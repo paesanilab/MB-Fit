@@ -1,0 +1,22 @@
+add_molecule['O1H2']
+add_molecule['O1H2']
+
+add_variable['O',  'a', 'H1', 'a',  'x-intra-OH']
+add_variable['O',  'a', 'H2', 'a',  'x-intra-OH']
+add_variable['H1', 'a', 'H2', 'a',  'x-intra-HH']
+
+add_variable['O',  'b', 'H1', 'b',  'x-intra-OH']
+add_variable['O',  'b', 'H2', 'b',  'x-intra-OH']
+add_variable['H1', 'b', 'H2', 'b',  'x-intra-HH']
+
+add_variable['O', 'a',   'O', 'b',  'x-OO']
+
+add_variable['O', 'a', 'H1', 'b', 'x-OH']
+add_variable['O', 'a', 'H2', 'b', 'x-OH']
+add_variable['O', 'b', 'H1', 'a', 'x-OH']
+add_variable['O', 'b', 'H2', 'a', 'x-OH']
+
+add_variable['H1', 'a', 'H1', 'b',  'x-HH']
+add_variable['H1', 'a', 'H2', 'b',  'x-HH']
+add_variable['H2', 'a', 'H1', 'b',  'x-HH']
+add_variable['H2', 'a', 'H2', 'b',  'x-HH']

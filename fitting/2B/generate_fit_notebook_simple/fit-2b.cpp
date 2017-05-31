@@ -1,6 +1,7 @@
 
 #include <cmath>
 #include <cassert>
+#include <cstdlib>
 
 #include <fstream>
 #include <sstream>
@@ -148,27 +149,26 @@ double compute_chisq(const gsl_vector* X, void* unused)
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::cerr << "usage: fit-2b ksv ts1 ..."
+    if (argc < 2) {
+        std::cerr << "usage: fit-2b ts1 ..."
                   << std::endl;
         return 0;
     }
 
-    ++argv; --argc;
-//    if (**argv == 'x') {
-      const double x0[] = {
-            1.50,
-            1.50,
-            1.00,
-            2.00,
-            1.00,
-            1.00,
-            1.00,
-            1.50,
-            2.00,
-            1.00
-      };
-//    }
+      double x0[10];
+      x0[0] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
+      x0[1] = ((double) rand() / (RAND_MAX)) * 2.0 + 0.0;
+      x0[2] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
+      x0[3] = ((double) rand() / (RAND_MAX)) * 2.0 + 0.0;
+      x0[4] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0;
+      x0[5] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
+      x0[6] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0;
+      x0[7] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
+      x0[8] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0;
+      x0[9] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
+
+      
+
     model.set_nonlinear_parameters(x0);
 
     #   ifdef RIDGE_REGRESSION
@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
       // Take out electrostatic energy:
       elec_e.push_back(ener);
       training_set[n].energy_twobody -= ener;
-      std::cerr << "Conf " << n << " : Elec= " << ener ;
+      // std::cerr << "Conf " << n << " : Elec= " << ener ;
 
       // Now need to take out dispersion
       x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_nsites(), m2.get_nsites());
@@ -313,7 +313,7 @@ int main(int argc, char** argv) {
       disp_e.push_back(ener);
       training_set[n].energy_twobody -= ener ;
 
-      std::cerr << " , Disp= " << ener << std::endl;
+      // std::cerr << " , Disp= " << ener << std::endl;
       delete[] system_sitecrds ;
       delete[] system_charge  ;
       delete[] system_polfac  ;

@@ -12,7 +12,6 @@
 
 const double CHARGECON = constants::CHARGECON;
 
-// ##DEFINE HERE## ORDER
 // NOTE: ASSUMING ABB
 
 namespace x  {
@@ -25,7 +24,6 @@ namespace x  {
 
   mon2::mon2( double* crd) {
     
-    // ##DEFINE HERE## number of sites
     nsites = 3;  
     
     allocate();
@@ -35,40 +33,40 @@ namespace x  {
     charge = set_charges(crd);
     polfac = set_polfacs(atmpolar);
 
-// ##DEFINE HERE## excluded pairs
+    // Excluded pairs
     excluded12.insert(std::make_pair(0,1));
     excluded12.insert(std::make_pair(0,2));
     excluded13.insert(std::make_pair(1,2));
+
 
   }
 
   double* mon2::set_charges(double* atmcrds) {
     charge = memory;
-
-// ##DEFINE HERE## Charges
     charge[0] = 0.454448*CHARGECON;
     charge[1] = -0.227224*CHARGECON;
     charge[2] = -0.227224*CHARGECON;
+
+
     return charge;
   }
   
-    double* mon2::set_pol() {
+  double* mon2::set_pol() {
     atmpolar = memory + nsites + nsites*3;
-    
-// ##DEFINE HERE## Polarizabilities
     atmpolar[0] = 1.43039;
     atmpolar[1] = 0.771519;
     atmpolar[2] = 0.771519;
+
     return atmpolar;
   }
 
   double* mon2::set_polfacs(double* atmpol) {
     polfac = memory + nsites + nsites*3 + nsites;
     
-// ##DEFINE HERE## Polarizability factors
     polfac[0] = 1.43039;
     polfac[1] = 0.771519;
     polfac[2] = 0.771519;
+
     return polfac;
   }
 

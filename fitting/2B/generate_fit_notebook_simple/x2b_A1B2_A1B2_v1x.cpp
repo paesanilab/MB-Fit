@@ -28,10 +28,10 @@ void error(int kode) {
 
 struct variable {
     double v_exp(const double& r0, const double& k,
-                 const double* xcrd, int o, int x );
+                 const double * p1, const double * p2 );
 
     double v_coul(const double& r0, const double& k,
-      const double* xcrd, int o, int x);
+                  const double * p1, const double * p2 );
 
     double g[3]; // diff(value, p1 - p2)
 };
@@ -39,11 +39,11 @@ struct variable {
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
 double variable::v_exp(const double& r0, const double& k,
-                       const double* xcrd, int o, int x)
+                       const double * p1, const double * p2)
 {
-    g[0] = xcrd[o++] - xcrd[x++];
-    g[1] = xcrd[o++] - xcrd[x++];
-    g[2] = xcrd[o]   - xcrd[x];
+    g[0] = p2[0] - p1[0];
+    g[1] = p2[1] - p1[1];
+    g[2] = p2[2] - p1[2];
 
     const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
 
@@ -60,11 +60,11 @@ double variable::v_exp(const double& r0, const double& k,
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
 double variable::v_coul(const double& r0, const double& k,
-                        const double* xcrd, int o, int x)
+                        const double * p1, const double * p2)
 {
-    g[0] = xcrd[o++] - xcrd[x++];
-    g[1] = xcrd[o++] - xcrd[x++];
-    g[2] = xcrd[o]   - xcrd[x];
+    g[0] = p2[0] - p1[0];
+    g[1] = p2[1] - p1[1];
+    g[2] = p2[2] - p1[2];
 
     const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
     const double r = std::sqrt(rsq);
@@ -96,16 +96,16 @@ std::string x2b_A1B2_A1B2_v1x::name() {
 }
 void x2b_A1B2_A1B2_v1x::set_nonlinear_parameters(const double* xxx) 
  { 
-     m_k_intra_AB = *xxx++; 
-    m_d_intra_AB = *xxx++; 
-    m_k_intra_BB = *xxx++; 
+     m_d_intra_AB = *xxx++; 
+    m_k_intra_AB = *xxx++; 
     m_d_intra_BB = *xxx++; 
-    m_k_AA = *xxx++; 
+    m_k_intra_BB = *xxx++; 
     m_d_AA = *xxx++; 
-    m_k_AB = *xxx++; 
+    m_k_AA = *xxx++; 
     m_d_AB = *xxx++; 
-    m_k_BB = *xxx++; 
+    m_k_AB = *xxx++; 
     m_d_BB = *xxx++; 
+    m_k_BB = *xxx++; 
 
 }
 
@@ -113,16 +113,16 @@ void x2b_A1B2_A1B2_v1x::set_nonlinear_parameters(const double* xxx)
 
 void x2b_A1B2_A1B2_v1x::get_nonlinear_parameters(double* xxx) 
  { 
-    *xxx++ = m_k_intra_AB; 
-   *xxx++ = m_d_intra_AB; 
-   *xxx++ = m_k_intra_BB; 
+    *xxx++ = m_d_intra_AB; 
+   *xxx++ = m_k_intra_AB; 
    *xxx++ = m_d_intra_BB; 
-   *xxx++ = m_k_AA; 
+   *xxx++ = m_k_intra_BB; 
    *xxx++ = m_d_AA; 
-   *xxx++ = m_k_AB; 
+   *xxx++ = m_k_AA; 
    *xxx++ = m_d_AB; 
-   *xxx++ = m_k_BB; 
+   *xxx++ = m_k_AB; 
    *xxx++ = m_d_BB; 
+   *xxx++ = m_k_BB; 
 
 }
 
@@ -148,16 +148,16 @@ void x2b_A1B2_A1B2_v1x::write_cdl(std::ostream& os, unsigned DEG,
        << "  :name = \"x2b_A1B2_A1B2_v1x<" << DEG << ">\";" << endl;
 
     // x2b_A1B2_A1B2_v1x::as_cdl(os);
-    os        << "  :k_intra_AB = " << setw(22) << m_k_intra_AB << "; // A^(-1))" << endl 
-       << "  :d_intra_AB = " << setw(22) << m_d_intra_AB << "; // A^(-1))" << endl 
-       << "  :k_intra_BB = " << setw(22) << m_k_intra_BB << "; // A^(-1))" << endl 
+    os        << "  :d_intra_AB = " << setw(22) << m_d_intra_AB << "; // A^(-1))" << endl 
+       << "  :k_intra_AB = " << setw(22) << m_k_intra_AB << "; // A^(-1))" << endl 
        << "  :d_intra_BB = " << setw(22) << m_d_intra_BB << "; // A^(-1))" << endl 
-       << "  :k_AA = " << setw(22) << m_k_AA << "; // A^(-1))" << endl 
+       << "  :k_intra_BB = " << setw(22) << m_k_intra_BB << "; // A^(-1))" << endl 
        << "  :d_AA = " << setw(22) << m_d_AA << "; // A^(-1))" << endl 
-       << "  :k_AB = " << setw(22) << m_k_AB << "; // A^(-1))" << endl 
+       << "  :k_AA = " << setw(22) << m_k_AA << "; // A^(-1))" << endl 
        << "  :d_AB = " << setw(22) << m_d_AB << "; // A^(-1))" << endl 
-       << "  :k_BB = " << setw(22) << m_k_BB << "; // A^(-1))" << endl 
+       << "  :k_AB = " << setw(22) << m_k_AB << "; // A^(-1))" << endl 
        << "  :d_BB = " << setw(22) << m_d_BB << "; // A^(-1))" << endl 
+       << "  :k_BB = " << setw(22) << m_k_BB << "; // A^(-1))" << endl 
 
          << "  :r2i = " << setw(22) << m_r2i << "; // A" << endl
          << "  :r2f = " << setw(22) << m_r2f << "; // A" << endl
@@ -182,88 +182,84 @@ void x2b_A1B2_A1B2_v1x::write_cdl(std::ostream& os, unsigned DEG,
 
 //----------------------------------------------------------------------------//
 bool x2b_A1B2_A1B2_v1x::nonlinear_parameters_out_of_range() const { 
+    const double k_min =  0.0 ;
+    const double k_max =  3.0 ;
+    const double k_min_intra =  0.0 ;
+    const double k_max_intra =  2.0 ;
 
-    // ##DEFINE HERE## the maximum and minimum for the ks and ds
-    const double k_min =  0.0;
-    const double k_max = 3.0;
-    const double k_min_intra =  0.0;
-    const double k_max_intra= 2.0;
+    const double d_min =  0.0 ;
+    const double d_max =  7.0 ;
+    const double d_min_intra =  0.0 ;
+    const double d_max_intra =  3.0 ;
 
-    const double d_min = 0.0;
-    const double d_max =  7.0;
-    const double d_min_intra =  0.0;
-    const double d_max_intra= 3.0;
-    
 return false
-       || m_k_intra_AB < k_min_intra 
-       || m_k_intra_AB > k_max_intra 
        || m_d_intra_AB < d_min_intra 
        || m_d_intra_AB > d_max_intra 
-       || m_k_intra_BB < k_min_intra 
-       || m_k_intra_BB > k_max_intra 
+       || m_k_intra_AB < k_min_intra 
+       || m_k_intra_AB > k_max_intra 
        || m_d_intra_BB < d_min_intra 
        || m_d_intra_BB > d_max_intra 
-       || m_k_AA < k_min 
-       || m_k_AA > k_max 
+       || m_k_intra_BB < k_min_intra 
+       || m_k_intra_BB > k_max_intra 
        || m_d_AA < d_min 
        || m_d_AA > d_max 
-       || m_k_AB < k_min 
-       || m_k_AB > k_max 
+       || m_k_AA < k_min 
+       || m_k_AA > k_max 
        || m_d_AB < d_min 
        || m_d_AB > d_max 
-       || m_k_BB < k_min 
-       || m_k_BB > k_max 
+       || m_k_AB < k_min 
+       || m_k_AB > k_max 
        || m_d_BB < d_min 
-       || m_d_BB > d_max ; 
+       || m_d_BB > d_max 
+       || m_k_BB < k_min 
+       || m_k_BB > k_max ; 
 
 
 }
 
-
-
-
 // ##DEFINE HERE## need to think how to generalize this function...
 
-void  x2b_A1B2_A1B2_v1x::cart_to_vars(const double* xyz, double* v, double& s) const { 
+void  x2b_A1B2_A1B2_v1x::cart_to_vars(const double* xyz, double* v, double& s, double& gs) const { 
+    // NOTE: XYZ contains ONLY the real sites. The lone pairs etc are calculated here 
+    const double* A_1_a= xyz + 0;
+    const double* B_1_a= xyz + 3;
+    const double* B_2_a= xyz + 6;
 
-    const double* A = xyz;
-    const double* B1 = xyz + 3;
-    const double* B2 = xyz + 6;
-    
-    const double* A_2 = xyz + 9;
-    const double* B1_2 = xyz + 12;
-    const double* B2_2 = xyz + 15;
-    
-    
+    const double* A_1_b= xyz + 9;
+    const double* B_1_b= xyz + 12;
+    const double* B_2_b= xyz + 15;
+
 // ##DEFINE HERE## the lone pairs if any
     // double Xa1[3], Xa2[3];
 
     // xpoints(m_in_plane_gamma, m_out_of_plane_gamma, O, Xa1, Xa2);
-
-
+    
+    variable vr[15];
     using x2o::distance;
+    
+    v[0]  = vr[0].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_1_a);
+    v[1]  = vr[1].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_2_a);
+    v[2]  = vr[2].v_exp(m_d_intra_BB, m_k_intra_BB, B_1_a, B_2_a);
 
-    v[0]  = var_intra(m_d_intra_BB, m_k_intra_BB, distance(B1, B2));
-    v[1]  = var_intra(m_d_intra_BB, m_k_intra_BB, distance(B1_2, B2_2));
-    v[2]  = var_intra(m_d_intra_AB, m_k_intra_AB, distance(A, B1));
-    v[3]  = var_intra(m_d_intra_AB, m_k_intra_AB, distance(A, B2));
-    v[4]  = var_intra(m_d_intra_AB, m_k_intra_AB, distance(A_2, B1_2));
-    v[5]  = var_intra(m_d_intra_AB, m_k_intra_AB, distance(A_2, B2_2));
-    
-    v[6]  = var_intra(m_d_BB, m_k_BB, distance(B1, B1_2));
-    v[7]  = var_intra(m_d_BB, m_k_BB, distance(B1, B2_2));
-    v[8]  = var_intra(m_d_BB, m_k_BB, distance(B2, B1_2));
-    v[9]  = var_intra(m_d_BB, m_k_BB, distance(B2, B2_2));
-    
-    v[10]  = var_intra(m_d_AB, m_k_AB, distance(A, B1_2));
-    v[11]  = var_intra(m_d_AB, m_k_AB, distance(A, B2_2));
-    v[12]  = var_intra(m_d_AB, m_k_AB, distance(A_2, B1));
-    v[13]  = var_intra(m_d_AB, m_k_AB, distance(A_2, B2));
-    
-    v[14]  = var_intra(m_d_AA, m_k_AA, distance(A, A_2));
+    v[3]  = vr[3].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_b, B_1_b);
+    v[4]  = vr[4].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_b, B_2_b);
+    v[5]  = vr[5].v_exp(m_d_intra_BB, m_k_intra_BB, B_1_b, B_2_b);
 
-    double g = 0;
-    s = f_switch(distance(A, A_2), g);
+    v[6]  = vr[6].v_exp(m_d_AA, m_k_AA, A_1_a, A_1_b);
+    v[7]  = vr[7].v_exp(m_d_AB, m_k_AB, A_1_a, B_1_b);
+    v[8]  = vr[8].v_exp(m_d_AB, m_k_AB, A_1_a, B_2_b);
+
+    v[9]  = vr[9].v_exp(m_d_AB, m_k_AB, B_1_a, A_1_b);
+    v[10]  = vr[10].v_exp(m_d_BB, m_k_BB, B_1_a, B_1_b);
+    v[11]  = vr[11].v_exp(m_d_BB, m_k_BB, B_1_a, B_2_b);
+
+    v[12]  = vr[12].v_exp(m_d_AB, m_k_AB, B_2_a, A_1_b);
+    v[13]  = vr[13].v_exp(m_d_BB, m_k_BB, B_2_a, B_1_b);
+    v[14]  = vr[14].v_exp(m_d_BB, m_k_BB, B_2_a, B_2_b);
+
+
+    s = f_switch(distance(A_1_a, A_1_b), gs);
+    
 #define PR(x)
   PR(s);
   PR(v[0]);
@@ -281,6 +277,7 @@ void  x2b_A1B2_A1B2_v1x::cart_to_vars(const double* xyz, double* v, double& s) c
   PR(v[12]);
   PR(v[13]);
   PR(v[14]);
+
 } 
 
 //----------------------------------------------------------------------------//
@@ -298,16 +295,16 @@ void x2b_A1B2_A1B2_v1x::load_netcdf(const char* fn)
 #   define RETRIEVE(name) \
     if ((rc = nc_get_att_double(ncid, NC_GLOBAL, #name , &m_##name))) \
         error(rc);
-    RETRIEVE(k_intra_AB)
     RETRIEVE(d_intra_AB)
-    RETRIEVE(k_intra_BB)
+    RETRIEVE(k_intra_AB)
     RETRIEVE(d_intra_BB)
-    RETRIEVE(k_AA)
+    RETRIEVE(k_intra_BB)
     RETRIEVE(d_AA)
-    RETRIEVE(k_AB)
+    RETRIEVE(k_AA)
     RETRIEVE(d_AB)
-    RETRIEVE(k_BB)
+    RETRIEVE(k_AB)
     RETRIEVE(d_BB)
+    RETRIEVE(k_BB)
 
 
     RETRIEVE(r2i)
@@ -364,55 +361,17 @@ double x2b_A1B2_A1B2_v1x::eval(const double* mon1, const double* mon2 ) const
     if (r12 > m_r2f)
         return 0.0;
 
-    // offsets
-    const int A  = 0;
-    const int B1 = 3;
-    const int B2 = 6;
-
-    const int A_2  = 9;
-    const int B1_2 = 12;
-    const int B2_2 = 15;
-
-
-    // ##DEFINE HERE## Careful... double check before using
-    double xcrd[18]; // coordinates including extra-points
+    double xcrd[18]; // coordinates of real sites ONLY
 
     std::copy(mon1, mon1 + 9, xcrd);
     std::copy(mon2, mon2 + 9, xcrd + 9);
-
-    // ##DEFINE HERE## For now, assuming no extra points are present (lone pairs, etc)
-    // the extra-points
-
-    // ##DEFINE HERE## Need to find a way to generalize that
     
     double v[15]; 
-    
-    variable ctxt[15];
-    v[0]  = ctxt[0].v_exp(m_d_intra_BB, m_k_intra_BB, xcrd, B1, B2);
-    v[1]  = ctxt[1].v_exp(m_d_intra_BB, m_k_intra_BB, xcrd, B1_2, B2_2);
-    v[2]  = ctxt[2].v_exp(m_d_intra_AB, m_k_intra_AB, xcrd, A, B1);
-    v[3]  = ctxt[3].v_exp(m_d_intra_AB, m_k_intra_AB, xcrd, A, B2);
-    v[4]  = ctxt[4].v_exp(m_d_intra_AB, m_k_intra_AB, xcrd, A_2, B1_2);
-    v[5]  = ctxt[5].v_exp(m_d_intra_AB, m_k_intra_AB, xcrd, A_2, B2_2);
-    
-    v[6]  = ctxt[6].v_exp(m_d_BB, m_k_BB, xcrd, B1, B1_2);
-    v[7]  = ctxt[7].v_exp(m_d_BB, m_k_BB, xcrd, B1, B2_2);
-    v[8]  = ctxt[8].v_exp(m_d_BB, m_k_BB, xcrd, B2, B1_2);
-    v[9]  = ctxt[9].v_exp(m_d_BB, m_k_BB, xcrd, B2, B2_2);
-    
-    v[10]  = ctxt[10].v_exp(m_d_AB, m_k_AB, xcrd, A, B1_2);
-    v[11]  = ctxt[11].v_exp(m_d_AB, m_k_AB, xcrd, A, B2_2);
-    v[12]  = ctxt[12].v_exp(m_d_AB, m_k_AB, xcrd, A_2, B1);
-    v[13]  = ctxt[13].v_exp(m_d_AB, m_k_AB, xcrd, A_2, B2);
-    
-    v[14]  = ctxt[14].v_exp(m_d_AA, m_k_AA, xcrd, A, A_2);
+    double sw = 0.0;
+    double gsw = 0.0;
+    cart_to_vars(xcrd, v, sw, gsw); 
     
     const double E_poly = mb_system::poly_model::eval(m_poly, v);
-    
-    // the switch
-
-    double gsw;
-    const double sw = f_switch(r12, gsw);
 
     return sw*E_poly;
 }

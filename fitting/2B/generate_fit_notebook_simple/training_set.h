@@ -11,6 +11,8 @@ struct dimer {
     double energy_total;
     double energy_twobody;
     double energy_onebody[2];
+    
+    // Note: XYZ is for the real sites
     double xyz[18];
 
     double mb_total_energy() const

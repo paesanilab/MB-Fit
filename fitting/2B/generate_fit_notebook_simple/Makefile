@@ -11,8 +11,8 @@ INCLUDE = -I./
 FIT_OBJ = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \
 kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \
 training_set.o ttm4.o wlsq.o poly_2b_A1B2_A1B2_v1x.o \
-x2b_A1B2_A1B2_v1x.o poly_2b_A1B2_A1B2.o \
-dispersion.o poly_2b_A1B2_A1B2_v1.o
+x2b_A1B2_A1B2_v1x.o poly_2b_A1B2_A1B2_v1.o \
+dispersion.o poly_2b_A1B2_A1B2.o
 
 all: libfit.a fit-2b
 # $(MAKE) libpot.a 2> err.txt > log.txt

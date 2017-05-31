@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <iomanip>
+#include <iostream>
 
 #include <netcdf.h>
 
@@ -388,7 +389,9 @@ double x2b_A1B2_A1B2_v1x::eval(const double* mon1, const double* mon2 ) const
     double v[15]; 
     
     variable ctxt[15];
+std::cerr << "B1_before = " << B1 << std::endl;
     v[0]  = ctxt[0].v_exp(m_d_intra_BB, m_k_intra_BB, xcrd, B1, B2);
+std::cerr << "B1_after = " << B1 << std::endl;
     v[1]  = ctxt[1].v_exp(m_d_intra_BB, m_k_intra_BB, xcrd, B1_2, B2_2);
     v[2]  = ctxt[2].v_exp(m_d_intra_AB, m_k_intra_AB, xcrd, A, B1);
     v[3]  = ctxt[3].v_exp(m_d_intra_AB, m_k_intra_AB, xcrd, A, B2);

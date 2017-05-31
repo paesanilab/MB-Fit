@@ -6,8 +6,14 @@ if [ $# -ne 3 ]; then
 fi
 
 # Create new folder
-filename=$1
-filename="${filename##*/}"
+# Gets the folder name from the input 
+# in /home/mrierari/codes/potential_fitting/polynomial_generation/tests/2B/A1B2_A1B2/A1B2_A1B2.in
+filename_wpath=$1
+path_to_poly_files=$2
+path_to_templates=$3
+
+
+filename="${filename_wpath##*/}"
 folder="${filename%.*}"
 
 if [ -d "$folder" ]; then
@@ -19,26 +25,26 @@ mkdir $folder
 cd $folder
 
 # Copy poly-direct
-cp $2/poly-direct.cpp .
+cp $path_to_poly_files/poly-direct.cpp .
 
 # Copy poly-grd and change the include file
-tail -n +2 $2/poly-grd.cpp > tmp
+tail -n +2 $path_to_poly_files/poly-grd.cpp > tmp
 echo '#include "poly_2b_'${folder}'_v1x.h"' > poly_2b_${folder}_v1x.cpp
 cat tmp >> poly_2b_${folder}_v1x.cpp
 
 # Copy poly-nogrd and change the include file
-tail -n +2 $2/poly-nogrd.cpp > tmp
+tail -n +2 $path_to_poly_files/poly-nogrd.cpp > tmp
 echo '#include "poly_2b_'${folder}'_v1x.h"' > poly_2b_${folder}_v1.cpp
 cat tmp >> poly_2b_${folder}_v1.cpp
 
 # Copy poly-model 
-cp $2/poly-model.h poly_2b_${folder}_v1x.h
+cp $path_to_poly_files/poly-model.h poly_2b_${folder}_v1x.h
 
 # Copy the templates
-cp $3/* .
+cp $path_to_templates/* .
 
 # Run python script
-python3 ../generate_fitting_notebook.py $1 poly-direct.cpp
+python3 ../generate_fitting_notebook.py $filename_wpath poly-direct.cpp
 rm poly-direct.cpp
 
 # Compile

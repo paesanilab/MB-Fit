@@ -108,8 +108,10 @@ double* ttm4::get_pol() { return atmpolar; }
 
 excluded_set_type::iterator ttm4::get_begin_12() { return excluded12.begin(); }
 excluded_set_type::iterator ttm4::get_begin_13() { return excluded13.begin(); }
+excluded_set_type::iterator ttm4::get_begin_13() { return excluded14.begin(); }
 excluded_set_type::iterator ttm4::get_end_12() { return excluded12.end(); }
 excluded_set_type::iterator ttm4::get_end_13() { return excluded13.end(); }
+excluded_set_type::iterator ttm4::get_end_13() { return excluded14.end(); }
 
 
 } // namespace x2o

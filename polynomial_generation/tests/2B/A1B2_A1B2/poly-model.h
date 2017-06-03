@@ -5,16 +5,16 @@ namespace mb_system {
 
 struct poly_model {
     static const unsigned n_vars = 15;
-    static const unsigned size = 134;
+    static const unsigned size = 597;
 
-    static double eval(const double a[134],
+    static double eval(const double a[597],
                        const double x[15]);
 
-    static double eval(const double a[134],
+    static double eval(const double a[597],
                        const double x[15],
                              double g[15]);
 
-    static double eval_direct(const double a[134],
+    static double eval_direct(const double a[597],
                               const double x[15]);
 
 public:

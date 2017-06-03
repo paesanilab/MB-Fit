@@ -1,4 +1,5 @@
-#include "ttm4.h"
+
+#include "mon1.h"
 
 #include <iostream>
 
@@ -22,17 +23,17 @@ inline void compute_M_site_crd
 
 } // namespace
 
-namespace x2o {
+namespace x {
 
-ttm4::ttm4() {
+mon1::mon1() {
 
 }
 
-ttm4::~ttm4() {
-	delete[] memory;
+mon1::~mon1() {
+  delete[] memory;
 }
 
-ttm4::ttm4(double* crd) {
+mon1::mon1(double* crd) {
     nsites = 4;
     allocate();
     sitecrds = set_sitecrds(crd);
@@ -51,7 +52,7 @@ ttm4::ttm4(double* crd) {
     excluded12.insert(std::make_pair(2, 3)); // H2 - M
 }
 
-double* ttm4::set_sitecrds(double* atmcrds) {
+double* mon1::set_sitecrds(double* atmcrds) {
     sitecrds = memory + nsites;
     // assumes O H H 
     compute_M_site_crd(atmcrds, atmcrds + 3, atmcrds + 6, sitecrds + 9);
@@ -59,11 +60,11 @@ double* ttm4::set_sitecrds(double* atmcrds) {
     return sitecrds;
 }
 
-double* ttm4::set_charges(double* atmcrds) {
+double* mon1::set_charges(double* atmcrds) {
     double chgtmp[3];
     h2o::ps::dms_nasa(0.0, 0.0, 0.0, atmcrds, chgtmp, 0, false);
     const double tmp = 0.5*gammaM/(1.0 - gammaM);
-    charge = memory; 
+    charge = memory;
 
     charge[0] = 0.0;                        // O
     charge[1] = CHARGECON*(chgtmp[1] + tmp*(chgtmp[1] + chgtmp[2])); // H1
@@ -75,7 +76,7 @@ double* ttm4::set_charges(double* atmcrds) {
     return charge;
 }
 
-double* ttm4::set_pol() {
+double* mon1::set_pol() {
     atmpolar = memory + nsites + nsites*3;
     atmpolar[0] = 1.310; // polarO
     atmpolar[1] = 0.294; // polarH
@@ -84,7 +85,7 @@ double* ttm4::set_pol() {
     return atmpolar;
 }
 
-double* ttm4::set_polfacs(double* atmpol) {
+double* mon1::set_polfacs(double* atmpol) {
     polfac = memory + nsites + nsites*3 + nsites;
     polfac[0] = 1.310; // polarO
     polfac[1] = 0.294; // polarH
@@ -93,25 +94,26 @@ double* ttm4::set_polfacs(double* atmpol) {
     return polfac;
 }
 
-void ttm4::allocate() {
+void mon1::allocate() {
     memory = new double [nsites // charges
-	+ nsites*3              // sitecrds	
-	+ nsites                // polarizabilities
-	+ nsites];              // polfacs
+  + nsites*3              // sitecrds 
+  + nsites                // polarizabilities
+  + nsites];              // polfacs
 }
 
-int ttm4::get_nsites() { return nsites; }
-double* ttm4::get_sitecrds() { return sitecrds; }
-double* ttm4::get_charges() { return charge; }
-double* ttm4::get_polfacs() { return polfac; }
-double* ttm4::get_pol() { return atmpolar; }
+int mon1::get_nsites() { return nsites; }
+double* mon1::get_sitecrds() { return sitecrds; }
+double* mon1::get_charges() { return charge; }
+double* mon1::get_polfacs() { return polfac; }
+double* mon1::get_pol() { return atmpolar; }
 
-excluded_set_type::iterator ttm4::get_begin_12() { return excluded12.begin(); }
-excluded_set_type::iterator ttm4::get_begin_13() { return excluded13.begin(); }
-excluded_set_type::iterator ttm4::get_begin_14() { return excluded14.begin(); }
-excluded_set_type::iterator ttm4::get_end_12() { return excluded12.end(); }
-excluded_set_type::iterator ttm4::get_end_13() { return excluded13.end(); }
-excluded_set_type::iterator ttm4::get_end_14() { return excluded14.end(); }
+excluded_set_type::iterator mon1::get_begin_12() { return excluded12.begin(); }
+excluded_set_type::iterator mon1::get_begin_13() { return excluded13.begin(); }
+excluded_set_type::iterator mon1::get_begin_14() { return excluded14.begin(); }
+excluded_set_type::iterator mon1::get_end_12() { return excluded12.end(); }
+excluded_set_type::iterator mon1::get_end_13() { return excluded13.end(); }
+excluded_set_type::iterator mon1::get_end_14() { return excluded14.end(); }
 
 
-} // namespace x2o
+} // namespace x
+

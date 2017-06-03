@@ -51,4 +51,9 @@ Aa:Ba1:Ba2:Ab:Bb1:Bb2
 680 possible (filtered) 3rd degree monomials
 110 <<== accepted 3rd degree terms
 
- Total number of terms: 134
+<> 4th degree <>
+
+3060 possible (filtered) 4th degree monomials
+463 <<== accepted 4th degree terms
+
+ Total number of terms: 597

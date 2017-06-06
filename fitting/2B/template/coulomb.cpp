@@ -113,7 +113,8 @@ smear_ttm4x::smear_ttm4x()
 {
     m_aDD_inter = 0.055;
     m_aDD_intra_12 = 0.626;
-    m_aDD_intra_13 = 0.626;
+    m_aDD_intra_13 = 0.055;
+    m_aDD_intra_14 = 0.055;
 }
 
 double smear_ttm4x::aCC() const { return 0.4; }
@@ -132,6 +133,11 @@ double smear_ttm4x::aDD_intra_12() const
 double smear_ttm4x::aDD_intra_13() const
 {
     return m_aDD_intra_13;
+}
+
+double smear_ttm4x::aDD_intra_14() const
+{
+    return m_aDD_intra_14;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -87,6 +87,8 @@ double electrostatics::operator()(size_t natom, const double* charge,
     const double* polfac, const double* polar, const double* xyz,
     const electrostatics::excluded_set_type& excluded12,
     const electrostatics::excluded_set_type& excluded13,
+    const electrostatics::excluded_set_type& excluded14,
+    const int * is_w,
     const smear& smr, double* grad)
 {
     allocate(natom);
@@ -136,7 +138,11 @@ double electrostatics::operator()(size_t natom, const double* charge,
             const bool ij_13 =
                 (excluded13.find(std::make_pair(i, j)) != excluded13.end());
 
-            const bool ij_bonded = ij_12 || ij_13;
+            const bool ij_14 =
+                (excluded14.find(std::make_pair(i, j)) != excluded14.end());
+
+
+            const bool ij_bonded = ij_12 || ij_13 || ij_14;
 
             if (!ij_bonded) {
                 double ts0, ts1;
@@ -152,9 +158,17 @@ double electrostatics::operator()(size_t natom, const double* charge,
 
 	    // dipole-dipole tensor
 
-            const double aDD = ij_bonded ?
-             (ij_12 ? smr.aDD_intra_12() : smr.aDD_intra_13())
+            double aDD = ij_bonded ?
+             (ij_12 ? smr.aDD_intra_12() : ij_13 ? smr.aDD_intra_13()
+                                         : smr.aDD_intra_14())
                                          : smr.aDD_inter();
+            if (ij_bonded && is_w[i] == 1) {
+              if (ij_12) {
+                aDD = 0.626;
+              } else {
+                aDD = 0.055;
+              }
+            }
 //DEBUG
 //	    std::cout << " i = " << i << "    j = " << j << 
 //		"   aDD = " << aDD << std::endl;
@@ -346,9 +360,11 @@ double electrostatics::operator()(size_t natom, const double* charge,
 
             const bool skip_ij = (i == j)
             || (i < j ? (excluded12.find(std::make_pair(i, j)) != excluded12.end()
-                      || excluded13.find(std::make_pair(i, j)) != excluded13.end())
+                      || excluded13.find(std::make_pair(i, j)) != excluded13.end()
+                      || excluded14.find(std::make_pair(i, j)) != excluded14.end())
                       : (excluded12.find(std::make_pair(j, i)) != excluded12.end()
-                      || excluded13.find(std::make_pair(j, i)) != excluded13.end()));
+                      || excluded13.find(std::make_pair(j, i)) != excluded13.end()
+                      || excluded14.find(std::make_pair(j, i)) != excluded14.end()));
 
             if (skip_ij)
                 continue; // skip this (i, j) pair
@@ -401,11 +417,22 @@ double electrostatics::operator()(size_t natom, const double* charge,
             const bool ij_13 =
                 excluded13.find(std::make_pair(i, j)) != excluded13.end();
 
-            const bool ij_bonded = ij_12 || ij_13;
+            const bool ij_14 =
+                excluded14.find(std::make_pair(i, j)) != excluded14.end();
 
-            const double aDD = ij_bonded ?
-             (ij_12 ? smr.aDD_intra_12() : smr.aDD_intra_13())
+            const bool ij_bonded = ij_12 || ij_13 || ij_14;
+
+            double aDD = ij_bonded ?
+             (ij_12 ? smr.aDD_intra_12() : ij_13 ? smr.aDD_intra_13()
+                                         : smr.aDD_intra_14())
                                          : smr.aDD_inter();
+            if (ij_bonded && is_w[i] == 1) {
+              if (ij_12) {
+                aDD = 0.626;
+              } else {
+                aDD = 0.055;
+              }
+            }
 
             double ts1, ts2, ts3;
             smr.smear3(Rsq, polfac[i]*polfac[j], aDD, ts1, ts2, ts3);
@@ -444,6 +471,8 @@ double electrostatics::operator()(size_t natom, const double* charge,
     const double* polfac, const double* polar, const double* xyz,
     const electrostatics::excluded_set_type& excluded12,
     const electrostatics::excluded_set_type& excluded13,
+    const electrostatics::excluded_set_type& excluded14,
+    const int * is_w,
     const smear& smr, double& E_elec, double& E_ind, double* grad)
 {
     allocate(natom);
@@ -493,7 +522,10 @@ double electrostatics::operator()(size_t natom, const double* charge,
             const bool ij_13 =
                 (excluded13.find(std::make_pair(i, j)) != excluded13.end());
 
-            const bool ij_bonded = ij_12 || ij_13;
+            const bool ij_14 =
+                (excluded14.find(std::make_pair(i, j)) != excluded14.end());
+
+            const bool ij_bonded = ij_12 || ij_13 || ij_14;
 
             if (!ij_bonded) {
                 double ts0, ts1;
@@ -509,9 +541,17 @@ double electrostatics::operator()(size_t natom, const double* charge,
 
 	    // dipole-dipole tensor
 
-            const double aDD = ij_bonded ?
-             (ij_12 ? smr.aDD_intra_12() : smr.aDD_intra_13())
+            double aDD = ij_bonded ?
+             (ij_12 ? smr.aDD_intra_12() : ij_13 ? smr.aDD_intra_13()
+                                         : smr.aDD_intra_14())
                                          : smr.aDD_inter();
+            if (ij_bonded && is_w[i] == 1) {
+              if (ij_12) {
+                aDD = 0.626;
+              } else {
+                aDD = 0.055;
+              }
+            }
 
             double ts1, ts2;
             smr.smear2(Rsq, polfac[i]*polfac[j], aDD, ts1, ts2);
@@ -702,9 +742,11 @@ double electrostatics::operator()(size_t natom, const double* charge,
 
             const bool skip_ij = (i == j)
             || (i < j ? (excluded12.find(std::make_pair(i, j)) != excluded12.end()
-                      || excluded13.find(std::make_pair(i, j)) != excluded13.end())
+                      || excluded13.find(std::make_pair(i, j)) != excluded13.end()
+                      || excluded14.find(std::make_pair(i, j)) != excluded14.end())
                       : (excluded12.find(std::make_pair(j, i)) != excluded12.end()
-                      || excluded13.find(std::make_pair(j, i)) != excluded13.end()));
+                      || excluded13.find(std::make_pair(j, i)) != excluded13.end()
+                      || excluded14.find(std::make_pair(j, i)) != excluded14.end()));
 
             if (skip_ij)
                 continue; // skip this (i, j) pair
@@ -757,11 +799,22 @@ double electrostatics::operator()(size_t natom, const double* charge,
             const bool ij_13 =
                 excluded13.find(std::make_pair(i, j)) != excluded13.end();
 
-            const bool ij_bonded = ij_12 || ij_13;
+            const bool ij_14 =
+                excluded14.find(std::make_pair(i, j)) != excluded14.end();
 
-            const double aDD = ij_bonded ?
-             (ij_12 ? smr.aDD_intra_12() : smr.aDD_intra_13())
+            const bool ij_bonded = ij_12 || ij_13 || ij_14;
+
+            double aDD = ij_bonded ?
+             (ij_12 ? smr.aDD_intra_12() : ij_13 ? smr.aDD_intra_13()
+                                         : smr.aDD_intra_14())
                                          : smr.aDD_inter();
+            if (ij_bonded && is_w[i] == 1) {
+              if (ij_12) {
+                aDD = 0.626;
+              } else {
+                aDD = 0.055;
+              }
+            }
 
             double ts1, ts2, ts3;
             smr.smear3(Rsq, polfac[i]*polfac[j], aDD, ts1, ts2, ts3);
@@ -867,6 +920,8 @@ double electrostatics::energy(size_t natom, const double* charge,
     const double* polfac, const double* polar, const double* xyz,
     const electrostatics::excluded_set_type& excluded12,
     const electrostatics::excluded_set_type& excluded13, //?
+    const electrostatics::excluded_set_type& excluded14, //?
+    const int * is_w,
     const smear& smr, const double F[3]) //see coulomb.cpp for smear struct
 {
     allocate(natom);
@@ -926,7 +981,10 @@ double electrostatics::energy(size_t natom, const double* charge,
             const bool ij_13 =
                 (excluded13.find(std::make_pair(i, j)) != excluded13.end());
 
-            const bool ij_bonded = ij_12 || ij_13;
+            const bool ij_14 =
+                (excluded14.find(std::make_pair(i, j)) != excluded14.end());
+
+            const bool ij_bonded = ij_12 || ij_13 || ij_14;
 
             if (!ij_bonded) {
                 double ts0, ts1;
@@ -943,9 +1001,17 @@ double electrostatics::energy(size_t natom, const double* charge,
 
             // dipole-dipole tensor
 
-            const double aDD = ij_bonded ?
-             (ij_12 ? smr.aDD_intra_12() : smr.aDD_intra_13())
+            double aDD = ij_bonded ?
+             (ij_12 ? smr.aDD_intra_12() : ij_13 ? smr.aDD_intra_13()
+                                         : smr.aDD_intra_14())
                                          : smr.aDD_inter();
+            if (ij_bonded && is_w[i] == 1) {
+              if (ij_12) {
+                aDD = 0.626;
+              } else {
+                aDD = 0.055;
+              }
+            }
 
             double ts1, ts2;
             smr.smear2(Rsq, polfac[i]*polfac[j], aDD, ts1, ts2);

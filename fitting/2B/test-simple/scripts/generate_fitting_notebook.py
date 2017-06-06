@@ -1,46 +1,43 @@
 
 # coding: utf-8
 
-# In[286]:
+# In[1]:
 
 import sys
 import os
 
 
-# In[287]:
+# In[2]:
 
 # Check proper if input is provided
 
 
-# In[288]:
+# In[3]:
 
 if len(sys.argv) != 3:
-    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> \n")
-    print("---> Current arguments: " + str(len(sys.argv)) + '\n')
-    print("sys.argv[1] = " + sys.argv[0] + '\n')
-    print("sys.argv[2] = " + sys.argv[1] + '\n')
+    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> ")
     sys.exit()
 else:
     name = sys.argv[1]
+    directcpp = sys.argv[2]
 
 
-# In[289]:
+# In[4]:
 
 # This should be the commandline argument
-#name = "A1B2_A1B2.in"
+#name = "A1B2Z2_D1E2.in"
 f = open(name, 'r')
 mon1 = f.readline().split('\'')[1]
 mon2 = f.readline().split('\'')[1]
 
 
-# In[290]:
+# In[5]:
 
 # This should be the second command line argument
 #directcpp = 'poly-direct.cpp'
-directcpp = sys.argv[2]
 
 
-# In[291]:
+# In[20]:
 
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
@@ -52,6 +49,8 @@ nat2 = 3
 nsites1 = 3
 nsites2 = 3
 
+# Is one of the molecules water? 0 = none, 1 = mon1; 2=mon2
+is_w = 0
 # Obtain the lists with the excluded pairs
 excl12_a = [[0,1],[0,2]]
 excl13_a = [[1,2]]
@@ -90,11 +89,11 @@ r2i = 6.0
 r2o = 7.0
 
 # FInd a way to get the degree
-degree = 3
+degree = 4
 # Find a way to get the number ov variables
 nvars = 15
 # Find a way to get the size of the polynomial
-npoly = 134
+npoly = 597
 
 # Define kind of variables for intra, inter and lone pairs
 var_intra = 'exp'
@@ -104,16 +103,17 @@ var_inter = 'exp'
 # Define Energy Range for the fitting
 E_range = '30.0'
 
+# Define list of variables that are fictitious
+vsites = []
 
-# In[292]:
+
+# In[21]:
 
 types_a = list(mon1)
 types_b = list(mon2)
-print(types_a)
-print(types_b)
 
 
-# In[293]:
+# In[22]:
 
 # Generating the non linear parameter list
 nlparam = []
@@ -131,11 +131,15 @@ print(t1)
 print(t2)
 
 
-# In[294]:
+# In[23]:
 
 # Appending for mon1
 for i in range(len(t1)):
+    if t1[i] in vsites:
+        continue
     for j in range(1,len(t1)):
+        if t1[j] in vsites:
+            continue
         for nlp in ['d','k']:
             const_intra = nlp + '_intra_' + t1[i] + t1[j]
             if not const_intra in nlparam:
@@ -143,7 +147,11 @@ for i in range(len(t1)):
 
 # Appending for mon2
 for i in range(len(t2)):
+    if t2[i] in vsites:
+        continue
     for j in range(1,len(t2)):
+        if t2[j] in vsites:
+            continue
         for nlp in ['d','k']:
             const_intra = nlp + '_intra_' + t2[i] + t2[j]
             if not const_intra in nlparam:
@@ -160,18 +168,22 @@ for i in range(len(t1)):
 
 # Getting the pairs
 pairs = []
+real_pairs = []
 for i in range(len(t1)):
     for j in range(len(t2)):
         p = sorted([t1[i],t2[j]])
         ps = p[0] + p[1]
         if not ps in pairs:
             pairs.append(ps)
+        if not p[0] in vsites and not p[1] in vsites and not ps in real_pairs:
+            real_pairs.append(ps)
 
 print(nlparam)
-print(pairs)    
+print(pairs)
+print(real_pairs)
 
 
-# In[295]:
+# In[24]:
 
 # Save number in num_nonlinear
 num_nonlinear = len(nlparam)
@@ -180,7 +192,7 @@ num_nonlinear = len(nlparam)
 
 # ## Creating mon1.h and mon2.h
 
-# In[296]:
+# In[25]:
 
 mon1_class = open('mon1.h','w')
 
@@ -225,7 +237,7 @@ mon1_class.write(str(a))
 mon1_class.close()
 
 
-# In[297]:
+# In[26]:
 
 mon1_class = open('mon2.h','w')
 
@@ -272,7 +284,7 @@ mon1_class.close()
 
 # ## Creating their cpp files
 
-# In[298]:
+# In[27]:
 
 ff = open('mon1.cpp','w')
 
@@ -303,7 +315,7 @@ namespace x  {
   mon1::mon1( double* crd) {
     
     nsites = """ + str(nsites1) + """;  
-    
+    is_w = 0;
     allocate();
     
     sitecrds = set_sitecrds(crd);
@@ -390,7 +402,7 @@ ff.write(a)
 ff.close()
 
 
-# In[299]:
+# In[28]:
 
 ff = open('mon2.cpp','w')
 
@@ -421,6 +433,8 @@ namespace x  {
   mon2::mon2( double* crd) {
     
     nsites = """ + str(nsites2) + """;  
+    
+    is_w = 0;
     
     allocate();
     
@@ -508,9 +522,141 @@ ff.write(a)
 ff.close()
 
 
+# ## Creating water monomer
+# If applicable...
+
+# In[29]:
+
+if is_w != 0:
+    ff = open('mon' + str(is_w) + '.cpp','w')
+    a = """
+#include "mon""" + str(is_w) + """.h"
+
+#include <iostream>
+
+//TODO: merge constants.h and fit-constants.h appropriately
+#include "fit-constants.h"
+
+namespace {
+
+const double gammaM = 0.426706882;
+const double gamma1 = 1.0 - gammaM;
+const double gamma2 = gammaM/2;
+
+const double CHARGECON = constants::CHARGECON;
+
+inline void compute_M_site_crd
+    (const double O[3], const double H1[3], const double H2[3], double M[3])
+{
+    for (size_t i = 0; i < 3; ++i)
+        M[i] = gamma1*O[i] + gamma2*(H1[i] + H2[i]);
+}
+
+} // namespace
+
+namespace x {
+
+mon""" + str(is_w) + """::mon""" + str(is_w) + """() {
+
+}
+
+mon""" + str(is_w) + """::~mon""" + str(is_w) + """() {
+  delete[] memory;
+}
+
+mon""" + str(is_w) + """::mon""" + str(is_w) + """(double* crd) {
+    nsites = 4;
+    is_w = 1;
+    allocate();
+    sitecrds = set_sitecrds(crd);
+    atmpolar = set_pol();
+    charge = set_charges(crd);
+    polfac = set_polfacs(atmpolar);
+
+    excluded12.clear();
+    excluded13.clear();
+
+    excluded12.insert(std::make_pair(0, 1)); // O - H1
+    excluded12.insert(std::make_pair(0, 2)); // O - H2
+    excluded12.insert(std::make_pair(0, 3)); // O - M
+    excluded13.insert(std::make_pair(1, 2)); // H1 - H2
+    excluded12.insert(std::make_pair(1, 3)); // H1 - M
+    excluded12.insert(std::make_pair(2, 3)); // H2 - M
+}
+
+double* mon""" + str(is_w) + """::set_sitecrds(double* atmcrds) {
+    sitecrds = memory + nsites;
+    // assumes O H H 
+    compute_M_site_crd(atmcrds, atmcrds + 3, atmcrds + 6, sitecrds + 9);
+    std::copy(atmcrds, atmcrds + 9, sitecrds);
+    return sitecrds;
+}
+
+double* mon""" + str(is_w) + """::set_charges(double* atmcrds) {
+    double chgtmp[3];
+    h2o::ps::dms_nasa(0.0, 0.0, 0.0, atmcrds, chgtmp, 0, false);
+    const double tmp = 0.5*gammaM/(1.0 - gammaM);
+    charge = memory;
+
+    charge[0] = 0.0;                        // O
+    charge[1] = CHARGECON*(chgtmp[1] + tmp*(chgtmp[1] + chgtmp[2])); // H1
+    charge[2] = CHARGECON*(chgtmp[2] + tmp*(chgtmp[1] + chgtmp[2])); // H2
+    charge[3] = CHARGECON*(chgtmp[0]/(1.0 - gammaM));       // M
+
+    //std::cout << "charge[1] = " << charge[1] << std::endl;
+
+    return charge;
+}
+
+double* mon""" + str(is_w) + """::set_pol() {
+    atmpolar = memory + nsites + nsites*3;
+    atmpolar[0] = 1.310; // polarO
+    atmpolar[1] = 0.294; // polarH
+    atmpolar[2] = 0.294; // polarH
+    atmpolar[3] = 0.0;   // polarM
+    return atmpolar;
+}
+
+double* mon""" + str(is_w) + """::set_polfacs(double* atmpol) {
+    polfac = memory + nsites + nsites*3 + nsites;
+    polfac[0] = 1.310; // polarO
+    polfac[1] = 0.294; // polarH
+    polfac[2] = 0.294; // polarH
+    polfac[3] = 1.31;   // polarM
+    return polfac;
+}
+
+void mon""" + str(is_w) + """::allocate() {
+    memory = new double [nsites // charges
+  + nsites*3              // sitecrds 
+  + nsites                // polarizabilities
+  + nsites];              // polfacs
+}
+
+int mon""" + str(is_w) + """::get_nsites() { return nsites; }
+double* mon""" + str(is_w) + """::get_sitecrds() { return sitecrds; }
+double* mon""" + str(is_w) + """::get_charges() { return charge; }
+double* mon""" + str(is_w) + """::get_polfacs() { return polfac; }
+double* mon""" + str(is_w) + """::get_pol() { return atmpolar; }
+
+excluded_set_type::iterator mon""" + str(is_w) + """::get_begin_12() { return excluded12.begin(); }
+excluded_set_type::iterator mon""" + str(is_w) + """::get_begin_13() { return excluded13.begin(); }
+excluded_set_type::iterator mon""" + str(is_w) + """::get_begin_14() { return excluded14.begin(); }
+excluded_set_type::iterator mon""" + str(is_w) + """::get_end_12() { return excluded12.end(); }
+excluded_set_type::iterator mon""" + str(is_w) + """::get_end_13() { return excluded13.end(); }
+excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excluded14.end(); }
+
+
+} // namespace x
+
+"""
+    ff.write(a)
+    ff.close()
+
+
 # ## Create training_set.h/cpp files
 
-# In[300]:
+# In[30]:
 
 ff = open('training_set.h','w')
 a = """
@@ -550,7 +696,7 @@ ff.close()
 
 # ## X2B h file
 
-# In[301]:
+# In[31]:
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1x.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -661,7 +807,7 @@ ff.close()
 
 # ## CPP file
 
-# In[302]:
+# In[43]:
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1x.cpp"
 ff = open(cppname,'w')
@@ -676,6 +822,7 @@ a = """
 #include "stuff.h"
 #include "constants.h"
 """
+hname = "x2b_" + mon1 + "_" + mon2 + "_v1x.h"
 ff.write(a)
 ff.write('#include "' + hname + '" \n \n')
 a = """
@@ -748,6 +895,40 @@ double variable::v_coul(const double& r0, const double& k,
     g[2] *= gg;
 
     return val;
+}
+
+struct vsites {
+    //void TwoParticleAverageSite() {}
+    //void ThreeParticleAverageSite() {}
+    void OutOfPlaneSite(const double& w12, const double& w13,
+                        const double& wcross, const double x1[3],
+                        const double y1[3], const double y2[3],
+                        double vs[3]);
+    //void LocalCoordinatesSite{}
+};
+
+void vsites::OutOfPlaneSite(const double& w12,
+                            const double& w13,
+                            const double& wcross,
+                            const double x1[3],
+                            const double y1[3],
+                            const double y2[3],
+                            double vs[3]) {
+    double r12[3], r13[3];
+
+    for (int i = 0; i < 3; ++i) {
+        r12[i] = y1[i] - x1[i];
+        r13[i] = y2[i] - x1[i];
+    }
+                            
+    double rc[3];
+    rc[0] = r12[1]*r13[2] - r12[2]*r13[1];
+    rc[1] = r12[2]*r13[0] - r12[0]*r13[2];
+    rc[2] = r12[0]*r13[1] - r12[1]*r13[0];
+    
+    vs[0] = x1[0] + w12 * r12[0] + w13 * r13[0] + wcross * rc[0];
+    vs[1] = x1[1] + w12 * r12[1] + w13 * r13[1] + wcross * rc[1];
+    vs[2] = x1[2] + w12 * r12[2] + w13 * r13[2] + wcross * rc[2];
 }
 
 } // namespace
@@ -865,7 +1046,6 @@ a = """
 
 }
 
-// ##DEFINE HERE## need to think how to generalize this function...
 
 """
 ff.write(a)
@@ -878,26 +1058,84 @@ set_m2 = []
 for i in range(0,len(types_a),2):
     n = 1
     for j in range(int(types_a[i+1])):
-        ff.write('    const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz + ' + str(3 * nc) + ';\n')
-        set_m1.append(types_a[i] + '_' + str(n) + '_a')
-        n = n + 1
-        nc = nc + 1
+        if not types_a[i] in vsites:
+            ff.write('    const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz + ' + str(3 * nc) + ';\n')
+            set_m1.append(types_a[i] + '_' + str(n) + '_a')
+            n = n + 1
+            nc = nc + 1
 ff.write('\n')
 for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
-        ff.write('    const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz + ' + str(3 * nc) + ';\n')
-        set_m2.append(types_b[i] + '_' + str(n) + '_b')
-        n = n + 1
-        nc = nc + 1
+        if not types_b[i] in vsites:
+            ff.write('    const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz + ' + str(3 * nc) + ';\n')
+            set_m2.append(types_b[i] + '_' + str(n) + '_b')
+            n = n + 1
+            nc = nc + 1
+            
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if types_a[i] in vsites:
+            ff.write('    double ' + types_a[i] + '_' + str(n) + '_a[3]' + ';\n')
+            set_m1.append(types_a[i] + '_' + str(n) + '_a')
+            n = n + 1
+ff.write('\n')
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if types_b[i] in vsites:
+            ff.write('    double ' + types_b[i] + '_' + str(n) + '_b[3]' + ';\n')
+            set_m2.append(types_b[i] + '_' + str(n) + '_b')
+            n = n + 1
 
-a = """
-// ##DEFINE HERE## the lone pairs if any
+
+if is_w == 0: 
+    a = """
+// ##DEFINE HERE## the lone pairs if any. How to make it general?
     // double Xa1[3], Xa2[3];
 
     // xpoints(m_in_plane_gamma, m_out_of_plane_gamma, O, Xa1, Xa2);
     
-    variable vr[15];
+    variable vr[""" + str(nvars) + """];
+    using x2o::distance;
+    
+"""
+elif is_w == 1:
+    a = """
+    vsites virt;
+    double w12 =     -9.721486914088159e-02 / 2.0;  //from MBpol
+    double w13 =     -9.721486914088159e-02 / 2.0;
+    double wcross =   9.859272078406150e-02;
+
+    
+    virt.OutOfPlaneSite(w12, w13, wcross, """ + types_a[0] + '_1' + '_a' + """,
+                   """ + types_a[2] + '_1' + '_a' + """, """ + types_a[2] + '_2' + '_a' + """, 
+                    """ + types_a[4] + '_1_a' + """);
+    virt.OutOfPlaneSite(w12, w13, wcross, """ + types_a[0] + '_1' + '_a' + """,
+                   """ + types_a[2] + '_2' + '_a' + """, """ + types_a[2] + '_1' + '_a' + """, 
+                    """ + types_a[4] + '_2_a' + """);
+                    
+    variable vr[""" + str(nvars) + """];
+    using x2o::distance;
+    
+"""
+elif is_w == 2:
+    a = """
+    vsites virt;
+    double w12 =     -9.721486914088159e-02 / 2.0;  //from MBpol
+    double w13 =     -9.721486914088159e-02 / 2.0;
+    double wcross =   9.859272078406150e-02;
+
+    
+    virt.OutOfPlaneSite(w12, w13, wcross, """ + types_b[0] + '_1' + '_b' + """,
+                   """ + types_b[2] + '_1' + '_b' + """, """ + types_b[2] + '_2' + '_b' + """, 
+                    """ + types_a[4] + '_1_a' + """);
+    virt.OutOfPlaneSite(w12, w13, wcross, """ + types_b[0] + '_1' + '_b' + """,
+                   """ + types_b[2] + '_2' + '_b' + """, """ + types_b[2] + '_1' + '_b' + """, 
+                    """ + types_b[4] + '_2_b' + """);
+                    
+    variable vr[""" + str(nvars) + """];
     using x2o::distance;
     
 """
@@ -909,16 +1147,18 @@ for i in range(0,len(set_m1) - 1):
         ti = set_m1[i].split('_')[0]
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
-        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
-        nv = nv + 1
+        if not ti in vsites and not tj in vsites:
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            nv = nv + 1
 ff.write('\n')
 for i in range(0,len(set_m2) - 1):
     for j in range(i + 1,len(set_m2)):
         ti = set_m2[i].split('_')[0]
         tj = set_m2[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
-        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
-        nv = nv + 1
+        if not ti in vsites and not tj in vsites:
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
+            nv = nv + 1
 ff.write('\n')
 # Intermolecular distances
 for i in range(0,len(set_m1)):
@@ -1022,7 +1262,7 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* mon1, const dou
     std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
     std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
     
-    double v[15]; 
+    double v[""" + str(nvars) + """]; 
     double sw = 0.0;
     double gsw = 0.0;
     cart_to_vars(xcrd, v, sw, gsw); 
@@ -1049,7 +1289,7 @@ ff.close()
 
 # ## Dispersion.h
 
-# In[303]:
+# In[33]:
 
 hname = "dispersion.h"
 ff = open(hname,'w')
@@ -1070,10 +1310,10 @@ struct x2b_disp {
 
 """
 ff.write(a)
-for i in range(len(pairs)):
-    ff.write('  const double m_C6_' + pairs[i] + ' = ' + C6[i] + ' ; \n')
-for i in range(len(pairs)):
-    ff.write('  const double m_d6_' + pairs[i] + ' = ' + d6[i] + ' ; \n')
+for i in range(len(real_pairs)):
+    ff.write('  const double m_C6_' + real_pairs[i] + ' = ' + C6[i] + ' ; \n')
+for i in range(len(real_pairs)):
+    ff.write('  const double m_d6_' + real_pairs[i] + ' = ' + d6[i] + ' ; \n')
     
 a = """
 
@@ -1169,7 +1409,7 @@ ff.close()
 
 # ## dispersion.cpp
 
-# In[304]:
+# In[34]:
 
 cppname = "dispersion.cpp"
 ff = open(cppname,'w')
@@ -1201,20 +1441,22 @@ set_m2 = []
 for i in range(0,len(types_a),2):
     n = 1
     for j in range(int(types_a[i+1])):
-        ff.write('  const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz1 + ' + str(3 * nc) + ';\n')
-        set_m1.append(types_a[i] + '_' + str(n) + '_a')
-        n = n + 1
-        nc = nc + 1
+        if not types_a[i] in vsites:
+            ff.write('  const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz1 + ' + str(3 * nc) + ';\n')
+            set_m1.append(types_a[i] + '_' + str(n) + '_a')
+            n = n + 1
+            nc = nc + 1
 ff.write('\n')
 
 nc = 0
 for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
-        ff.write('  const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz2 + ' + str(3 * nc) + ';\n')
-        set_m2.append(types_b[i] + '_' + str(n) + '_b')
-        n = n + 1
-        nc = nc + 1
+        if not types_b[i] in vsites:
+            ff.write('  const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz2 + ' + str(3 * nc) + ';\n')
+            set_m2.append(types_b[i] + '_' + str(n) + '_b')
+            n = n + 1
+            nc = nc + 1
 ff.write('\n')
 
 for i in range(0,len(set_m1)):
@@ -1235,7 +1477,7 @@ ff.close()
 
 # ## Fitting routine
 
-# In[311]:
+# In[35]:
 
 cppname = "fit-2b.cpp"
 ff = open(cppname,'w')
@@ -1473,15 +1715,20 @@ a = """
       x::mon2 m2(training_set[n].xyz + 3*m1.get_nsites());
 
       int system_nsites = m1.get_nsites() + m2.get_nsites();
+      int * system_is_w;
       double* system_sitecrds;
       double* system_charge;
       double* system_polfac;
       double* system_pol;
 
-     system_sitecrds = new double [system_nsites*3];
+      system_sitecrds = new double [system_nsites*3];
       system_charge = new double [system_nsites];
       system_polfac = new double [system_nsites];
       system_pol = new double [system_nsites]; //allocates memory to the pointers
+      system_is_w = new int[system_nsites];
+      
+      std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
+      std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
 
       std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
                 system_sitecrds);
@@ -1540,13 +1787,14 @@ a = """
 
       ttm::electrostatics m_electrostatics;
 
-      ttm::smear_ttm4x smr; // smearing for chloride?
+      ttm::smear_ttm4x smr; 
       smr.m_aDD_intra_12 = 0.3;
       smr.m_aDD_intra_13 = 0.3;
-  // Missing 14. Add it later.
+      smr.m_aDD_intra_14 = 0.055;
 
       double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                    system_sitecrds, exclude12, exclude13, smr, 0);
+                                    system_sitecrds, exclude12, exclude13, exclude14, 
+                                    system_is_w, smr, 0);
 
       // Take out electrostatic energy:
       elec_e.push_back(ener);
@@ -1564,6 +1812,7 @@ a = """
       delete[] system_charge  ;
       delete[] system_polfac  ;
       delete[] system_pol ;
+      delete[] system_is_w;
 
     }
 
@@ -1697,7 +1946,7 @@ ff.close()
 
 # ## Makefile
 
-# In[306]:
+# In[40]:
 
 fname = "Makefile"
 ff = open(fname,'w')
@@ -1715,7 +1964,7 @@ FIT_OBJ = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
 kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
 training_set.o ttm4.o wlsq.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
 x2b_""" + mon1 + """_""" + mon2 + """_v1x.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
-dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o
+dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o 
 
 all: libfit.a fit-2b
 # $(MAKE) libpot.a 2> err.txt > log.txt
@@ -1744,7 +1993,7 @@ ff.close()
 
 # ## Poly_fit_header
 
-# In[307]:
+# In[37]:
 
 fname = "poly_2b_" + mon1 + "_" + mon2 + ".h"
 ff = open(fname,'w')
@@ -1774,7 +2023,7 @@ ff.close()
 
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
-# In[308]:
+# In[38]:
 
 fdirect = open(directcpp, 'r')
 fnamecpp = "poly_2b_" + mon1 + "_" + mon2 + ".cpp"

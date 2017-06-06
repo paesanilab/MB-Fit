@@ -26,6 +26,7 @@ struct smear {
     virtual double aDD_inter() const = 0;
     virtual double aDD_intra_12() const { return aDD_inter(); }
     virtual double aDD_intra_13() const { return aDD_inter(); }
+    virtual double aDD_intra_14() const { return aDD_inter(); }
 
     virtual void smear01(const double&, const double&, const double&,
                          double&, double&) const = 0;
@@ -46,6 +47,7 @@ struct smear_ttm4x : public smear {
     double aDD_inter() const;
     double aDD_intra_12() const;
     double aDD_intra_13() const;
+    double aDD_intra_14() const;
 
     void smear01(const double&, const double&, const double&,
                  double&, double&) const;
@@ -59,6 +61,7 @@ struct smear_ttm4x : public smear {
     double m_aDD_inter;
     double m_aDD_intra_12;
     double m_aDD_intra_13;
+    double m_aDD_intra_14;
 };
 
 } // namespace ttm

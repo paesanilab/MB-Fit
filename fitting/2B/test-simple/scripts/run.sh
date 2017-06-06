@@ -44,7 +44,7 @@ cp $path_to_poly_files/poly-model.h poly_2b_${folder}_v1x.h
 cp $path_to_templates/* .
 
 # Run python script
-python3 ../generate_fitting_notebook.py $filename_wpath poly-direct.cpp
+python3 ../scripts/generate_fitting_notebook.py $filename_wpath poly-direct.cpp
 rm poly-direct.cpp
 
 # Compile

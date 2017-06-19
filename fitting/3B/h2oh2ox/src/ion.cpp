@@ -4,7 +4,7 @@
 #include <cstddef>
 #include "fit-constants.h"
 
-//#define FLUORIDE    
+#define FLUORIDE    
 //#define CHLORIDE    
 //#define BROMIDE     
 //#define IODIDE      

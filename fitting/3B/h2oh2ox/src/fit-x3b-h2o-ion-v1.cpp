@@ -20,7 +20,7 @@
 #include "x3b-h2o-ion-v1.h"
 #include "training-set-h2o-ion.h"
 
-//#define FLUORIDE
+#define FLUORIDE
 //#define CHLORIDE
 //#define BROMIDE 
 //#define IODIDE  

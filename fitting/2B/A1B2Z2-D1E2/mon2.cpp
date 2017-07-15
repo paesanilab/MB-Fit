@@ -26,6 +26,8 @@ namespace x  {
     
     nsites = 3;  
     
+    is_w = 0;
+    
     allocate();
     
     sitecrds = set_sitecrds(crd);

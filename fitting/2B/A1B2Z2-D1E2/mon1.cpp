@@ -35,6 +35,7 @@ mon1::~mon1() {
 
 mon1::mon1(double* crd) {
     nsites = 4;
+    is_w = 1;
     allocate();
     sitecrds = set_sitecrds(crd);
     atmpolar = set_pol();

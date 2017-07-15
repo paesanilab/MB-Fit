@@ -29,6 +29,7 @@ protected :
 public :
 
     double* memory;
+    int is_w; 
 
     // sets site positions based on atom coordinates
     virtual double* set_sitecrds(double* xyz) = 0;

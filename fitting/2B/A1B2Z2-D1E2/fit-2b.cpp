@@ -2,12 +2,14 @@
 #include <cmath>
 #include <cassert>
 #include <cstdlib>
+#include <ctime>
 
 #include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <chrono>
 
 #include <gsl/gsl_multimin.h>
 
@@ -23,7 +25,7 @@
 #include "mon2.h"
 #include "fit-utils.h"
 #include "training_set.h"
-#include "x2b_A1B2Z2_D1E2_v1x.h"
+#include "x2b_A1B2Z2_D1E2_v1.h"
 #include "electrostatics.h"
 #include "coulomb.h"
 #include "dispersion.h"
@@ -154,8 +156,13 @@ int main(int argc, char** argv) {
                   << std::endl;
         return 0;
     }
+      
+    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
 
-      double x0[20];
+    srand(duration);
+
+    double x0[20];
       x0[0] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
       x0[1] = ((double) rand() / (RAND_MAX)) * 2.0 + 0.0;
       x0[2] = ((double) rand() / (RAND_MAX)) * 3.0 + 0.0;
@@ -237,15 +244,20 @@ int main(int argc, char** argv) {
       x::mon2 m2(training_set[n].xyz + 3*m1.get_nsites());
 
       int system_nsites = m1.get_nsites() + m2.get_nsites();
+      int * system_is_w;
       double* system_sitecrds;
       double* system_charge;
       double* system_polfac;
       double* system_pol;
 
-     system_sitecrds = new double [system_nsites*3];
+      system_sitecrds = new double [system_nsites*3];
       system_charge = new double [system_nsites];
       system_polfac = new double [system_nsites];
       system_pol = new double [system_nsites]; //allocates memory to the pointers
+      system_is_w = new int[system_nsites];
+      
+      std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
+      std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
 
       std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
                 system_sitecrds);
@@ -304,13 +316,14 @@ int main(int argc, char** argv) {
 
       ttm::electrostatics m_electrostatics;
 
-      ttm::smear_ttm4x smr; // smearing for chloride?
+      ttm::smear_ttm4x smr; 
       smr.m_aDD_intra_12 = 0.3;
       smr.m_aDD_intra_13 = 0.3;
-  // Missing 14. Add it later.
+      smr.m_aDD_intra_14 = 0.055;
 
       double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                    system_sitecrds, exclude12, exclude13, smr, 0);
+                                    system_sitecrds, exclude12, exclude13, exclude14, 
+                                    system_is_w, smr, 0);
 
       // Take out electrostatic energy:
       elec_e.push_back(ener);
@@ -328,6 +341,7 @@ int main(int argc, char** argv) {
       delete[] system_charge  ;
       delete[] system_polfac  ;
       delete[] system_pol ;
+      delete[] system_is_w;
 
     }
 

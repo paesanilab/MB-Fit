@@ -20,7 +20,7 @@ struct x2b_disp {
   const double m_d6_AD = 3.20676 ; 
   const double m_d6_AE = 3.38985 ; 
   const double m_d6_BD = 3.74833 ; 
-  const double m_d6_BE = 3.74833 ; 
+  const double m_d6_BE = 3.0 ; 
 
 
   const double m_C8 = 0.0;

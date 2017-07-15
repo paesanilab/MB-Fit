@@ -1,9 +1,8 @@
+#include "poly-model.h"
 
-#include "poly_2b_A1B2Z2_D1E2.h"
+namespace mb_system {
 
-namespace mb_system_fit {
-
-void poly_model::eval(const double x[20], double a[492])
+double poly_model::eval_direct(const double a[492], const double x[21])
 {
     double p[492];
     p[0] = x[11] + x[14] + x[13] + x[10];
@@ -12,6 +11,7 @@ void poly_model::eval(const double x[20], double a[492])
     p[3] = x[9] + x[12];
     p[4] = x[20] + x[19] + x[17] + x[16];
     p[5] = x[18] + x[15];
+
     p[6] = x[20]*x[20] + x[17]*x[17] + x[19]*x[19] + x[16]*x[16];
     p[7] = x[15]*x[17] + x[18]*x[20] + x[18]*x[19] + x[15]*x[16];
     p[8] = x[0]*x[9] + x[12]*x[1];
@@ -76,6 +76,7 @@ void poly_model::eval(const double x[20], double a[492])
     p[67] = x[15]*x[18];
     p[68] = x[18]*x[6] + x[15]*x[6];
     p[69] = x[12]*x[9];
+
     p[70] = x[10]*x[10]*x[15] + x[13]*x[13]*x[18] + x[13]*x[13]*x[15] + x[14]*x[14]*x[18] + x[11]*x[11]*x[18] + x[10]*x[10]*x[18] + x[11]*x[11]*x[15] + x[14]*x[14]*x[15];
     p[71] = x[14]*x[19]*x[7] + x[14]*x[16]*x[7] + x[10]*x[17]*x[8] + x[11]*x[16]*x[7] + x[13]*x[20]*x[8] + x[11]*x[19]*x[7] + x[10]*x[20]*x[8] + x[13]*x[17]*x[8];
     p[72] = x[11]*x[18]*x[1] + x[0]*x[14]*x[18] + x[10]*x[15]*x[1] + x[0]*x[13]*x[15] + x[11]*x[15]*x[1] + x[0]*x[13]*x[18] + x[0]*x[14]*x[15] + x[10]*x[18]*x[1];
@@ -499,8 +500,11 @@ void poly_model::eval(const double x[20], double a[492])
     p[490] = x[16]*x[17]*x[5] + x[19]*x[20]*x[5];
     p[491] = x[6]*x[7]*x[8];
 
-for(int i = 0; i < 492; ++i)
-        a[i] = p[i];
+    double energy(0);
+    for(int i = 0; i < 492; ++i)
+        energy += p[i]*a[i];
+
+    return energy;
 
 }
 } // namespace mb_system

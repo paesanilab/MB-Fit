@@ -39,6 +39,8 @@ struct electrostatics {
                       const double* xyz,    // size=3N, coordinates
                       const excluded_set_type& s12,
                       const excluded_set_type& s13,
+                      const excluded_set_type& s14,
+                      const int * is_w,
                       const smear&,
                       double* grad = 0);
 
@@ -49,6 +51,8 @@ struct electrostatics {
                       const double* xyz,    // size=3N, coordinates
                       const excluded_set_type& s12,
                       const excluded_set_type& s13,
+                      const excluded_set_type& s14,
+                      const int * is_w,
                       const smear&,
                       double& E_elec,
 		      double& E_ind,

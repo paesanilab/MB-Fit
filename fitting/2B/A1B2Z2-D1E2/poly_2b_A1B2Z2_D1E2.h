@@ -6,7 +6,7 @@ namespace mb_system_fit {
 
 struct poly_model{
     static const unsigned degree = 3;
-    static const unsigned n_vars = 21;
+    static const unsigned n_vars = 20;
 
     static const unsigned size = 492;
 

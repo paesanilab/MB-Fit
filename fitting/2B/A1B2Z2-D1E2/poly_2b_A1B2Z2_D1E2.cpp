@@ -3,7 +3,7 @@
 
 namespace mb_system_fit {
 
-void poly_model::eval(const double x[20], double a[492])
+void poly_model::eval(const double x[21], double a[492])
 {
     double p[492];
     p[0] = x[11] + x[14] + x[13] + x[10];

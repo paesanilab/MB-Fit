@@ -403,7 +403,7 @@ void  x2b_A1B2Z2_D1E2_v1x::cart_to_vars(const double* xyz, double* v, double& s,
     m.setup(A_1_a, w12, wcross,
              Z_1_a, Z_2_a);
                     
-    variable vr[20];
+    variable vr[21];
     using x2o::distance;
     
     v[0]  = vr[0].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_1_a);
@@ -559,7 +559,7 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2 ) const
     std::copy(mon1, mon1 + 9, xcrd);
     std::copy(mon2, mon2 + 9, xcrd + 9);
     
-    double v[20]; 
+    double v[21]; 
     double sw = 0.0;
     double gsw = 0.0;
     cart_to_vars(xcrd, v, sw, gsw); 

@@ -314,7 +314,7 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2 ) const
     std::copy(mon1, mon1 + 9, xcrd);
     std::copy(mon2, mon2 + 9, xcrd + 9);
     
-    double v[20];
+    double v[21];
     
     double sw = 0.0;
     double gsw = 0.0;
@@ -341,7 +341,7 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2 ) const
     m.setup(A_1_a, w12, wcross,
              Z_1_a, Z_2_a);
                     
-    variable vr[20];
+    variable vr[21];
     
     v[0]  = vr[0].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_1_a);
     v[1]  = vr[1].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_2_a);
@@ -400,7 +400,7 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2,
     std::copy(mon1, mon1 + 9, xcrd);
     std::copy(mon2, mon2 + 9, xcrd + 9);
     
-    double v[20];
+    double v[21];
     
     double sw = 0.0;
     double gsw = 0.0;
@@ -427,7 +427,7 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2,
     m.setup(A_1_a, w12, wcross, 
              Z_1_a, Z_2_a);
                     
-    variable vr[20];
+    variable vr[21];
     
     v[0]  = vr[0].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_1_a);
     v[1]  = vr[1].v_exp(m_d_intra_AB, m_k_intra_AB, A_1_a, B_2_a);
@@ -459,7 +459,7 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2,
 
      
     
-    double g[20];
+    double g[21];
     
     const double E_poly = mb_system::poly_model::eval(m_poly, v, g);
     

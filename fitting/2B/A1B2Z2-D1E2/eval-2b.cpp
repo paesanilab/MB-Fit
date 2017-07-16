@@ -18,6 +18,8 @@
 #include "dispersion.h"
 #include "io-xyz.h"
 
+#define GRADIENTS
+
 static std::vector<double> elec_e;
 static std::vector<double> disp_e;
 
@@ -143,19 +145,52 @@ int main(int argc, char** argv) {
     x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_nsites(), m2.get_nsites());
     ener = disp.get_dispersion();
     disp_e.push_back(ener);
-
-    //std::cerr << " , Disp= " << ener << std::endl;
-    delete[] system_sitecrds ;
-    delete[] system_charge  ;
-    delete[] system_polfac  ;
-    delete[] system_pol ;
-    delete[] system_is_w;
     
     double Epoly = pot(xyz);
     std::cout << "E_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
     std::cout << "E_poly = " << Epoly << std::endl;
     std::cout << "E_elec = " << elec_e[0] << std::endl;
     std::cout << "E_disp = " << disp_e[0] << std::endl;
+    
+#ifdef GRADIENTS
+    const double eps = 1.0e-5;
+    double grd[18];
+    std::fill(grd, grd + 18, 0.0);
+    Epoly = pot(xyz, grd);
+    std::cout << "E_grad = " << Epoly << std::endl;
+    for(size_t n = 0; n < 18; ++n){
+      const double x_orig = xyz[n];
+
+      xyz[n] = x_orig + eps;
+      const double Ep = pot(xyz) ;
+      std::cout << "E_p = " << Ep << std::endl;
+
+      xyz[n] = x_orig + 2*eps;
+      const double E2p = pot(xyz) ;
+      std::cout << "E_2p = " << E2p << std::endl;
+
+      xyz[n] = x_orig - 2*eps;
+      const double E2m = pot(xyz) ;
+      std::cout << "E_2m = " << E2m << std::endl;
+
+      xyz[n] = x_orig - eps;
+      const double Em = pot(xyz) ;
+      std::cout << "E_m = " << Em << std::endl;
+
+      const double gfd = (8*(Ep - Em) - (E2p - E2m))/(12*eps);
+      xyz[n] = x_orig;
+
+      std::cout << elements[n/3] << "   "  << "Analit: " << grd[n] << " Numerical: " << gfd
+                     << " Diff: " << std::fabs(grd[n] - gfd) << '\n';
+    }
+#endif
+
+    // Free memory
+    delete[] system_sitecrds ;
+    delete[] system_charge  ;
+    delete[] system_polfac  ;
+    delete[] system_pol ;
+    delete[] system_is_w;
     
     return 0;
 }

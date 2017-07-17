@@ -1282,21 +1282,6 @@ if($poly_order > 0){
     print OUT_MAPLE_GRD "\n";
 }
 
-print "\n Total number of terms: $tot_terms\n";
-
-&print_cpp_header($tot_terms, scalar@variables);
-&print_cpp_direct_opening($tot_terms, scalar@variables);
-
-# print the polynomials
-
-if($poly_order > 0){
-    &print_orbits($i0, $mono1_orb);
-    $i0 += scalar(@{$mono1_orb});
-    print OUT_CPP "\n";
-    print OUT_MAPLE_NOGRD "\n";
-    print OUT_MAPLE_GRD "\n";
-}
-
 if($poly_order > 1){
     &print_orbits($i0, $mono2_orb);
     $i0 += scalar(@{$mono2_orb});

@@ -1,14 +1,16 @@
 ##PB: Needs to be updated 
 
 # To compile the code :
-1. Go to src/ and modify the -D flags for your system (ION?(FLUORIDE, CHLORIDE, BROMIDE, IODIDE) and %POL?(POL0, POL25, POL50, POL75, POL100, POL_EFF))
+1. Go to src/ 
 
-2. Then do: 
+2. Modify the \#define cards in fit-x3b-h2o-ion.cpp and ion.cpp for your system (ION?(FLUORIDE, CHLORIDE, BROMIDE, IODIDE))
+
+3. Then do: 
 $ make 
 
 This creates two executables in ../bin/ fit* and eval-pot
 
-Note: There is a Makefile for tscc as well in src/. To use it do "make -f Makefile.tscc" instead of "make" in src/. Ion and polarizability will have to be defined similarly in Makefile.tscc
+Note: There is a Makefile for tscc as well in src/. To use it do "make -f Makefile.tscc" instead of "make" in src/. 
 
 To run the codes, go to ../bin/
 

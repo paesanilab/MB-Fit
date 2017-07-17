@@ -24,8 +24,10 @@ public :
 
     excluded_set_type::iterator get_begin_12();
     excluded_set_type::iterator get_begin_13();
+    excluded_set_type::iterator get_begin_14();
     excluded_set_type::iterator get_end_12();
     excluded_set_type::iterator get_end_13();
+    excluded_set_type::iterator get_end_14();
     
 
 };

@@ -1,0 +1,47 @@
+MRR - 20170716
+
+NOTE: USE PYTHON 3
+
+First thing to do is to modify the top part of the python script 
+with the proper information of your system. Everything that needs
+to be changed is after In[6] and before In[7].
+
+- Define the numebr of atoms of your system, for monomers 1 and 2
+  nat1 and nat2
+- Define the number of sites (water has 4 sites)
+  nsites1 and nsites2
+- If monomer 1 is water, set is_w = 1
+  If monomer 2 is water, set is_w = 2
+  Else, set is_w = 0
+- Define the excluded pairs of your system for monomer 1 (exclXX_a)
+  and monomer 2 (exclXX_b) as a python list of lists. If you don't 
+  know how to use a python list, you google it.
+- Define the charges, pols and polfacs for the real atoms for
+  monomer 1 (chg_a, pol_a and polfac_a) and monomer 2 (chg_b, pol_b
+  and polfac_b) AS STRINGS.
+- Define the ks and ds min and max for inter and intramolecular 
+  distances AS STRINGS.
+- Define the C6 and D6 you obtained for TTM-nrg as a list of strings.
+- Define the degree (degree), number of variables (nvars) and number 
+  of terms (npoly) in your polynomials. This should be in the log of 
+  the poly generation.
+- Define which kind of variable you want to use for the intramolecular
+  distances (var_intra), intermolecular distances (var_inter) and lone
+  pair interactions (also inter, but is set in var_lp). There are two 
+  options:
+    - exp is the exponential exp(-k(d - d0))
+    - coul is the  coulombic exp(-k(d - d0)/d)
+- Define your DE (E_range). 
+- Define which of the atoms in your input are virtual. As an example, 
+  the monomer for water A1B2Z2 has Z as virtual (is a lone pair). Thus,
+  vsites = ['Z']
+
+Do not touch anything else.
+
+To generate the fitting code, execute run_example.sh and follow 
+instructions. If it doesn't work, breathe deep 3 times, meditate 
+for 5 minutes, and read the instructions again. Then find the error
+and try again.
+
+This should generate a folder that contains fit-2b and eval-2b, which
+as the names indicate, one fits and one evaluates.

@@ -30,9 +30,9 @@ cp $2/poly-nogrd.cpp ./poly_2b_${FNAME}_v1.cpp
 cp $2/poly-model.h ./poly_2b_${FNAME}_v1x.h
 
 # CHange the includes in the poly files
-cat poly_2b_${FNAME}_v1x.cpp | sed "s/poly-model.h/poly_2b_A1B2Z2_D1E2_v1x.h/g" > tmp
+cat poly_2b_${FNAME}_v1x.cpp | sed "s/poly-model.h/poly_2b_${FNAME}_v1x.h/g" > tmp
 mv tmp poly_2b_${FNAME}_v1x.cpp
-cat poly_2b_${FNAME}_v1.cpp | sed "s/poly-model.h/poly_2b_A1B2Z2_D1E2_v1x.h/g" > tmp
+cat poly_2b_${FNAME}_v1.cpp | sed "s/poly-model.h/poly_2b_${FNAME}_v1x.h/g" > tmp
 mv tmp poly_2b_${FNAME}_v1.cpp
 
 # Execute python script

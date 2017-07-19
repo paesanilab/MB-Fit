@@ -35,6 +35,7 @@ mon1::~mon1() {
 
 mon1::mon1(double* crd) {
     nsites = 4;
+    realsites = 3;
     is_w = 1;
     allocate();
     sitecrds = set_sitecrds(crd);
@@ -103,6 +104,7 @@ void mon1::allocate() {
 }
 
 int mon1::get_nsites() { return nsites; }
+int mon1::get_realsites() { return realsites; }
 double* mon1::get_sitecrds() { return sitecrds; }
 double* mon1::get_charges() { return charge; }
 double* mon1::get_polfacs() { return polfac; }

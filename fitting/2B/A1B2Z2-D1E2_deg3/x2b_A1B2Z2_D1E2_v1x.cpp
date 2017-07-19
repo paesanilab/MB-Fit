@@ -363,13 +363,13 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2 ) const
     v[13]  = vr[13].v_exp(m_d_BE, m_k_BE, B_2_a, E_1_b);
     v[14]  = vr[14].v_exp(m_d_BE, m_k_BE, B_2_a, E_2_b);
 
-    v[15]  = vr[15].v_exp(m_d_DZ, m_k_DZ, Z_1_a, D_1_b);
-    v[16]  = vr[16].v_exp(m_d_EZ, m_k_EZ, Z_1_a, E_1_b);
-    v[17]  = vr[17].v_exp(m_d_EZ, m_k_EZ, Z_1_a, E_2_b);
+    v[15]  = vr[15].v_coul(m_d_DZ, m_k_DZ, Z_1_a, D_1_b);
+    v[16]  = vr[16].v_coul(m_d_EZ, m_k_EZ, Z_1_a, E_1_b);
+    v[17]  = vr[17].v_coul(m_d_EZ, m_k_EZ, Z_1_a, E_2_b);
 
-    v[18]  = vr[18].v_exp(m_d_DZ, m_k_DZ, Z_2_a, D_1_b);
-    v[19]  = vr[19].v_exp(m_d_EZ, m_k_EZ, Z_2_a, E_1_b);
-    v[20]  = vr[20].v_exp(m_d_EZ, m_k_EZ, Z_2_a, E_2_b);
+    v[18]  = vr[18].v_coul(m_d_DZ, m_k_DZ, Z_2_a, D_1_b);
+    v[19]  = vr[19].v_coul(m_d_EZ, m_k_EZ, Z_2_a, E_1_b);
+    v[20]  = vr[20].v_coul(m_d_EZ, m_k_EZ, Z_2_a, E_2_b);
 
      
     
@@ -449,13 +449,13 @@ double x2b_A1B2Z2_D1E2_v1x::eval(const double* mon1, const double* mon2,
     v[13]  = vr[13].v_exp(m_d_BE, m_k_BE, B_2_a, E_1_b);
     v[14]  = vr[14].v_exp(m_d_BE, m_k_BE, B_2_a, E_2_b);
 
-    v[15]  = vr[15].v_exp(m_d_DZ, m_k_DZ, Z_1_a, D_1_b);
-    v[16]  = vr[16].v_exp(m_d_EZ, m_k_EZ, Z_1_a, E_1_b);
-    v[17]  = vr[17].v_exp(m_d_EZ, m_k_EZ, Z_1_a, E_2_b);
+    v[15]  = vr[15].v_coul(m_d_DZ, m_k_DZ, Z_1_a, D_1_b);
+    v[16]  = vr[16].v_coul(m_d_EZ, m_k_EZ, Z_1_a, E_1_b);
+    v[17]  = vr[17].v_coul(m_d_EZ, m_k_EZ, Z_1_a, E_2_b);
 
-    v[18]  = vr[18].v_exp(m_d_DZ, m_k_DZ, Z_2_a, D_1_b);
-    v[19]  = vr[19].v_exp(m_d_EZ, m_k_EZ, Z_2_a, E_1_b);
-    v[20]  = vr[20].v_exp(m_d_EZ, m_k_EZ, Z_2_a, E_2_b);
+    v[18]  = vr[18].v_coul(m_d_DZ, m_k_DZ, Z_2_a, D_1_b);
+    v[19]  = vr[19].v_coul(m_d_EZ, m_k_EZ, Z_2_a, E_1_b);
+    v[20]  = vr[20].v_coul(m_d_EZ, m_k_EZ, Z_2_a, E_2_b);
 
      
     

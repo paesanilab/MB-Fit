@@ -11,7 +11,6 @@
 struct x2b_disp {
   x2b_disp();
   x2b_disp(double *, double * , size_t, size_t);
-  x2b_disp(double *, double * , double *, double *, size_t, size_t);
   ~x2b_disp();
 
   const double m_C6_AD = 310.915 ; 
@@ -32,9 +31,6 @@ struct x2b_disp {
 
   double * xyz1;
   double * xyz2;
-  
-  double * grd1;
-  double * grd2;
 
   double get_dispersion();
   double get_dispersion(double * grdx);

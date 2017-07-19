@@ -40,10 +40,6 @@ mon2 = f.readline().split('\'')[1]
 
 # In[6]:
 
-###############################################################################
-#  These are the things that for now need to be entered manually... ###########
-############################################################################### 
-
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
 # Store them in nat1 and nat2
@@ -229,6 +225,7 @@ namespace x   {
       void allocate();
 
       int get_nsites();
+      int get_realsites();
       double* get_sitecrds();
       double* get_charges();
       double* get_polfacs();
@@ -274,6 +271,7 @@ namespace x   {
       void allocate();
 
       int get_nsites();
+      int get_realsites();
       double* get_sitecrds();
       double* get_charges();
       double* get_polfacs();
@@ -327,7 +325,8 @@ namespace x  {
 
   mon1::mon1( double* crd) {
     
-    nsites = """ + str(nsites1) + """;  
+    nsites = """ + str(nsites1) + """; 
+    realsites = """ + str(nat1) + """;
     is_w = 0;
     allocate();
     
@@ -396,6 +395,7 @@ a = """
     }
 
     int mon1::get_nsites() { return nsites; }
+    int mon1::get_realsites() { return realsites; }
     double* mon1::get_charges() { return charge; }
     double* mon1::get_sitecrds() { return sitecrds; }
     double* mon1::get_pol() { return atmpolar; }
@@ -446,6 +446,7 @@ namespace x  {
   mon2::mon2( double* crd) {
     
     nsites = """ + str(nsites2) + """;  
+    realsites = """ + str(nat2) + """;
     
     is_w = 0;
     
@@ -516,6 +517,7 @@ a = """
     }
 
     int mon2::get_nsites() { return nsites; }
+    int mon2::get_realsites() { return realsites; }
     double* mon2::get_charges() { return charge; }
     double* mon2::get_sitecrds() { return sitecrds; }
     double* mon2::get_pol() { return atmpolar; }
@@ -579,6 +581,7 @@ mon""" + str(is_w) + """::~mon""" + str(is_w) + """() {
 
 mon""" + str(is_w) + """::mon""" + str(is_w) + """(double* crd) {
     nsites = 4;
+    realsites = 3;
     is_w = 1;
     allocate();
     sitecrds = set_sitecrds(crd);
@@ -647,6 +650,7 @@ void mon""" + str(is_w) + """::allocate() {
 }
 
 int mon""" + str(is_w) + """::get_nsites() { return nsites; }
+int mon""" + str(is_w) + """::get_realsites() { return realsites; }
 double* mon""" + str(is_w) + """::get_sitecrds() { return sitecrds; }
 double* mon""" + str(is_w) + """::get_charges() { return charge; }
 double* mon""" + str(is_w) + """::get_polfacs() { return polfac; }
@@ -1395,7 +1399,6 @@ a = """
 struct x2b_disp {
   x2b_disp();
   x2b_disp(double *, double * , size_t, size_t);
-  x2b_disp(double *, double * , double *, double *, size_t, size_t);
   ~x2b_disp();
 
 """
@@ -1415,9 +1418,6 @@ a = """
 
   double * xyz1;
   double * xyz2;
-  
-  double * grd1;
-  double * grd2;
 
   double get_dispersion();
   double get_dispersion(double * grdx);
@@ -1514,36 +1514,17 @@ a = """
 x2b_disp::x2b_disp() {
   xyz1 = new double[3];
   xyz2 = new double[3];
-  grd1 = new double[3];
-  grd2 = new double[3];
 }
 x2b_disp::~x2b_disp() {
   delete[] xyz1;
   delete[] xyz2;
-  delete[] grd1;
-  delete[] grd2;
 }
 
 x2b_disp::x2b_disp(double * c1, double * c2, size_t n1, size_t n2) {
   xyz1 = new double[3*n1];
   xyz2 = new double[3*n2];
-  grd1 = new double[3*n1];
-  grd2 = new double[3*n2];
   std::copy(c1, c1 + 3*n1, xyz1);
   std::copy(c2, c2 + 3*n2, xyz2);
-}
-
-x2b_disp::x2b_disp(double * c1, double * c2, 
-                   double * g1, double * g2,
-                   size_t n1, size_t n2) {
-  xyz1 = new double[3*n1];
-  xyz2 = new double[3*n2];
-  grd1 = new double[3*n1];
-  grd2 = new double[3*n2];
-  std::copy(c1, c1 + 3*n1, xyz1);
-  std::copy(c2, c2 + 3*n2, xyz2);
-  std::copy(g1, g1 + 3*n1, grd1);
-  std::copy(g2, g2 + 3*n2, grd2);
 }
 
 double x2b_disp::get_dispersion() {
@@ -1625,18 +1606,17 @@ for i in range(0,len(types_a),2):
     n = 1
     for j in range(int(types_a[i+1])):
         if not types_a[i] in vsites:
-            ff.write('  double* ' + types_a[i] + '_' + str(n) + '_a_g' + '= grd1 + ' + str(3 * nc) + ';\n')
+            ff.write('  double* ' + types_a[i] + '_' + str(n) + '_a_g' + '= grd + ' + str(3 * nc) + ';\n')
             set_m1.append(types_a[i] + '_' + str(n) + '_a')
             n = n + 1
             nc = nc + 1
 ff.write('\n')
 
-nc = 0
 for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
         if not types_b[i] in vsites:
-            ff.write('  double* ' + types_b[i] + '_' + str(n) + '_b_g' + '= grd2 + ' + str(3 * nc) + ';\n')
+            ff.write('  double* ' + types_b[i] + '_' + str(n) + '_b_g' + '= grd + ' + str(3 * nc) + ';\n')
             set_m2.append(types_b[i] + '_' + str(n) + '_b')
             n = n + 1
             nc = nc + 1
@@ -1902,7 +1882,7 @@ a = """
       tb_ref[n] = training_set[n].energy_twobody ;
 
       x::mon1 m1(training_set[n].xyz);
-      x::mon2 m2(training_set[n].xyz + 3*m1.get_nsites());
+      x::mon2 m2(training_set[n].xyz + 3*m1.get_realsites());
 
       int system_nsites = m1.get_nsites() + m2.get_nsites();
       int * system_is_w;
@@ -1992,7 +1972,7 @@ a = """
       // std::cerr << "Conf " << n << " : Elec= " << ener ;
 
       // Now need to take out dispersion
-      x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_nsites(), m2.get_nsites());
+      x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
       ener = disp.get_dispersion();
       disp_e.push_back(ener);
       training_set[n].energy_twobody -= ener ;
@@ -2080,13 +2060,13 @@ a = """
     for (size_t i = 0; i < training_set.size(); ++i) {
 
         const double E_model = model(training_set[i].xyz) + elec_e[i] + disp_e[i];
-        const double delta = E_model - training_set[i].energy_twobody;
+        const double delta = E_model - tb_ref[i];
         if (std::abs(delta) > err_Linf)
             err_Linf = std::abs(delta);
 
   correlation_file <<  i+1   << "   "
     << E_model  << "   "
-    <<  training_set[i].energy_twobody  << "    "
+    <<  tb_ref[i]  << "    "
           <<  delta*delta  << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -2321,7 +2301,7 @@ int main(int argc, char** argv) {
     std::copy(crd.begin(), crd.end(), xyz);
     
     x::mon1 m1(xyz);
-    x::mon2 m2(xyz + 3*m1.get_nsites());
+    x::mon2 m2(xyz + 3*m1.get_realsites());
     
     int system_nsites = m1.get_nsites() + m2.get_nsites();
     int * system_is_w;
@@ -2406,7 +2386,7 @@ int main(int argc, char** argv) {
     elec_e.push_back(ener);
       
     // Now need to take out dispersion
-    x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_nsites(), m2.get_nsites());
+    x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
     ener = disp.get_dispersion();
     disp_e.push_back(ener);
     
@@ -2948,7 +2928,11 @@ for i in range(0,len(set_m1)):
         ti = set_m1[i].split('_')[0]
         tj = set_m2[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
-        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_inter + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
+        if not ti in vsites and not tj in vsites:
+            var_i = var_inter
+        else:
+            var_i = var_lp
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
         nv = nv + 1
     ff.write('\n')
 a = """     
@@ -3232,6 +3216,169 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::operator()(const double crd[""" + 
 """
 ff.write(a)
 ff.close()
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
 
 
 

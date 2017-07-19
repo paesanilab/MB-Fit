@@ -15,8 +15,8 @@ typedef std::set<std::pair<size_t, size_t> > excluded_set_type;
 class molecule {
 
 protected : 
-    int nsites; //# of sites, the compiler complained when this was declared as
-    //              const int, why?
+    int nsites; //# of sites
+    int realsites;
     double* sitecrds; // site coordinates
     double* atmpolar; //atomic polarizabilities
     double* charge;
@@ -44,6 +44,7 @@ public :
 
     virtual double* get_sitecrds() = 0;
     virtual int get_nsites() = 0;
+    virtual int get_realsites() = 0;
     virtual double* get_charges() = 0;
     virtual double* get_polfacs() = 0;
     virtual double* get_pol() = 0;

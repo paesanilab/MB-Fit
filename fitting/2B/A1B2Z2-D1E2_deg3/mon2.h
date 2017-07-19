@@ -18,6 +18,7 @@ namespace x   {
       void allocate();
 
       int get_nsites();
+      int get_realsites();
       double* get_sitecrds();
       double* get_charges();
       double* get_polfacs();

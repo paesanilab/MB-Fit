@@ -18,7 +18,7 @@ else:
     name = sys.argv[1]
 
 
-# In[9]:
+# In[8]:
 
 # This should be the commandline argument
 #name = "A1B2Z2_D1E2.in"
@@ -32,13 +32,13 @@ f.write('add_molecule[\'' + mon2 + '\']\n')
 vsites = ['Z','Y','X']
 
 
-# In[10]:
+# In[9]:
 
 types_a = list(mon1)
 types_b = list(mon2)
 
 
-# In[11]:
+# In[10]:
 
 # Generating the non linear parameter list
 nlparam = []
@@ -54,7 +54,7 @@ for i in range(0,len(types_b),2):
         t2.append(types_b[i])
 
 
-# In[12]:
+# In[11]:
 
 nc = 0
 set_m1 = []
@@ -98,7 +98,7 @@ for i in range(0,len(types_b),2):
             n = n + 1
 
 
-# In[13]:
+# In[12]:
 
 f.write('\n')
 # Intramolecular distances:
@@ -106,21 +106,24 @@ for i in range(0,len(set_m1) - 1):
     for j in range(i + 1,len(set_m1)):
         ti = set_m1[i].split('_')
         tj = set_m1[j].split('_')
+        t = ''.join(sorted(ti[0] + tj[0]))
         if not ti[0] in vsites and not tj[0] in vsites:
-            f.write('add_variable[\'' + ti[0] + ti[1] + '\', \'' + ti[2] + '\', \''                   + tj[0] + tj[1] + '\', \'' + tj[2] + '\', \'x-intra-' + ti[0] + tj[0] + '\']\n')
+            f.write('add_variable[\'' + ti[0] + ti[1] + '\', \'' + ti[2] + '\', \''                   + tj[0] + tj[1] + '\', \'' + tj[2] + '\', \'x-intra-' + t + '\']\n')
             
 for i in range(0,len(set_m2) - 1):
     for j in range(i + 1,len(set_m2)):
         ti = set_m2[i].split('_')
         tj = set_m2[j].split('_')
+        t = ''.join(sorted(ti[0] + tj[0]))
         if not ti[0] in vsites and not tj[0] in vsites:
-            f.write('add_variable[\'' + ti[0] + ti[1] + '\', \'' + ti[2] + '\', \''                   + tj[0] + tj[1] + '\', \'' + tj[2] + '\', \'x-intra-' + ti[0] + tj[0] + '\']\n')
+            f.write('add_variable[\'' + ti[0] + ti[1] + '\', \'' + ti[2] + '\', \''                   + tj[0] + tj[1] + '\', \'' + tj[2] + '\', \'x-intra-' + t + '\']\n')
 # Intermolecular distances
 for i in range(0,len(set_m1)):
     for j in range(0,len(set_m2)):
         ti = set_m1[i].split('_')
         tj = set_m2[j].split('_')
-        f.write('add_variable[\'' + ti[0] + ti[1] + '\', \'' + ti[2] + '\', \''                   + tj[0] + tj[1] + '\', \'' + tj[2] + '\', \'x-' + ti[0] + tj[0] + '\']\n')
+        t = ''.join(sorted(ti[0] + tj[0]))
+        f.write('add_variable[\'' + ti[0] + ti[1] + '\', \'' + ti[2] + '\', \''                   + tj[0] + tj[1] + '\', \'' + tj[2] + '\', \'x-' + t + '\']\n')
 f.close()
 
 

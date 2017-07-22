@@ -10,9 +10,9 @@
     x[6] = @VAR@-|x-AA|(AaAb;
     x[7] = @VAR@-|x-AB|(AaB1b;
     x[8] = @VAR@-|x-AB|(AaB2b;
-    x[9] = @VAR@-|x-AB|(AbB1a;
-    x[10] = @VAR@-|x-AB|(AbB2a;
-    x[11] = @VAR@-|x-BB|(B1aB1b;
-    x[12] = @VAR@-|x-BB|(B1aB2b;
+    x[9] = @VAR@-|x-AB|(B1aAb;
+    x[10] = @VAR@-|x-BB|(B1aB1b;
+    x[11] = @VAR@-|x-BB|(B1aB2b;
+    x[12] = @VAR@-|x-AB|(B2aAb;
     x[13] = @VAR@-|x-BB|(B2aB1b;
     x[14] = @VAR@-|x-BB|(B2aB2b;

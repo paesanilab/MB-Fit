@@ -4,36 +4,17 @@
 x2b_disp::x2b_disp() {
   xyz1 = new double[3];
   xyz2 = new double[3];
-  grd1 = new double[3];
-  grd2 = new double[3];
 }
 x2b_disp::~x2b_disp() {
   delete[] xyz1;
   delete[] xyz2;
-  delete[] grd1;
-  delete[] grd2;
 }
 
 x2b_disp::x2b_disp(double * c1, double * c2, size_t n1, size_t n2) {
   xyz1 = new double[3*n1];
   xyz2 = new double[3*n2];
-  grd1 = new double[3*n1];
-  grd2 = new double[3*n2];
   std::copy(c1, c1 + 3*n1, xyz1);
   std::copy(c2, c2 + 3*n2, xyz2);
-}
-
-x2b_disp::x2b_disp(double * c1, double * c2, 
-                   double * g1, double * g2,
-                   size_t n1, size_t n2) {
-  xyz1 = new double[3*n1];
-  xyz2 = new double[3*n2];
-  grd1 = new double[3*n1];
-  grd2 = new double[3*n2];
-  std::copy(c1, c1 + 3*n1, xyz1);
-  std::copy(c2, c2 + 3*n2, xyz2);
-  std::copy(g1, g1 + 3*n1, grd1);
-  std::copy(g2, g2 + 3*n2, grd2);
 }
 
 double x2b_disp::get_dispersion() {
@@ -74,13 +55,13 @@ double x2b_disp::get_dispersion(double * grd) {
   const double* B_1_b= xyz2 + 3;
   const double* B_2_b= xyz2 + 6;
 
-  double* A_1_a_g= grd1 + 0;
-  double* B_1_a_g= grd1 + 3;
-  double* B_2_a_g= grd1 + 6;
+  double* A_1_a_g= grd + 0;
+  double* B_1_a_g= grd + 3;
+  double* B_2_a_g= grd + 6;
 
-  double* A_1_b_g= grd2 + 0;
-  double* B_1_b_g= grd2 + 3;
-  double* B_2_b_g= grd2 + 6;
+  double* A_1_b_g= grd + 9;
+  double* B_1_b_g= grd + 12;
+  double* B_2_b_g= grd + 15;
 
   disp += x6(m_C6_AA, m_d6_AA, m_C8, m_d8, 
              A_1_a, A_1_b, A_1_a_g, A_1_b_g);

@@ -16,9 +16,9 @@
     x[12] = @VAR@-|x-BD|(B2aDb;
     x[13] = @VAR@-|x-BE|(B2aE1b;
     x[14] = @VAR@-|x-BE|(B2aE2b;
-    x[15] = @VAR@-|x-ZD|(Z1aDb;
-    x[16] = @VAR@-|x-ZE|(Z1aE1b;
-    x[17] = @VAR@-|x-ZE|(Z1aE2b;
-    x[18] = @VAR@-|x-ZD|(Z2aDb;
-    x[19] = @VAR@-|x-ZE|(Z2aE1b;
-    x[20] = @VAR@-|x-ZE|(Z2aE2b;
+    x[15] = @VAR@-|x-DZ|(Z1aDb;
+    x[16] = @VAR@-|x-EZ|(Z1aE1b;
+    x[17] = @VAR@-|x-EZ|(Z1aE2b;
+    x[18] = @VAR@-|x-DZ|(Z2aDb;
+    x[19] = @VAR@-|x-EZ|(Z2aE1b;
+    x[20] = @VAR@-|x-EZ|(Z2aE2b;

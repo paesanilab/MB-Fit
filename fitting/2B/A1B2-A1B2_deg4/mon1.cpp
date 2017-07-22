@@ -24,7 +24,8 @@ namespace x  {
 
   mon1::mon1( double* crd) {
     
-    nsites = 3;  
+    nsites = 3; 
+    realsites = 3;
     is_w = 0;
     allocate();
     
@@ -85,6 +86,7 @@ namespace x  {
     }
 
     int mon1::get_nsites() { return nsites; }
+    int mon1::get_realsites() { return realsites; }
     double* mon1::get_charges() { return charge; }
     double* mon1::get_sitecrds() { return sitecrds; }
     double* mon1::get_pol() { return atmpolar; }

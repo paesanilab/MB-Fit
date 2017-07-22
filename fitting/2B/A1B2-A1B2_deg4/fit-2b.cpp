@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
       tb_ref[n] = training_set[n].energy_twobody ;
 
       x::mon1 m1(training_set[n].xyz);
-      x::mon2 m2(training_set[n].xyz + 3*m1.get_nsites());
+      x::mon2 m2(training_set[n].xyz + 3*m1.get_realsites());
 
       int system_nsites = m1.get_nsites() + m2.get_nsites();
       int * system_is_w;
@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
       // std::cerr << "Conf " << n << " : Elec= " << ener ;
 
       // Now need to take out dispersion
-      x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_nsites(), m2.get_nsites());
+      x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
       ener = disp.get_dispersion();
       disp_e.push_back(ener);
       training_set[n].energy_twobody -= ener ;
@@ -409,13 +409,13 @@ int main(int argc, char** argv) {
     for (size_t i = 0; i < training_set.size(); ++i) {
 
         const double E_model = model(training_set[i].xyz) + elec_e[i] + disp_e[i];
-        const double delta = E_model - training_set[i].energy_twobody;
+        const double delta = E_model - tb_ref[i];
         if (std::abs(delta) > err_Linf)
             err_Linf = std::abs(delta);
 
   correlation_file <<  i+1   << "   "
     << E_model  << "   "
-    <<  training_set[i].energy_twobody  << "    "
+    <<  tb_ref[i]  << "    "
           <<  delta*delta  << "    \n" ;
 
         err_L2 += delta*delta;

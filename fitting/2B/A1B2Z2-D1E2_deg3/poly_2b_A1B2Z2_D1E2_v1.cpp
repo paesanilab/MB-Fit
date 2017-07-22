@@ -68,7 +68,7 @@ double poly_model::eval(const double a[492], const double x[21])
     const double t147 = t5*t146;
     const double t148 = a[154];
     const double t151 = (t122*t7+t148*t3+t124+t145+t147)*t7;
-    const double t153 = t7*t129;
+    const double t153 = t129*t7;
     const double t154 = a[83];
     const double t155 = t6*t154;
     const double t156 = a[76];
@@ -100,7 +100,7 @@ double poly_model::eval(const double a[492], const double x[21])
     const double t81 = x[14];
     const double t211 = t210*t81;
     const double t212 = a[82];
-    const double t213 = t212*t31;
+    const double t213 = t31*t212;
     const double t214 = a[226];
     const double t215 = t25*t214;
     const double t216 = t7*t214;
@@ -110,7 +110,7 @@ double poly_model::eval(const double a[492], const double x[21])
     const double t220 = a[31];
     const double t224 = t25*t176;
     const double t225 = t7*t174;
-    const double t226 = t5*t176;
+    const double t226 = t176*t5;
     const double t227 = t3*t174;
     const double t232 = a[3];
     const double t233 = a[214];
@@ -128,10 +128,10 @@ double poly_model::eval(const double a[492], const double x[21])
     const double t256 = a[477];
     const double t259 = (t233*t7+t254*t5+t256*t3+t235+t253)*t7;
     const double t265 = (t233*t25+t239*t7+t254*t3+t256*t5+t235+t253)*t25;
-    const double t274 = (t243*t31+t245*t25+t245*t7+t252*t3+t252*t5+t6*a[467]+t248)*t31;
+    const double t274 = (t243*t31+t245*t25+t245*t7+t252*t3+t252*t5+a[467]*t6+t248)*t31;
     const double t275 = a[121];
     const double t277 = a[110];
-    const double t278 = t31*t277;
+    const double t278 = t277*t31;
     const double t279 = a[198];
     const double t280 = t25*t279;
     const double t281 = a[244];
@@ -148,7 +148,7 @@ double poly_model::eval(const double a[492], const double x[21])
     const double t298 = a[458];
     const double t300 = a[107];
     const double t303 = a[428];
-    const double t304 = t31*t303;
+    const double t304 = t303*t31;
     const double t305 = a[144];
     const double t306 = t25*t305;
     const double t307 = t7*t305;
@@ -198,8 +198,8 @@ double poly_model::eval(const double a[492], const double x[21])
     const double t364 = a[178];
     const double t365 = t364*t112;
     const double t113 = x[11];
-    const double t366 = t113*t170+t173+t175+t177+t178+t179+t180+t181+t317+t331+t365;
-    const double t368 = t121+t126+t133+t142+t151+t160+t169+(t25*t320+t3*t322+t320*t5+t322*t7
+    const double t366 = t170*t113+t173+t175+t177+t178+t179+t180+t181+t317+t331+t365;
+    const double t368 = t121+t126+t133+t142+t151+t160+t169+(t320*t25+t322*t3+t320*t5+t322*t7
 +t317+t319+t324+t327)*t81+(t331+t333+t335+t337+t338+t339+t340+t341+t342)*t111+(
 t346+t348+t350+t352+t354+t356+t357+t358+t359+t360)*t112+t366*t113;
     const double t371 = t330*t81;
@@ -1126,13 +1126,13 @@ t41+t42)*t3+(t46+t48+t49)*t5+(t53+t55+t57+t58)*t6+(t2*t7+t4+t41+t46+t63)*t7)*t7
 +(t1+(t68+t49)*t3+(t71+t48+t42)*t5+(t53+t74+t75+t58)*t6+(t47*t5+t6*t79+t11+t48+
 t78)*t7+(t2*t25+t4+t63+t68+t71+t78)*t25)*t25+(t19+(t3*t62+t58)*t3+(t3*t79+t5*
 t62+t58)*t5+(t3*t98+t5*t98+t97+a[67])*t6+(t20*t7+t105+t22+t55+t57)*t7+(t20*t25+
-t26*t7+t105+t22+t74+t75)*t25+(t32*t25+t52*t3+t30*t31+t32*t7+t52*t5+t35+t97)*t31
+t26*t7+t105+t22+t74+t75)*t25+(t25*t32+t3*t52+t30*t31+t32*t7+t5*t52+t35+t97)*t31
 )*t31+(t121+t126+t133+t142+t151+t160+t169+(t170*t81+t173+t175+t177+t178+t179+
 t180+t181)*t81)*t81+(t121+t188+t191+t195+t199+t203+t209+(t211+t213+t215+t216+
 t217+t218+t219+t220)*t81+(t111*t170+t173+t178+t181+t211+t224+t225+t226+t227)*
 t111)*t111+(t232+t237+t242+t250+t259+t265+t274+(t275*t81+t278+t280+t282+t283+
 t284+t285+t286)*t81+(t111*t275+t290*t81+t278+t283+t286+t292+t293+t294+t295)*
-t111+(t300*t111+t298*t112+t300*t81+t304+t306+t307+t308+t309+t310+t311)*t112)*
+t111+(t111*t300+t112*t298+t300*t81+t304+t306+t307+t308+t309+t310+t311)*t112)*
 t112+t368*t113+t2110);
 
 }

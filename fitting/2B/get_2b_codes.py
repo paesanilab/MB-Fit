@@ -47,16 +47,16 @@ nat1 = 3
 nat2 = 3
 
 # Find the number of sites
-nsites1 = 4
-#nsites1 = 3
+#nsites1 = 4
+nsites1 = 3
 nsites2 = 3
 
 # Is one of the molecules water? 0 = none, 1 = mon1; 2=mon2
-is_w = 1
-#is_w = 0
+#is_w = 1
+is_w = 0
 # Obtain the lists with the excluded pairs
-excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
-#excl12_a = [[0,1],[0,2]]
+#excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
+excl12_a = [[0,1],[0,2]]
 excl13_a = [[1,2]]
 excl14_a = []
 
@@ -84,10 +84,10 @@ d_min_intra = '0.0'
 d_max_intra= '3.0'
 
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
-C6 = ['310.915','216.702','172.445','172.445']
-d6 = ['3.20676','3.38985','3.74833','3.0']
-#C6 = ['310.915','216.702','172.445']
-#d6 = ['3.20676','3.38985','3.74833']
+#C6 = ['310.915','216.702','172.445','172.445']
+#d6 = ['3.20676','3.38985','3.74833','3.0']
+C6 = ['310.915','216.702','172.445']
+d6 = ['3.20676','3.38985','3.74833']
 
 # Allow user to define Input and output cutoff
 # Save them 
@@ -95,18 +95,18 @@ r2i = 6.0
 r2o = 7.0
 
 # FInd a way to get the degree
-degree = 3
-#degree = 4
+#degree = 3
+degree = 4
 # Find a way to get the number ov variables
-nvars = 21
-#nvars = 15
+#nvars = 21
+nvars = 15
 # Find a way to get the size of the polynomial
-npoly = 492
-#npoly = 597
+#npoly = 492
+npoly = 597
 
 # Define kind of variables for intra, inter and lone pairs
 var_intra = 'exp'
-var_lp = 'coul'
+var_lp = 'exp'
 var_inter = 'exp'
 
 # Define Energy Range for the fitting

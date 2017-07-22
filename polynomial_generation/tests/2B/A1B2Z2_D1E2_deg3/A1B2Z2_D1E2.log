@@ -35,12 +35,12 @@ Aa:Ba1:Ba2:Za1:Za2:Db:Eb1:Eb2
 12 :  B2(a) <===>   D(b) : x-BD
 13 :  B2(a) <===>  E1(b) : x-BE
 14 :  B2(a) <===>  E2(b) : x-BE
-15 :  Z1(a) <===>   D(b) : x-ZD
-16 :  Z1(a) <===>  E1(b) : x-ZE
-17 :  Z1(a) <===>  E2(b) : x-ZE
-18 :  Z2(a) <===>   D(b) : x-ZD
-19 :  Z2(a) <===>  E1(b) : x-ZE
-20 :  Z2(a) <===>  E2(b) : x-ZE
+15 :  Z1(a) <===>   D(b) : x-DZ
+16 :  Z1(a) <===>  E1(b) : x-EZ
+17 :  Z1(a) <===>  E2(b) : x-EZ
+18 :  Z2(a) <===>   D(b) : x-DZ
+19 :  Z2(a) <===>  E1(b) : x-EZ
+20 :  Z2(a) <===>  E2(b) : x-EZ
 
 <> 1st degree <>
 

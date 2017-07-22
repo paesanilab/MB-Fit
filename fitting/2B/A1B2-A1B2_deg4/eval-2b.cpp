@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     std::copy(crd.begin(), crd.end(), xyz);
     
     x::mon1 m1(xyz);
-    x::mon2 m2(xyz + 3*m1.get_nsites());
+    x::mon2 m2(xyz + 3*m1.get_realsites());
     
     int system_nsites = m1.get_nsites() + m2.get_nsites();
     int * system_is_w;
@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     elec_e.push_back(ener);
       
     // Now need to take out dispersion
-    x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_nsites(), m2.get_nsites());
+    x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
     ener = disp.get_dispersion();
     disp_e.push_back(ener);
     

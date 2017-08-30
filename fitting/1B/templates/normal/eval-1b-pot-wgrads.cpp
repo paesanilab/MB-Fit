@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     std::cout << "Enogrd = " << Enogrd  << std::endl;
     
     double  grd[12];
-    double Egrd = pot_1b(&(crd[0]), &(crd[0]));
+    double Egrd = pot_1b(&(crd[0]), &(grd[0]));
     std::cout << "Egrd = " << Egrd  << std::endl;
    
     const double eps = 1.0e-4;

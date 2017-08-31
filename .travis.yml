@@ -1,0 +1,8 @@
+dist: trusty
+
+language: bash
+
+script:
+    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh

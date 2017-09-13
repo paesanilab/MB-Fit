@@ -1,0 +1,7 @@
+'isomer3_opt.xyz'          | optimized geometry corresponding to normal mode analysis
+'isomer3_normal_modes.dat' | input normal modes
+21 6                       | dim; dimnull
+Q 1024                     | 'P' pseudorandom, 'Q' quasirandom; nconfigs
+'isomer3_linear_Q.xyz'     | output configurations
+.FALSE. .TRUE.             | geometric, linear
+.TRUE.                     | verbose output

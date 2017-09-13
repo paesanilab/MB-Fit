@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "io-xyz.h"
-#include "training-set.h"
+#include "training_set.h"
 //#include "xyz-water-utils.h"
 
 namespace tset {

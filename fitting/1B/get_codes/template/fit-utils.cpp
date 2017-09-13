@@ -5,7 +5,7 @@
 
 namespace tset {
 
-void setup_weights(const std::vector<tset::dimer>& ts,
+void setup_weights(const std::vector<tset::monomer>& ts,
                    const double& E_range, double& E_min,
                    double* weights, size_t& effective_size,
                    bool use_mb_energy)
@@ -13,13 +13,13 @@ void setup_weights(const std::vector<tset::dimer>& ts,
     E_min = 1.0e+10;
 
     for (size_t n = 0; n < ts.size(); ++n) {
-        const double energy = ts[n].onebody_energy;
+        const double energy = ts[n].energy_onebody;
         if (energy < E_min)
             E_min = energy;
     }
 
     for (size_t n = 0; n < ts.size(); ++n) {
-        const double energy = ts[n].onebody_energy;
+        const double energy = ts[n].energy_onebody;
         weights[n] = std::pow(E_range/(energy - E_min + E_range), 2);
     }
 

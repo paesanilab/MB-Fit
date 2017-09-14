@@ -55,7 +55,7 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t68 = t6*t67;
     const double t70 = (t66+t68+t63)*t22;
     const double t71 = a[66];
-    const double t72 = t71*t39;
+    const double t72 = t39*t71;
     const double t73 = a[57];
     const double t74 = t22*t73;
     const double t75 = t6*t73;
@@ -182,7 +182,7 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t255 = t249*t22;
     const double t257 = (t255+t244+t245)*t22;
     const double t258 = a[32];
-    const double t259 = t39*t258;
+    const double t259 = t258*t39;
     const double t260 = a[62];
     const double t261 = t22*t260;
     const double t262 = a[33];
@@ -194,7 +194,7 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t270 = (t267+t268+t243+t222+t217)*t79;
     const double t271 = t114*t225;
     const double t272 = t79*t227;
-    const double t273 = t240*t22;
+    const double t273 = t22*t240;
     const double t275 = (t271+t272+t259+t273+t229+t230)*t114;
     const double t277 = (t214+t219+t257+t266+t270+t275)*t114;
     const double t278 = t249*t6;
@@ -206,9 +206,9 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t287 = t221*t22;
     const double t289 = (t267+t268+t287+t244+t217)*t79;
     const double t290 = t114*t258;
-    const double t291 = t262*t79;
+    const double t291 = t79*t262;
     const double t292 = a[71];
-    const double t293 = t292*t39;
+    const double t293 = t39*t292;
     const double t295 = (t290+t291+t293+t261+t284+t264)*t114;
     const double t296 = t177*t225;
     const double t297 = t240*t6;
@@ -284,13 +284,13 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t393 = t39*t215;
     const double t395 = (t393+t283+t244+t217)*t39;
     const double t396 = t79*t258;
-    const double t397 = t292*t22;
+    const double t397 = t22*t292;
     const double t399 = (t396+t268+t397+t284+t264)*t79;
     const double t400 = t114*t215;
     const double t401 = t221*t39;
     const double t403 = (t400+t291+t401+t261+t244+t217)*t114;
     const double t404 = t114*t227;
-    const double t405 = t227*t39;
+    const double t405 = t39*t227;
     const double t407 = (t296+t404+t396+t405+t368+t297+t230)*t177;
     const double t409 = (t214+t280+t392+t395+t399+t403+t407)*t177;
     const double t410 = a[8];
@@ -299,7 +299,7 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t413 = a[10];
     const double t415 = (t412+t413)*t6;
     const double t416 = a[49];
-    const double t417 = t416*t22;
+    const double t417 = t22*t416;
     const double t418 = a[39];
     const double t419 = t418*t6;
     const double t420 = a[23];
@@ -357,7 +357,7 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t483 = (t480+t328+t481+t331+t310+t305)*t114;
     const double t484 = t315*t114;
     const double t485 = t79*t329;
-    const double t486 = t39*t315;
+    const double t486 = t315*t39;
     const double t488 = (t334+t484+t485+t486+t477+t336+t318)*t177;
     const double t489 = a[67];
     const double t490 = t489*t306;
@@ -374,7 +374,7 @@ double poly_model::eval(const double a[82], const double x[10],
     const double t501 = t341*t22;
     const double t503 = (t497+t454+t342+t498+t499+t500+t501+t348+t349)*t468;
     const double t505 = (t302+t307+t472+t475+t479+t483+t488+t496+t503)*t468;
-    const double t508 = t6*t225;
+    const double t508 = t225*t6;
     const double t510 = (t508+t230)*t6;
     const double t512 = (t214+t510)*t6;
     const double t514 = (t229+t217)*t6;

@@ -1,10 +1,10 @@
 <> molecules(1) <>
 
-B1F4
+A1B4
 
 <> atoms (5) <>
 
-Ba:Fa1:Fa2:Fa3:Fa4
+Aa:Ba1:Ba2:Ba3:Ba4
 
 <> permutations (24) <>
 
@@ -35,16 +35,16 @@ Ba:Fa1:Fa2:Fa3:Fa4
 
 <> variables (10) <>
 
- 0 :   B(a) <===>  F1(a) : x-intra-BF
- 1 :   B(a) <===>  F2(a) : x-intra-BF
- 2 :   B(a) <===>  F3(a) : x-intra-BF
- 3 :   B(a) <===>  F4(a) : x-intra-BF
- 4 :  F1(a) <===>  F2(a) : x-intra-FF
- 5 :  F1(a) <===>  F3(a) : x-intra-FF
- 6 :  F1(a) <===>  F4(a) : x-intra-FF
- 7 :  F2(a) <===>  F3(a) : x-intra-FF
- 8 :  F2(a) <===>  F4(a) : x-intra-FF
- 9 :  F3(a) <===>  F4(a) : x-intra-FF
+ 0 :   A(a) <===>  B1(a) : x-intra-AB
+ 1 :   A(a) <===>  B2(a) : x-intra-AB
+ 2 :   A(a) <===>  B3(a) : x-intra-AB
+ 3 :   A(a) <===>  B4(a) : x-intra-AB
+ 4 :  B1(a) <===>  B2(a) : x-intra-BB
+ 5 :  B1(a) <===>  B3(a) : x-intra-BB
+ 6 :  B1(a) <===>  B4(a) : x-intra-BB
+ 7 :  B2(a) <===>  B3(a) : x-intra-BB
+ 8 :  B2(a) <===>  B4(a) : x-intra-BB
+ 9 :  B3(a) <===>  B4(a) : x-intra-BB
 
 <> 1st degree <>
 

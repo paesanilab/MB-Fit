@@ -10,8 +10,13 @@ if [ $# -ne 4 ]; then
   exit
 fi
 
+INPUT=$1
+POLY_CPP_PATH=$2
+TEMPLATE_PATH=$3
+PYTHON_SCRIPT=$4
+
 # Getting the system name
-FNAME="${1%.*}"
+FNAME="${INPUT%.*}"
 
 # Check if the system exists
 if [ -d "$FNAME" ]; then
@@ -23,11 +28,11 @@ fi
 mkdir $FNAME
 cd $FNAME
 
-cp $2/$1 .
-cp $2/poly-direct.cpp .
-cp $2/poly-grd.cpp ./poly_1b_${FNAME}_v1x.cpp
-cp $2/poly-nogrd.cpp ./poly_1b_${FNAME}_v1.cpp
-cp $2/poly-model.h ./poly_1b_${FNAME}_v1x.h
+cp $POLY_CPP_PATH/$1 .
+cp $POLY_CPP_PATH/poly-direct.cpp .
+cp $POLY_CPP_PATH/poly-grd.cpp ./poly_1b_${FNAME}_v1x.cpp
+cp $POLY_CPP_PATH/poly-nogrd.cpp ./poly_1b_${FNAME}_v1.cpp
+cp $POLY_CPP_PATH/poly-model.h ./poly_1b_${FNAME}_v1x.h
 
 # CHange the includes in the poly files
 cat poly_1b_${FNAME}_v1x.cpp | sed "s/poly-model.h/poly_1b_${FNAME}_v1x.h/g" > tmp
@@ -38,10 +43,10 @@ mv tmp poly_1b_${FNAME}_v1.cpp
 # Execute python script
 echo "Did you change the parameters for your system in the python script?"
 
-python $4 $1 poly-direct.cpp
+python $PYTHON_SCRIPT $INPUT poly-direct.cpp
 
 # Copy the rest of the files
-cp $3/* .
+cp $TEMPLATE_PATH/* .
 
 # Compile
 make clean

@@ -1,3 +1,4 @@
+# Run Test
 This code generates, compiles and runs a test of the 1B polynomials.
 To test, just run the script run_test.sh.
 
@@ -14,3 +15,10 @@ contributions to the energy, and numerical and analytical gradients:
  - Atom   Analit: XXX Numerical: YYY Diff: ZZZ 
    This line gives the analytical (from polynomials), numerical (from finite
    differences) gradient, and their absolute value of the difference.
+
+# Run fit
+ `./fit-1b [training_set.xyz] > [log_file]`
+ In destination/ , this fits the polynomials to your training set in xyz format.
+ - The energies of the training set must be in kcal/mol in the comment line.
+ - The energies of the training set must be scaled to the minimum energy, being
+   that one 0.

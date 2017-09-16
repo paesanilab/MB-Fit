@@ -14,17 +14,23 @@ Features for usability
 Tips for running `poly-gen_mb-nrg.pl`
 -------------------------------------
 
+- The names of the molecules must be general. This means that H2O should be
+  A1B2, CH4 should be A1B4, N2O5 should be A1B2C4 (Central O, N2, 4O from 
+  the outside)
+- If the molecule has virtual sites for the polynomials (M-site is for the
+  electrostatics, not the polynomials) such as lone pairs, use the letters
+  Z, Y, X ... For real atoms use A, B, C...
 - In input, the number of atoms in a molecule must be explicitly stated, even if there is only one
-  - correct: O1H2 for water, atoms names are converted to Oa Ha1 Ha2
-  - will fail: OH2
-- The distances and atom labels are case sensitive: CL does not match Cl
+  - correct: A1B2 for water, atoms names are converted to Aa Ba1 Ba2
+  - will fail: AB2
+- The distances and atom labels are case sensitive: A does not match a 
 - The molecule order given in the input file is used to assign fragment ids
-  `add_molecule['H1F1']` # becomes H1a and F1a
-  `add_molecule['O1']`   # becomes O1b
+  `add_molecule['A1B1']` # becomes A1a and B1a
+  `add_molecule['C1']`   # becomes C1b
   The variable names would then be assigned as:
-  `add_variable['H1', 'a', 'F1', 'a', 'x-intra-HF']`
-  `add_variable['H1', 'a', 'O1', 'b', 'x-HO']`
-  `add_variable['F1', 'a', 'O1', 'b', 'x-FO']`
+  `add_variable['A1', 'a', 'B1', 'a', 'x-intra-AB']`
+  `add_variable['A1', 'a', 'C1', 'b', 'x-AC']`
+  `add_variable['B1', 'a', 'C1', 'b', 'x-BC']`
 
 
 Notes on assumptions of the code

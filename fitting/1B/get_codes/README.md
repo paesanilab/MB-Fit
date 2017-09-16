@@ -22,3 +22,12 @@ contributions to the energy, and numerical and analytical gradients:
  - The energies of the training set must be in kcal/mol in the comment line.
  - The energies of the training set must be scaled to the minimum energy, being
    that one 0.
+ - The output will be the file fit-1b.cdl. This file contains the parameters.
+
+# Run eval
+ `./eval-1b [fit-1b.nc] [config.xyz] > output`
+ - You need the nc file of the training set. To obtain it:
+ ```
+ ncgen -o fit-1b.nc fit-1b.cdl
+ ```
+ - The output will contain all the energies (E_nograd, E_poly ...) previously described

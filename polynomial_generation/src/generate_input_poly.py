@@ -1,13 +1,13 @@
 
 # coding: utf-8
 
-# In[11]:
+# In[1]:
 
 import sys
 import os
 
 
-# In[12]:
+# In[2]:
 
 if len(sys.argv) != 2:
     print("Usage: ./script <input.in>")
@@ -18,7 +18,7 @@ else:
     name = sys.argv[1]
 
 
-# In[18]:
+# In[3]:
 
 # This should be the commandline argument
 #name = "A1B2Z2_D1E2.in"
@@ -45,14 +45,14 @@ if n_body > 1:
 vsites = ['Z','Y','X']
 
 
-# In[19]:
+# In[4]:
 
 types_a = list(mon1)
 if n_body > 1:
     types_b = list(mon2)
 
 
-# In[20]:
+# In[5]:
 
 # Generating the non linear parameter list
 nlparam = []
@@ -70,7 +70,7 @@ if n_body > 1:
             t2.append(types_b[i])
 
 
-# In[21]:
+# In[6]:
 
 nc = 0
 set_m1 = []
@@ -115,7 +115,7 @@ if n_body > 1:
                 n = n + 1
 
 
-# In[22]:
+# In[7]:
 
 f.write('\n')
 # Intramolecular distances:

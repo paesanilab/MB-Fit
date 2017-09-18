@@ -8,15 +8,15 @@ import shutil
 #TODO
 #Things to add later
 #descriptive names for variables etc.
-#reader for qm settings for psi4 like charge and multiplicity
+#reader for job control settings for psi4 like charge and multiplicity
 #output storage and compression
 #training set writing during/after calculation
 
 training_set_file = open('./training_set.xyz', 'w')
 
-#read in an xyz file called input and start counting configurations with i_config
+#read in an xyz file called input.xyz and start counting configurations with i_config
 i_config = 0
-for mol in pb.readfile("xyz", "input"):    
+for mol in pb.readfile("xyz", "input.xyz"):    
     i_config += 1
 
     #convert "mol" to string 

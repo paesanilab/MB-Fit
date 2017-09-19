@@ -40,7 +40,7 @@ for mol in pb.readfile("xyz", "input.xyz"):
     if not os.path.exists('./calculations/'+str(i_config).zfill(4)):
         os.makedirs('./calculations/'+str(i_config).zfill(4))
 
-    psi4.core.set_output_file('./calculations/'+str(i_config).zfill(4)+'/output.dat')
+    psi4.core.set_output_file('./calculations/'+str(i_config).zfill(4)+'/output.dat', False)
     
     #! Sample HF/3-21g one-body Computation
     psi4.set_memory('500 MB')

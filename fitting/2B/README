@@ -38,7 +38,7 @@ to be changed is after In[6] and before In[7].
 
 Do not touch anything else.
 
-To generate the fitting code, execute run_example.sh and follow 
+To generate the fitting code, execute getcode.sh and follow 
 instructions. If it doesn't work, breathe deep 3 times, meditate 
 for 5 minutes, and read the instructions again. Then find the error
 and try again.

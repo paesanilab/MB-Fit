@@ -54,7 +54,7 @@ size_t load_monomers(const char* filename, std::vector<monomer>& ts)
             std::ostringstream oss;
             oss << "'" << filename << "' : configuration #"
                 << (nmonomers + 1) << " : unexpected text '"
-                << iss << "' instead of the three-body energy  ";
+                << iss.str() << "' instead of the three-body energy  ";
             throw std::runtime_error(oss.str());
         }
 

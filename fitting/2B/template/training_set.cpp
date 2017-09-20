@@ -51,7 +51,7 @@ size_t load_dimers(const char* filename, std::vector<dimer>& ts)
             std::ostringstream oss;
             oss << "'" << filename << "' : configuration #"
                 << (ndimers + 1) << " : unexpected text '"
-                << iss << "' instead of total/twobody/onebody[2] energies";
+                << iss.str() << "' instead of total/twobody/onebody[2] energies";
             throw std::runtime_error(oss.str());
         }
 

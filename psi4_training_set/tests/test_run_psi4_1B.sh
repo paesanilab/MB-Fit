@@ -12,5 +12,5 @@ then
     exit $exit_code
 else
     echo "run_psi4_1b.py passed!"
-    rm -r calculations* timer.dat
+    rm -r calculations* timer.dat training_set.xyz
 fi

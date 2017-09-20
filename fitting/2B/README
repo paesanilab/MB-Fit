@@ -45,3 +45,6 @@ and try again.
 
 This should generate a folder that contains fit-2b and eval-2b, which
 as the names indicate, one fits and one evaluates.
+
+==== TESTING ====
+To run the test, just execute the script run_test_A1B2_A1B2.sh

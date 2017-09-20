@@ -53,7 +53,7 @@ for mol in pb.readfile("xyz", "input.xyz"):
     ref_energy = psi4.energy('scf/3-21g', molecule=psi4_mol)
 
     #Writing the one-body training set without parsing every output file in the end
-    training_set_file.write(str(len(mol.atoms))+'\n'+str(ref_energy)+'\n'+xyz_string+'\n')
+    training_set_file.write(str(len(mol.atoms))+'\n'+str("%.8f" % ref_energy)+'\n'+xyz_string+'\n')
 
 training_set_file.close()
 

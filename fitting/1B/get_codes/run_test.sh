@@ -11,9 +11,9 @@ rm fit-1b.nc
 ncgen -o fit-1b.nc fit-1b.cdl
 ../A1B4/eval-1b fit-1b.nc test.xyz > test_eval.out
 if diff test_eval.out test_eval.out_expected &> /dev/null ; then
-    echo "Test for $i PASSED"
+    echo "Test for PASSED"
   else
-    echo "Test for $i FAILED"
+    echo "Test for FAILED"
     echo "EXPECTED:"
     cat test_eval.out_expected
     echo

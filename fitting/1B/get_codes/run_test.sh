@@ -4,7 +4,7 @@ WORKDIR=$PWD
 
 cd A1B4
 rm -rf A1B4
-./run_example.sh A1B4.in /home/mrierari/codes/potential_fitting/fitting/1B/get_codes/A1B4/A1B4_poly /home/mrierari/codes/potential_fitting/fitting/1B/get_codes/template /home/mrierari/codes/potential_fitting/fitting/1B/get_codes/get-1b-fit.py
+./run_example.sh A1B4.in $WORKDIR/A1B4/A1B4_poly $WORKDIR/template $WORKDIR//get-1b-fit.py
 
 cd $WORKDIR/A1B4/A1B4_fit
 rm fit-1b.nc 

@@ -1,6 +1,12 @@
 dist: trusty
 
-language: bash
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y netcdf-bin
+
+install: true # skip calling make
+
+language: cpp
 
 script:
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
@@ -8,3 +14,5 @@ script:
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh
 
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/input_generation; bash run_test.sh
+
+    - cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh

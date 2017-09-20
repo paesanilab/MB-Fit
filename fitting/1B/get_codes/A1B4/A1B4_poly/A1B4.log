@@ -1,0 +1,69 @@
+<> molecules(1) <>
+
+A1B4
+
+<> atoms (5) <>
+
+Aa:Ba1:Ba2:Ba3:Ba4
+
+<> permutations (24) <>
+
+0:1:2:3:4
+0:1:2:4:3
+0:1:3:2:4
+0:1:3:4:2
+0:1:4:2:3
+0:1:4:3:2
+0:2:1:3:4
+0:2:1:4:3
+0:2:3:1:4
+0:2:3:4:1
+0:2:4:1:3
+0:2:4:3:1
+0:3:1:2:4
+0:3:1:4:2
+0:3:2:1:4
+0:3:2:4:1
+0:3:4:1:2
+0:3:4:2:1
+0:4:1:2:3
+0:4:1:3:2
+0:4:2:1:3
+0:4:2:3:1
+0:4:3:1:2
+0:4:3:2:1
+
+<> variables (10) <>
+
+ 0 :   A(a) <===>  B1(a) : x-intra-AB
+ 1 :   A(a) <===>  B2(a) : x-intra-AB
+ 2 :   A(a) <===>  B3(a) : x-intra-AB
+ 3 :   A(a) <===>  B4(a) : x-intra-AB
+ 4 :  B1(a) <===>  B2(a) : x-intra-BB
+ 5 :  B1(a) <===>  B3(a) : x-intra-BB
+ 6 :  B1(a) <===>  B4(a) : x-intra-BB
+ 7 :  B2(a) <===>  B3(a) : x-intra-BB
+ 8 :  B2(a) <===>  B4(a) : x-intra-BB
+ 9 :  B3(a) <===>  B4(a) : x-intra-BB
+
+<> 1st degree <>
+
+10 possible 1st degree monomials
+2 <<== accepted 1st degree terms
+
+<> 2nd degree <>
+
+55 possible (filtered) 2nd degree monomials
+7 <<== accepted 2nd degree terms
+
+<> 3rd degree <>
+
+220 possible (filtered) 3rd degree monomials
+20 <<== accepted 3rd degree terms
+
+<> 4th degree <>
+
+715 possible (filtered) 4th degree monomials
+53 <<== accepted 4th degree terms
+
+ Total number of terms: 82

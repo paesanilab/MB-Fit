@@ -1,0 +1,4 @@
+This script (run_test.sh) shows how to get input for one body and two body for
+the perl script to generate maple files. This script generates the input with
+the variables in the same order as in the fitting code.
+Please use them or you might break the permutational invariance of the polynomials.

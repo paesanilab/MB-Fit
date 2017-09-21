@@ -130,7 +130,7 @@ SUBROUTINE random_stdnormal(d, lseed, x_stdnormal)
 
   INTERFACE
      FUNCTION beasley_springer_moro_r(u)
-       DOUBLE PRECISION :: u(:)
+       DOUBLE PRECISION, DIMENSION(:), INTENT(IN) :: u
        DOUBLE PRECISION :: beasley_springer_moro_r(SIZE(u))
      END FUNCTION beasley_springer_moro_r
   END INTERFACE

@@ -1,10 +1,11 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[78]:
 
 import sys
 import os
+import json
 
 
 # In[79]:
@@ -14,12 +15,18 @@ import os
 
 # In[80]:
 
-if len(sys.argv) != 3:
-    print("Usage: ./script <input.in> <poly-direct.cpp_with_path>\n ")
+if len(sys.argv) != 4:
+    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini path>\n ")
     sys.exit()
 else:
     name = sys.argv[1]
     directcpp = sys.argv[2]
+    config_filename = sys.argv[3]
+
+import configparser
+
+config = configparser.ConfigParser()
+config.read(config_filename)
 
 
 # In[81]:
@@ -41,36 +48,38 @@ mon1 = f.readline().split('\'')[1]
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
 # Store them in nat1
-nat = 5
+nat = config.getint("fitting", "number_of_atoms")
 
 # Find the number of sites (electrostatic sites)
-nsites = 5
+nsites = config.getint("fitting", "number_of_electrostatic_sites")
 
 # Obtain the lists with the excluded pairs
-excl12 = [[0,1],[0,2],[0,3],[0,4]]
-excl13 = [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]]
-excl14 = []
+excl12 = json.loads(config.get("fitting", "excluded_pairs_12"))
+excl13 = json.loads(config.get("fitting", "excluded_pairs_13"))
+excl14 = json.loads(config.get("fitting", "excluded_pairs_14"))
+
 
 #Obtain charges (in the order of input), pols and polfacs
-chg = ['0.326705','-0.331688','-0.331688','-0.331688','-0.331688']
-pol = ['3.8767477858','0.5333436504','0.5333436504','0.5333436504','0.5333436504']
-polfac = ['3.8767477858','0.5333436504','0.5333436504','0.5333436504','0.5333436504']
+chg = json.loads(config.get("fitting", "charges"))
+pol = json.loads(config.get("fitting", "polarizabilities"))
+polfac = json.loads(config.get("fitting", "polarizability_fractions"))
 
 #Ask the user for the max value of k and d
-k_min = '0.0'
-k_max = '3.0'
+k_min = config.getfloat("fitting", "k_min")
+k_max = config.getfloat("fitting", "k_max")
 
-d_min = '0.0'
-d_max = '7.0'
+d_min = config.getfloat("fitting", "d_min")
+d_max = config.getfloat("fitting", "d_max")
+
 
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
 # Look at the input to retrieve this
 #These are the INTERMOLECULAR C6 for same m
-C6 = ['310.915','216.702','172.445']
-d6 = ['3.20676','3.38985','3.74833']
+C6 = json.loads(config.get("fitting", "C6"))
+d6 = json.loads(config.get("fitting", "d6"))
 
 # FInd a way to get the degree
-degree = 4
+degree = config.getint("common", "polynomial_order")
 # Find a way to get the number ov variables
 nvars = 10
 # Find a way to get the size of the polynomial
@@ -79,13 +88,13 @@ npoly = 82
 # Define kind of variables 
 # 'coul' is e^(-k(d-d0)/d)
 # 'exp'  is e^(-k(d-d0))
-var = 'exp'
+var = config.get("fitting", "var")
 
 # Define Energy Range for the fitting
-E_range = '50.0'
+E_range = config.getfloat("fitting", "energy_range")
 
 # Define list of variables that are fictitious
-vsites = ['X', 'Y', 'Z']
+vsites = json.loads(config.get("fitting", "virtual_sites_labels"))
 
 
 # In[84]:
@@ -281,7 +290,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(chg)):
-    ff.write('    charge[' + str(i) + '] = ' + chg[i] + '*CHARGECON;\n')
+    ff.write('    charge[' + str(i) + '] = ' + str(chg[i]) + '*CHARGECON;\n')
 a = """
 
     return charge;
@@ -292,7 +301,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(pol)):
-    ff.write('    atmpolar[' + str(i) + '] = ' + pol[i] + ';\n')
+    ff.write('    atmpolar[' + str(i) + '] = ' + str(pol[i]) + ';\n')
 a = """
     return atmpolar;
   }
@@ -303,7 +312,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(polfac)):
-    ff.write('    polfac[' + str(i) + '] = ' + polfac[int(i)] + ';\n')
+    ff.write('    polfac[' + str(i) + '] = ' + str(polfac[i]) + ';\n')
 a = """
     return polfac;
   }
@@ -686,11 +695,11 @@ a = """
 """
 ff.write(a)
 ff.write('bool x1b_' + mon1 + '_v1x::nonlinear_parameters_out_of_range() const { \n')
-ff.write('    const double k_min =  ' + k_min + ' ;\n')
-ff.write('    const double k_max =  ' + k_max + ' ;\n')
+ff.write('    const double k_min =  ' + str(k_min) + ' ;\n')
+ff.write('    const double k_max =  ' + str(k_max) + ' ;\n')
 
-ff.write('    const double d_min =  ' + d_min + ' ;\n')
-ff.write('    const double d_max =  ' + d_max + ' ;\n')
+ff.write('    const double d_min =  ' + str(d_min) + ' ;\n')
+ff.write('    const double d_max =  ' + str(d_max) + ' ;\n')
 
 ff.write('return false')
 for nl in nlparam:
@@ -860,10 +869,10 @@ struct x1b_disp {
 ff.write(a)
 for i in range(len(real_pairs)):
     if not real_pairs[i] in excluded_pairs:
-        ff.write('  const double m_C6_' + real_pairs[i] + ' = ' + C6[i] + ' ; \n')
+        ff.write('  const double m_C6_' + real_pairs[i] + ' = ' + str(C6[i]) + ' ; \n')
 for i in range(len(real_pairs)):
     if not real_pairs[i] in excluded_pairs:
-        ff.write('  const double m_d6_' + real_pairs[i] + ' = ' + d6[i] + ' ; \n')
+        ff.write('  const double m_d6_' + real_pairs[i] + ' = ' + str(d6[i]) + ' ; \n')
     
 a = """
 
@@ -1120,7 +1129,7 @@ const double alpha = 0.0005;
 #endif
 
 // ##DEFINE HERE## energy range
-const double E_range = """ + E_range + """; // kcal/mol
+const double E_range = """ + str(E_range) + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 
@@ -1234,9 +1243,9 @@ int main(int argc, char** argv) {
 ff.write(a)
 for i in range(len(nlparam)):
     if nlparam[i].startswith('d'):
-        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + d_min + ';\n')
+        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + str(d_min) + ';\n')
     else:
-        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
+        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + str(k_min) + ';\n')
 
             
 a = """

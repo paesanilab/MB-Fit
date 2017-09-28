@@ -49,7 +49,8 @@ for f in ["poly-nogrd", "poly-grd"]:
     execute(['maple', maple_file])
     c_file = f + ".c"
     cpp_file = f + ".cpp"
-    execute(['clean-maple-c.pl', c_file, cpp_file])
+    with open(c_file, 'r') as c_file_handle, open(cpp_file, 'w') as cpp_file_handle:
+        subprocess.check_call(['clean-maple-c.pl'], stdin=c_file_handle, stdout=cpp_file_handle)
 
 # # Fitting
 

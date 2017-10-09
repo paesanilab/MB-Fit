@@ -1,8 +1,30 @@
 dist: trusty
 
-language: bash
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y netcdf-bin libgsl0-dev libblas-dev liblapack-dev
+
+install:
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n psi4env -c psi4 -c openbabel --file psi4_training_set/requirements.txt python=3.6
+
+language: cpp
 
 script:
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh
+
+    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/input_generation; bash run_test.sh
+
+    # requires MKL, cannot run on Travis-CI unless we reconfigure it to use conda
+    #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
+
+    # psi4 segfaults on Travis-CI
+    #- cd $TRAVIS_BUILD_DIR/psi4_training_set/tests; source activate psi4env; bash test_run_psi4_1B.sh

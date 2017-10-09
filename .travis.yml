@@ -26,4 +26,5 @@ script:
     # requires MKL, cannot run on Travis-CI unless we reconfigure it to use conda
     #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
 
-    - cd $TRAVIS_BUILD_DIR/psi4_training_set/tests; source activate psi4env; bash test_run_psi4_1B.sh
+    # psi4 segfaults on Travis-CI
+    #- cd $TRAVIS_BUILD_DIR/psi4_training_set/tests; source activate psi4env; bash test_run_psi4_1B.sh

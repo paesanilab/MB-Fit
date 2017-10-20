@@ -350,3 +350,40 @@ HF: Form C  :       0.00u       0.00s   0.004221w     90 calls
 HF: Form D  :       0.00u       0.00s   0.000202w     90 calls
 
 ***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 20 16:17:19 2017
+Timers Off: Fri Oct 20 16:17:29 2017
+
+Wall Time:       10.00 seconds
+
+JK: (A|mn)  :       0.04u       0.00s   0.042317w     30 calls
+JK: (A|Q)^-1/2:       0.62u       0.00s   0.617463w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.001599w     30 calls
+HF: Form H  :       0.00u       0.00s   1.175265w     10 calls
+HF: Form S/X:       0.01u       0.00s   0.001285w     10 calls
+HF: Guess   :       1.08u       0.00s   1.077142w     10 calls
+SAD Guess   :       1.04u       0.00s   1.035934w     10 calls
+JK: D       :       0.00u       0.00s   0.000533w    180 calls
+JK: USO2AO  :       0.00u       0.00s   0.001256w    180 calls
+JK: JK      :       0.03u       0.00s   0.016446w    180 calls
+JK: J       :       0.00u       0.00s   0.002031w    180 calls
+JK: J1      :       0.00u       0.00s   0.000731w    270 calls
+JK: J2      :       0.00u       0.00s   0.000555w    270 calls
+JK: K       :       0.02u       0.00s   0.012207w    180 calls
+JK: K1      :       0.00u       0.00s   0.008959w    250 calls
+JK: K2      :       0.01u       0.00s   0.002571w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000576w    180 calls
+DIISManager::add_entry:       0.01u       0.00s   0.504656w    170 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.005907w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001289w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.002631w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001193w    160 calls
+HF: Form G  :       0.03u       0.00s   0.013969w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000188w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.508773w     90 calls
+HF: Form C  :       0.00u       0.00s   0.003806w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000191w     90 calls
+
+***********************************************************

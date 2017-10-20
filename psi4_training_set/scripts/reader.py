@@ -1,7 +1,7 @@
 import molecule
 
 '''
-Inputs a file with the input and convert it into usable info
+Reads a file as input and convert it into a list of molecules
 '''
 
 lineNum = 0;
@@ -17,7 +17,7 @@ def readfile(file):
         # This looks for atom amount
         fileline = read(inputfile)
 
-        # Check for EOF
+        # Check for EOF; if there's no more to read, return
         if fileline == '':
             return molecules
 
@@ -41,11 +41,11 @@ def readfile(file):
         # Form the molecule
         newMol = molecule.molecule(atomArr)
 
-        print(newMol.toString())
+        #print(newMol.toString())
 
         # Some debug into
         count += 1
-        print('That was molecule #{}'.format(count))
+        #print('That was molecule #{}'.format(count))
 
         molecules.append(newMol)
 

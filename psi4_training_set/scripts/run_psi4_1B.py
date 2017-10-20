@@ -1,11 +1,11 @@
-#!/~/anaconda3/envs/caffeine-psi4/bin/python
+#!/usr/bin/env python3
 
 import os, sys
 import psi4
 import pybel as pb
 import shutil
 
-from reader import lineNum, readfile
+from reader import readfile
 
 #TODO
 #Things to add later
@@ -28,8 +28,9 @@ training_set_file = open('./training_set.xyz', 'w')
 #configurations with i_config
 
 
-i_config = 0
+molCount = 0
 
+# This section is currently defunct. Will uncomment when issue is resolved
 '''
 for mol in pb.readfile("xyz","input.xyz"):
     i_config += 1
@@ -45,8 +46,9 @@ for mol in pb.readfile("xyz","input.xyz"):
     for atom in atom_total_range:
     
         xyz_string.append(my_mol.splitlines()[atom+2])
-     
+ 
     xyz_string = "\n".join(xyz_string)
+'''
 
     #TODO
     #output file necessary! we just need the energies of the configurations 
@@ -54,24 +56,25 @@ for mol in pb.readfile("xyz","input.xyz"):
     #right now the script creates a directory called "calculations"
     #also creates a subdirectory for the output of each configuration 
     #with hardcoded 3 leading zeroes for the subdirectory name
-'''
 
+# Temporary solution to pybel conflict. See reader.py
 molecules = readfile('input.xyz')
 
+# Perform a calculation for each molecule
 for mol in molecules:
-    i_config += 1
-    xyz_string = mol.toString()
+    molCount += 1
+    molString = mol.toString()
 
-    if not os.path.exists('./calculations/'+str(i_config).zfill(4)):
-        os.makedirs('./calculations/'+str(i_config).zfill(4))
+    if not os.path.exists('./calculations/'+str(molCount).zfill(4)):
+        os.makedirs('./calculations/'+str(molCount).zfill(4))
 
-    psi4.core.set_output_file('./calculations/'+str(i_config).zfill(4)+
+    psi4.core.set_output_file('./calculations/'+str(molCount).zfill(4)+
         '/output.dat', False)
     
     #! Sample HF/3-21g one-body Computation
     psi4.set_memory('500 MB')
     
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(xyz_string)  
+    psi4_mol = psi4.core.Molecule.create_molecule_from_string(molString)  
 
     psi4_mol.update_geometry()
    
@@ -81,7 +84,7 @@ for mol in molecules:
     #Writing the one-body training set without 
     #parsing every output file in the end
     training_set_file.write(str(len(mol.atoms))+
-        '\n'+str("%.8f" % ref_energy)+'\n'+xyz_string+'\n')
+        '\n'+str("%.8f" % ref_energy)+'\n'+molString+'\n')
 
 training_set_file.close()
 

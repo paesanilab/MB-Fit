@@ -27,3 +27,7 @@
 *.exe
 *.out
 *.app
+
+# Gvim and Python realted
+*.swp
+__pycache__/

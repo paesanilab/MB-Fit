@@ -5,8 +5,7 @@ import psi4
 import pybel as pb
 import shutil
 
-import reader
-from reader import lineNum
+from reader import lineNum, readfile
 
 #TODO
 #Things to add later
@@ -28,8 +27,10 @@ training_set_file = open('./training_set.xyz', 'w')
 #read in an xyz file called input.xyz and start counting 
 #configurations with i_config
 
+
 i_config = 0
 
+'''
 for mol in pb.readfile("xyz","input.xyz"):
     i_config += 1
 
@@ -53,6 +54,13 @@ for mol in pb.readfile("xyz","input.xyz"):
     #right now the script creates a directory called "calculations"
     #also creates a subdirectory for the output of each configuration 
     #with hardcoded 3 leading zeroes for the subdirectory name
+'''
+
+molecules = readfile('input.xyz')
+
+for mol in molecules:
+    i_config += 1
+    xyz_string = mol.toString()
 
     if not os.path.exists('./calculations/'+str(i_config).zfill(4)):
         os.makedirs('./calculations/'+str(i_config).zfill(4))

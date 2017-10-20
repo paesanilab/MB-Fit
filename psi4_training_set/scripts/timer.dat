@@ -303,3 +303,50 @@ Wall Time:        5.00 seconds
 
 
 ***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 20 15:59:08 2017
+Timers Off: Fri Oct 20 15:59:09 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 20 16:00:05 2017
+Timers Off: Fri Oct 20 16:00:19 2017
+
+Wall Time:       14.00 seconds
+
+JK: (A|mn)  :       0.05u       0.00s   0.042387w     30 calls
+JK: (A|Q)^-1/2:       0.60u       0.00s   0.617965w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.001665w     30 calls
+HF: Form H  :       0.00u       0.01s   2.077001w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.001312w     10 calls
+HF: Guess   :       1.07u       0.01s   1.070998w     10 calls
+SAD Guess   :       1.02u       0.01s   1.030393w     10 calls
+JK: D       :       0.00u       0.00s   0.000532w    180 calls
+JK: USO2AO  :       0.01u       0.00s   0.001288w    180 calls
+JK: JK      :       0.01u       0.00s   0.017617w    180 calls
+JK: J       :       0.00u       0.00s   0.002097w    180 calls
+JK: J1      :       0.00u       0.00s   0.000773w    270 calls
+JK: J2      :       0.00u       0.00s   0.000581w    270 calls
+JK: K       :       0.01u       0.00s   0.013205w    180 calls
+JK: K1      :       0.01u       0.00s   0.009756w    250 calls
+JK: K2      :       0.00u       0.00s   0.002757w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000616w    180 calls
+DIISManager::add_entry:       0.00u       0.00s   0.390113w    170 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.006350w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001438w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.002809w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001286w    160 calls
+HF: Form G  :       0.02u       0.00s   0.015203w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000209w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.394825w     90 calls
+HF: Form C  :       0.00u       0.00s   0.004221w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000202w     90 calls
+
+***********************************************************

@@ -1,9 +1,11 @@
-#!/usr/bin/env python3
+#!/~/anaconda3/envs/caffeine-psi4/bin/python
 
 import os, sys
 import psi4
 import pybel as pb
 import shutil
+
+import reader
 
 #TODO
 #Things to add later
@@ -12,11 +14,22 @@ import shutil
 #output storage and compression
 #training set writing during/after calculation
 
+# TODO
+# Find a way to parse the test input file
+# Cannot use BOTH pybel and psi4
+# The format for xyz input file:
+# amount of atoms in a molecule
+# comment(mandatory, but can by empty)
+# n atoms, and their xyz coordinates
+
 training_set_file = open('./training_set.xyz', 'w')
 
-#read in an xyz file called input.xyz and start counting configurations with i_config
+#read in an xyz file called input.xyz and start counting 
+#configurations with i_config
+
 i_config = 0
-for mol in pb.readfile("xyz", "input.xyz"):    
+
+for mol in pb.readfile("xyz","input.xyz"):
     i_config += 1
 
     #convert "mol" to string 
@@ -32,15 +45,19 @@ for mol in pb.readfile("xyz", "input.xyz"):
         xyz_string.append(my_mol.splitlines()[atom+2])
      
     xyz_string = "\n".join(xyz_string)
- 
+
     #TODO
     #output file necessary! we just need the energies of the configurations 
-    #for now the output files will be placed somewhere but right now the script creates a directory called "calculations"
-    #also creates a subdirectory for the output of each configuration with hardcoded 3 leading zeroes for the subdirectory name
+    #for now the output files will be placed somewhere but 
+    #right now the script creates a directory called "calculations"
+    #also creates a subdirectory for the output of each configuration 
+    #with hardcoded 3 leading zeroes for the subdirectory name
+
     if not os.path.exists('./calculations/'+str(i_config).zfill(4)):
         os.makedirs('./calculations/'+str(i_config).zfill(4))
 
-    psi4.core.set_output_file('./calculations/'+str(i_config).zfill(4)+'/output.dat', False)
+    psi4.core.set_output_file('./calculations/'+str(i_config).zfill(4)+
+        '/output.dat', False)
     
     #! Sample HF/3-21g one-body Computation
     psi4.set_memory('500 MB')
@@ -52,8 +69,10 @@ for mol in pb.readfile("xyz", "input.xyz"):
     #storing the single-point electronic energy in a variable
     ref_energy = psi4.energy('scf/3-21g', molecule=psi4_mol)
 
-    #Writing the one-body training set without parsing every output file in the end
-    training_set_file.write(str(len(mol.atoms))+'\n'+str("%.8f" % ref_energy)+'\n'+xyz_string+'\n')
+    #Writing the one-body training set without 
+    #parsing every output file in the end
+    training_set_file.write(str(len(mol.atoms))+
+        '\n'+str("%.8f" % ref_energy)+'\n'+xyz_string+'\n')
 
 training_set_file.close()
 

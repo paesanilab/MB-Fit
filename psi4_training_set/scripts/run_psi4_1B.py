@@ -6,6 +6,7 @@ import pybel as pb
 import shutil
 
 import reader
+from reader import lineNum
 
 #TODO
 #Things to add later

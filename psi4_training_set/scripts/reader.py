@@ -4,19 +4,22 @@ import molecule
 Inputs a file with the input and convert it into usable info
 '''
 
+lineNum = 0;
+
 def readfile(file):
     # Open the input file manually
     inputfile = open(file,'r')
     count = 0
     fileline = 1
+    molecules = []
     while fileline:
         
         # This looks for atom amount
-        fileline = inputfile.readline() # Atom count, record this
+        fileline = read(inputfile)
 
         # Check for EOF
         if fileline == '':
-            break
+            return molecules
 
         # Create an array of atoms
         atomArr = []
@@ -25,11 +28,11 @@ def readfile(file):
         atomCount = int(fileline)
 
         # Comment, skip a line
-        fileline = inputfile.readline() # Comment, skip a line
+        fileline = read(inputfile)
 
         # Read info about each atom
         for atom in range(atomCount):
-            fileline = inputfile.readline()
+            fileline = read(inputfile)
             atomInfo = fileline.split()
 
             # Form the atom and add it to list
@@ -44,6 +47,19 @@ def readfile(file):
         count += 1
         print('That was molecule #{}'.format(count))
 
+        molecules.append(newMol)
+
     inputfile.close()
+
+'''
+An overriding read function that also tells line number
+'''
+def read(readfile):
+    line = readfile.readline()
+
+    global lineNum
+    lineNum += 1
+    
+    return line
 
 readfile('input.xyz')

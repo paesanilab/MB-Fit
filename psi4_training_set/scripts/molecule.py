@@ -24,6 +24,18 @@ class molecule:
         return len(self.atoms)
 
     '''
+    Setter for single-point energy of molecule
+    '''
+    def setEnergy(self, energy):
+        self.energy = energy
+
+    '''
+    Getter for single-point energy of molecule
+    '''
+    def getEnergy(self):
+        return self.energy
+
+    '''
     String representation of the molecule
     '''
     def toString(self):

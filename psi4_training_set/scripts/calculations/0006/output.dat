@@ -2,7 +2,7 @@
   Memory set to 476.837 MiB by Python driver.
 
 *** tstart() called on caffeine
-*** at Fri Oct 20 16:17:24 2017
+*** at Wed Oct 25 17:03:57 2017
 
    => Loading Basis Set <=
 
@@ -186,12 +186,12 @@ Properties computed using the SCF density matrix
      X:    -1.9268      Y:     1.4785      Z:     0.0000     Total:     2.4287
 
 
-*** tstop() called on caffeine at Fri Oct 20 16:17:25 2017
+*** tstop() called on caffeine at Wed Oct 25 17:03:58 2017
 Module time:
-	user time   =       0.30 seconds =       0.01 minutes
+	user time   =       0.25 seconds =       0.00 minutes
 	system time =       0.00 seconds =       0.00 minutes
 	total time  =          1 seconds =       0.02 minutes
 Total time:
-	user time   =       1.90 seconds =       0.03 minutes
+	user time   =       1.64 seconds =       0.03 minutes
 	system time =       0.04 seconds =       0.00 minutes
 	total time  =          5 seconds =       0.08 minutes

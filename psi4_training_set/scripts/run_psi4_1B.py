@@ -23,26 +23,25 @@ from reader import readfile
 # comment(mandatory, but can by empty)
 # n atoms, and their xyz coordinates
 
+# Error flags, caused by invalid command-line options
+memErr = methodErr = basisErr = 0
+
 # Check for initial passed-in command-line args
-parser = argparse.ArgumentParser('Calculates single-body energy of molecules.')
-parser.add_argument('memory', metavar='Memory', type=str, 
-    default='500 MB', nargs='?', 
-    help='Memory needed to make the calculation. Default is 500 MB.')
-parser.add_argument('method', metavar='Method', type=str, default='HF',
-    nargs='?', 
-    help='The method to use for the calculation. Default is HF.')
-parser.add_argument('basis', metavar='BasisSet', type=str, default='sto-3g',
-    nargs='?', 
-    help='The basis set to use for the calculation. Default is sto-3g.')
+parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+parser.add_argument('memory', metavar='Memory', type=str,
+    help='Memory needed to make the calculation.')
+parser.add_argument('method', metavar='Method', type=str, 
+    help='The method to use for the calculation.')
+parser.add_argument('basis', metavar='BasisSet', type=str, 
+    help='The basis set to use for the calculation.')
+parser.add_argument('charge', metavar='Charge', type=str)
+parser.add_argument('spin', metavar='Spin', type=str)
+parser.add_argument('convergence', metavar='SCF convergence', type=str)
+parser.add_argument('cycles', metavar='Max SCF Cycles', type=str)
+parser.add_argument('threshold', metavar='Threshold', type=str)
+
 args = parser.parse_args()
 print(args)
-
-'''
-if len(sys.argv) == 1:
-    if len(sys.argv) != 1 and len(sys.argv) != 4:
-    print("Usage: python run_psi4_1B.py (Memory Method BasisSet)")
-    sys.exit(1)
-'''
 
 # If only one argument (meaning no arguments passed in),
 # use default arguments
@@ -108,7 +107,8 @@ for mol in molecules:
       psi4.set_memory(args.memory)
     except:
       print("Invalid memory settings.")
-      sys.exit(1)
+      memErr = 1
+      break
     
     psi4_mol = psi4.core.Molecule.create_molecule_from_string(molString) 
 
@@ -117,10 +117,17 @@ for mol in molecules:
     # Given the test input, we are calculating the same calculations 10 times.
     # There should be a way to only calculate this once.
     #storing the single-point electronic energy in a variable
-    ref_energy = psi4.energy('scf/3-21g', molecule=psi4_mol)
+    try:
+      ref_energy = psi4.energy("{}/{}".format(args.method, args.basis), 
+          molecule=psi4_mol)
+    except:
+      print("Method does not exist.")
+      methodErr = 1
+      break
 
     # Store the one-body energy into molecule
     mol.setEnergy(ref_energy)
+    print(mol.getEnergy())
 
     #Writing the one-body training set without 
     #parsing every output file in the end
@@ -128,6 +135,10 @@ for mol in molecules:
         '\n'+str("%.8f" % ref_energy)+'\n'+molString+'\n')
 
 training_set_file.close()
+
+if memErr or methodErr or basisErr:
+    print("One or more errors have occurred. Exiting without saving.")
+    sys.exit(1)
 
 #Compression of the calculations directory
 shutil.make_archive('calculations', 'zip', './', 'calculations')

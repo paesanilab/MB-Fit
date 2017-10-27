@@ -763,3 +763,609 @@ Wall Time:        0.00 seconds
 
 
 ***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:10:35 2017
+Timers Off: Fri Oct 27 15:10:36 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:10:50 2017
+Timers Off: Fri Oct 27 15:10:50 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:11:11 2017
+Timers Off: Fri Oct 27 15:11:12 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:11:32 2017
+Timers Off: Fri Oct 27 15:11:32 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:11:50 2017
+Timers Off: Fri Oct 27 15:11:51 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:12:17 2017
+Timers Off: Fri Oct 27 15:12:17 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:14:26 2017
+Timers Off: Fri Oct 27 15:14:26 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:14:51 2017
+Timers Off: Fri Oct 27 15:14:51 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:15:21 2017
+Timers Off: Fri Oct 27 15:15:21 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:16:00 2017
+Timers Off: Fri Oct 27 15:16:09 2017
+
+Wall Time:        9.00 seconds
+
+JK: (A|mn)  :       0.02u       0.00s   0.026366w     30 calls
+JK: (A|Q)^-1/2:       0.61u       0.00s   0.608429w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.000450w     30 calls
+HF: Form H  :       0.02u       0.02s   1.298226w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.000940w     10 calls
+HF: Guess   :       1.05u       0.00s   1.047717w     10 calls
+SAD Guess   :       1.01u       0.00s   1.007145w     10 calls
+JK: D       :       0.00u       0.00s   0.000357w    120 calls
+JK: USO2AO  :       0.00u       0.00s   0.000941w    120 calls
+JK: JK      :       0.00u       0.00s   0.005346w    120 calls
+JK: J       :       0.00u       0.00s   0.000902w    120 calls
+JK: J1      :       0.00u       0.00s   0.000277w    160 calls
+JK: J2      :       0.00u       0.00s   0.000219w    160 calls
+JK: K       :       0.00u       0.00s   0.003148w    120 calls
+JK: K1      :       0.00u       0.00s   0.002199w    140 calls
+JK: K2      :       0.00u       0.00s   0.000553w    140 calls
+JK: AO2USO  :       0.00u       0.00s   0.000306w    120 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010337w    110 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.003254w    100 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.000727w    100 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.001377w    100 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.000696w    100 calls
+HF: Form G  :       0.00u       0.00s   0.005987w     80 calls
+HF: Form F  :       0.00u       0.00s   0.000146w     80 calls
+HF: DIIS    :       0.00u       0.00s   0.013436w     80 calls
+HF: Form C  :       0.00u       0.00s   0.001666w     80 calls
+HF: Form D  :       0.00u       0.00s   0.000115w     80 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:16:38 2017
+Timers Off: Fri Oct 27 15:16:48 2017
+
+Wall Time:       10.00 seconds
+
+JK: (A|mn)  :       0.02u       0.00s   0.026412w     30 calls
+JK: (A|Q)^-1/2:       0.65u       0.00s   0.609220w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.000452w     30 calls
+HF: Form H  :       0.00u       0.01s   1.185072w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.000944w     10 calls
+HF: Guess   :       1.06u       0.00s   1.044904w     10 calls
+SAD Guess   :       1.03u       0.00s   1.005503w     10 calls
+JK: D       :       0.00u       0.00s   0.000368w    120 calls
+JK: USO2AO  :       0.00u       0.00s   0.000901w    120 calls
+JK: JK      :       0.00u       0.00s   0.005269w    120 calls
+JK: J       :       0.00u       0.00s   0.000901w    120 calls
+JK: J1      :       0.00u       0.00s   0.000289w    160 calls
+JK: J2      :       0.00u       0.00s   0.000226w    160 calls
+JK: K       :       0.00u       0.00s   0.003102w    120 calls
+JK: K1      :       0.00u       0.00s   0.002173w    140 calls
+JK: K2      :       0.00u       0.00s   0.000546w    140 calls
+JK: AO2USO  :       0.00u       0.00s   0.000302w    120 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010395w    110 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.003215w    100 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.000720w    100 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.001375w    100 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.000666w    100 calls
+HF: Form G  :       0.00u       0.00s   0.005857w     80 calls
+HF: Form F  :       0.00u       0.00s   0.000164w     80 calls
+HF: DIIS    :       0.00u       0.00s   0.013424w     80 calls
+HF: Form C  :       0.00u       0.00s   0.001621w     80 calls
+HF: Form D  :       0.00u       0.00s   0.000114w     80 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:20:50 2017
+Timers Off: Fri Oct 27 15:21:00 2017
+
+Wall Time:       10.00 seconds
+
+JK: (A|mn)  :       0.03u       0.00s   0.026916w     30 calls
+JK: (A|Q)^-1/2:       0.58u       0.01s   0.616031w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.000458w     30 calls
+HF: Form H  :       0.00u       0.01s   1.260019w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.000984w     10 calls
+HF: Guess   :       1.08u       0.01s   1.072406w     10 calls
+SAD Guess   :       1.03u       0.01s   1.031105w     10 calls
+JK: D       :       0.00u       0.00s   0.000394w    120 calls
+JK: USO2AO  :       0.00u       0.00s   0.000944w    120 calls
+JK: JK      :       0.00u       0.00s   0.005410w    120 calls
+JK: J       :       0.00u       0.00s   0.000904w    120 calls
+JK: J1      :       0.00u       0.00s   0.000290w    160 calls
+JK: J2      :       0.00u       0.00s   0.000214w    160 calls
+JK: K       :       0.00u       0.00s   0.003192w    120 calls
+JK: K1      :       0.00u       0.00s   0.002219w    140 calls
+JK: K2      :       0.00u       0.00s   0.000561w    140 calls
+JK: AO2USO  :       0.00u       0.00s   0.000299w    120 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010844w    110 calls
+DIISManager::extrapolate:       0.00u       0.01s   0.003322w    100 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.000730w    100 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.001403w    100 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.000727w    100 calls
+HF: Form G  :       0.00u       0.02s   0.006040w     80 calls
+HF: Form F  :       0.00u       0.00s   0.000145w     80 calls
+HF: DIIS    :       0.01u       0.01s   0.013967w     80 calls
+HF: Form C  :       0.00u       0.00s   0.001708w     80 calls
+HF: Form D  :       0.00u       0.00s   0.000118w     80 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:21:09 2017
+Timers Off: Fri Oct 27 15:21:19 2017
+
+Wall Time:       10.00 seconds
+
+JK: (A|mn)  :       0.08u       0.00s   0.042255w     30 calls
+JK: (A|Q)^-1/2:       0.55u       0.00s   0.614397w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.001596w     30 calls
+HF: Form H  :       0.00u       0.00s   1.052308w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.001297w     10 calls
+HF: Guess   :       1.07u       0.00s   1.066490w     10 calls
+SAD Guess   :       1.00u       0.00s   1.025836w     10 calls
+JK: D       :       0.00u       0.00s   0.000518w    180 calls
+JK: USO2AO  :       0.01u       0.00s   0.001218w    180 calls
+JK: JK      :       0.05u       0.00s   0.015971w    180 calls
+JK: J       :       0.01u       0.00s   0.002002w    180 calls
+JK: J1      :       0.00u       0.00s   0.000733w    270 calls
+JK: J2      :       0.01u       0.00s   0.000549w    270 calls
+JK: K       :       0.04u       0.00s   0.011811w    180 calls
+JK: K1      :       0.02u       0.00s   0.008667w    250 calls
+JK: K2      :       0.02u       0.00s   0.002434w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000555w    180 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010910w    170 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.005658w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001219w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.002530w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001147w    160 calls
+HF: Form G  :       0.04u       0.01s   0.013356w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000178w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.014729w     90 calls
+HF: Form C  :       0.00u       0.00s   0.003644w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000179w     90 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:31:32 2017
+Timers Off: Fri Oct 27 15:31:33 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:31:41 2017
+Timers Off: Fri Oct 27 15:31:41 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:32:07 2017
+Timers Off: Fri Oct 27 15:32:08 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:33:04 2017
+Timers Off: Fri Oct 27 15:33:04 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:33:27 2017
+Timers Off: Fri Oct 27 15:33:28 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:41:41 2017
+Timers Off: Fri Oct 27 15:41:41 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:41:59 2017
+Timers Off: Fri Oct 27 15:41:59 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:43:43 2017
+Timers Off: Fri Oct 27 15:43:43 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:44:18 2017
+Timers Off: Fri Oct 27 15:44:18 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:44:39 2017
+Timers Off: Fri Oct 27 15:44:39 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:44:45 2017
+Timers Off: Fri Oct 27 15:44:46 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:45:12 2017
+Timers Off: Fri Oct 27 15:45:13 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:49:33 2017
+Timers Off: Fri Oct 27 15:49:33 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:50:19 2017
+Timers Off: Fri Oct 27 15:50:19 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:53:14 2017
+Timers Off: Fri Oct 27 15:53:15 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:55:48 2017
+Timers Off: Fri Oct 27 15:55:48 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:59:09 2017
+Timers Off: Fri Oct 27 15:59:09 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 15:59:27 2017
+Timers Off: Fri Oct 27 15:59:27 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:01:11 2017
+Timers Off: Fri Oct 27 16:01:12 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:10:03 2017
+Timers Off: Fri Oct 27 16:10:03 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:10:35 2017
+Timers Off: Fri Oct 27 16:10:35 2017
+
+Wall Time:        0.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:14:34 2017
+Timers Off: Fri Oct 27 16:14:35 2017
+
+Wall Time:        1.00 seconds
+
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:14:42 2017
+Timers Off: Fri Oct 27 16:14:51 2017
+
+Wall Time:        9.00 seconds
+
+JK: (A|mn)  :       0.05u       0.00s   0.038387w     30 calls
+JK: (A|Q)^-1/2:       0.59u       0.01s   0.571088w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.001501w     30 calls
+HF: Form H  :       0.00u       0.01s   0.965217w     10 calls
+HF: Form S/X:       0.01u       0.00s   0.001223w     10 calls
+HF: Guess   :       1.01u       0.00s   0.998044w     10 calls
+SAD Guess   :       0.98u       0.00s   0.960330w     10 calls
+JK: D       :       0.00u       0.00s   0.000507w    180 calls
+JK: USO2AO  :       0.00u       0.00s   0.001182w    180 calls
+JK: JK      :       0.00u       0.00s   0.015240w    180 calls
+JK: J       :       0.00u       0.00s   0.001924w    180 calls
+JK: J1      :       0.00u       0.00s   0.000712w    270 calls
+JK: J2      :       0.00u       0.00s   0.000502w    270 calls
+JK: K       :       0.00u       0.00s   0.011224w    180 calls
+JK: K1      :       0.00u       0.00s   0.008172w    250 calls
+JK: K2      :       0.00u       0.00s   0.002374w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000551w    180 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010950w    170 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.005543w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001151w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.002529w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001126w    160 calls
+HF: Form G  :       0.00u       0.00s   0.012738w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000176w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.014674w     90 calls
+HF: Form C  :       0.00u       0.00s   0.003430w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000172w     90 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:21:45 2017
+Timers Off: Fri Oct 27 16:21:53 2017
+
+Wall Time:        8.00 seconds
+
+JK: (A|mn)  :       0.08u       0.01s   0.041989w     30 calls
+JK: (A|Q)^-1/2:       0.57u       0.01s   0.613446w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.001584w     30 calls
+HF: Form H  :       0.01u       0.00s   1.007657w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.001282w     10 calls
+HF: Guess   :       1.09u       0.01s   1.065628w     10 calls
+SAD Guess   :       1.03u       0.00s   1.024983w     10 calls
+JK: D       :       0.00u       0.00s   0.000518w    180 calls
+JK: USO2AO  :       0.00u       0.00s   0.001222w    180 calls
+JK: JK      :       0.00u       0.00s   0.015802w    180 calls
+JK: J       :       0.00u       0.00s   0.001989w    180 calls
+JK: J1      :       0.00u       0.00s   0.000732w    270 calls
+JK: J2      :       0.00u       0.00s   0.000533w    270 calls
+JK: K       :       0.00u       0.00s   0.011606w    180 calls
+JK: K1      :       0.00u       0.00s   0.008434w    250 calls
+JK: K2      :       0.00u       0.00s   0.002477w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000552w    180 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010909w    170 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.005717w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001184w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.002599w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001145w    160 calls
+HF: Form G  :       0.00u       0.00s   0.013140w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000189w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.014736w     90 calls
+HF: Form C  :       0.00u       0.00s   0.003524w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000169w     90 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:22:46 2017
+Timers Off: Fri Oct 27 16:22:55 2017
+
+Wall Time:        9.00 seconds
+
+JK: (A|mn)  :       0.05u       0.00s   0.040583w     30 calls
+JK: (A|Q)^-1/2:       0.58u       0.00s   0.603386w     30 calls
+JK: (Q|mn)  :       0.00u       0.00s   0.001542w     30 calls
+HF: Form H  :       0.00u       0.01s   1.187518w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.001300w     10 calls
+HF: Guess   :       1.06u       0.00s   1.061031w     10 calls
+SAD Guess   :       1.01u       0.00s   1.021035w     10 calls
+JK: D       :       0.00u       0.00s   0.000520w    180 calls
+JK: USO2AO  :       0.00u       0.00s   0.001175w    180 calls
+JK: JK      :       0.01u       0.00s   0.015647w    180 calls
+JK: J       :       0.00u       0.00s   0.001974w    180 calls
+JK: J1      :       0.00u       0.00s   0.000722w    270 calls
+JK: J2      :       0.00u       0.00s   0.000531w    270 calls
+JK: K       :       0.00u       0.00s   0.011497w    180 calls
+JK: K1      :       0.00u       0.00s   0.008399w    250 calls
+JK: K2      :       0.00u       0.00s   0.002413w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000550w    180 calls
+DIISManager::add_entry:       0.00u       0.00s   0.010830w    170 calls
+DIISManager::extrapolate:       0.00u       0.00s   0.005741w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001180w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.00u       0.00s   0.002638w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001129w    160 calls
+HF: Form G  :       0.00u       0.00s   0.012950w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000176w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.014609w     90 calls
+HF: Form C  :       0.00u       0.00s   0.003463w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000163w     90 calls
+
+***********************************************************
+
+Host: caffeine
+
+Timers On : Fri Oct 27 16:24:25 2017
+Timers Off: Fri Oct 27 16:24:33 2017
+
+Wall Time:        8.00 seconds
+
+JK: (A|mn)  :       0.05u       0.00s   0.042214w     30 calls
+JK: (A|Q)^-1/2:       0.60u       0.00s   0.608027w     30 calls
+JK: (Q|mn)  :       0.01u       0.00s   0.001588w     30 calls
+HF: Form H  :       0.00u       0.00s   0.743361w     10 calls
+HF: Form S/X:       0.00u       0.00s   0.001335w     10 calls
+HF: Guess   :       1.07u       0.00s   1.056552w     10 calls
+SAD Guess   :       1.04u       0.00s   1.016490w     10 calls
+JK: D       :       0.00u       0.00s   0.000532w    180 calls
+JK: USO2AO  :       0.00u       0.00s   0.001187w    180 calls
+JK: JK      :       0.01u       0.00s   0.015606w    180 calls
+JK: J       :       0.01u       0.00s   0.001947w    180 calls
+JK: J1      :       0.01u       0.00s   0.000697w    270 calls
+JK: J2      :       0.00u       0.00s   0.000516w    270 calls
+JK: K       :       0.00u       0.00s   0.011508w    180 calls
+JK: K1      :       0.00u       0.00s   0.008402w    250 calls
+JK: K2      :       0.00u       0.00s   0.002418w    250 calls
+JK: AO2USO  :       0.00u       0.00s   0.000534w    180 calls
+DIISManager::add_entry:       0.00u       0.00s   0.011019w    170 calls
+DIISManager::extrapolate:       0.01u       0.00s   0.005735w    160 calls
+DIISManager::extrapolate: bMatrix setup:       0.00u       0.00s   0.001209w    160 calls
+DIISManager::extrapolate: bMatrix pseudoinverse:       0.01u       0.00s   0.002596w    160 calls
+DIISManager::extrapolate: form new data:       0.00u       0.00s   0.001125w    160 calls
+HF: Form G  :       0.01u       0.00s   0.012929w     90 calls
+HF: Form F  :       0.00u       0.00s   0.000203w     90 calls
+HF: DIIS    :       0.00u       0.00s   0.014736w     90 calls
+HF: Form C  :       0.00u       0.00s   0.003456w     90 calls
+HF: Form D  :       0.00u       0.00s   0.000166w     90 calls
+
+***********************************************************

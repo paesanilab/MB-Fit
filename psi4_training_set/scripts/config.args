@@ -1,8 +1,9 @@
-500MB
-HF
-3-21g
-0
-1
-6
-100
-11
+memory 500MB
+method HF
+basis 3-21g
+charge 0
+spin 1
+convergence 6
+cycles 100
+threshold 11
+input input.xyz

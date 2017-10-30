@@ -20,25 +20,32 @@ from reader import readfile
 # Cannot use BOTH pybel and psi4
 # The format for xyz input file:
 # amount of atoms in a molecule
-# comment(mandatory, but can by empty)
+# comment(mandatory, but can be empty)
 # n atoms, and their xyz coordinates
 
 # Error flags, caused by invalid command-line options
-memErr = methodErr = basisErr = 0
+memErr = methodErr = basisErr = fileErr = 0
+
+'''
+Subclass and function to override argparse
+'''
+class optionParse(argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_lines):
+        return arg_lines.split()[1:]
 
 # Check for initial passed-in command-line args
-parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
-parser.add_argument('memory', metavar='Memory', type=str,
-    help='Memory needed to make the calculation.')
-parser.add_argument('method', metavar='Method', type=str, 
-    help='The method to use for the calculation.')
-parser.add_argument('basis', metavar='BasisSet', type=str, 
-    help='The basis set to use for the calculation.')
-parser.add_argument('charge', metavar='Charge', type=str)
-parser.add_argument('spin', metavar='Spin', type=str)
-parser.add_argument('convergence', metavar='SCF convergence', type=str)
-parser.add_argument('cycles', metavar='Max SCF Cycles', type=str)
-parser.add_argument('threshold', metavar='Threshold', type=str)
+parser = optionParse(fromfile_prefix_chars='@')
+
+
+parser.add_argument('memory', type=str)
+parser.add_argument('method', type=str) 
+parser.add_argument('basis', type=str)
+parser.add_argument('charge', type=int)
+parser.add_argument('spin', type=int)
+parser.add_argument('convergence', type=int)
+parser.add_argument('cycles', type=int)
+parser.add_argument('threshold', type=int)
+parser.add_argument('input', type=str)
 
 args = parser.parse_args()
 print(args)
@@ -84,7 +91,11 @@ for mol in pb.readfile("xyz","input.xyz"):
     #with hardcoded 3 leading zeroes for the subdirectory name
 
 # Temporary solution to pybel conflict. See reader.py
-molecules = readfile('input.xyz')
+try:
+    molecules = readfile('input.xyz')
+except:
+    print("Invalid file. Exiting.")
+    training_set_file.close()
 
 # Perform a calculation for each molecule
 for mol in molecules:
@@ -136,7 +147,7 @@ for mol in molecules:
 
 training_set_file.close()
 
-if memErr or methodErr or basisErr:
+if memErr or methodErr or basisErr or fileErr:
     print("One or more errors have occurred. Exiting without saving.")
     sys.exit(1)
 

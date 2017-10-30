@@ -6,9 +6,9 @@ Reads a file as input and convert it into a list of molecules
 
 lineNum = 0;
 
-def readfile(file):
+def readfile(datafile):
     # Open the input file manually
-    inputfile = open(file,'r')
+    inputfile = open(datafile,'r')
     count = 0
     fileline = 1
     molecules = []

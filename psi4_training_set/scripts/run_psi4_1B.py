@@ -5,8 +5,15 @@ import psi4
 import pybel as pb
 import shutil
 import argparse
+import math
 
 from reader import readfile
+import calculate
+
+zfill_const = 4
+pwd = './'
+calcDir = 'calculations'
+output = '/output.dat'
 
 #TODO
 #Things to add later
@@ -24,7 +31,7 @@ from reader import readfile
 # n atoms, and their xyz coordinates
 
 # Error flags, caused by invalid command-line options
-memErr = methodErr = basisErr = fileErr = 0
+memErr = methodErr = basisErr = 0
 
 '''
 Subclass and function to override argparse
@@ -36,7 +43,7 @@ class optionParse(argparse.ArgumentParser):
 # Check for initial passed-in command-line args
 parser = optionParse(fromfile_prefix_chars='@')
 
-
+# Add arguments and parse
 parser.add_argument('memory', type=str)
 parser.add_argument('method', type=str) 
 parser.add_argument('basis', type=str)
@@ -45,10 +52,8 @@ parser.add_argument('spin', type=int)
 parser.add_argument('convergence', type=int)
 parser.add_argument('cycles', type=int)
 parser.add_argument('threshold', type=int)
-parser.add_argument('input', type=str)
-
+parser.add_argument('inputfile', type=str)
 args = parser.parse_args()
-print(args)
 
 # If only one argument (meaning no arguments passed in),
 # use default arguments
@@ -89,56 +94,34 @@ for mol in pb.readfile("xyz","input.xyz"):
     #right now the script creates a directory called "calculations"
     #also creates a subdirectory for the output of each configuration 
     #with hardcoded 3 leading zeroes for the subdirectory name
+    # Zeroes should no longer be hardcoded - Derek
 
 # Temporary solution to pybel conflict. See reader.py
 try:
-    molecules = readfile('input.xyz')
+    molecules = readfile(args.inputfile)
 except:
     print("Invalid file. Exiting.")
     training_set_file.close()
+    sys.exit(1)
 
 # Perform a calculation for each molecule
 for mol in molecules:
     molCount += 1
     molString = mol.toString()
 
-    if not os.path.exists('./calculations/'+str(molCount).zfill(4)):
-        os.makedirs('./calculations/'+str(molCount).zfill(4))
+    zeroes = int(math.ceil(len(str(molCount)) / zfill_const) * zfill_const)
+    dirname = str(molCount).zfill(zeroes)
 
-    psi4.core.set_output_file('./calculations/'+str(molCount).zfill(4)+
-        '/output.dat', False)
+    # If a calculation does not exist, make a new file for it
+    if not os.path.exists("{}{}{}".format(pwd, calcDir, dirname)):
+        os.makedirs("{}{}{}".format(pwd, calcDir, dirname))
+
+    # Designate the output file
+    psi4.core.set_output_file("{}{}{}/{}".format(pwd, calcDir, dirname, 
+          output), False)
     
-    #! Sample HF/3-21g one-body Computation
-    # There are several ways we can do this without hard-coding.
-    # 1. Use command-line input (user-defined), and set a default value if no
-    #    input given
-    # 2. Figure out how much memory do we actually need for a calculation,
-    #    based on the molecule complexity
-    try:
-      psi4.set_memory(args.memory)
-    except:
-      print("Invalid memory settings.")
-      memErr = 1
-      break
-    
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(molString) 
-
-    psi4_mol.update_geometry()
-   
-    # Given the test input, we are calculating the same calculations 10 times.
-    # There should be a way to only calculate this once.
-    #storing the single-point electronic energy in a variable
-    try:
-      ref_energy = psi4.energy("{}/{}".format(args.method, args.basis), 
-          molecule=psi4_mol)
-    except:
-      print("Method does not exist.")
-      methodErr = 1
-      break
-
-    # Store the one-body energy into molecule
-    mol.setEnergy(ref_energy)
-    print(mol.getEnergy())
+    # Redirect calculation
+    ref_energy = calculate.calculate(mol, args)
 
     #Writing the one-body training set without 
     #parsing every output file in the end
@@ -147,7 +130,7 @@ for mol in molecules:
 
 training_set_file.close()
 
-if memErr or methodErr or basisErr or fileErr:
+if memErr or methodErr or basisErr:
     print("One or more errors have occurred. Exiting without saving.")
     sys.exit(1)
 

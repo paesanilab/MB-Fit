@@ -4,7 +4,7 @@
 clean:
 	rm -rf __pycache__
 	rm -rf calculations
-	rm calculations.zip
+	rm -rf calculations.zip
 
 .PHONY:
 	clean

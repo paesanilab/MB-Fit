@@ -135,4 +135,4 @@ if memErr or methodErr or basisErr:
     sys.exit(1)
 
 #Compression of the calculations directory
-shutil.make_archive('calculations', 'zip', './', 'calculations')
+shutil.make_archive('calculations', 'zip', pwd, calcDir)

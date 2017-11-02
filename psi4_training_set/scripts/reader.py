@@ -1,4 +1,5 @@
 import molecule
+import dimer
 
 '''
 Reads a file as input and convert it into a list of molecules
@@ -46,19 +47,25 @@ def readfile(datafile):
         if not monomer:
             atomCountArr = fileline.split()
         for molCount in range(len(atomCountArr)):
-            newMol = formMol(atomCountArr[molCount], inputfile)
 
+            # Create a new molecule every time
+            newMol = formMol(atomCountArr[molCount], inputfile)
         
             # Some debug into
             count += 1
-            print(newMol.toString())
+            #print(newMol.toString())
             print('That was molecule #{}'.format(count))
 
             # Append molecule into molecules array; this is size 1-3
             molecules.append(newMol)
       
         # Whether it's a monomer, dimer, trimer, append to compounds
-        compounds.append(molecules)
+        if len(molecules) == 2:
+            newComp = dimer(molecules)
+            print(newComp.toString())
+            compounds.append(newComp)
+        else:
+            compounds.append(molecules)
         #print(compounds)
 
     inputfile.close()

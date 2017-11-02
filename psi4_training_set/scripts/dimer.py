@@ -3,27 +3,54 @@ Extension class that deals with dimers
 '''
 class dimer:
 
-    def __init__(mol1, mol2):
+    '''
+    Dimer constructor
+    '''
+    def __init__(self, molecules):
+        self.mol1 = molecules[0]
+        self.mol2 = molecules[1]
+
+    '''
+    Sets molecule #1
+    '''
+    def setMol1(self, mol1):
         self.mol1 = mol1
+
+    '''
+    Sets molecule #2
+    '''
+    def setMol2(self, mol2):
         self.mol2 = mol2
 
-    def setMol1(mol1):
-        self.mol1 = mol1
-
-    def setMol2(mol2):
-        self.mol2 = mol2
-
-    def getMol1():
+    '''
+    Gets molecule #1
+    '''
+    def getMol1(self):
         return self.mol1
 
-    def getMol2():
+    '''
+    Gets molecule #2
+    '''
+    def getMol2(self):
         return self.mol2
 
-    def setEnergy(energy):
+    '''
+    Sets the energy of this dimer
+    '''
+    def setEnergy(self, energy):
         self.energy = energy
 
-    def getEnergy(energy):
+    '''
+    Gets the energy of this dimer
+    '''
+    def getEnergy(self):
         return self.energy
+
+    '''
+    String representation of dimer
+    '''
+    def toString(self):
+        return self.mol1.toString() + "\n" + self.mol2.toString()
 
     '''
     Interaction energy!

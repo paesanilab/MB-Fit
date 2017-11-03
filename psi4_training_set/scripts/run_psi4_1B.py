@@ -12,7 +12,7 @@ import calculate
 
 zfill_const = 4
 pwd = './'
-calcDir = 'calculations'
+calc_dir = 'calculations'
 output = '/output.dat'
 
 #TODO
@@ -31,17 +31,15 @@ output = '/output.dat'
 # n atoms, and their xyz coordinates
 
 # Error flags, caused by invalid command-line options
-memErr = methodErr = basisErr = 0
+mem_err = method_err = basis_err = 0
 
-'''
-Subclass and function to override argparse
-'''
-class optionParse(argparse.ArgumentParser):
+class OptionParse(argparse.ArgumentParser):
+    """ Subclass and function to override default argparse parser """
     def convert_arg_line_to_args(self, arg_lines):
         return arg_lines.split()[1:]
 
 # Check for initial passed-in command-line args
-parser = optionParse(fromfile_prefix_chars='@')
+parser = OptionParse(fromfile_prefix_chars='@')
 
 # Add arguments and parse
 parser.add_argument('memory', type=str)
@@ -66,7 +64,7 @@ training_set_file = open('./training_set.xyz', 'w')
 #configurations with i_config
 
 
-molCount = 0
+mol_count = 0
 
 # This section is currently defunct. Will uncomment when issue is resolved
 '''
@@ -106,18 +104,19 @@ except:
 
 # Perform a calculation for each molecule
 for mol in molecules:
-    molCount += 1
-    molString = mol.toString()
 
-    zeroes = int(math.ceil(len(str(molCount)) / zfill_const) * zfill_const)
-    dirname = str(molCount).zfill(zeroes)
+    mol_count += 1
+    mol_string = str(mol)
+
+    zeroes = int(math.ceil(len(str(mol_count)) / zfill_const) * zfill_const)
+    dirname = str(mol_count).zfill(zeroes)
 
     # If a calculation does not exist, make a new file for it
-    if not os.path.exists("{}{}{}".format(pwd, calcDir, dirname)):
-        os.makedirs("{}{}{}".format(pwd, calcDir, dirname))
+    if not os.path.exists("{}{}/{}".format(pwd, calc_dir, dirname)):
+        os.makedirs("{}{}/{}".format(pwd, calc_dir, dirname))
 
     # Designate the output file
-    psi4.core.set_output_file("{}{}{}/{}".format(pwd, calcDir, dirname, 
+    psi4.core.set_output_file("{}{}{}/{}".format(pwd, calc_dir, dirname, 
           output), False)
     
     # Redirect calculation
@@ -126,13 +125,13 @@ for mol in molecules:
     #Writing the one-body training set without 
     #parsing every output file in the end
     training_set_file.write(str(len(mol.atoms))+
-        '\n'+str("%.8f" % ref_energy)+'\n'+molString+'\n')
+        '\n'+str("%.8f" % ref_energy)+'\n'+mol_string+'\n')
 
 training_set_file.close()
 
-if memErr or methodErr or basisErr:
+if mem_err or method_err or basis_err:
     print("One or more errors have occurred. Exiting without saving.")
     sys.exit(1)
 
 #Compression of the calculations directory
-shutil.make_archive('calculations', 'zip', pwd, calcDir)
+shutil.make_archive('calculations', 'zip', pwd, calc_dir)

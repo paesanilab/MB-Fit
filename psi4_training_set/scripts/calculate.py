@@ -1,9 +1,7 @@
 import psi4
 
-'''
-This file will do all the calculations
-'''
 def calculate(mol, args):
+    """ psi4 calculations file """
 
     # Some constant args from the config
     memory = args.memory
@@ -22,7 +20,7 @@ def calculate(mol, args):
         return None
 
     # Something calculation-related
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(mol.toString()) 
+    psi4_mol = psi4.core.Molecule.create_molecule_from_string(str(mol)) 
 
     psi4_mol.update_geometry()
    
@@ -37,8 +35,8 @@ def calculate(mol, args):
         return None
 
     # Store the one-body energy into molecule
-    mol.setEnergy(ref_energy)
-    print(mol.getEnergy())
+    mol.set_energy(ref_energy)
+    print(mol.energy)
     
     # Return the energy for file to write out
     return ref_energy

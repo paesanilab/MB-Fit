@@ -5,7 +5,7 @@ import dimer
 Reads a file as input and convert it into a list of molecules
 '''
 
-lineNum = 0
+line_num = 0
 dimer_input = 0
 trimer_input = 0
 monomer_input = 0
@@ -16,7 +16,7 @@ def readfile(datafile):
     count = 0
     fileline = 1
     compounds = []
-    atomCountArr = [1]
+    atom_count_arr = [1]
 
     # Determine what to look for
     if "dimer" in datafile:
@@ -37,70 +37,70 @@ def readfile(datafile):
 
         # Check for EOF; if there's no more to read, return
         if fileline == '':
-            return molecules
+            return compounds
 
         # If the line wasn't EOF, cast into list of int
-        atomCountArr = [int(fileline)]
+        atom_count_arr = [int(fileline)]
 
         # Comment, if dimer or trimer, convert comment into list
         fileline = read(inputfile)
         if not monomer_input:
-            atomCountArr = fileline.split()
-        for molCount in range(len(atomCountArr)):
+            atom_count_arr = fileline.split()
+        for mol_count in range(len(atom_count_arr)):
 
             # Create a new molecule every time
-            newMol = formMol(atomCountArr[molCount], inputfile)
+            new_mol = form_mol(atom_count_arr[mol_count], inputfile)
         
             # Some debug into
             count += 1
-            #print(newMol.toString())
+            print(new_mol)
             print('That was molecule #{}'.format(count))
 
             # Append molecule into molecules array; this is size 1-3
-            molecules.append(newMol)
+            molecules.append(new_mol)
       
         # Whether it's a monomer, dimer, trimer, append to compounds
         if len(molecules) == 2:
-            newComp = dimer.dimer(molecules)
-            print(newComp.toString())
-            compounds.append(newComp)
+            new_comp = dimer.Dimer(molecules)
+            print(new_comp)
+            compounds.append(new_comp)
         else:
-            compounds.append(molecules)
+            compounds.append(molecules[0])
         #print(compounds)
 
     inputfile.close()
 
-'''
-An overriding read function that also tells line number
-'''
 def read(readfile):
+    """ An overriding read function that also tells line number """
     line = readfile.readline()
 
-    global lineNum
-    lineNum += 1
+    global line_num
+    line_num += 1
     
     return line
 
 '''
 Make molecules
 '''
-def formMol(atomCount, inputfile):
+def form_mol(atom_count, inputfile):
+    """ Form molecules based on number of atoms specified by input file
+        Returns a molecule that can be by itself, or used to form a dimer
+        or trimer.
+    """
     
     # Prepare a list to append to molecule
-    atomArr = []
+    atom_arr = []
 
     # Read info about each atom
-    for atom in range(int(atomCount)):
+    for atom in range(int(atom_count)):
         fileline = read(inputfile)
-        atomInfo = fileline.split()
+        atom_info = fileline.split()
 
         # Form the atom and add it to list
-        atomArr.append(molecule.atom(atomInfo))  
+        atom_arr.append(molecule.Atom(atom_info))  
 
     # Form the molecule
-    newMol = molecule.molecule(atomArr)
+    new_mol = molecule.Molecule(atom_arr)
 
-    #print(newMol.toString())
-    return newMol
-
-readfile("dimer_input.xyz")
+    #print(new_mol)
+    return new_mol

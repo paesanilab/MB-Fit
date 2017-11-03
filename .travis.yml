@@ -31,8 +31,8 @@ script:
 
     # training set generation
     - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/src; make
-    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; run_test.sh
-    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; run_test_so4.sh
-    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; run_test_fp6.sh
-    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; run_test_trimer_minimum.sh
-    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; run_test_trimer_saddle.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_so4.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_fp6.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_trimer_minimum.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_trimer_saddle.sh

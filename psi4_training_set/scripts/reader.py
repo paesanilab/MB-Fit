@@ -53,8 +53,8 @@ def readfile(datafile):
         
             # Some debug into
             count += 1
-            print(new_mol)
-            print('That was molecule #{}'.format(count))
+            # print(new_mol)
+            # print('That was molecule #{}'.format(count))
 
             # Append molecule into molecules array; this is size 1-3
             molecules.append(new_mol)
@@ -62,7 +62,7 @@ def readfile(datafile):
         # Whether it's a monomer, dimer, trimer, append to compounds
         if len(molecules) == 2:
             new_comp = dimer.Dimer(molecules)
-            print(new_comp)
+            # print(new_comp)
             compounds.append(new_comp)
         else:
             compounds.append(molecules[0])

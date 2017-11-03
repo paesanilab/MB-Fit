@@ -36,7 +36,7 @@ def calculate(mol, args):
 
     # Store the one-body energy into molecule
     mol.set_energy(ref_energy)
-    print(mol.energy)
+    # print(mol.energy)
     
     # Return the energy for file to write out
     return ref_energy

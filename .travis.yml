@@ -2,7 +2,7 @@ dist: trusty
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y netcdf-bin libgsl0-dev libblas-dev liblapack-dev
+  - sudo apt-get install -y gfortran netcdf-bin libgsl0-dev libblas-dev liblapack-dev
 
 install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -28,3 +28,11 @@ script:
 
     # psi4 segfaults on Travis-CI
     #- cd $TRAVIS_BUILD_DIR/psi4_training_set/tests; source activate psi4env; bash test_run_psi4_1B.sh
+
+    # training set generation
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/src; make
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_so4.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_pf6.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_trimer_minimum.sh
+    - cd $TRAVIS_BUILD_DIR/training_set_generation/norm_distribution/scripts; bash run_test_trimer_saddle.sh

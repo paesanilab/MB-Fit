@@ -6,9 +6,9 @@ Reads a file as input and convert it into a list of molecules
 '''
 
 lineNum = 0
-dimer = 0
-trimer = 0
-monomer = 0
+dimer_input = 0
+trimer_input = 0
+monomer_input = 0
 
 def readfile(datafile):
     # Open the input file manually
@@ -20,13 +20,13 @@ def readfile(datafile):
 
     # Determine what to look for
     if "dimer" in datafile:
-        dimer = 1
+        dimer_input = 1
     elif "trimer" in datafile:
-        trimer = 1
+        trimer_input = 1
     # By default, set monomer to true
     else:
-        global monomer
-        monomer = 1
+        global monomer_input
+        monomer_input = 1
 
     while fileline:
         # Empty molecules list
@@ -44,7 +44,7 @@ def readfile(datafile):
 
         # Comment, if dimer or trimer, convert comment into list
         fileline = read(inputfile)
-        if not monomer:
+        if not monomer_input:
             atomCountArr = fileline.split()
         for molCount in range(len(atomCountArr)):
 
@@ -61,7 +61,7 @@ def readfile(datafile):
       
         # Whether it's a monomer, dimer, trimer, append to compounds
         if len(molecules) == 2:
-            newComp = dimer(molecules)
+            newComp = dimer.dimer(molecules)
             print(newComp.toString())
             compounds.append(newComp)
         else:

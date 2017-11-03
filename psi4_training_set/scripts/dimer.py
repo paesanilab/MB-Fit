@@ -50,7 +50,7 @@ class dimer:
     String representation of dimer
     '''
     def toString(self):
-        return self.mol1.toString() + "\n" + self.mol2.toString()
+        return self.mol1.toString() + self.mol2.toString()
 
     '''
     Interaction energy!

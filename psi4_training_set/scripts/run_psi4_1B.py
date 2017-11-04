@@ -116,7 +116,7 @@ for mol in molecules:
         os.makedirs("{}{}/{}".format(pwd, calc_dir, dirname))
 
     # Designate the output file
-    psi4.core.set_output_file("{}{}{}/{}".format(pwd, calc_dir, dirname, 
+    psi4.core.set_output_file("{}{}/{}{}".format(pwd, calc_dir, dirname, 
           output), False)
     
     # Redirect calculation

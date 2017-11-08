@@ -1,4 +1,5 @@
-Python script to perform calculations of energies on one-body molecules.
+Python script to perform calculations of energies on 
+monomers, dimers, and trimers.
 
 To run the script, use the following in the command line:
 

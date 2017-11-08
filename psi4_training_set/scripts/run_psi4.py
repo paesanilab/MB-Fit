@@ -102,6 +102,8 @@ except:
     training_set_file.close()
     sys.exit(1)
 
+print(molecules)
+
 # Perform a calculation for each molecule
 for mol in molecules:
 
@@ -124,8 +126,8 @@ for mol in molecules:
 
     #Writing the one-body training set without 
     #parsing every output file in the end
-    training_set_file.write(str(len(mol.atoms))+
-        '\n'+str("%.8f" % ref_energy)+'\n'+mol_string+'\n')
+    training_set_file.write(str(mol.size()))+
+        '\n'+str(energy_str)+'\n'+mol_string+'\n')
 
 training_set_file.close()
 

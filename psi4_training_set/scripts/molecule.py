@@ -13,11 +13,15 @@ class Molecule:
         self.energy = energy
 
     def __repr__(self):
+
         # Concatenate the atom toString outputs
         atom_str = ""
         for atom in self.atoms:
             atom_str += str(atom) + "\n"
         return atom_str
+
+    def energy_str(self):
+        return "%.8f"%self.energy
 
 class Atom:
 

@@ -9,6 +9,7 @@ import math
 
 from reader import readfile
 import calculate
+import comb
 
 zfill_const = 4
 pwd = './'
@@ -64,7 +65,7 @@ training_set_file = open('./training_set.xyz', 'w')
 #configurations with i_config
 
 
-mol_count = 0
+poly_count = 0
 
 # This section is currently defunct. Will uncomment when issue is resolved
 '''
@@ -95,23 +96,26 @@ for mol in pb.readfile("xyz","input.xyz"):
     # Zeroes should no longer be hardcoded - Derek
 
 # Temporary solution to pybel conflict. See reader.py
+'''
 try:
-    molecules = readfile(args.inputfile)
+    polymers = readfile(args.inputfile)
 except:
     print("Invalid file. Exiting.")
     training_set_file.close()
     sys.exit(1)
-
-print(molecules)
+'''
+polymers = readfile(args.inputfile)
+# print(polymers)
 
 # Perform a calculation for each molecule
-for mol in molecules:
+for polymer in polymers:
 
-    mol_count += 1
-    mol_string = str(mol)
+    poly_count += 1
+    final_energy = 0
+    energy_str = ""
 
-    zeroes = int(math.ceil(len(str(mol_count)) / zfill_const) * zfill_const)
-    dirname = str(mol_count).zfill(zeroes)
+    zeroes = int(math.ceil(len(str(poly_count)) / zfill_const) * zfill_const)
+    dirname = str(poly_count).zfill(zeroes)
 
     # If a calculation does not exist, make a new file for it
     if not os.path.exists("{}{}/{}".format(pwd, calc_dir, dirname)):
@@ -121,13 +125,33 @@ for mol in molecules:
     psi4.core.set_output_file("{}{}/{}{}".format(pwd, calc_dir, dirname, 
           output), False)
     
-    # Redirect calculation
-    ref_energy = calculate.calculate(mol, args)
+    for mol_comb in comb.make_combs(polymer.size()):
+
+        # Determine whether this energy adds or subtracts.
+        # For a trimer, trimer energy is added, dimer energy is subtracted,
+        # and monomer energy is added.
+        #print(polymer.size())
+        #print(len(mol_comb))
+        alternate = (-1)**(polymer.size() - len(mol_comb))
+        #print(alternate)
+
+        # Redirect calculation
+        ref_energy = calculate.calculate(polymer, mol_comb, args)
+        
+        # Add to final energy
+        ref_energy *= alternate
+        print("Energy for this calculation: {}".format(ref_energy))
+        print("Number of molecules: {}".format(len(mol_comb)))
+        energy_str += "%.8f"%ref_energy + " "
+        final_energy += ref_energy
+
+    # Print out the final energy calculation based on several calculations
+    print("Final energy: {}".format(final_energy))
 
     #Writing the one-body training set without 
     #parsing every output file in the end
-    training_set_file.write(str(mol.size()))+
-        '\n'+str(energy_str)+'\n'+mol_string+'\n')
+    training_set_file.write(str(polymer.total_atoms())+
+        '\n'+energy_str+'\n'+str(polymer)+'\n')
 
 training_set_file.close()
 

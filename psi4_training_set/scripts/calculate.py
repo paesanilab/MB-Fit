@@ -1,6 +1,6 @@
 import psi4
 
-def calculate(mol, args):
+def calculate(mol, comb, args):
     """ psi4 calculations file """
 
     # Some constant args from the config
@@ -19,8 +19,11 @@ def calculate(mol, args):
         print("Invalid memory settings.")
         return None
 
+    # Create a polymer combination based on combinations list
+    mol_str = mol.nmer_comb_str(comb)
+
     # Something calculation-related
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(str(mol)) 
+    psi4_mol = psi4.core.Molecule.create_molecule_from_string(mol_str) 
 
     psi4_mol.update_geometry()
    

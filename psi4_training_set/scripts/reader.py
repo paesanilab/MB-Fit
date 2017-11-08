@@ -1,14 +1,12 @@
 import molecule
-import dimer
+import nmer
 
 '''
 Reads a file as input and convert it into a list of molecules
 '''
 
 line_num = 0
-dimer_input = 0
-trimer_input = 0
-monomer_input = 0
+monomer_input = 1
 
 def readfile(datafile):
     # Open the input file manually
@@ -19,14 +17,9 @@ def readfile(datafile):
     atom_count_arr = [1]
 
     # Determine what to look for
-    if "dimer" in datafile:
-        dimer_input = 1
-    elif "trimer" in datafile:
-        trimer_input = 1
-    # By default, set monomer to true
-    else:
+    if "dimer" in datafile or "trimer" in datafile:
         global monomer_input
-        monomer_input = 1
+        monomer_input = 0
 
     while fileline:
         # Empty molecules list
@@ -60,8 +53,8 @@ def readfile(datafile):
             molecules.append(new_mol)
       
         # Whether it's a monomer, dimer, trimer, append to compounds
-        if len(molecules) == 2:
-            new_comp = dimer.Dimer(molecules)
+        if len(molecules) != 1:
+            new_comp = nmer.Nmer(molecules)
             # print(new_comp)
             compounds.append(new_comp)
         else:

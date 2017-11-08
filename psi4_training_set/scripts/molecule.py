@@ -4,13 +4,19 @@ class Molecule:
         self.atoms = []
         for atom in atom_arr:
             self.atoms.append(atom)
-
+    
     def size(self):
+        return 1
+
+    def total_atoms(self):
         return len(self.atoms)
 
     def set_energy(self, energy):
         """ Setter for single-point energy of molecule """
         self.energy = energy
+
+    def nmer_comb_str(self, comb):
+        return str(self)
 
     def __repr__(self):
 

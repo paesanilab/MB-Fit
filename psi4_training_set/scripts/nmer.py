@@ -5,10 +5,14 @@ class Nmer:
         self.mols = molecules
 
     def size(self):
+        """ Gives the total amount of molecules """
+        return len(self.mols)
+
+    def total_atoms(self):
         """ Gives the total atom amount of the dimer """
         total = 0
         for mol in self.mols:
-            total += mol.size()
+            total += mol.total_atoms()
         return total
 
     def set_energy(self, energy):
@@ -18,6 +22,7 @@ class Nmer:
         ret_str = ""
         for mol in self.mols:
             ret_str += str(mol)
+        ret_str = ret_str[:-1]
         return ret_str
 
     def nmer_comb_str(self, comb):

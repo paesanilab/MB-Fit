@@ -6,4 +6,4 @@ spin 1
 convergence 6
 cycles 100
 threshold 11
-input input.xyz
+input trimer_input.xyz

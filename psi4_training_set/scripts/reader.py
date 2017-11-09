@@ -1,9 +1,7 @@
 import molecule
 import nmer
 
-'''
-Reads a file as input and convert it into a list of molecules
-'''
+""" Reads from an input file and converts input into a list of polymers """
 
 line_num = 0
 monomer_input = 1
@@ -72,9 +70,6 @@ def read(readfile):
     
     return line
 
-'''
-Make molecules
-'''
 def form_mol(atom_count, inputfile):
     """ Form molecules based on number of atoms specified by input file
         Returns a molecule that can be by itself, or used to form a dimer

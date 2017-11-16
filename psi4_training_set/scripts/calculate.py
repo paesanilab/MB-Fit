@@ -13,11 +13,11 @@ def calculate(mol, comb, args):
     cycles = args.cycles
     threshold = args.threshold
 
-    try:
-        psi4.set_memory(memory)
-    except:
-        print("Invalid memory settings.")
-        return None
+#   try:
+#       psi4.set_memory(memory)
+#   except:
+#       print("Invalid memory settings.")
+#       return None
 
     # Create a polymer combination based on combinations list
     mol_str = mol.nmer_comb_str(comb)
@@ -31,6 +31,7 @@ def calculate(mol, comb, args):
     # There should be a way to only calculate this once.
     #storing the single-point electronic energy in a variable
     try:
+        psi4.set_num_threads(int(args.threads))
         ref_energy = psi4.energy("{}/{}".format(method, basis), 
             molecule=psi4_mol)
     except:

@@ -40,6 +40,8 @@ parser.add_argument('convergence', type=int)
 parser.add_argument('cycles', type=int)
 parser.add_argument('threshold', type=int)
 parser.add_argument('inputfile', type=str)
+parser.add_argument('threads', type=str)
+
 args = parser.parse_args()
 
 training_set_file = open('./training_set.xyz', 'w')
@@ -86,8 +88,8 @@ for polymer in polymers:
         
         # Add to final energy
         ref_energy *= alternate
-        #print("Energy for this calculation: {}".format(ref_energy))
-        #print("Number of molecules: {}".format(len(mol_comb)))
+        print("Energy for this calculation: {}".format(ref_energy))
+        print("Number of molecules: {}".format(len(mol_comb)))
         energy_str += "%.8f"%ref_energy + " "
         final_energy += ref_energy
 

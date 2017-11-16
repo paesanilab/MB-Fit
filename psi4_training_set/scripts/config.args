@@ -1,9 +1,10 @@
-memory 500MB
+memory 1GB
 method HF
-basis 3-21g
+basis AUG-CC-PV5Z
 charge 0
 spin 1
 convergence 6
 cycles 100
 threshold 11
-input trimer_input.xyz
+input 2mol_trimer.xyz
+threads 6

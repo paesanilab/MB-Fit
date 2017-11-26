@@ -1,0 +1,45 @@
+CXX = g++
+CXXFLAGS = -Wall -g -O2 -m64 -I/opt/intel/mkl/include
+
+COMMON = io-xyz.o rwlsq.o stuff.o training-set-h2o-ion.o wlsq.o \
+	x3b-h2o-ion-base.o x3b-h2o-ion-v1.o electrostatics.o coulomb.o \
+	ion.o ttm4.o gammq.o ps.o poly-3b-h2o-ion-v1x.o
+
+LIBS = -lnetcdf -lgsl -lgslcblas -L/opt/intel/lib/intel64 -L/opt/intel/composer_xe_2015.2.164/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -L/opt/netcdf/4.3.2/intel/openmpi_ib/lib/ -L/opt/gsl/intel/lib/
+
+all: test-x3b fit-x3b-h2o-ion-v1 eval-3b-pot
+
+eval-3b-pot: eval-3b-pot.o $(COMMON)
+	$(CXX) -DFLUORIDE -o eval-3b-pot eval-3b-pot.cpp $(CXXFLAGS) $(LIBS) $(COMMON)
+	mkdir -p ../bin
+	mv eval-3b-pot ../bin
+
+test-x3b: test-x3b.o $(COMMON)
+	$(CXX) -DFLUORIDE -o test-x3b test-x3b.cpp $(CXXFLAGS) $(LIBS) $(COMMON) 
+	mkdir -p ../bin
+	mv test-x3b ../bin
+
+fit-x3b-h2o-ion-v1: fit-x3b-h2o-ion-v1.o $(COMMON)
+	$(CXX) -DFLUORIDE -o fit-x3b-h2o-ion-v1 fit-x3b-h2o-ion-v1.cpp $(CXXFLAGS) $(LIBS) $(COMMON) 
+	mkdir -p ../bin
+	mv fit-x3b-h2o-ion-v1 ../bin
+
+poly-3b-h2o-ion-v1x.o: poly-3b-h2o-ion-v1x.cpp poly-3b-h2o-ion-v1x.h
+io-xyz.o: io-xyz.cpp io-xyz.h
+rwlsq.o: rwlsq.cpp rwlsq.h
+stuff.o: stuff.cpp stuff.h
+training-set-h2o-ion.o: training-set-h2o-ion.cpp training-set-h2o-ion.h
+wlsq.o: wlsq.cpp wlsq.h
+x3b-h2o-ion-base.o: x3b-h2o-ion-base.cpp x3b-h2o-ion-base.h electrostatics.cpp electrostatics.h ttm4.cpp ttm4.h ion.cpp ion.h coulomb.h coulomb.cpp molecule.h
+x3b-h2o-ion-v1.o: x3b-h2o-ion-v1.cpp x3b-h2o-ion-v1.h x3b-h2o-ion-base.h x3b-h2o-ion-base.cpp electrostatics.h electrostatics.cpp ttm4.h ttm4.cpp  ion.h ion.cpp coulomb.h coulomb.cpp molecule.h
+electrostatics.o: electrostatics.cpp electrostatics.h coulomb.cpp coulomb.h constants.h
+coulomb.o: coulomb.cpp coulomb.h gammq.h gammq.cpp
+gammq.o: gammq.h gammq.cpp
+ion.o: molecule.h ion.h ion.cpp fit-constants.h
+ttm4.o: ttm4.h ttm4.cpp ps.cpp ps.h molecule.h fit-constants.h
+ps.o: ps.cpp ps.h
+
+clean:
+	rm -rf *.o *.gch ../bin 
+
+.PHONY: all clean

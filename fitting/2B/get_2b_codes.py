@@ -65,8 +65,8 @@ excl13_b = [[1,2]]
 excl14_b = []
 
 #Obtain charges (in the order of input), pols and polfacs
-chg_a = ['0.454448','-0.227224','-0.227224']
-chg_b = ['0.454448','-0.227224','-0.227224']
+chg_a = ['0.724183','-0.3620915','-0.3620915']
+chg_b = ['0.724183','-0.3620915','-0.3620915']
 pol_a = ['1.43039','0.771519','0.771519']
 pol_b = ['1.43039','0.771519','0.771519']
 polfac_a = ['1.43039','0.771519','0.771519']
@@ -86,23 +86,23 @@ d_max_intra= '3.0'
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
 #C6 = ['310.915','216.702','172.445','172.445']
 #d6 = ['3.20676','3.38985','3.74833','3.0']
-C6 = ['310.915','216.702','172.445']
-d6 = ['3.20676','3.38985','3.74833']
+C6 = ['309.98565664','214.76868974','168.13855718']
+d6 = ['3.66726','4.04045','4.07433']
 
 # Allow user to define Input and output cutoff
 # Save them 
-r2i = 6.0
-r2o = 7.0
+r2i = 7.0
+r2o = 8.0
 
 # FInd a way to get the degree
 #degree = 3
-degree = 4
+degree = 5
 # Find a way to get the number ov variables
 #nvars = 21
 nvars = 15
 # Find a way to get the size of the polynomial
 #npoly = 492
-npoly = 597
+npoly = 2269
 
 # Define kind of variables for intra, inter and lone pairs
 var_intra = 'exp'
@@ -110,7 +110,7 @@ var_lp = 'exp'
 var_inter = 'exp'
 
 # Define Energy Range for the fitting
-E_range = '30.0'
+E_range = '15.0'
 
 # Define list of variables that are fictitious
 vsites = ['Z']

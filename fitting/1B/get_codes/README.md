@@ -31,3 +31,7 @@ contributions to the energy, and numerical and analytical gradients:
  ncgen -o fit-1b.nc fit-1b.cdl
  ```
  - The output will contain all the energies (E_nograd, E_poly ...) previously described
+
+# Multiple fits
+
+It may be necessary to fit a training set several times using different sets of initial guesses for the nonlinear parameters (k-intra, d-intra) in order to find the least possible weighted RMSD.

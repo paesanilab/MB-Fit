@@ -27,3 +27,12 @@
 *.exe
 *.out
 *.app
+
+# Gvim and Python realted
+*.swp
+*.swo
+__pycache__/
+calculations*
+timer.dat
+output.dat
+submit.sh

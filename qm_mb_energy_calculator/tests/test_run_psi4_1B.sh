@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python3 ../scripts/run_psi4_1B.py
+python3 ../scripts/run_psi4_1B.py @../scripts/config.args
 
 diff training_set.xyz expected/training_set.xyz
 

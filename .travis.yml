@@ -16,11 +16,6 @@ install:
 
 language: cpp
 
-before_install:
-    - sudo apt-get update
-    - sudo apt-get install libgsl0ldbl
-    - sudo apt-get install libnetcdf-dev
-
 script:
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh

@@ -1,18 +1,18 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 import sys
 import os
 
 
-# In[2]:
+# In[ ]:
 
 # Check proper if input is provided
 
 
-# In[3]:
+# In[ ]:
 
 if len(sys.argv) != 3:
     print("Usage: ./script <input.in> <poly-direct.cpp_with_path> ")
@@ -22,23 +22,23 @@ else:
     directcpp = sys.argv[2]
 
 
-# In[4]:
+# In[ ]:
 
 # This should be the commandline argument
-#name = "A1B2Z2_D1E2.in"
+#name = "A1B2Z2_C1D2.in"
 #name = "A1B2_A1B2.in"
 f = open(name, 'r')
 mon1 = f.readline().split('\'')[1]
 mon2 = f.readline().split('\'')[1]
 
 
-# In[5]:
+# In[ ]:
 
 # This should be the second command line argument
 #directcpp = 'poly-direct.cpp'
 
 
-# In[6]:
+# In[ ]:
 
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
@@ -105,8 +105,13 @@ nvars = 15
 npoly = 597
 
 # Define kind of variables for intra, inter and lone pairs
-var_intra = 'exp'
-var_lp = 'exp'
+# Options are:
+# exp e^-kd
+# exp0 e^-k(d-d0)
+# coul [e^-k(d-d0)]/r
+# Recomendation is to use exp for intra and inter and coul for lone pairs
+var_intra = 'exp0'
+var_lp = 'coul'
 var_inter = 'exp'
 
 # Define Energy Range for the fitting
@@ -116,13 +121,13 @@ E_range = '30.0'
 vsites = ['Z']
 
 
-# In[7]:
+# In[ ]:
 
 types_a = list(mon1)
 types_b = list(mon2)
 
 
-# In[8]:
+# In[ ]:
 
 # Generating the non linear parameter list
 nlparam = []
@@ -136,20 +141,21 @@ t2 = []
 for i in range(0,len(types_b),2):
     for j in range(int(types_b[i+1])):
         t2.append(types_b[i])
-print(t1)
-print(t2)
 
 
-# In[9]:
+# In[ ]:
 
 # Appending for mon1
+nlp_touse_intra = ['k']
+if var_intra == 'coul' or var_intra == 'exp0':
+    nlp_touse_intra.append('d')
 for i in range(len(t1)):
     if t1[i] in vsites:
         continue
     for j in range(1,len(t1)):
         if t1[j] in vsites:
             continue
-        for nlp in ['d','k']:
+        for nlp in nlp_touse_intra:
             const_intra = nlp + '_intra_' + t1[i] + t1[j]
             if not const_intra in nlparam:
                 nlparam.append(const_intra)
@@ -161,16 +167,28 @@ for i in range(len(t2)):
     for j in range(1,len(t2)):
         if t2[j] in vsites:
             continue
-        for nlp in ['d','k']:
+        for nlp in nlp_touse_intra:
             const_intra = nlp + '_intra_' + t2[i] + t2[j]
             if not const_intra in nlparam:
                 nlparam.append(const_intra)
 
 # Intermolecular
+nlp_touse_inter = ['k']
+nlp_touse_lp = ['k']
+if var_inter == 'coul' or var_inter == 'exp0':
+    nlp_touse_inter.append('d')
+if var_lp == 'coul' or var_lp == 'exp0':
+    nlp_touse_lp.append('d')
+    
 for i in range(len(t1)):
     for j in range(len(t2)):
         p = sorted([t1[i],t2[j]])
-        for nlp in ['d','k']:
+        nlcompare = []
+        if not p[0] in vsites and not p[1] in vsites:
+            nlcompare = nlp_touse_inter
+        else:
+            nlcompare = nlp_touse_lp
+        for nlp in nlcompare:
             const_inter = nlp + '_' + p[0] + p[1]
             if not const_inter in nlparam:
                 nlparam.append(const_inter)
@@ -187,12 +205,8 @@ for i in range(len(t1)):
         if not p[0] in vsites and not p[1] in vsites and not ps in real_pairs:
             real_pairs.append(ps)
 
-print(nlparam)
-print(pairs)
-print(real_pairs)
 
-
-# In[10]:
+# In[ ]:
 
 # Save number in num_nonlinear
 num_nonlinear = len(nlparam)
@@ -201,7 +215,7 @@ num_nonlinear = len(nlparam)
 
 # ## Creating mon1.h and mon2.h
 
-# In[11]:
+# In[ ]:
 
 mon1_class = open('mon1.h','w')
 
@@ -247,7 +261,7 @@ mon1_class.write(str(a))
 mon1_class.close()
 
 
-# In[12]:
+# In[ ]:
 
 mon1_class = open('mon2.h','w')
 
@@ -295,7 +309,7 @@ mon1_class.close()
 
 # ## Creating their cpp files
 
-# In[13]:
+# In[ ]:
 
 ff = open('mon1.cpp','w')
 
@@ -415,7 +429,7 @@ ff.write(a)
 ff.close()
 
 
-# In[14]:
+# In[ ]:
 
 ff = open('mon2.cpp','w')
 
@@ -540,7 +554,7 @@ ff.close()
 # ## Creating water monomer
 # If applicable...
 
-# In[15]:
+# In[ ]:
 
 if is_w != 0:
     ff = open('mon' + str(is_w) + '.cpp','w')
@@ -673,7 +687,7 @@ excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excl
 
 # ## Create training_set.h/cpp files
 
-# In[16]:
+# In[ ]:
 
 ff = open('training_set.h','w')
 a = """
@@ -713,7 +727,7 @@ ff.close()
 
 # ## X2B h file
 
-# In[17]:
+# In[ ]:
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -824,7 +838,7 @@ ff.close()
 
 # ## CPP file
 
-# In[18]:
+# In[ ]:
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1.cpp"
 ff = open(cppname,'w')
@@ -859,7 +873,10 @@ void error(int kode) {
 //----------------------------------------------------------------------------//
 
 struct variable {
-    double v_exp(const double& r0, const double& k,
+    double v_exp0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
     double v_coul(const double& r0, const double& k,
@@ -870,7 +887,7 @@ struct variable {
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-double variable::v_exp(const double& r0, const double& k,
+double variable::v_exp0(const double& r0, const double& k,
                        const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -880,6 +897,27 @@ double variable::v_exp(const double& r0, const double& k,
     const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
 
     const double exp1 = std::exp(k*(r0 - r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_exp(const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(- r));
     const double gg = - k*exp1/r;
 
     g[0] *= gg;
@@ -1237,7 +1275,12 @@ for i in range(0,len(set_m1) - 1):
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            variables = ""
+            if var_intra == 'exp0' or var_intra == 'coul':
+                variables = '(m_d_intra_' + t + ', m_k_intra_' + t
+            else:
+                variables = '(m_k_intra_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 for i in range(0,len(set_m2) - 1):
@@ -1246,7 +1289,12 @@ for i in range(0,len(set_m2) - 1):
         tj = set_m2[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
+            variables = ""
+            if var_intra == 'exp0' or var_intra == 'coul':
+                variables = '(m_d_intra_' + t + ', m_k_intra_' + t
+            else:
+                variables = '(m_k_intra_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + variables + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 # Intermolecular distances
@@ -1259,7 +1307,12 @@ for i in range(0,len(set_m1)):
             var_i = var_inter
         else:
             var_i = var_lp
-        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
+        variables = ""
+        if var_i == 'exp0' or var_i == 'coul':
+            variables = '(m_d_' + t + ', m_k_' + t
+        else:
+            variables = '(m_k_' + t
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + variables + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
         nv = nv + 1
     ff.write('\n')
 
@@ -1382,7 +1435,7 @@ ff.close()
 
 # ## Dispersion.h
 
-# In[19]:
+# In[ ]:
 
 hname = "dispersion.h"
 ff = open(hname,'w')
@@ -1504,7 +1557,7 @@ ff.close()
 
 # ## dispersion.cpp
 
-# In[20]:
+# In[ ]:
 
 cppname = "dispersion.cpp"
 ff = open(cppname,'w')
@@ -1640,7 +1693,7 @@ ff.close()
 
 # ## Fitting routine
 
-# In[21]:
+# In[ ]:
 
 cppname = "fit-2b.cpp"
 ff = open(cppname,'w')
@@ -2116,7 +2169,7 @@ ff.close()
 
 # ## Makefile
 
-# In[22]:
+# In[ ]:
 
 fname = "Makefile"
 ff = open(fname,'w')
@@ -2174,7 +2227,7 @@ ff.close()
 
 # ## Poly_fit_header
 
-# In[23]:
+# In[ ]:
 
 fname = "poly_2b_" + mon1 + "_" + mon2 + ".h"
 ff = open(fname,'w')
@@ -2204,7 +2257,7 @@ ff.close()
 
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
-# In[24]:
+# In[ ]:
 
 fdirect = open(directcpp, 'r')
 fnamecpp = "poly_2b_" + mon1 + "_" + mon2 + ".cpp"
@@ -2239,7 +2292,7 @@ fpolycpp.close()
 
 # ## Evaluation code
 
-# In[25]:
+# In[ ]:
 
 ff = open('eval-2b.cpp','w')
 a = """
@@ -2445,7 +2498,7 @@ ff.close()
 
 # ## X2B.h for software
 
-# In[26]:
+# In[ ]:
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1x.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -2514,7 +2567,7 @@ ff.close()
 
 # ## X2B.cpp for software
 
-# In[27]:
+# In[ ]:
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1x.cpp"
 ff = open(cppname,'w')
@@ -2547,7 +2600,10 @@ void error(int kode) {
 //----------------------------------------------------------------------------//
 
 struct variable {
-    double v_exp(const double& r0, const double& k,
+    double v_exp0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
     double v_coul(const double& r0, const double& k,
@@ -2559,20 +2615,9 @@ struct variable {
     double g[3]; // diff(value, p1 - p2)
 };
 
-//----------------------------------------------------------------------------//
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-void variable::grads(const double& gg, double * grd1, double * grd2, 
-                     const double * p1, const double * p2) {
-    for (size_t i = 0; i < 3 ; i++) {
-        double d = gg*g[i];
-        grd1[i] += d;
-        grd2[i] -= d;
-    }
-}
-
-//----------------------------------------------------------------------------//
-
-double variable::v_exp(const double& r0, const double& k,
+double variable::v_exp0(const double& r0, const double& k,
                        const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -2582,6 +2627,27 @@ double variable::v_exp(const double& r0, const double& k,
     const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
 
     const double exp1 = std::exp(k*(r0 - r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_exp(const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(- r));
     const double gg = - k*exp1/r;
 
     g[0] *= gg;
@@ -2615,6 +2681,19 @@ double variable::v_coul(const double& r0, const double& k,
 
     return val;
 }
+
+//----------------------------------------------------------------------------//
+
+void variable::grads(const double& gg, double * grd1, double * grd2, 
+                     const double * p1, const double * p2) {
+    for (size_t i = 0; i < 3 ; i++) {
+        double d = gg*g[i];
+        grd1[i] += d;
+        grd2[i] -= d;
+    }
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
 struct monomer {
     double oh1[3];
@@ -2910,7 +2989,12 @@ for i in range(0,len(set_m1) - 1):
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            variables = ""
+            if var_intra == 'exp0' or var_intra == 'coul':
+                variables = '(m_d_intra_' + t + ', m_k_intra_' + t
+            else:
+                variables = '(m_k_intra_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 for i in range(0,len(set_m2) - 1):
@@ -2919,7 +3003,12 @@ for i in range(0,len(set_m2) - 1):
         tj = set_m2[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
+            variables = ""
+            if var_intra == 'exp0' or var_intra == 'coul':
+                variables = '(m_d_intra_' + t + ', m_k_intra_' + t
+            else:
+                variables = '(m_k_intra_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + variables + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 # Intermolecular distances
@@ -2932,7 +3021,12 @@ for i in range(0,len(set_m1)):
             var_i = var_inter
         else:
             var_i = var_lp
-        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
+        variables = ""
+        if var_i == 'exp0' or var_i == 'coul':
+            variables = '(m_d_' + t + ', m_k_' + t
+        else:
+            variables = '(m_k_' + t
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + variables + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
         nv = nv + 1
     ff.write('\n')
 a = """     
@@ -3052,7 +3146,12 @@ for i in range(0,len(set_m1) - 1):
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            variables = ""
+            if var_intra == 'exp0' or var_intra == 'coul':
+                variables = '(m_d_intra_' + t + ', m_k_intra_' + t
+            else:
+                variables = '(m_k_intra_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 for i in range(0,len(set_m2) - 1):
@@ -3061,7 +3160,12 @@ for i in range(0,len(set_m2) - 1):
         tj = set_m2[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + '(m_d_intra_' + t + ', m_k_intra_' + t + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
+            variables = ""
+            if var_intra == 'exp0' or var_intra == 'coul':
+                variables = '(m_d_intra_' + t + ', m_k_intra_' + t
+            else:
+                variables = '(m_k_intra_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + variables + ', ' + set_m2[i] + ', ' + set_m2[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 # Intermolecular distances
@@ -3074,7 +3178,12 @@ for i in range(0,len(set_m1)):
             var_i = var_inter
         else:
             var_i = var_lp
-        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
+        variables = ""
+        if var_i == 'exp0' or var_i == 'coul':
+            variables = '(m_d_' + t + ', m_k_' + t
+        else:
+            variables = '(m_k_' + t
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_i + variables + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
         nv = nv + 1
     ff.write('\n')
 a = """     

@@ -1,5 +1,7 @@
 #include <cmath>
 #include <cassert>
+#include <cstdlib>
+#include <ctime>
 
 #include <fstream>
 #include <sstream>
@@ -20,10 +22,10 @@
 #include "x3b-h2o-ion-v1.h"
 #include "training-set-h2o-ion.h"
 
-#define FLUORIDE
+//#define FLUORIDE
 //#define CHLORIDE
 //#define BROMIDE 
-//#define IODIDE  
+#define IODIDE  
 
 #define dont_be_VERBOSE yes
 //#define VERBOSE yes
@@ -169,23 +171,29 @@ int main(int argc, char** argv)
 
     std::cout << "\n<><><> model type = '" << model_type::name() << "'\n";
 
+    //long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+    //            std::chrono::system_clock::now().time_since_epoch()).count();
+    time_t duration = time(NULL);
+
+    srand((long long int)duration);
+    
     {
-        const double x0[] = {
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-            1.00,
-	    1.00,
-	    1.00,
-	    1.00,
-	    2.00
-   	};
+        double x0[14];
+
+        x0[0] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[1] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[2] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[3] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[4] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[5] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[6] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[7] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[8] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[9] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[10] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[11] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[12] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
+        x0[13] = ((double) rand() / (RAND_MAX)) * 7.0 + 0.0; 
         model.set_nonlinear_parameters(x0);
 #ifdef FLUORIDE
         model.set_r3i_r3f(0.0, 6.5); 

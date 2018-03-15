@@ -4,10 +4,10 @@
 #include <cstddef>
 #include "fit-constants.h"
 
-#define FLUORIDE    
+//#define FLUORIDE    
 //#define CHLORIDE    
 //#define BROMIDE     
-//#define IODIDE      
+#define IODIDE      
 
 const double CHARGECON = constants::CHARGECON;
 
@@ -52,11 +52,11 @@ namespace ion {
 #endif
 
 #ifdef BROMIDE      
-	atmpolar[0] = 7.1668; //A^3 from finite field method 
+	atmpolar[0] = 7.1668 //A^3 from finite field method 
 #endif
 
 #ifdef IODIDE       
-	atmpolar[0] =10.1184; //A^3 from finite field method 
+	atmpolar[0]=10.1184; //A^3 from finite field method 
 #endif
 
 	return atmpolar;
@@ -64,7 +64,24 @@ namespace ion {
 
     double* ion::set_polfacs(double* atmpol) {
 	polfac = memory + nsites + nsites*3 + nsites;
-	std::copy(atmpolar, atmpolar + nsites, polfac); //polfac set equal to polar
+#ifdef FLUORIDE     
+  polfac[0] = 2.4669; //A^3 from finite field method 
+#endif
+
+#ifdef CHLORIDE     
+  polfac[0] = 5.3602; //A^3 from finite field method 
+#endif
+
+#ifdef BROMIDE      
+  polfac[0] = 7.1668; //A^3 from finite field method 
+#endif
+
+#ifdef IODIDE       
+  polfac[0] =10.1184; //A^3 from finite field method 
+#endif
+
+//	std::copy(atmpolar, atmpolar + nsites, polfac); //polfac set equal to polar
+
 	return polfac;
     }
 

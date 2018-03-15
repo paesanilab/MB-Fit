@@ -1316,7 +1316,8 @@ bool x3b_h2o_ion_v1::nonlinear_parameters_out_of_range() const //same as MBpol
     const double k_min = 0.0;
 
 //    return 0;
-    return m_kOO < k_min || m_kOH < k_min || m_kHH < k_min
+    return m_kOO < k_min || m_kOH < k_min || m_kHH < k_min 
+  || m_kXO < k_min || m_kXH < k_min
 	|| m_kOH_intra < k_min || m_kHH_intra < k_min;
 //        || m_dOO < 0.0 || m_dHH < 0.0 || m_dOH < 0.0;
 }

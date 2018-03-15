@@ -1726,7 +1726,7 @@ sub check_for_filtered_monomials_and_do_it {
 
             if( scalar@toks != 4){
                 print STDERR "error reading monomial filter request from input, expected format:\n";
-                print STDERR "  >>> add_monomial_filter[4, 'x-intra-HH', 1, max]\n";
+                print STDERR "  >>> add_monomial_filter[4, 'x-intra-HH', 1, 'max']\n";
                 print STDERR " [ * 4 is polynomial order to filter, \n";
                 print STDERR "   * 'x-intra-HH' is the class being filtered,\n";
                 print STDERR "   * 1 is the maximum/minimum allowed order of this class at this poly. order \n";
@@ -1815,10 +1815,11 @@ sub print_input_file_info {
     print STDERR "\n >>>> Example options for input file\n\n";
     print STDERR "add_molecule['O1H2']\n\n";
     print STDERR "add_variable['H1', 'a', 'H2', 'a', 'x-intra-HH']\n\n";
-    print STDERR "add_monomial_filter[4, 'x-intra-HH', 1]\n";
+    print STDERR "add_monomial_filter[4, 'x-intra-HH', 1, min/max]\n";
     print STDERR " >   4 is polynomial order to filter, \n";
     print STDERR " >   'x-intra-HH' is the class being filtered,\n";
-    print STDERR " >   1 is the maximum allowed order of this class at this poly. order\n";
+    print STDERR " >   1 is the maximum/minimum allowed order of this class at this poly. order\n";
+    print STDERR " >   max/min specifies if the order allowed is maximum or minimum\n";
     print STDERR "\n\n";
 
 }

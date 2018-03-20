@@ -1,0 +1,78 @@
+<> atoms <> Oa:Ha1:Ha2:Xa1:Xa2:Ob:Hb1:Hb2:Xb1:Xb2
+
+<> permutations <>
+
+0:1:2:3:4:5:6:7:8:9
+5:6:7:8:9:0:1:2:3:4
+0:1:2:3:4:5:6:7:9:8
+5:6:7:9:8:0:1:2:3:4
+0:1:2:3:4:5:7:6:8:9
+5:7:6:8:9:0:1:2:3:4
+0:1:2:3:4:5:7:6:9:8
+5:7:6:9:8:0:1:2:3:4
+0:1:2:4:3:5:6:7:8:9
+5:6:7:8:9:0:1:2:4:3
+0:1:2:4:3:5:6:7:9:8
+5:6:7:9:8:0:1:2:4:3
+0:1:2:4:3:5:7:6:8:9
+5:7:6:8:9:0:1:2:4:3
+0:1:2:4:3:5:7:6:9:8
+5:7:6:9:8:0:1:2:4:3
+0:2:1:3:4:5:6:7:8:9
+5:6:7:8:9:0:2:1:3:4
+0:2:1:3:4:5:6:7:9:8
+5:6:7:9:8:0:2:1:3:4
+0:2:1:3:4:5:7:6:8:9
+5:7:6:8:9:0:2:1:3:4
+0:2:1:3:4:5:7:6:9:8
+5:7:6:9:8:0:2:1:3:4
+0:2:1:4:3:5:6:7:8:9
+5:6:7:8:9:0:2:1:4:3
+0:2:1:4:3:5:6:7:9:8
+5:6:7:9:8:0:2:1:4:3
+0:2:1:4:3:5:7:6:8:9
+5:7:6:8:9:0:2:1:4:3
+0:2:1:4:3:5:7:6:9:8
+5:7:6:9:8:0:2:1:4:3
+
+<> variables (31)<>
+
+Ha1 <===> Ha2 : x-intra
+Hb1 <===> Hb2 : x-intra
+ Oa <===> Ha1 : x-intra
+ Oa <===> Ha2 : x-intra
+ Ob <===> Hb1 : x-intra
+ Ob <===> Hb2 : x-intra
+Ha1 <===> Hb1 : x-coul
+Ha1 <===> Hb2 : x-coul
+Ha2 <===> Hb1 : x-coul
+Ha2 <===> Hb2 : x-coul
+ Oa <===> Hb1 : x-coul
+ Oa <===> Hb2 : x-coul
+ Ob <===> Ha1 : x-coul
+ Ob <===> Ha2 : x-coul
+ Oa <===>  Ob : x-coul
+Xa1 <===> Hb1 : x-main
+Xa1 <===> Hb2 : x-main
+Xa2 <===> Hb1 : x-main
+Xa2 <===> Hb2 : x-main
+Xb1 <===> Ha1 : x-main
+Xb1 <===> Ha2 : x-main
+Xb2 <===> Ha1 : x-main
+Xb2 <===> Ha2 : x-main
+ Oa <===> Xb1 : x-main
+ Oa <===> Xb2 : x-main
+ Ob <===> Xa1 : x-main
+ Ob <===> Xa2 : x-main
+Xa1 <===> Xb1 : x-main
+Xa1 <===> Xb2 : x-main
+Xa2 <===> Xb1 : x-main
+Xa2 <===> Xb2 : x-main
+31 of all possible 1st degree monomials
+6 1st degree 2B orbits
+475 of all possible (filtered) 2nd degree monomials
+63 2nd degree 2B orbits
+5400 of all possible (filtered) 3rd degree monomials
+491 3rd degree 2B orbits
+6825 of all possible (filtered) 4th degree monomials
+593 4th degree 2B orbits

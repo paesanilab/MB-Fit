@@ -140,7 +140,7 @@ foreach my $p1 (@{$molec_permutations[0]}) {
                     }
                     if($molecules[1] eq $molecules[2] && $molecules[0] eq $molecules[2]){
                         push @{$atom_permutations}, [@xp2, @xp3, @xp1];
-                        push @{$atom_permutations}, [@xp2, @xp1, @xp2];
+                        push @{$atom_permutations}, [@xp3, @xp1, @xp2];
                     }
                 }
             }else{ # 2-body

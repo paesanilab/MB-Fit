@@ -1,16 +1,30 @@
 #!/bin/bash 
 
-./../../src/poly-gen_mb-nrg.pl 2 clh2o_2.in > clh2o_2.log 
-## Testing Cl-(H2O)2
-diff clh2o_2.log clh2o_2_expected/clh2o_2.log  
-exit_code=$?
+generator=$(pwd)/../../src/poly-gen_mb-nrg.pl
 
-if [ $exit_code -ne 0 ]
-then
-    echo "Cl-(H2O)2 failed!!"
-    exit $exit_code
-else
-    echo "Cl-(H2O)2 passed!"
-    rm *log poly* vars.cpp
-fi
+run_test() {
+    test=$1
+    order=$2
+    pushd $test > /dev/null
+    $generator $order $test.in > $test.log
+    diff $test.log expected/$test.log
+    exit_code=$?
+    if [ $exit_code -ne 0 ]
+    then
+	echo "$test failed!!"
+	exit $exit_code
+    else
+	echo "$test passed!"
+	rm *log poly* vars.cpp
+    fi
+    popd > /dev/null
+}
+
+order=2
+test="clh2o_2"
+run_test $test $order
+
+order=4
+test="mb-pol-3b"
+run_test $test $order
 

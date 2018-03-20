@@ -21,8 +21,8 @@ my $input_file = shift;
 #####
 # Check for maximum polynomial order currently supported
 #####
-if ($poly_order > 6){
-    die "Polynomial order > 6 not implemented.\n";
+if ($poly_order > 20){
+    die "Polynomial order > 20 not implemented.\n";
 }
 
 #####
@@ -137,6 +137,10 @@ foreach my $p1 (@{$molec_permutations[0]}) {
                     }
                     if($molecules[1] eq $molecules[2]){# B == C
                         push @{$atom_permutations}, [@xp1, @xp3, @xp2];
+                    }
+                    if($molecules[1] eq $molecules[2] && $molecules[0] eq $molecules[2]){
+                        push @{$atom_permutations}, [@xp2, @xp3, @xp1];
+                        push @{$atom_permutations}, [@xp3, @xp1, @xp2];
                     }
                 }
             }else{ # 2-body
@@ -406,6 +410,867 @@ if($poly_order > 5){
 
 }
 
+# loop over 7th degree monomials
+my $mono7_orb = undef;
+if($poly_order > 6){
+
+    print "\n<> 7th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				my @mono = (0) x $nvar;
+				$mono[$k1] += 1;
+				$mono[$k2] += 1;
+				$mono[$k3] += 1;
+				$mono[$k4] += 1;
+				$mono[$k5] += 1;
+				$mono[$k6] += 1;
+				$mono[$k7] += 1;
+				$mono_all{join(':', @mono)} = undef;
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 7);
+
+    print scalar keys %mono_all, " possible (filtered) 7th degree monomials\n";
+    $mono7_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono7_orb});
+
+    print scalar @{$mono7_orb}, " <<== accepted 7th degree terms\n";
+
+}
+
+# loop over 8th degree monomials
+my $mono8_orb = undef;
+if($poly_order > 7){
+
+    print "\n<> 8th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    my @mono = (0) x $nvar;
+				    $mono[$k1] += 1;
+				    $mono[$k2] += 1;
+				    $mono[$k3] += 1;
+				    $mono[$k4] += 1;
+				    $mono[$k5] += 1;
+				    $mono[$k6] += 1;
+				    $mono[$k7] += 1;
+				    $mono[$k8] += 1;
+				    $mono_all{join(':', @mono)} = undef;
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 8);
+
+    print scalar keys %mono_all, " possible (filtered) 8th degree monomials\n";
+    $mono8_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono8_orb});
+
+    print scalar @{$mono8_orb}, " <<== accepted 8th degree terms\n";
+
+}
+
+# loop over 9th degree monomials
+my $mono9_orb = undef;
+if($poly_order > 8){
+
+    print "\n<> 9th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					my @mono = (0) x $nvar;
+					$mono[$k1] += 1;
+					$mono[$k2] += 1;
+					$mono[$k3] += 1;
+					$mono[$k4] += 1;
+					$mono[$k5] += 1;
+					$mono[$k6] += 1;
+					$mono[$k7] += 1;
+					$mono[$k8] += 1;
+					$mono[$k9] += 1;
+					$mono_all{join(':', @mono)} = undef;
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 9);
+
+    print scalar keys %mono_all, " possible (filtered) 9th degree monomials\n";
+    $mono9_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono9_orb});
+
+    print scalar @{$mono9_orb}, " <<== accepted 9th degree terms\n";
+
+}
+
+# loop over 10th degree monomials
+my $mono10_orb = undef;
+if($poly_order > 9){
+
+    print "\n<> 10th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    my @mono = (0) x $nvar;
+					    $mono[$k1] += 1;
+					    $mono[$k2] += 1;
+					    $mono[$k3] += 1;
+					    $mono[$k4] += 1;
+					    $mono[$k5] += 1;
+					    $mono[$k6] += 1;
+					    $mono[$k7] += 1;
+					    $mono[$k8] += 1;
+					    $mono[$k9] += 1;
+					    $mono[$k10] += 1;
+					    $mono_all{join(':', @mono)} = undef;
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 10);
+
+    print scalar keys %mono_all, " possible (filtered) 10th degree monomials\n";
+    $mono10_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono10_orb});
+
+    print scalar @{$mono10_orb}, " <<== accepted 10th degree terms\n";
+
+}
+
+# loop over 11th degree monomials
+my $mono11_orb = undef;
+if($poly_order > 10){
+
+    print "\n<> 11th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						my @mono = (0) x $nvar;
+						$mono[$k1] += 1;
+						$mono[$k2] += 1;
+						$mono[$k3] += 1;
+						$mono[$k4] += 1;
+						$mono[$k5] += 1;
+						$mono[$k6] += 1;
+						$mono[$k7] += 1;
+						$mono[$k8] += 1;
+						$mono[$k9] += 1;
+						$mono[$k10] += 1;
+						$mono[$k11] += 1;
+						$mono_all{join(':', @mono)} = undef;
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 11);
+
+    print scalar keys %mono_all, " possible (filtered) 11th degree monomials\n";
+    $mono11_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono11_orb});
+
+    print scalar @{$mono11_orb}, " <<== accepted 11th degree terms\n";
+
+}
+
+# loop over 12th degree monomials
+my $mono12_orb = undef;
+if($poly_order > 11){
+
+    print "\n<> 12th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    my @mono = (0) x $nvar;
+						    $mono[$k1] += 1;
+						    $mono[$k2] += 1;
+						    $mono[$k3] += 1;
+						    $mono[$k4] += 1;
+						    $mono[$k5] += 1;
+						    $mono[$k6] += 1;
+						    $mono[$k7] += 1;
+						    $mono[$k8] += 1;
+						    $mono[$k9] += 1;
+						    $mono[$k10] += 1;
+						    $mono[$k11] += 1;
+						    $mono[$k12] += 1;
+						    $mono_all{join(':', @mono)} = undef;
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 12);
+
+    print scalar keys %mono_all, " possible (filtered) 12th degree monomials\n";
+    $mono12_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono12_orb});
+
+    print scalar @{$mono12_orb}, " <<== accepted 12th degree terms\n";
+
+}
+
+# loop over 13th degree monomials
+my $mono13_orb = undef;
+if($poly_order > 12){
+
+    print "\n<> 13th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							my @mono = (0) x $nvar;
+							$mono[$k1] += 1;
+							$mono[$k2] += 1;
+							$mono[$k3] += 1;
+							$mono[$k4] += 1;
+							$mono[$k5] += 1;
+							$mono[$k6] += 1;
+							$mono[$k7] += 1;
+							$mono[$k8] += 1;
+							$mono[$k9] += 1;
+							$mono[$k10] += 1;
+							$mono[$k11] += 1;
+							$mono[$k12] += 1;
+							$mono[$k13] += 1;
+							$mono_all{join(':', @mono)} = undef;
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 13);
+
+    print scalar keys %mono_all, " possible (filtered) 13th degree monomials\n";
+    $mono13_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono13_orb});
+
+    print scalar @{$mono13_orb}, " <<== accepted 13th degree terms\n";
+
+}
+
+# loop over 14th degree monomials
+my $mono14_orb = undef;
+if($poly_order > 13){
+
+    print "\n<> 14th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    my @mono = (0) x $nvar;
+							    $mono[$k1] += 1;
+							    $mono[$k2] += 1;
+							    $mono[$k3] += 1;
+							    $mono[$k4] += 1;
+							    $mono[$k5] += 1;
+							    $mono[$k6] += 1;
+							    $mono[$k7] += 1;
+							    $mono[$k8] += 1;
+							    $mono[$k9] += 1;
+							    $mono[$k10] += 1;
+							    $mono[$k11] += 1;
+							    $mono[$k12] += 1;
+							    $mono[$k13] += 1;
+							    $mono[$k14] += 1;
+							    $mono_all{join(':', @mono)} = undef;
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 14);
+
+    print scalar keys %mono_all, " possible (filtered) 14th degree monomials\n";
+    $mono14_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono14_orb});
+
+    print scalar @{$mono14_orb}, " <<== accepted 14th degree terms\n";
+
+}
+
+# loop over 15th degree monomials
+my $mono15_orb = undef;
+if($poly_order > 14){
+
+    print "\n<> 15th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    for (my $k15 = 0; $k15 < $nvar; ++$k15) {
+								my @mono = (0) x $nvar;
+								$mono[$k1] += 1;
+								$mono[$k2] += 1;
+								$mono[$k3] += 1;
+								$mono[$k4] += 1;
+								$mono[$k5] += 1;
+								$mono[$k6] += 1;
+								$mono[$k7] += 1;
+								$mono[$k8] += 1;
+								$mono[$k9] += 1;
+								$mono[$k10] += 1;
+								$mono[$k11] += 1;
+								$mono[$k12] += 1;
+								$mono[$k13] += 1;
+								$mono[$k14] += 1;
+								$mono[$k15] += 1;
+								$mono_all{join(':', @mono)} = undef;
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 15);
+
+    print scalar keys %mono_all, " possible (filtered) 15th degree monomials\n";
+    $mono15_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono15_orb});
+
+    print scalar @{$mono15_orb}, " <<== accepted 15th degree terms\n";
+
+}
+
+# loop over 16th degree monomials
+my $mono16_orb = undef;
+if($poly_order > 15){
+
+    print "\n<> 16th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    for (my $k15 = 0; $k15 < $nvar; ++$k15) {
+								for (my $k16 = 0; $k16 < $nvar; ++$k16) {
+								    my @mono = (0) x $nvar;
+								    $mono[$k1] += 1;
+								    $mono[$k2] += 1;
+								    $mono[$k3] += 1;
+								    $mono[$k4] += 1;
+								    $mono[$k5] += 1;
+								    $mono[$k6] += 1;
+								    $mono[$k7] += 1;
+								    $mono[$k8] += 1;
+								    $mono[$k9] += 1;
+								    $mono[$k10] += 1;
+								    $mono[$k11] += 1;
+								    $mono[$k12] += 1;
+								    $mono[$k13] += 1;
+								    $mono[$k14] += 1;
+								    $mono[$k15] += 1;
+								    $mono[$k16] += 1;
+								    $mono_all{join(':', @mono)} = undef;
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 16);
+
+    print scalar keys %mono_all, " possible (filtered) 16th degree monomials\n";
+    $mono16_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono16_orb});
+
+    print scalar @{$mono16_orb}, " <<== accepted 16th degree terms\n";
+
+}
+
+# loop over 17th degree monomials
+my $mono17_orb = undef;
+if($poly_order > 16){
+
+    print "\n<> 17th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    for (my $k15 = 0; $k15 < $nvar; ++$k15) {
+								for (my $k16 = 0; $k16 < $nvar; ++$k16) {
+								    for (my $k17 = 0; $k17 < $nvar; ++$k17) {
+									my @mono = (0) x $nvar;
+									$mono[$k1] += 1;
+									$mono[$k2] += 1;
+									$mono[$k3] += 1;
+									$mono[$k4] += 1;
+									$mono[$k5] += 1;
+									$mono[$k6] += 1;
+									$mono[$k7] += 1;
+									$mono[$k8] += 1;
+									$mono[$k9] += 1;
+									$mono[$k10] += 1;
+									$mono[$k11] += 1;
+									$mono[$k12] += 1;
+									$mono[$k13] += 1;
+									$mono[$k14] += 1;
+									$mono[$k15] += 1;
+									$mono[$k16] += 1;
+									$mono[$k17] += 1;
+									$mono_all{join(':', @mono)} = undef;
+								    }
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 17);
+
+    print scalar keys %mono_all, " possible (filtered) 17th degree monomials\n";
+    $mono17_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono17_orb});
+
+    print scalar @{$mono17_orb}, " <<== accepted 17th degree terms\n";
+
+}
+
+# loop over 18th degree monomials
+my $mono18_orb = undef;
+if($poly_order > 17){
+
+    print "\n<> 18th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    for (my $k15 = 0; $k15 < $nvar; ++$k15) {
+								for (my $k16 = 0; $k16 < $nvar; ++$k16) {
+								    for (my $k17 = 0; $k17 < $nvar; ++$k17) {
+									for (my $k18 = 0; $k18 < $nvar; ++$k18) {
+									    my @mono = (0) x $nvar;
+									    $mono[$k1] += 1;
+									    $mono[$k2] += 1;
+									    $mono[$k3] += 1;
+									    $mono[$k4] += 1;
+									    $mono[$k5] += 1;
+									    $mono[$k6] += 1;
+									    $mono[$k7] += 1;
+									    $mono[$k8] += 1;
+									    $mono[$k9] += 1;
+									    $mono[$k10] += 1;
+									    $mono[$k11] += 1;
+									    $mono[$k12] += 1;
+									    $mono[$k13] += 1;
+									    $mono[$k14] += 1;
+									    $mono[$k15] += 1;
+									    $mono[$k16] += 1;
+									    $mono[$k17] += 1;
+									    $mono[$k18] += 1;
+									    $mono_all{join(':', @mono)} = undef;
+									}
+								    }
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 18);
+
+    print scalar keys %mono_all, " possible (filtered) 18th degree monomials\n";
+    $mono18_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono18_orb});
+
+    print scalar @{$mono18_orb}, " <<== accepted 18th degree terms\n";
+
+}
+
+# loop over 19th degree monomials
+my $mono19_orb = undef;
+if($poly_order > 18){
+
+    print "\n<> 19th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    for (my $k15 = 0; $k15 < $nvar; ++$k15) {
+								for (my $k16 = 0; $k16 < $nvar; ++$k16) {
+								    for (my $k17 = 0; $k17 < $nvar; ++$k17) {
+									for (my $k18 = 0; $k18 < $nvar; ++$k18) {
+									    for (my $k19 = 0; $k19 < $nvar; ++$k19) {
+										my @mono = (0) x $nvar;
+										$mono[$k1] += 1;
+										$mono[$k2] += 1;
+										$mono[$k3] += 1;
+										$mono[$k4] += 1;
+										$mono[$k5] += 1;
+										$mono[$k6] += 1;
+										$mono[$k7] += 1;
+										$mono[$k8] += 1;
+										$mono[$k9] += 1;
+										$mono[$k10] += 1;
+										$mono[$k11] += 1;
+										$mono[$k12] += 1;
+										$mono[$k13] += 1;
+										$mono[$k14] += 1;
+										$mono[$k15] += 1;
+										$mono[$k16] += 1;
+										$mono[$k17] += 1;
+										$mono[$k18] += 1;
+										$mono[$k19] += 1;
+										$mono_all{join(':', @mono)} = undef;
+									    }
+									}
+								    }
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 19);
+
+    print scalar keys %mono_all, " possible (filtered) 19th degree monomials\n";
+    $mono19_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono19_orb});
+
+    print scalar @{$mono19_orb}, " <<== accepted 19th degree terms\n";
+
+}
+
+# loop over 20th degree monomials
+my $mono20_orb = undef;
+if($poly_order > 19){
+
+    print "\n<> 20th degree <>\n\n";
+
+    my %mono_all;
+    for (my $k1 = 0; $k1 < $nvar; ++$k1) {
+        for (my $k2 = 0; $k2 < $nvar; ++$k2) {
+            for (my $k3 = 0; $k3 < $nvar; ++$k3) {
+                for (my $k4 = 0; $k4 < $nvar; ++$k4) {
+                    for (my $k5 = 0; $k5 < $nvar; ++$k5) {
+                        for (my $k6 = 0; $k6 < $nvar; ++$k6) {
+			    for (my $k7 = 0; $k7 < $nvar; ++$k7) {
+				for (my $k8 = 0; $k8 < $nvar; ++$k8) {
+				    for (my $k9 = 0; $k9 < $nvar; ++$k9) {
+					for (my $k10 = 0; $k10 < $nvar; ++$k10) {
+					    for (my $k11 = 0; $k11 < $nvar; ++$k11) {
+						for (my $k12 = 0; $k12 < $nvar; ++$k12) {
+						    for (my $k13 = 0; $k13 < $nvar; ++$k13) {
+							for (my $k14 = 0; $k14 < $nvar; ++$k14) {
+							    for (my $k15 = 0; $k15 < $nvar; ++$k15) {
+								for (my $k16 = 0; $k16 < $nvar; ++$k16) {
+								    for (my $k17 = 0; $k17 < $nvar; ++$k17) {
+									for (my $k18 = 0; $k18 < $nvar; ++$k18) {
+									    for (my $k19 = 0; $k19 < $nvar; ++$k19) {
+										for (my $k20 = 0; $k20 < $nvar; ++$k20) {
+										    my @mono = (0) x $nvar;
+										    $mono[$k1] += 1;
+										    $mono[$k2] += 1;
+										    $mono[$k3] += 1;
+										    $mono[$k4] += 1;
+										    $mono[$k5] += 1;
+										    $mono[$k6] += 1;
+										    $mono[$k7] += 1;
+										    $mono[$k8] += 1;
+										    $mono[$k9] += 1;
+										    $mono[$k10] += 1;
+										    $mono[$k11] += 1;
+										    $mono[$k12] += 1;
+										    $mono[$k13] += 1;
+										    $mono[$k14] += 1;
+										    $mono[$k15] += 1;
+										    $mono[$k16] += 1;
+										    $mono[$k17] += 1;
+										    $mono[$k18] += 1;
+										    $mono[$k19] += 1;
+										    $mono[$k20] += 1;
+										    $mono_all{join(':', @mono)} = undef;
+										}
+									    }
+									}
+								    }
+								}
+							    }
+							}
+						    }
+						}
+					    }
+					}
+				    }
+				}
+			    }
+		      	}
+                    }
+                }
+            }
+        }
+    }
+
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 20);
+
+    print scalar keys %mono_all, " possible (filtered) 20th degree monomials\n";
+    $mono20_orb = find_orbits(\%mono_all);
+    die unless scalar(keys %mono_all) == 0;
+    $tot_terms += scalar(@{$mono20_orb});
+
+    print scalar @{$mono20_orb}, " <<== accepted 20th degree terms\n";
+
+}
+
 print "\n Total number of terms: $tot_terms\n";
 
 &print_cpp_header($tot_terms, scalar@variables);
@@ -456,6 +1321,118 @@ if($poly_order > 4){
 if($poly_order > 5){
     &print_orbits($i0, $mono6_orb);
     $i0 += scalar(@{$mono6_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 6){
+    &print_orbits($i0, $mono7_orb);
+    $i0 += scalar(@{$mono7_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 7){
+    &print_orbits($i0, $mono8_orb);
+    $i0 += scalar(@{$mono8_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 8){
+    &print_orbits($i0, $mono9_orb);
+    $i0 += scalar(@{$mono9_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 9){
+    &print_orbits($i0, $mono10_orb);
+    $i0 += scalar(@{$mono10_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 10){
+    &print_orbits($i0, $mono11_orb);
+    $i0 += scalar(@{$mono11_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 11){
+    &print_orbits($i0, $mono12_orb);
+    $i0 += scalar(@{$mono12_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 12){
+    &print_orbits($i0, $mono13_orb);
+    $i0 += scalar(@{$mono13_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 13){
+    &print_orbits($i0, $mono14_orb);
+    $i0 += scalar(@{$mono14_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 14){
+    &print_orbits($i0, $mono15_orb);
+    $i0 += scalar(@{$mono15_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 15){
+    &print_orbits($i0, $mono16_orb);
+    $i0 += scalar(@{$mono16_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 16){
+    &print_orbits($i0, $mono17_orb);
+    $i0 += scalar(@{$mono17_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 17){
+    &print_orbits($i0, $mono18_orb);
+    $i0 += scalar(@{$mono18_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 18){
+    &print_orbits($i0, $mono19_orb);
+    $i0 += scalar(@{$mono19_orb});
+    print OUT_CPP "\n";
+    print OUT_MAPLE_NOGRD "\n";
+    print OUT_MAPLE_GRD "\n";
+}
+
+if($poly_order > 19){
+    &print_orbits($i0, $mono20_orb);
+    $i0 += scalar(@{$mono20_orb});
     print OUT_CPP "\n";
     print OUT_MAPLE_NOGRD "\n";
     print OUT_MAPLE_GRD "\n";
@@ -747,18 +1724,24 @@ sub check_for_filtered_monomials_and_do_it {
 
             my @toks = split(/\s+/, $line);
 
-            if( scalar@toks != 3){
+            if( scalar@toks != 4){
                 print STDERR "error reading monomial filter request from input, expected format:\n";
-                print STDERR "  >>> add_monomial_filter[4, 'x-intra-HH', 1]\n";
+                print STDERR "  >>> add_monomial_filter[4, 'x-intra-HH', 1, 'max']\n";
                 print STDERR " [ * 4 is polynomial order to filter, \n";
                 print STDERR "   * 'x-intra-HH' is the class being filtered,\n";
-                print STDERR "   * 1 is the maximum allowed order of this class at this poly. order]\n";
+                print STDERR "   * 1 is the maximum/minimum allowed order of this class at this poly. order \n";
+                print STDERR "   * min/max indicates if 1 is the minimum or maximum.]\n";
+                print STDERR " If max defined, all terms with degree LARGER than max will be discarded.\n";
+                print STDERR " If min defined, all terms with degree LOWER than min will be discarded.\n";
 
                 die;
             }
 
-            if($toks[0] == $poly_order){
-                &filter_monomials($r_mono_all, $toks[1], $toks[2])
+            if($toks[0] == $poly_order && $toks[3] eq "max"){
+                &filter_monomials($r_mono_all, $toks[1], $toks[2]);
+            }
+            if($toks[0] == $poly_order && $toks[3] eq "min"){
+                &filter_monomials_at_least($r_mono_all, $toks[1], $toks[2]);
             }
         }
     }
@@ -833,10 +1816,11 @@ sub print_input_file_info {
     print STDERR "\n >>>> Example options for input file\n\n";
     print STDERR "add_molecule['O1H2']\n\n";
     print STDERR "add_variable['H1', 'a', 'H2', 'a', 'x-intra-HH']\n\n";
-    print STDERR "add_monomial_filter[4, 'x-intra-HH', 1]\n";
+    print STDERR "add_monomial_filter[4, 'x-intra-HH', 1, min/max]\n";
     print STDERR " >   4 is polynomial order to filter, \n";
     print STDERR " >   'x-intra-HH' is the class being filtered,\n";
-    print STDERR " >   1 is the maximum allowed order of this class at this poly. order\n";
+    print STDERR " >   1 is the maximum/minimum allowed order of this class at this poly. order\n";
+    print STDERR " >   max/min specifies if the order allowed is maximum or minimum\n";
     print STDERR "\n\n";
 
 }

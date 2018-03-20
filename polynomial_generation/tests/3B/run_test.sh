@@ -1,13 +1,10 @@
 #!/bin/bash 
 
 generator=$(pwd)/../../src/poly-gen_mb-nrg.pl
-order=2
 
-tests="clh2o_2"
-
-for test in $tests
-do
-
+run_test() {
+    test=$1
+    order=$2
     pushd $test > /dev/null
     $generator $order $test.in > $test.log
     diff $test.log expected/$test.log
@@ -21,7 +18,13 @@ do
 	rm *log poly* vars.cpp
     fi
     popd > /dev/null
-    
-done
+}
 
+order=2
+test="clh2o_2"
+run_test $test $order
+
+order=4
+test="mb-pol-3b"
+run_test $test $order
 

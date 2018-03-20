@@ -1731,7 +1731,8 @@ sub check_for_filtered_monomials_and_do_it {
                 print STDERR "   * 'x-intra-HH' is the class being filtered,\n";
                 print STDERR "   * 1 is the maximum/minimum allowed order of this class at this poly. order \n";
                 print STDERR "   * min/max indicates if 1 is the minimum or maximum.]\n";
-                print STDERR " If max defined, all terms with degree LARGER than max will be discarted. If min defined, all terms with degree LOWER than min will be discarted.\n";
+                print STDERR " If max defined, all terms with degree LARGER than max will be discarded.\n";
+                print STDERR " If min defined, all terms with degree LOWER than min will be discarded.\n";
 
                 die;
             }

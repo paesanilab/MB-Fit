@@ -12,3 +12,22 @@ energy functions (1B, 2B, 3B):
    - Code to generate polynomials functions
    - Fitting codes
 
+
+## Single script
+
+`run.py` is a single script that executes all the steps of polynomial fitting.
+
+First create a folder, as an example see the `B1F4` folder in the repository.
+Inside this folder, create a configuration file `config.ini` that contains all
+the configuration options. See for example `B1F4/config.ini`.
+
+Then we assume that all of the tools in this repository will be installed and
+available in the path. Currently we do not install them so we modify the path
+by running:
+
+    source set_path.sh
+
+Finally we can run the script:
+
+    cd B1F4
+    python ../run.py config.ini

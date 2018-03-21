@@ -61,6 +61,6 @@ os.chdir("fitting")
 
 # ### Setup fitting and compile
 
-execute(['prepare_1b_fitting_code.sh', '../'+input_file, '../polynomial_generation/', "/home/azonca/Paesani/potential_fitting/fitting/1B/get_codes/template", '../config.ini'])
+execute(['prepare_1b_fitting_code.sh', '../'+input_file, '../polynomial_generation/', "fitting/1B/get_codes/template", '../config.ini'])
 
 execute(["./fit-1b", config.get("fitting", "training_set_file")])

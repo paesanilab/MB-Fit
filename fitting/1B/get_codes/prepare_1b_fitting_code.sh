@@ -11,7 +11,7 @@ fi
 INPUT=$1
 POLY_CPP_PATH=../polynomial_generation
 TEMPLATE_PATH=$3
-PYTHON_SCRIPT=/home/azonca/Paesani/potential_fitting/fitting/1B/get_codes/get-1b-fit.py #FIXME require this to be in the PATH
+PYTHON_SCRIPT=get-1b-fit.py
 
 # Getting the system name
 FNAME=$(basename "${INPUT}")

@@ -1,17 +1,17 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]; then
-  echo "USAGE: $0 <arg1> <arg2> <arg3> <arg4>"
+if [ $# -ne 3 ]; then
+  echo "USAGE: $0 <arg1> <arg2>"
   echo "Arg 1 is the absolute path to the .in file used to generate the polynomials"
   echo "Arg 2 is the path to the folder were the poly*.cpp files are."
-  echo "Arg 3 is the path to the files inside the template folder"
   exit
 fi
 
 INPUT=$1
 POLY_CPP_PATH=../polynomial_generation
-TEMPLATE_PATH=$3
 PYTHON_SCRIPT=get-1b-fit.py
+PYTHON_SCRIPT_PATH=$(which $PYTHON_SCRIPT)
+TEMPLATE_PATH=${PYTHON_SCRIPT_PATH/get-1b-fit.py/template}
 
 # Getting the system name
 FNAME=$(basename "${INPUT}")

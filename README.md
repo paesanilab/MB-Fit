@@ -15,7 +15,7 @@ energy functions (1B, 2B, 3B):
 
 ## Single script
 
-`run.py` is a single script that executes all the steps of polynomial fitting.
+`generate_1b_fitcode.py` is a single script that executes all the steps of polynomial fitting.
 
 First create a folder, as an example see the `B1F4` folder in the repository.
 Inside this folder, create a configuration file `config.ini` that contains all
@@ -30,4 +30,4 @@ by running:
 Finally we can run the script:
 
     cd B1F4
-    python ../run.py config.ini
+    python ../generate_1b_fitcode.py config.ini

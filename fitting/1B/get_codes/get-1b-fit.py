@@ -301,7 +301,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(chg)):
-    ff.write('    charge[' + str(i) + '] = ' + chg[i] + '*CHARGECON;\n')
+    ff.write('    charge[' + str(i) + '] = ' + str(chg[i]) + '*CHARGECON;\n')
 a = """
 
     return charge;
@@ -312,7 +312,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(pol)):
-    ff.write('    atmpolar[' + str(i) + '] = ' + pol[i] + ';\n')
+    ff.write('    atmpolar[' + str(i) + '] = ' + str(pol[i]) + ';\n')
 a = """
     return atmpolar;
   }
@@ -323,7 +323,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(polfac)):
-    ff.write('    polfac[' + str(i) + '] = ' + polfac[int(i)] + ';\n')
+    ff.write('    polfac[' + str(i) + '] = ' + str(polfac[int(i)]) + ';\n')
 a = """
     return polfac;
   }
@@ -761,11 +761,11 @@ a = """
 """
 ff.write(a)
 ff.write('bool x1b_' + mon1 + '_v1x::nonlinear_parameters_out_of_range() const { \n')
-ff.write('    const double k_min =  ' + k_min + ' ;\n')
-ff.write('    const double k_max =  ' + k_max + ' ;\n')
+ff.write('    const double k_min =  ' + str(k_min) + ' ;\n')
+ff.write('    const double k_max =  ' + str(k_max) + ' ;\n')
 
-ff.write('    const double d_min =  ' + d_min + ' ;\n')
-ff.write('    const double d_max =  ' + d_max + ' ;\n')
+ff.write('    const double d_min =  ' + str(d_min) + ' ;\n')
+ff.write('    const double d_max =  ' + str(d_max) + ' ;\n')
 
 ff.write('return false')
 for nl in nlparam:
@@ -1203,7 +1203,7 @@ const double alpha = 0.0005;
 #endif
 
 // ##DEFINE HERE## energy range
-const double E_range = """ + E_range + """; // kcal/mol
+const double E_range = """ + str(E_range) + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 
@@ -1312,14 +1312,14 @@ int main(int argc, char** argv) {
 
     srand(duration);
 
-    double x0[""" + str(len(nlparam)) + """];
 """
 ff.write(a)
+ff.write("    double x0[" + str(len(nlparam)) + "];\n")
 for i in range(len(nlparam)):
     if nlparam[i].startswith('d'):
-        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + d_min + ';\n')
+        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + str(d_min) + ';\n')
     else:
-        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
+        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + str(k_min) + ';\n')
 
             
 a = """

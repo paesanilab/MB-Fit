@@ -42,7 +42,6 @@ mon1 = f.readline().split('\'')[1]
 # This should be the second command line argument
 #directcpp = 'poly-direct.cpp'
 
-
 # In[83]:
 
 # For Andrea:
@@ -86,8 +85,10 @@ nvars = 10
 npoly = 82
 
 # Define kind of variables 
-# 'coul' is e^(-k(d-d0)/d)
-# 'exp'  is e^(-k(d-d0))
+# 'coul' is e^(-k(d-d0))/d
+# 'coul0' is e^(-kd)/d
+# 'exp'  is e^(-kd)
+# 'exp0'  is e^(-k(d-d0))
 var = config.get("fitting", "var")
 
 # Define Energy Range for the fitting
@@ -97,12 +98,14 @@ E_range = config.getfloat("fitting", "energy_range")
 vsites = json.loads(config.get("fitting", "virtual_sites_labels"))
 
 
-# In[84]:
+# In[ ]:
+
 
 types = list(mon1)
 
 
-# In[85]:
+# In[ ]:
+
 
 # Generating the non linear parameter list
 nlparam = []
@@ -115,7 +118,12 @@ for i in range(0,len(types),2):
 print(t1)
 
 
-# In[86]:
+# In[ ]:
+
+
+nlp_touse = ['k']
+if var == 'coul0' or var == 'exp0':
+    nlp_touse.append('d')
 
 # Appending for mon1
 for i in range(len(t1)):
@@ -124,7 +132,7 @@ for i in range(len(t1)):
     for j in range(1,len(t1)):
         if t1[j] in vsites:
             continue
-        for nlp in ['d','k']:
+        for nlp in nlp_touse:
             const_intra = nlp + '_' + t1[i] + t1[j]
             if not const_intra in nlparam:
                 nlparam.append(const_intra)
@@ -177,7 +185,8 @@ print(real_pairs)
 print(excluded_pairs)
 
 
-# In[87]:
+# In[ ]:
+
 
 # Save number in num_nonlinear
 num_nonlinear = len(nlparam)
@@ -185,7 +194,8 @@ num_nonlinear = len(nlparam)
 
 # ## Creating mon1.h
 
-# In[88]:
+# In[ ]:
+
 
 mon1_class = open('mon1.h','w')
 
@@ -233,7 +243,8 @@ mon1_class.close()
 
 # ## Creating their cpp files
 
-# In[89]:
+# In[ ]:
+
 
 ff = open('mon1.cpp','w')
 
@@ -290,7 +301,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(chg)):
-    ff.write('    charge[' + str(i) + '] = ' + str(chg[i]) + '*CHARGECON;\n')
+    ff.write('    charge[' + str(i) + '] = ' + chg[i] + '*CHARGECON;\n')
 a = """
 
     return charge;
@@ -301,7 +312,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(pol)):
-    ff.write('    atmpolar[' + str(i) + '] = ' + str(pol[i]) + ';\n')
+    ff.write('    atmpolar[' + str(i) + '] = ' + pol[i] + ';\n')
 a = """
     return atmpolar;
   }
@@ -312,7 +323,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(polfac)):
-    ff.write('    polfac[' + str(i) + '] = ' + str(polfac[i]) + ';\n')
+    ff.write('    polfac[' + str(i) + '] = ' + polfac[int(i)] + ';\n')
 a = """
     return polfac;
   }
@@ -354,7 +365,8 @@ ff.close()
 
 # ## Create training_set.h/cpp files
 
-# In[90]:
+# In[ ]:
+
 
 ff = open('training_set.h','w')
 a = """
@@ -383,7 +395,8 @@ ff.close()
 
 # ## X1B h file
 
-# In[91]:
+# In[ ]:
+
 
 hname = "x1b_" + mon1 + "_v1.h"
 polyhname = "poly_1b_" + mon1 + "_v1x.h"
@@ -486,7 +499,8 @@ ff.close()
 
 # ## CPP file
 
-# In[92]:
+# In[ ]:
+
 
 cppname = "x1b_" + mon1 + "_v1.cpp"
 ff = open(cppname,'w')
@@ -521,10 +535,16 @@ void error(int kode) {
 //----------------------------------------------------------------------------//
 
 struct variable {
-    double v_exp(const double& r0, const double& k,
+    double v_exp0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
-    double v_coul(const double& r0, const double& k,
+    double v_coul0(const double& r0, const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_coul(const double& k,
                   const double * p1, const double * p2 );
 
     double g[3]; // diff(value, p1 - p2)
@@ -532,7 +552,7 @@ struct variable {
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-double variable::v_exp(const double& r0, const double& k,
+double variable::v_exp0(const double& r0, const double& k,
                        const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -553,7 +573,53 @@ double variable::v_exp(const double& r0, const double& k,
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-double variable::v_coul(const double& r0, const double& k,
+double variable::v_exp(const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(- r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_coul(const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(-r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_coul0(const double& r0, const double& k,
                         const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -695,11 +761,11 @@ a = """
 """
 ff.write(a)
 ff.write('bool x1b_' + mon1 + '_v1x::nonlinear_parameters_out_of_range() const { \n')
-ff.write('    const double k_min =  ' + str(k_min) + ' ;\n')
-ff.write('    const double k_max =  ' + str(k_max) + ' ;\n')
+ff.write('    const double k_min =  ' + k_min + ' ;\n')
+ff.write('    const double k_max =  ' + k_max + ' ;\n')
 
-ff.write('    const double d_min =  ' + str(d_min) + ' ;\n')
-ff.write('    const double d_max =  ' + str(d_max) + ' ;\n')
+ff.write('    const double d_min =  ' + d_min + ' ;\n')
+ff.write('    const double d_max =  ' + d_max + ' ;\n')
 
 ff.write('return false')
 for nl in nlparam:
@@ -758,7 +824,12 @@ for i in range(0,len(set_m1) - 1):
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            variables = ""
+            if var == 'exp0' or var == 'coul0':
+                variables = '(m_d_' + t + ', m_k_' + t
+            else:
+                variables = '(m_k_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 
@@ -846,7 +917,8 @@ ff.close()
 
 # ## Dispersion.h
 
-# In[93]:
+# In[ ]:
+
 
 hname = "dispersion.h"
 ff = open(hname,'w')
@@ -869,10 +941,10 @@ struct x1b_disp {
 ff.write(a)
 for i in range(len(real_pairs)):
     if not real_pairs[i] in excluded_pairs:
-        ff.write('  const double m_C6_' + real_pairs[i] + ' = ' + str(C6[i]) + ' ; \n')
+        ff.write('  const double m_C6_' + real_pairs[i] + ' = ' + C6[i] + ' ; \n')
 for i in range(len(real_pairs)):
     if not real_pairs[i] in excluded_pairs:
-        ff.write('  const double m_d6_' + real_pairs[i] + ' = ' + str(d6[i]) + ' ; \n')
+        ff.write('  const double m_d6_' + real_pairs[i] + ' = ' + d6[i] + ' ; \n')
     
 a = """
 
@@ -969,7 +1041,8 @@ ff.close()
 
 # ## dispersion.cpp
 
-# In[94]:
+# In[ ]:
+
 
 cppname = "dispersion.cpp"
 ff = open(cppname,'w')
@@ -1071,7 +1144,8 @@ ff.close()
 
 # ## Fitting routine
 
-# In[95]:
+# In[ ]:
+
 
 cppname = "fit-1b.cpp"
 ff = open(cppname,'w')
@@ -1129,7 +1203,7 @@ const double alpha = 0.0005;
 #endif
 
 // ##DEFINE HERE## energy range
-const double E_range = """ + str(E_range) + """; // kcal/mol
+const double E_range = """ + E_range + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 
@@ -1243,9 +1317,9 @@ int main(int argc, char** argv) {
 ff.write(a)
 for i in range(len(nlparam)):
     if nlparam[i].startswith('d'):
-        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + str(d_min) + ';\n')
+        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + d_min + ';\n')
     else:
-        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + str(k_min) + ';\n')
+        ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
 
             
 a = """
@@ -1515,7 +1589,8 @@ ff.close()
 
 # ## Makefile
 
-# In[103]:
+# In[ ]:
+
 
 fname = "Makefile"
 ff = open(fname,'w')
@@ -1571,7 +1646,8 @@ ff.close()
 
 # ## Poly_fit_header
 
-# In[97]:
+# In[ ]:
+
 
 fname = "poly_1b_" + mon1 + ".h"
 ff = open(fname,'w')
@@ -1601,7 +1677,8 @@ ff.close()
 
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
-# In[98]:
+# In[ ]:
+
 
 fdirect = open(directcpp, 'r')
 fnamecpp = "poly_1b_" + mon1 + ".cpp"
@@ -1636,7 +1713,8 @@ fpolycpp.close()
 
 # ## Evaluation code
 
-# In[108]:
+# In[ ]:
+
 
 ff = open('eval-1b.cpp','w')
 a = """
@@ -1813,7 +1891,8 @@ ff.close()
 
 # ## X1B.h for software
 
-# In[106]:
+# In[ ]:
+
 
 hname = "x1b_" + mon1 + "_v1x.h"
 polyhname = "poly_1b_" + mon1 + "_v1x.h"
@@ -1877,7 +1956,8 @@ ff.close()
 
 # ## X1B.cpp for software
 
-# In[111]:
+# In[ ]:
+
 
 cppname = "x1b_" + mon1 + "_v1x.cpp"
 ff = open(cppname,'w')
@@ -1910,10 +1990,16 @@ void error(int kode) {
 //----------------------------------------------------------------------------//
 
 struct variable {
-    double v_exp(const double& r0, const double& k,
+    double v_exp0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
-    double v_coul(const double& r0, const double& k,
+    double v_coul0(const double& r0, const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_coul(const double& k,
                   const double * p1, const double * p2 );
                   
     void grads(const double& gg, double * grd1, double * grd2,
@@ -1935,7 +2021,7 @@ void variable::grads(const double& gg, double * grd1, double * grd2,
 
 //----------------------------------------------------------------------------//
 
-double variable::v_exp(const double& r0, const double& k,
+double variable::v_exp0(const double& r0, const double& k,
                        const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -1956,7 +2042,7 @@ double variable::v_exp(const double& r0, const double& k,
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-double variable::v_coul(const double& r0, const double& k,
+double variable::v_coul0(const double& r0, const double& k,
                         const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -1978,6 +2064,56 @@ double variable::v_coul(const double& r0, const double& k,
 
     return val;
 }
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_exp(const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(- r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+
+double variable::v_coul(const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(-r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
 struct monomer {
     double oh1[3];
@@ -2192,7 +2328,12 @@ for i in range(0,len(set_m1) - 1):
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            variables = ""
+            if var == 'exp0' or var == 'coul0':
+                variables = '(m_d_' + t + ', m_k_' + t
+            else:
+                variables = '(m_k_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 
@@ -2251,7 +2392,12 @@ for i in range(0,len(set_m1) - 1):
         tj = set_m1[j].split('_')[0]
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + '(m_d_' + t + ', m_k_' + t + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
+            variables = ""
+            if var == 'exp0' or var == 'coul0':
+                variables = '(m_d_' + t + ', m_k_' + t
+            else:
+                variables = '(m_k_' + t
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
             nv = nv + 1
 ff.write('\n')
 a = """     
@@ -2329,165 +2475,6 @@ ff.close()
 
 # In[ ]:
 
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
 
 
 

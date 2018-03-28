@@ -44,7 +44,7 @@ mv tmp poly_1b_${FNAME}_v1.cpp
 echo "Executing python generator script"
 
 # Execute python script
-python3 $PYTHON_SCRIPT $INPUT poly-direct.cpp ../config.ini
+python3 $PYTHON_SCRIPT_PATH $INPUT poly-direct.cpp ../config.ini
 mv ../config.initmp ../config.ini
 
 # Copy the rest of the files

@@ -1,55 +1,57 @@
-#!/usr/bin/env python3
 # coding: utf-8
+# In[1]:
 
-# In[78]:
 
 import sys
 import os
 import json
+import configparser
 
 
-# In[79]:
+# ### Check proper if input is provided
+# Commented on Notebook but Uncommented on script.py
 
-# Check proper if input is provided
+# In[2]:
 
-
-# In[80]:
 
 if len(sys.argv) != 4:
-    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini path>\n ")
+    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini>\n ")
     sys.exit()
 else:
     name = sys.argv[1]
     directcpp = sys.argv[2]
     config_filename = sys.argv[3]
 
-import configparser
+
+# ### Set arguments for testing. 
+# This should be commented in the script.py, but uncommented on the notebook
+
+# In[3]:
+
+
+# This should be the commandline argument
+#name = "A1B4"
+#directcpp = 'poly-direct.cpp'
+#config_filename = 'config.ini'
+
+
+# In[4]:
+
+
+f = open(name, 'r')
+mon1 = f.readline().split('\'')[1]
 
 config = configparser.ConfigParser()
 config.read(config_filename)
 
 
-# In[81]:
-
-# This should be the commandline argument
-#name = "A1B4.in"
-f = open(name, 'r')
-mon1 = f.readline().split('\'')[1]
+# In[5]:
 
 
-# In[82]:
-
-# This should be the second command line argument
-#directcpp = 'poly-direct.cpp'
-
-# In[83]:
-
-# For Andrea:
-# Find a way to find the number of atoms in each monomer
-# Store them in nat1
+# Number of atoms in monomer
 nat = config.getint("fitting", "number_of_atoms")
 
-# Find the number of sites (electrostatic sites)
+# Number of sites (electrostatic sites, NO LONE PAIRS)
 nsites = config.getint("fitting", "number_of_electrostatic_sites")
 
 # Obtain the lists with the excluded pairs
@@ -58,12 +60,12 @@ excl13 = json.loads(config.get("fitting", "excluded_pairs_13"))
 excl14 = json.loads(config.get("fitting", "excluded_pairs_14"))
 
 
-#Obtain charges (in the order of input), pols and polfacs
+# Obtain charges (in the order of input), pols and polfacs
 chg = json.loads(config.get("fitting", "charges"))
 pol = json.loads(config.get("fitting", "polarizabilities"))
 polfac = json.loads(config.get("fitting", "polarizability_fractions"))
 
-#Ask the user for the max value of k and d
+# Max and min values of k and d (even if you don't use d)
 k_min = config.getfloat("fitting", "k_min")
 k_max = config.getfloat("fitting", "k_max")
 
@@ -72,17 +74,16 @@ d_max = config.getfloat("fitting", "d_max")
 
 
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
-# Look at the input to retrieve this
-#These are the INTERMOLECULAR C6 for same m
+# Intermolecular C6!
 C6 = json.loads(config.get("fitting", "C6"))
 d6 = json.loads(config.get("fitting", "d6"))
 
-# FInd a way to get the degree
+# Polynomial degree
 degree = config.getint("common", "polynomial_order")
-# Find a way to get the number ov variables
-nvars = 10
+# Number ov variables
+nvars = config.getint("fitting", "nvars")
 # Find a way to get the size of the polynomial
-npoly = 82
+npoly = config.getint("fitting", "npoly")
 
 # Define kind of variables 
 # 'coul' is e^(-k(d-d0))/d
@@ -98,13 +99,13 @@ E_range = config.getfloat("fitting", "energy_range")
 vsites = json.loads(config.get("fitting", "virtual_sites_labels"))
 
 
-# In[ ]:
+# In[6]:
 
 
 types = list(mon1)
 
 
-# In[ ]:
+# In[7]:
 
 
 # Generating the non linear parameter list
@@ -118,7 +119,7 @@ for i in range(0,len(types),2):
 print(t1)
 
 
-# In[ ]:
+# In[8]:
 
 
 nlp_touse = ['k']
@@ -185,7 +186,7 @@ print(real_pairs)
 print(excluded_pairs)
 
 
-# In[ ]:
+# In[9]:
 
 
 # Save number in num_nonlinear
@@ -194,7 +195,7 @@ num_nonlinear = len(nlparam)
 
 # ## Creating mon1.h
 
-# In[ ]:
+# In[10]:
 
 
 mon1_class = open('mon1.h','w')
@@ -243,7 +244,7 @@ mon1_class.close()
 
 # ## Creating their cpp files
 
-# In[ ]:
+# In[11]:
 
 
 ff = open('mon1.cpp','w')
@@ -323,7 +324,7 @@ a = """
 """
 ff.write(a)
 for i in range(len(polfac)):
-    ff.write('    polfac[' + str(i) + '] = ' + str(polfac[int(i)]) + ';\n')
+    ff.write('    polfac[' + str(i) + '] = ' + str(polfac[i]) + ';\n')
 a = """
     return polfac;
   }
@@ -365,7 +366,7 @@ ff.close()
 
 # ## Create training_set.h/cpp files
 
-# In[ ]:
+# In[12]:
 
 
 ff = open('training_set.h','w')
@@ -395,7 +396,7 @@ ff.close()
 
 # ## X1B h file
 
-# In[ ]:
+# In[13]:
 
 
 hname = "x1b_" + mon1 + "_v1.h"
@@ -499,7 +500,7 @@ ff.close()
 
 # ## CPP file
 
-# In[ ]:
+# In[14]:
 
 
 cppname = "x1b_" + mon1 + "_v1.cpp"
@@ -917,7 +918,7 @@ ff.close()
 
 # ## Dispersion.h
 
-# In[ ]:
+# In[15]:
 
 
 hname = "dispersion.h"
@@ -1041,7 +1042,7 @@ ff.close()
 
 # ## dispersion.cpp
 
-# In[ ]:
+# In[16]:
 
 
 cppname = "dispersion.cpp"
@@ -1144,7 +1145,7 @@ ff.close()
 
 # ## Fitting routine
 
-# In[ ]:
+# In[17]:
 
 
 cppname = "fit-1b.cpp"
@@ -1312,9 +1313,9 @@ int main(int argc, char** argv) {
 
     srand(duration);
 
+    double x0[""" + str(len(nlparam)) + """];
 """
 ff.write(a)
-ff.write("    double x0[" + str(len(nlparam)) + "];\n")
 for i in range(len(nlparam)):
     if nlparam[i].startswith('d'):
         ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + str(d_min) + ';\n')
@@ -1589,7 +1590,7 @@ ff.close()
 
 # ## Makefile
 
-# In[ ]:
+# In[18]:
 
 
 fname = "Makefile"
@@ -1646,7 +1647,7 @@ ff.close()
 
 # ## Poly_fit_header
 
-# In[ ]:
+# In[19]:
 
 
 fname = "poly_1b_" + mon1 + ".h"
@@ -1677,7 +1678,7 @@ ff.close()
 
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
-# In[ ]:
+# In[20]:
 
 
 fdirect = open(directcpp, 'r')
@@ -1713,7 +1714,7 @@ fpolycpp.close()
 
 # ## Evaluation code
 
-# In[ ]:
+# In[21]:
 
 
 ff = open('eval-1b.cpp','w')
@@ -1891,7 +1892,7 @@ ff.close()
 
 # ## X1B.h for software
 
-# In[ ]:
+# In[22]:
 
 
 hname = "x1b_" + mon1 + "_v1x.h"
@@ -1956,7 +1957,7 @@ ff.close()
 
 # ## X1B.cpp for software
 
-# In[ ]:
+# In[23]:
 
 
 cppname = "x1b_" + mon1 + "_v1x.cpp"

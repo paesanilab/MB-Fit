@@ -1,9 +1,3 @@
-# IMPORTANT
-## READ THIS
-### FOR REAL
-#### YOU WILL APPRECIATE IT
-For now, since the pipeline is not completed, please use the 1b-fit-mbnrg-nopipeline.tgz tarball. That is easier to use.
-
 # Run Test
 This code generates, compiles and runs a test of the 1B polynomials.
 To test, just run the script run_test.sh.

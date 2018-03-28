@@ -3,6 +3,11 @@ import os
 import argparse
 import subprocess
 
+def execute_with_output(cmd, output):
+    f = open(output, "w")
+    subprocess.check_call(cmd, stdout=f)
+    f.close()
+
 def execute(cmd):
     subprocess.check_call(cmd)
     #popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
@@ -42,7 +47,8 @@ execute(["generate_input_poly.py", input_file])
 os.makedirs("polynomial_generation", exist_ok=True)
 os.chdir("polynomial_generation")
 
-execute(["poly-gen_mb-nrg.pl", str(order), '../' + input_file])
+poly_output_file = "poly.log"
+execute_with_output(["poly-gen_mb-nrg.pl", str(order), '../' + input_file], poly_output_file)
 
 for f in ["poly-nogrd", "poly-grd"]:
     maple_file = f + ".maple"
@@ -63,4 +69,5 @@ os.chdir("fitting")
 
 execute(['prepare_1b_fitting_code.sh', '../'+input_file, '../polynomial_generation/', '../config.ini'])
 
-execute(["./fit-1b", config.get("fitting", "training_set_file")])
+# Commented, unnecessary
+#execute(["./fit-1b", config.get("fitting", "training_set_file")])

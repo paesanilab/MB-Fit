@@ -22,16 +22,30 @@ cp $POLY_CPP_PATH/poly-grd.cpp ./poly_1b_${FNAME}_v1x.cpp
 cp $POLY_CPP_PATH/poly-nogrd.cpp ./poly_1b_${FNAME}_v1.cpp
 cp $POLY_CPP_PATH/poly-model.h ./poly_1b_${FNAME}_v1x.h
 
+nvar=`grep "<> variables" $POLY_CPP_PATH/poly.log | sed 's/(//g' | sed 's/)//g' | awk '{print $3}'`
+npoly=`grep "Total number of terms" $POLY_CPP_PATH/poly.log | awk '{print $5}'`
+
+cp ../config.ini ../config.initmp
+
+cat << EOF >> ../config.ini
+
+## Define number of variables and terms
+nvars = $nvar
+npoly = $npoly
+EOF
+
+
 # CHange the includes in the poly files
 cat poly_1b_${FNAME}_v1x.cpp | sed "s/poly-model.h/poly_1b_${FNAME}_v1x.h/g" > tmp
 mv tmp poly_1b_${FNAME}_v1x.cpp
 cat poly_1b_${FNAME}_v1.cpp | sed "s/poly-model.h/poly_1b_${FNAME}_v1x.h/g" > tmp
 mv tmp poly_1b_${FNAME}_v1.cpp
 
-# Execute python script
-echo "Did you change the parameters for your system in the python script?"
+echo "Executing python generator script"
 
-$PYTHON_SCRIPT $INPUT poly-direct.cpp ../config.ini
+# Execute python script
+python3 $PYTHON_SCRIPT $INPUT poly-direct.cpp ../config.ini
+mv ../config.initmp ../config.ini
 
 # Copy the rest of the files
 cp $TEMPLATE_PATH/* .

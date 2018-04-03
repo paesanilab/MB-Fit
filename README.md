@@ -31,3 +31,7 @@ Finally we can run the script:
 
     cd B1F4
     python ../generate_1b_fitcode.py config.ini
+    
+If there are problems with the libraries:
+1. Make sure you are running python3
+2. Remove all python path libraries by doing `export PYTHONPATH=`

@@ -28,6 +28,11 @@ MODULE generate_configs_module
   DOUBLE PRECISION, PARAMETER :: Clmass = 34.968852682*melectron
   DOUBLE PRECISION, PARAMETER :: Brmass = 78.9183376*melectron
   DOUBLE PRECISION, PARAMETER :: Imass = 126.9044719*melectron
+  DOUBLE PRECISION, PARAMETER :: Limass = 7.0160034366*melectron
+  DOUBLE PRECISION, PARAMETER :: Namass = 22.989769282*melectron
+  DOUBLE PRECISION, PARAMETER :: Kmass  = 38.9637064864*melectron
+  DOUBLE PRECISION, PARAMETER :: Rbmass = 84.9114977282*melectron
+  DOUBLE PRECISION, PARAMETER :: Csmass = 132.905429*melectron
 
   DOUBLE PRECISION, ALLOCATABLE :: sqrt_mass(:)
   CHARACTER(len=2), ALLOCATABLE :: atom_type(:)
@@ -68,6 +73,16 @@ CONTAINS
        atom_mass = Brmass
     ELSE IF (atom == 'I' .OR. atom == '53') THEN
        atom_mass = Imass
+    ELSE IF (atom == 'Li' .OR. atom == '3') THEN
+       atom_mass = Limass
+    ELSE IF (atom == 'Na' .OR. atom == '11') THEN
+       atom_mass = Namass
+    ELSE IF (atom == 'K' .OR. atom == '19') THEN
+       atom_mass = Kmass
+    ELSE IF (atom == 'Rb' .OR. atom == '37') THEN
+       atom_mass = Rbmass
+    ELSE IF (atom == 'Cs' .OR. atom == '55') THEN
+       atom_mass = Csmass
     ELSE
        WRITE(*,*) 'atom ', atom, ' is not recognized'
        STOP 

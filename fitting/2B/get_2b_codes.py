@@ -3,16 +3,19 @@
 
 # In[ ]:
 
+
 import sys
 import os
 
 
 # In[ ]:
 
+
 # Check proper if input is provided
 
 
 # In[ ]:
+
 
 if len(sys.argv) != 3:
     print("Usage: ./script <input.in> <poly-direct.cpp_with_path> ")
@@ -24,6 +27,7 @@ else:
 
 # In[ ]:
 
+
 # This should be the commandline argument
 #name = "A1B2Z2_C1D2.in"
 #name = "A1B2_A1B2.in"
@@ -34,11 +38,13 @@ mon2 = f.readline().split('\'')[1]
 
 # In[ ]:
 
+
 # This should be the second command line argument
 #directcpp = 'poly-direct.cpp'
 
 
 # In[ ]:
+
 
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
@@ -108,7 +114,8 @@ npoly = 597
 # Options are:
 # exp e^-kd
 # exp0 e^-k(d-d0)
-# coul [e^-k(d-d0)]/r
+# coul0 [e^-k(d-d0)]/r
+# coul [e^-kd]/r
 # Recomendation is to use exp for intra and inter and coul for lone pairs
 var_intra = 'exp0'
 var_lp = 'coul'
@@ -123,11 +130,13 @@ vsites = ['Z']
 
 # In[ ]:
 
+
 types_a = list(mon1)
 types_b = list(mon2)
 
 
 # In[ ]:
+
 
 # Generating the non linear parameter list
 nlparam = []
@@ -145,9 +154,10 @@ for i in range(0,len(types_b),2):
 
 # In[ ]:
 
+
 # Appending for mon1
 nlp_touse_intra = ['k']
-if var_intra == 'coul' or var_intra == 'exp0':
+if var_intra == 'coul0' or var_intra == 'exp0':
     nlp_touse_intra.append('d')
 for i in range(len(t1)):
     if t1[i] in vsites:
@@ -175,9 +185,9 @@ for i in range(len(t2)):
 # Intermolecular
 nlp_touse_inter = ['k']
 nlp_touse_lp = ['k']
-if var_inter == 'coul' or var_inter == 'exp0':
+if var_inter == 'coul0' or var_inter == 'exp0':
     nlp_touse_inter.append('d')
-if var_lp == 'coul' or var_lp == 'exp0':
+if var_lp == 'coul0' or var_lp == 'exp0':
     nlp_touse_lp.append('d')
     
 for i in range(len(t1)):
@@ -208,6 +218,7 @@ for i in range(len(t1)):
 
 # In[ ]:
 
+
 # Save number in num_nonlinear
 num_nonlinear = len(nlparam)
 
@@ -216,6 +227,7 @@ num_nonlinear = len(nlparam)
 # ## Creating mon1.h and mon2.h
 
 # In[ ]:
+
 
 mon1_class = open('mon1.h','w')
 
@@ -262,6 +274,7 @@ mon1_class.close()
 
 
 # In[ ]:
+
 
 mon1_class = open('mon2.h','w')
 
@@ -310,6 +323,7 @@ mon1_class.close()
 # ## Creating their cpp files
 
 # In[ ]:
+
 
 ff = open('mon1.cpp','w')
 
@@ -430,6 +444,7 @@ ff.close()
 
 
 # In[ ]:
+
 
 ff = open('mon2.cpp','w')
 
@@ -555,6 +570,7 @@ ff.close()
 # If applicable...
 
 # In[ ]:
+
 
 if is_w != 0:
     ff = open('mon' + str(is_w) + '.cpp','w')
@@ -689,6 +705,7 @@ excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excl
 
 # In[ ]:
 
+
 ff = open('training_set.h','w')
 a = """
 #ifndef TRAINING_SET_H
@@ -728,6 +745,7 @@ ff.close()
 # ## X2B h file
 
 # In[ ]:
+
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -840,6 +858,7 @@ ff.close()
 
 # In[ ]:
 
+
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1.cpp"
 ff = open(cppname,'w')
 a = """
@@ -879,7 +898,10 @@ struct variable {
     double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
-    double v_coul(const double& r0, const double& k,
+    double v_coul0(const double& r0, const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_coul(const double& k,
                   const double * p1, const double * p2 );
 
     double g[3]; // diff(value, p1 - p2)
@@ -929,7 +951,7 @@ double variable::v_exp(const double& k,
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-double variable::v_coul(const double& r0, const double& k,
+double variable::v_coul0(const double& r0, const double& k,
                         const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -940,6 +962,31 @@ double variable::v_coul(const double& r0, const double& k,
     const double r = std::sqrt(rsq);
 
     const double exp1 = std::exp(k*(r0 - r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_coul(const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(-r));
     const double rinv = 1.0/r;
     const double val = exp1*rinv;
 
@@ -1276,7 +1323,7 @@ for i in range(0,len(set_m1) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var_intra == 'exp0' or var_intra == 'coul':
+            if var_intra == 'exp0' or var_intra == 'coul0':
                 variables = '(m_d_intra_' + t + ', m_k_intra_' + t
             else:
                 variables = '(m_k_intra_' + t
@@ -1290,7 +1337,7 @@ for i in range(0,len(set_m2) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var_intra == 'exp0' or var_intra == 'coul':
+            if var_intra == 'exp0' or var_intra == 'coul0':
                 variables = '(m_d_intra_' + t + ', m_k_intra_' + t
             else:
                 variables = '(m_k_intra_' + t
@@ -1308,7 +1355,7 @@ for i in range(0,len(set_m1)):
         else:
             var_i = var_lp
         variables = ""
-        if var_i == 'exp0' or var_i == 'coul':
+        if var_i == 'exp0' or var_i == 'coul0':
             variables = '(m_d_' + t + ', m_k_' + t
         else:
             variables = '(m_k_' + t
@@ -1437,6 +1484,7 @@ ff.close()
 
 # In[ ]:
 
+
 hname = "dispersion.h"
 ff = open(hname,'w')
 a = """
@@ -1558,6 +1606,7 @@ ff.close()
 # ## dispersion.cpp
 
 # In[ ]:
+
 
 cppname = "dispersion.cpp"
 ff = open(cppname,'w')
@@ -1694,6 +1743,7 @@ ff.close()
 # ## Fitting routine
 
 # In[ ]:
+
 
 cppname = "fit-2b.cpp"
 ff = open(cppname,'w')
@@ -1952,6 +2002,9 @@ a = """
       
       std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
       std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
+      
+      int * is_w_a = system_is_w;
+      int * is_w_b = system_is_w + m1.get_nsites();
 
       std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
                 system_sitecrds);
@@ -1977,35 +2030,49 @@ a = """
       excluded_set_type exclude12;
       excluded_set_type exclude13;
       excluded_set_type exclude14;
+      
+      excluded_set_type exclude12_a;
+      excluded_set_type exclude13_a;
+      excluded_set_type exclude14_a;
+      
+      excluded_set_type exclude12_b;
+      excluded_set_type exclude13_b;
+      excluded_set_type exclude14_b;
 
       for (auto i = m1.get_begin_12(); i != m1.get_end_12(); i++) {
         exclude12.insert(*i);
+        exclude12_a.insert(*i);
       }
       for (auto i = m2.get_begin_12(); i != m2.get_end_12(); i++) {
         std::pair<size_t,size_t> p =
                       std::make_pair(i->first + m1.get_nsites() ,
                                      i->second + m1.get_nsites());
         exclude12.insert(p);
+        exclude12_b.insert(*i);
       }
 
       for (auto i = m1.get_begin_13(); i != m1.get_end_13(); i++) {
         exclude13.insert(*i);
+        exclude13_a.insert(*i);
       }
       for (auto i = m2.get_begin_13(); i != m2.get_end_13(); i++) {
         std::pair<size_t,size_t> p =
                       std::make_pair(i->first + m1.get_nsites() ,
                                      i->second + m1.get_nsites());
         exclude13.insert(p);
+        exclude13_b.insert(*i);
       }
 
       for (auto i = m1.get_begin_14(); i != m1.get_end_14(); i++) {
         exclude14.insert(*i);
+        exclude14_a.insert(*i);
       }
       for (auto i = m2.get_begin_14(); i != m2.get_end_14(); i++) {
         std::pair<size_t,size_t> p =
                       std::make_pair(i->first + m1.get_nsites() ,
                                      i->second + m1.get_nsites());
         exclude14.insert(p);
+        exclude14_b.insert(*i);
       }
 
       ttm::electrostatics m_electrostatics;
@@ -2018,10 +2085,16 @@ a = """
       double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
                                     system_sitecrds, exclude12, exclude13, exclude14, 
                                     system_is_w, smr, 0);
+      double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
+                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                    is_w_a, smr, 0);
+      double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
+                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                    is_w_b, smr, 0);
 
       // Take out electrostatic energy:
-      elec_e.push_back(ener);
-      training_set[n].energy_twobody -= ener;
+      elec_e.push_back(ener - ener_a - ener_b);
+      training_set[n].energy_twobody -= elec_e[n];
       // std::cerr << "Conf " << n << " : Elec= " << ener ;
 
       // Now need to take out dispersion
@@ -2171,6 +2244,7 @@ ff.close()
 
 # In[ ]:
 
+
 fname = "Makefile"
 ff = open(fname,'w')
 a = """
@@ -2229,6 +2303,7 @@ ff.close()
 
 # In[ ]:
 
+
 fname = "poly_2b_" + mon1 + "_" + mon2 + ".h"
 ff = open(fname,'w')
 a = """
@@ -2258,6 +2333,7 @@ ff.close()
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
 # In[ ]:
+
 
 fdirect = open(directcpp, 'r')
 fnamecpp = "poly_2b_" + mon1 + "_" + mon2 + ".cpp"
@@ -2293,6 +2369,7 @@ fpolycpp.close()
 # ## Evaluation code
 
 # In[ ]:
+
 
 ff = open('eval-2b.cpp','w')
 a = """
@@ -2371,7 +2448,10 @@ int main(int argc, char** argv) {
       
     std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
     std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-
+    
+    int * is_w_a = system_is_w;
+    int * is_w_b = system_is_w + m1.get_nsites();
+    
     std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
               system_sitecrds);
     std::copy(m2.get_sitecrds(), m2.get_sitecrds() + 3 * m2.get_nsites(),
@@ -2396,47 +2476,69 @@ int main(int argc, char** argv) {
     excluded_set_type exclude13;
     excluded_set_type exclude14;
 
+    excluded_set_type exclude12_a;
+    excluded_set_type exclude13_a;
+    excluded_set_type exclude14_a;
+      
+    excluded_set_type exclude12_b;
+    excluded_set_type exclude13_b;
+    excluded_set_type exclude14_b;
+
     for (auto i = m1.get_begin_12(); i != m1.get_end_12(); i++) {
-        exclude12.insert(*i);
+      exclude12.insert(*i);
+      exclude12_a.insert(*i);
     }
     for (auto i = m2.get_begin_12(); i != m2.get_end_12(); i++) {
-        std::pair<size_t,size_t> p =
+      std::pair<size_t,size_t> p =
                     std::make_pair(i->first + m1.get_nsites() ,
                                    i->second + m1.get_nsites());
-        exclude12.insert(p);
+      exclude12.insert(p);
+      exclude12_b.insert(*i);
     }
 
     for (auto i = m1.get_begin_13(); i != m1.get_end_13(); i++) {
-        exclude13.insert(*i);
+      exclude13.insert(*i);
+      exclude13_a.insert(*i);
     }
     for (auto i = m2.get_begin_13(); i != m2.get_end_13(); i++) {
       std::pair<size_t,size_t> p =
                     std::make_pair(i->first + m1.get_nsites() ,
                                    i->second + m1.get_nsites());
-        exclude13.insert(p);
+      exclude13.insert(p);
+      exclude13_b.insert(*i);
     }
 
     for (auto i = m1.get_begin_14(); i != m1.get_end_14(); i++) {
-        exclude14.insert(*i);
+      exclude14.insert(*i);
+      exclude14_a.insert(*i);
     }
     for (auto i = m2.get_begin_14(); i != m2.get_end_14(); i++) {
       std::pair<size_t,size_t> p =
                     std::make_pair(i->first + m1.get_nsites() ,
                                    i->second + m1.get_nsites());
-        exclude14.insert(p);
+      exclude14.insert(p);
+      exclude14_b.insert(*i);
     }
 
     ttm::electrostatics m_electrostatics;
+
     ttm::smear_ttm4x smr; 
     smr.m_aDD_intra_12 = 0.3;
     smr.m_aDD_intra_13 = 0.3;
     smr.m_aDD_intra_14 = 0.055;
 
     double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                   system_sitecrds, exclude12, exclude13, exclude14, 
-                                   system_is_w, smr, 0);
+                                  system_sitecrds, exclude12, exclude13, exclude14, 
+                                  system_is_w, smr, 0);
+    double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
+                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                  is_w_a, smr, 0);
+    double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
+                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                  is_w_b, smr, 0);
 
-    elec_e.push_back(ener);
+    // Take out electrostatic energy:
+    elec_e.push_back(ener - ener_a - ener_b);
       
     // Now need to take out dispersion
     x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
@@ -2444,10 +2546,10 @@ int main(int argc, char** argv) {
     disp_e.push_back(ener);
     
     double Epoly = pot(xyz);
-    std::cout << "E_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
-    std::cout << "E_poly = " << Epoly << std::endl;
-    std::cout << "E_elec = " << elec_e[0] << std::endl;
-    std::cout << "E_disp = " << disp_e[0] << std::endl;
+    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
+    std::cout << "E_poly2b = " << Epoly << std::endl;
+    std::cout << "E_elec2b = " << elec_e[0] << std::endl;
+    std::cout << "E_disp2b = " << disp_e[0] << std::endl;
     
 #ifdef GRADIENTS
     const double eps = 1.0e-5;
@@ -2460,19 +2562,15 @@ int main(int argc, char** argv) {
 
       xyz[n] = x_orig + eps;
       const double Ep = pot(xyz) ;
-      std::cout << "E_p = " << Ep << std::endl;
 
       xyz[n] = x_orig + 2*eps;
       const double E2p = pot(xyz) ;
-      std::cout << "E_2p = " << E2p << std::endl;
 
       xyz[n] = x_orig - 2*eps;
       const double E2m = pot(xyz) ;
-      std::cout << "E_2m = " << E2m << std::endl;
 
       xyz[n] = x_orig - eps;
       const double Em = pot(xyz) ;
-      std::cout << "E_m = " << Em << std::endl;
 
       const double gfd = (8*(Ep - Em) - (E2p - E2m))/(12*eps);
       xyz[n] = x_orig;
@@ -2499,6 +2597,7 @@ ff.close()
 # ## X2B.h for software
 
 # In[ ]:
+
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1x.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -2569,6 +2668,7 @@ ff.close()
 
 # In[ ]:
 
+
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1x.cpp"
 ff = open(cppname,'w')
 a = """
@@ -2606,7 +2706,10 @@ struct variable {
     double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
-    double v_coul(const double& r0, const double& k,
+    double v_coul0(const double& r0, const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_coul(const double& k,
                   const double * p1, const double * p2 );
                   
     void grads(const double& gg, double * grd1, double * grd2,
@@ -2659,7 +2762,33 @@ double variable::v_exp(const double& k,
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-double variable::v_coul(const double& r0, const double& k,
+
+double variable::v_coul(const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(-r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_coul0(const double& r0, const double& k,
                         const double * p1, const double * p2)
 {
     g[0] = p1[0] - p2[0];
@@ -2990,7 +3119,7 @@ for i in range(0,len(set_m1) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var_intra == 'exp0' or var_intra == 'coul':
+            if var_intra == 'exp0' or var_intra == 'coul0':
                 variables = '(m_d_intra_' + t + ', m_k_intra_' + t
             else:
                 variables = '(m_k_intra_' + t
@@ -3004,7 +3133,7 @@ for i in range(0,len(set_m2) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var_intra == 'exp0' or var_intra == 'coul':
+            if var_intra == 'exp0' or var_intra == 'coul0':
                 variables = '(m_d_intra_' + t + ', m_k_intra_' + t
             else:
                 variables = '(m_k_intra_' + t
@@ -3022,7 +3151,7 @@ for i in range(0,len(set_m1)):
         else:
             var_i = var_lp
         variables = ""
-        if var_i == 'exp0' or var_i == 'coul':
+        if var_i == 'exp0' or var_i == 'coul0':
             variables = '(m_d_' + t + ', m_k_' + t
         else:
             variables = '(m_k_' + t
@@ -3147,7 +3276,7 @@ for i in range(0,len(set_m1) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var_intra == 'exp0' or var_intra == 'coul':
+            if var_intra == 'exp0' or var_intra == 'coul0':
                 variables = '(m_d_intra_' + t + ', m_k_intra_' + t
             else:
                 variables = '(m_k_intra_' + t
@@ -3161,7 +3290,7 @@ for i in range(0,len(set_m2) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var_intra == 'exp0' or var_intra == 'coul':
+            if var_intra == 'exp0' or var_intra == 'coul0':
                 variables = '(m_d_intra_' + t + ', m_k_intra_' + t
             else:
                 variables = '(m_k_intra_' + t
@@ -3179,7 +3308,7 @@ for i in range(0,len(set_m1)):
         else:
             var_i = var_lp
         variables = ""
-        if var_i == 'exp0' or var_i == 'coul':
+        if var_i == 'exp0' or var_i == 'coul0':
             variables = '(m_d_' + t + ', m_k_' + t
         else:
             variables = '(m_k_' + t
@@ -3325,169 +3454,4 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::operator()(const double crd[""" + 
 """
 ff.write(a)
 ff.close()
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
 

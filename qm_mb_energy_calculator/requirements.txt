@@ -1,3 +1,2 @@
 # Note: this requirements.txt file lists what packages are needed for everything in the directory
 psi4
-openbabel

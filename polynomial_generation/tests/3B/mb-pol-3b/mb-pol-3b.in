@@ -55,8 +55,6 @@ add_monomial_filter[2, 'x-intra-OH', 1, max]
 
 add_monomial_filter[3, 'x-intra-HH', 1, max]
 add_monomial_filter[3, 'x-intra-OH', 1, max]
-add_monomial_filter[3, 'x-OO', 3, max]
-add_monomial_filter[3, 'x-HH', 3, max]
 
 add_monomial_filter[4, 'x-intra-HH', 1, max]
 add_monomial_filter[4, 'x-intra-OH', 1, max]

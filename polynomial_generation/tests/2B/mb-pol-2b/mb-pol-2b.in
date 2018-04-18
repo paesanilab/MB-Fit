@@ -36,9 +36,7 @@ add_variable['L2, 'a', 'L1', 'b', 'x-main']
 add_variable['L2, 'a', 'L2', 'b', 'x-main']
 
 add_monomial_filter[2, 'x-intra', 1, max]
-add_monomial_filter[2, 'x-intra', 1, max]
 
-add_monomial_filter[3, 'x-intra', 2, max]
 add_monomial_filter[3, 'x-intra', 2, max]
 
 add_monomial_filter[4, 'x-intra', 2, max]

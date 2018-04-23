@@ -7,6 +7,7 @@ import numpy
 try:
     import psi4
 except ImportError:
+    print("Error: failed to import psi4")
     pass
 
 try:
@@ -36,6 +37,8 @@ def calc_energy(frag_str, config):
     
     if model == "TensorMol":
         return TensorMol_convert_str(frag_str, config)
+    if  model == "qchem":
+        return calc_qchem_energy(frag_str, config)
 
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):
@@ -104,3 +107,11 @@ def calc_TensorMol_energy(atoms, coords, config):
     molset.mols.append(molecule)
     manager = GetWaterNetwork(molset)
     return En(molecule, coords, manager)
+
+"""
+Calculates energy using qchem
+"""
+def calc_qchem_energy(frag_str, config):
+    #prepare qchem input file from the frag_str
+    print(frag_str)
+    return 0

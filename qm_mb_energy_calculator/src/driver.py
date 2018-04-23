@@ -1,6 +1,8 @@
 """
 A driver for the modules
 """
+
+#For some reason this import gives a warning.
 try:
     import tensorflow
 except ImportError:
@@ -13,18 +15,27 @@ import json
 import mbdecomp
 import molecule
 
+# 
 tr_set = './training_set.xyz'
+# 
 log_name = './mbdecomp.log'
+# 
 overwrite = 'w'
+# 
 append = 'a'
+# Whether or not to write a log file
 write_log = False
 
+# config file, set by user, contains instructions for operation
 config = configparser.ConfigParser(allow_no_value=False)
+# read the conflig file into the configuration
 config.read("settings.ini")
 
-
+# open the input file
 f = open(config["driver"]["input"], 'r')
+# open the training set file
 training_set_file = open('./training_set.xyz', 'w')
+
 
 # Open the log file here
 if config["MBdecomp"].getboolean("cluster_analysis"):

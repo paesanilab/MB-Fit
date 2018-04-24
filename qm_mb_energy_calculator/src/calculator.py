@@ -2,7 +2,11 @@
 A module for the different models for calculating the 
 energy of a set of atoms (a fragment)
 """
-import numpy
+try:
+    import numpy
+except:
+    pass
+
 from subprocess import call
 
 try:
@@ -138,7 +142,7 @@ def calc_qchem_energy(frag_str, config):
     qchem_input += "$rem\n"
 
     qchem_input += "jobtype " + "sp" + "\n"
-    qchem_input += "mothod " + config["Qchem"]["method"] + "\n"
+    qchem_input += "method " + config["Qchem"]["method"] + "\n"
     qchem_input += "basis " + config["Qchem"]["basis"] + "\n"
 
     qchem_input += "$end"

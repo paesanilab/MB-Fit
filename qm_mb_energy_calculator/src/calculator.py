@@ -114,6 +114,8 @@ Calculates energy using qchem
 """
 def calc_qchem_energy(frag_str, config):
 
+    #prepare Q-chem input fil from frag string
+
     input_file = "qchem_input.txt"
     output_file = "qchem_out.txt"
     
@@ -150,5 +152,4 @@ def calc_qchem_energy(frag_str, config):
     f.close();    
     
     call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
-    #prepare Q-chem input fil from frag string
     return 0

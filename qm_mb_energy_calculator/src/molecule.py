@@ -34,6 +34,12 @@ class Molecule(object):
     """
     A class for a complete assembly of fragments.
     """
+
+    natoms = 0
+    fragments = []
+    energies = {}
+    nmer_energoes = []
+    mb_energies = []
     # Goal: Convert molecule into a dictionary to convert into JSON
     def __init__(self):
         self.natoms = 0
@@ -98,6 +104,7 @@ class Molecule(object):
                 total_from_comment += int(natom)
             # Should the total amount not match, raise an error
             if total_from_comment != self.natoms:
+                print("Error: Fragment atoms do not add to total atoms in xyz file");
                 raise ValueError
           
             for mono_natoms in self.comment:

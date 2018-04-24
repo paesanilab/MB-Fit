@@ -3,6 +3,7 @@ A module for the different models for calculating the
 energy of a set of atoms (a fragment)
 """
 import numpy
+from subprocess import call
 
 try:
     import psi4
@@ -112,6 +113,42 @@ def calc_TensorMol_energy(atoms, coords, config):
 Calculates energy using qchem
 """
 def calc_qchem_energy(frag_str, config):
-    #prepare qchem input file from the frag_str
-    print(frag_str)
+
+    input_file = "qchem_input.txt"
+    output_file = "qchem_out.txt"
+    
+    # initialize qchem input string
+    qchem_input = "";
+    
+    # molecule format
+    qchem_input += "$molecule\n"
+
+    # charge and spin multiplicity
+    qchem_input += "0 1\n"
+
+    # atoms in the molecule
+    # might need to add whitespace before each line?
+    qchem_input += frag_str
+
+    qchem_input += "$end\n"
+
+    # Q-chem settings
+    qchem_input += "$rem\n"
+
+    qchem_input += "jobtype " + "sp" + "\n"
+    qchem_input += "mothod " + config["Qchem"]["method"] + "\n"
+    qchem_input += "basis " + config["Qchem"]["basis"] + "\n"
+
+    qchem_input += "$end"
+ 
+    print("Q-chem input file: \n" + qchem_input)
+   
+    call(["mkdir", "qchem"]);
+    
+    f = open("qchem/qchem_in",'w');
+    f.write(qchem_input)
+    f.close();    
+    
+    call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
+    #prepare Q-chem input fil from frag string
     return 0

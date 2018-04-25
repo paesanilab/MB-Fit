@@ -95,7 +95,7 @@ class Molecule(object):
             # Error catching mechanism
             total_from_comment = 0
             for natom in self.comment:
-                total_from_atom += int(natom)
+                total_from_comment += int(natom)
             # Should the total amount not match, raise an error
             if total_from_comment != self.natoms:
                 raise ValueError

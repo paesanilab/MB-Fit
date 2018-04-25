@@ -19,5 +19,5 @@ then
     exit $exit_code
 else
     echo "test passed!"
-    rm -f timer.dat training_set.xyz mbdecomp.log json_output.log
+    rm -f timer.dat training_set.xyz mbdecomp.log json_output.json
 fi

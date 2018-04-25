@@ -15,14 +15,12 @@ import json
 import mbdecomp
 import molecule
 
-# 
+from molecule_parser import xyz_to_molecules
+
+# CURRENTLY UNUSED 
 tr_set = './training_set.xyz'
-# 
+# Name of log file
 log_name = './mbdecomp.log'
-# 
-overwrite = 'w'
-# 
-append = 'a'
 # Whether or not to write a log file
 write_log = False
 
@@ -31,23 +29,27 @@ config = configparser.ConfigParser(allow_no_value=False)
 # read the conflig file into the configuration
 config.read("settings.ini")
 
+# input filename
+input_path = config["driver"]["input"]
 # open the input file
-f = open(config["driver"]["input"], 'r')
+f = open(input_path, 'r')
 # open the training set file
-training_set_file = open('./training_set.xyz', 'w')
+training_set_file = open(tr_set, 'w')
 
-
-# Open the log file here
+# Open the log file and if cluster_anaylsis
 if config["MBdecomp"].getboolean("cluster_analysis"):
             
     # Check if the file already exists, and do something about it
     if config["MBdecomp"].getboolean("append"):
+        # If both flags are True, print a warning message
         if config["MBdecomp"].getboolean("overwrite"):
             print("Warning: Both flags selected. Will append " + 
                 "to file if it exists.")
+        # Open the log file
         log = open(log_name, 'a')
         write_log = True
     elif config["MBdecomp"].getboolean("overwrite"):
+        # Open the log file
         log = open(log_name, 'w')
         write_log = True
 
@@ -56,8 +58,6 @@ if config["MBdecomp"].getboolean("cluster_analysis"):
         print("Error: File exists and don't know how to deal with it."+
             " No log file will be produced.")
         
-
-
 while_read = 1
 count = 0
 '''
@@ -66,9 +66,11 @@ Let user decide what to do with log file.
 By default, if a log file already exists, terminate.
 We can also let the user append or overwrite the existing file.
 '''
+
+
 while while_read:
-    mol_from_xyz = molecule.Molecule()
-    while_read = mol_from_xyz.read_xyz(f)
+    molecule = xyz_to_molecule(input_path)
+    while_read = xyz
     if while_read:
         count += 1
         #print(mol_from_xyz)

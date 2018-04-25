@@ -1,14 +1,68 @@
+class Atom(object):
+    """
+    A class for an atom in a fragment, stores it's charge, number of unpaired
+    electrons, and coordinates
+    """
+
+    '''
+    Initialize a new atom from the given information
+    '''
+    def __init__(self, name, charge, unpaired_electrons, x, y, z):
+        # Single letter symbol corresponding to periodic table abbrehviation.
+        # For example: H, O, N, Cl, He
+        self.name = name
+        # Ionization of atom, positive values means missing electrons, negative
+        # values mean extra electrons
+        self.charge = charge
+        # Number of unpaired electrons. An electron is unpaired if it occupies
+        # an orbital without a second electron
+        self.unpaired_electrons = unpaired_electrons
+        # x position in angstroms
+        self.x = x
+        # y position in angstroms
+        self.y = y
+        # z position in angstoms
+        self.z = z
+
+    '''
+    Get the name of this symbol as its periodic table abbreviation
+    '''
+    def get_name(self):
+        return self.name
+
+    '''
+    Get the charge of this atom
+    '''
+    def get_charge(self):
+        return charge
+
+    '''
+    Get the number of unpaired electrons in this atom
+    '''
+    def get_unpaired(self):
+        return unpaired_electrons
+
+    '''
+    Returns a string representing the information in this atom in the xyz file
+    format
+    '''
+    def to_xyz(self):
+        return "{} {} {} {}".format(self.name, self.x, self.y, self.z)
+
 class Fragment(object):
     """
-    A class for a fragment of a Molecule. Accepts symbols and coordinates.
+    A class for a fragment of a Molecule. Contains atoms
     """
-
+    
+    '''
+    Initialize a new Fragment with an empty atoms list
+    '''
     def __init__(self):
-        self.natoms = 0
-        self.symbols = []
-        self.coordinates = []
-        self.comment = None
+        # Array of atoms in this molecule
+        self.atoms = []
 
+    """
+    STILL NEEDED?
     def __repr__(self):
         return self.__str__()
 
@@ -20,34 +74,116 @@ class Fragment(object):
                 s += "{:22.14e}".format(c)
             s += "\n"
         return s
+    """
+
+    '''
+    Add an Atom to this Fragment.
+    '''
+    def add_atom(self, atom):
+        self.atoms.append(atom)
+
+    '''
+    Get the total charge of this fragment by summing the charges of the atoms
+    within it.
+    '''
+    def get_charge(self):
+        charge = 0
+        for atom in self.atoms:
+            charge += atom.get_charge()
+        return charge
+
+    '''
+    Get the total number of unpaired electrons in this fragment by summing
+    the unpaired electrons of the Atoms within it
+    '''
+    def get_unpaired(self):
+        unpaired = 0
+        for unpaired in self.atoms:
+            unpaired += atom.get_unpaired()
+        return unpaired
+
+    '''
+    Gets the number of atoms in this fragment
+    '''
+    def get_num_atoms(self):
+        return len(self.atoms)
  
-    def get_xyz_string(self):
+    '''
+    Returns a string representing the information in this fragment in the xyz
+    file format.
+    '''
+    def to_xyz(self):
         """ 
         Builds a string used for an output.
         """
-        s=str(self.natoms)+"\n"
-        s+=self.comment+"\n"
-        s+=self.__str__()
-        return s
+        string = ""
+        for atom in self.atoms:
+            string += atom.to_xyz() + "\n"
+        return string
 
 class Molecule(object):
     """
-    A class for a complete assembly of fragments.
+    A Molecule holds an array of fragments.
     """
 
-    natoms = 0
-    fragments = []
-    energies = {}
-    nmer_energoes = []
-    mb_energies = []
-    # Goal: Convert molecule into a dictionary to convert into JSON
+    '''
+    Construct a new Molecule.
+    '''
     def __init__(self):
-        self.natoms = 0
+        # list of fragments in this molecule
         self.fragments = []
         self.energies = {}
         self.nmer_energies = []
         self.mb_energies = []
         #TODO: consider other attributes required by this class
+
+    '''
+    Add a Fragment to this Molecule.
+    '''
+    def add_fragment(self, fragment):
+        self.fragments.append(fragment)
+
+    '''
+    Get total charge of this Molecule by summing charges of Fragments.
+    '''
+    def get_charge(self):
+        charge = 0
+        for fragment in self.fragments:
+            charge += fragment.get_charge()
+        return charge
+
+    '''
+    Get total unpaired electrons in this Molecule by summing unpaired electrons
+    of Fragments.
+    '''
+    def get_unpaired(self):
+        upaired = 0
+        for fragment in self.fragments:
+            unpaired += fragment.get_unpaired()
+
+    '''
+    Gets the number of Atoms in this Molecule
+    '''
+    def get_num_atoms(self):
+        atoms = 0
+        for fragment in self.fragments:
+            atoms += fragment.get_num_atoms()
+        return atoms
+    
+
+    '''
+    Return a string representing the fragments of this Molecule specified by
+    the indicies in the fragments parameter in the xyz file format.
+    '''
+    def to_xyz(self, fragments):
+        string = ""
+        for index in fragments:
+            # newline improves readability but might break psi4 or qchem
+            string += self.fragments[index].to_xyz() + "\n"
+        return string[:-1]
+
+    '''
+    STILL NEED?
 
     def __repr__(self):
         ret_str = ""
@@ -104,7 +240,7 @@ class Molecule(object):
                 total_from_comment += int(natom)
             # Should the total amount not match, raise an error
             if total_from_comment != self.natoms:
-                print("Error: Fragment atoms do not add to total atoms in xyz file");
+                print("Error: Fragment atoms do not add to total atoms in xyz file")
                 raise ValueError
           
             for mono_natoms in self.comment:
@@ -121,3 +257,4 @@ class Molecule(object):
             return 1
         except ValueError:
             return 0
+    '''

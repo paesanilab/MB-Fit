@@ -17,6 +17,9 @@ install:
 language: cpp
 
 script:
+    # Build ndiff tool
+    - cd $TRAVIS_BUILD_DIR/tools/ndiff-2.00; ./configure; make
+
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh

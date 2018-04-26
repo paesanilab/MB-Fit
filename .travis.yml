@@ -12,7 +12,7 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda create -q -n psi4env -c psi4 -c openbabel --file qm_mb_energy_calculator/requirements.txt python=3.6
+  - conda create -q -n psi4env -c psi4 --file qm_mb_energy_calculator/requirements.txt python=3.6
 
 language: cpp
 
@@ -26,8 +26,8 @@ script:
     # requires MKL, cannot run on Travis-CI unless we reconfigure it to use conda
     #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
 
-    # psi4 segfaults on Travis-CI
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests; source activate psi4env; bash test_run_psi4_1B.sh
+    # psi4
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
 
     # training set generation
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/src; make

@@ -1,5 +1,5 @@
 #!/bin/bash
-export PATH=$PATH:../../../tools/ndiff-2.0
+export PATH=$PATH:../../../tools/ndiff-2.00
 
 out=psi4_test.out
 

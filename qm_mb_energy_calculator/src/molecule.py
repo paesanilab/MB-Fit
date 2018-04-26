@@ -17,7 +17,7 @@ class Fragment(object):
         for symbol,coord in zip(self.symbols, self.coordinates):
             s += "{:2s}".format(symbol)
             for c in coord:
-                s += "{:8.4f}".format(c)
+                s += "{:22.14e}".format(c)
             s += "\n"
         return s
  

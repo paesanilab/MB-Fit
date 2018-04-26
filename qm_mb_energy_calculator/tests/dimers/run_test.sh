@@ -12,7 +12,7 @@ exit_code=$?
 ndiff mbdecomp.log expected/mbdecomp.log >> $log
 exit_code=$(($exit_code + $?))
 
-ndiff -quiet -abserr 1.e-12 -separators '[ \t,()]' json_output.json expected/json_output.json >> $log
+ndiff -quiet -abserr 1.e-8 -separators '[ \t,()]' json_output.json expected/json_output.json >> $log
 exit_code=$(($exit_code + $?))
 
 if [ $exit_code -ne 0 ]

@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH=$PATH:../../../tools/ndiff-2.0
 
 driver=../../src/driver.py
 log=test.log

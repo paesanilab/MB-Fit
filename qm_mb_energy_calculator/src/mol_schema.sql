@@ -1,3 +1,3 @@
-drop table if exists Molecules
+DROP table if exists Molecules
 
-create table Molecules(mID int, mol, energies)
+CREATE table Molecules(mID int, mol blob, energies blob, updated date)

@@ -22,10 +22,10 @@ def build_frag_indices(index_list, n=3):
             comb_sub_arr.append(comb)
         comb_arr.append(comb_sub_arr)
         n -= 1
+    print(comb_arr)
     return comb_arr
 
-# Change to get nmer energies
-def get_nmer_energies(mol, config):
+def get_nmer_energies(molecule, config):
     """ 
     Computes the energy of a molecule and the MB decomposition,
     if requested.
@@ -35,23 +35,21 @@ def get_nmer_energies(mol, config):
             only one energy or many energies (from MB decomposition).
     """
     if config["MBdecomp"].getboolean("mbdecomp"):
-        combs = build_frag_indices(range(len(mol.fragments)), 
-            len(mol.fragments))
+        combinations = build_frag_indices(range(len(molecule.fragments)), len(molecule.fragments))
     else:
-        combs = build_frag_indices(range(len(mol.fragments)), 
-            len(mol.fragments)+1)
+        combinations = build_frag_indices(range(len(molecule.fragments)), len(molecule.fragments)+1)
     energy_str = ""
     output_str = ""
-    for sub_arr in combs:
+    for sub_arr in combinations:
         total_en_sub_arr = []
         for comb in sub_arr:
-            frag_str = mol.mol_comb_str(comb)
+            frag_str = molecule.to_xyz(comb)
             energy = calculator.calc_energy(frag_str, config)
             energy_str += str(energy) + " "
             output_str += "%.8f"%energy + " "
-            mol.energies[comb] = energy
+            molecule.energies[comb] = energy
             total_en_sub_arr.append(energy)
-        mol.nmer_energies.append(total_en_sub_arr)
+        molecule.nmer_energies.append(total_en_sub_arr)
     return output_str
 
 # Get this printed to log file

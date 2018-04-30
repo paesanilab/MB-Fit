@@ -147,13 +147,11 @@ def calc_qchem_energy(frag_str, config):
 
     qchem_input += "$end"
  
-    print("Q-chem input file: \n" + qchem_input)
-   
     call(["mkdir", "qchem"]);
     
     f = open("qchem/qchem_in",'w');
     f.write(qchem_input)
     f.close();    
     
-    call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
+    # call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
     return 0

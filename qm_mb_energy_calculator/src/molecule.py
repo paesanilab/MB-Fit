@@ -61,7 +61,7 @@ class Fragment(object):
         # Array of atoms in this molecule
         self.atoms = []
 
-    """
+    '''
     STILL NEEDED?
     def __repr__(self):
         return self.__str__()
@@ -74,7 +74,7 @@ class Fragment(object):
                 s += "{:22.14e}".format(c)
             s += "\n"
         return s
-    """
+    '''
 
     '''
     Add an Atom to this Fragment.
@@ -175,7 +175,10 @@ class Molecule(object):
     Return a string representing the fragments of this Molecule specified by
     the indicies in the fragments parameter in the xyz file format.
     '''
-    def to_xyz(self, fragments):
+    def to_xyz(self, fragments = None):
+        # by default, use all fragments
+        if fragments == None:
+            fragments = range(len(self.fragments))
         string = ""
         for index in fragments:
             # newline improves readability but might break psi4 or qchem

@@ -67,10 +67,20 @@ By default, if a log file already exists, terminate.
 We can also let the user append or overwrite the existing file.
 '''
 
+# parse array of molecules from input xyz file
+molecules = xyz_to_molecules(f)
 
+# for each molecule from the input xyz file...
+for molecule in molecules:
+    print(molecule.fragments)
+    energy = mbdecomp.get_nmer_energies(molecule, config)
+    molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies[::-1])
+    training_set_file.write(str(molecule.get_num_atoms()) + '\n' + str(energy) + '\n' + molecule.to_xyz() + '\n')
+    print(energy)
+
+"""
+OLD CODE, COMMENTED
 while while_read:
-    molecule = xyz_to_molecule(input_path)
-    while_read = xyz
     if while_read:
         count += 1
         #print(mol_from_xyz)
@@ -118,7 +128,7 @@ while while_read:
             json_output["k-body_energies"] = k_dict
             with open('json_output.json', 'w') as fp:
                 json.dump(json_output, fp, indent=4)
-
+"""
 
 # We make an exception here in case there is no log file
 try:

@@ -106,8 +106,11 @@ class InconsistentInputException(Exception):
     def __init__(self, message):
         self.message = message
 
+'''
+COMMENTED TEST CODE
 molecules = xyz_to_molecules(open("trimer_input.xyz", 'r'))
 for molecule in molecules:
     # why is there an extra newline?
     print("MOLECULE: \n")
     print(molecule.to_xyz([0, 1, 2]))
+'''

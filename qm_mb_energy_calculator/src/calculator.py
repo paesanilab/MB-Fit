@@ -30,7 +30,7 @@ def sym_to_num(symbol):
     elif symbol == "H":
         return 1
 
-def calc_energy(frag_str, config):
+def calc_energy(molecule, fragment_indicies, config):
     """
     Compute the energy using a model requested by the user
     """
@@ -38,12 +38,12 @@ def calc_energy(frag_str, config):
     if model == "psi4":
         psi4.core.set_output_file("/dev/null", False)
         psi4.set_memory(config["psi4"]["memory"])
-        return calc_psi4_energy(frag_str, config)
+        return calc_psi4_energy(molecule, fragment_indicies, config)
     
     if model == "TensorMol":
-        return TensorMol_convert_str(frag_str, config)
+        return TensorMol_convert_str(molecule, fragment_indicies, config)
     if  model == "qchem":
-        return calc_qchem_energy(frag_str, config)
+        return calc_qchem_energy(molecule, fragment_indicies, config)
 
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):
@@ -76,11 +76,12 @@ def En(m, x_, manager):
     energy = Etotal[0]
     return energy
 
-def calc_psi4_energy(frag_str, config):
+def calc_psi4_energy(molecule, fragment_indicies, config):
     """
     Use PSI4 to compute the energy of a fragment
     """
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(frag_str)
+    psi4_string = molecule.to_xyz(fragment_indicies)
+    psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
     psi4_mol.update_geometry()
 
     psi4.set_num_threads(config["psi4"].getint("threads"))
@@ -90,11 +91,12 @@ def calc_psi4_energy(frag_str, config):
     #print(energy)
     return energy
 
-def TensorMol_convert_str(frag_str, config):
+def TensorMol_convert_str(molecule, fragment_indicies, config):
     """
     Prepares input data 
     """
-    xyz_list = frag_str.split()
+    tensorMol_string = molecule.to_xyz(fragment_indicies)
+    xyz_list = tensorMol_string.split()
     atoms = numpy.array([])
     coords = numpy.array([])
     for i in range(int(len(xyz_list)/4)):
@@ -116,7 +118,7 @@ def calc_TensorMol_energy(atoms, coords, config):
 """
 Calculates energy using qchem
 """
-def calc_qchem_energy(frag_str, config):
+def calc_qchem_energy(molecule, fragment_indicies, config):
 
     #prepare Q-chem input fil from frag string
 
@@ -134,7 +136,7 @@ def calc_qchem_energy(frag_str, config):
 
     # atoms in the molecule
     # might need to add whitespace before each line?
-    qchem_input += frag_str
+    qchem_input += molecule.to_xyz(fragment_indicies)
 
     qchem_input += "$end\n"
 

@@ -132,7 +132,9 @@ class Molecule(object):
     def __init__(self):
         # list of fragments in this molecule
         self.fragments = []
+        # list of energies for this molecule, filled in by get_nmer_energies
         self.energies = {}
+        # list of nmer_energies for this molecule, filled by get_nmer_energies
         self.nmer_energies = []
         self.mb_energies = []
         #TODO: consider other attributes required by this class
@@ -184,6 +186,14 @@ class Molecule(object):
             # newline improves readability but might break psi4 or qchem
             string += self.fragments[index].to_xyz() + "\n"
         return string[:-1]
+
+    '''
+    Clears the energies, nmer_energies, and mb_energies fields to make way for new calculations
+    '''
+    def clear(self):
+        self.energies = {}
+        self.nmer_energies = []
+        self.mb_energies = []
 
     '''
     STILL NEED?

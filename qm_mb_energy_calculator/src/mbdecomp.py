@@ -3,27 +3,50 @@ A module for computing the energy of a molecule with or without
 many-body decomposition.
 """
 
+"""
+LIBRARY IMPORTS
+"""
+
 import itertools
 import calculator
 from math import factorial
 
-def build_frag_indices(index_list, n=3):
-    """
-    Creates an array of all combinations of mCn.
-    Input: m and n, which correspond to the formula mCn.
-    Output: An array of combinations of size n.
-    """
-    comb_arr = []
-    if len(index_list) < n:
-        return itertools.combinations(index_list, len(index_list))
-    while n > 0:
-        comb_sub_arr = []
-        for comb in itertools.combinations(index_list, n):
-            comb_sub_arr.append(comb)
-        comb_arr.append(comb_sub_arr)
-        n -= 1
-    print(comb_arr)
-    return comb_arr
+"""
+Returns a 3d array of indicies to be passed into calc_energy.
+Its hard to explain what this does, so I'll just give examples:    
+
+
+if mbdecomp is true, returns an array of every possible combinations
+in the list, sorted by size.
+    Example: index_list = [0, 1, 2]
+            return value = [
+                [[0], [1], [2]],
+                [[0, 1], [0, 2], [1, 2]],
+                [[0, 1, 2]]
+            ]
+
+if mbdecomp is false:
+    Example: index_list = [0, 1, 2]
+            return value = [[[0, 1, 2]]]
+"""
+def build_frag_indices(index_list, mbdecomp):
+    # used to hold array of combinations of index_list
+    combinations_arr = []
+    
+    # if mbdecomp is False, just return a copy of index_list
+    if mbdecomp == False:
+        combinations_arr.append([index_list[:]])
+        return combinations_arr
+
+    # if mbdecomp is True, return array of every possible combination of index_list
+    for n in range(1, len(index_list) + 1):
+        # create array to hold all combinations of length n
+        size_n_combinations = []
+        for combination in itertools.combinations(index_list, n):
+            size_n_combinations.append(combination)
+        # append array of all combinations of size n to the main cominations array
+        combinations_arr.append(size_n_combinations)
+    return combinations_arr
 
 def get_nmer_energies(molecule, config):
     """ 
@@ -35,21 +58,20 @@ def get_nmer_energies(molecule, config):
             only one energy or many energies (from MB decomposition).
     """
     if config["MBdecomp"].getboolean("mbdecomp"):
-        combinations = build_frag_indices(range(len(molecule.fragments)), len(molecule.fragments))
+        combinations = build_frag_indices(range(len(molecule.fragments)), True)
     else:
-        combinations = build_frag_indices(range(len(molecule.fragments)), len(molecule.fragments)+1)
+        combinations = build_frag_indices(range(len(molecule.fragments)), False)
     energy_str = ""
     output_str = ""
-    for sub_arr in combinations:
-        total_en_sub_arr = []
-        for comb in sub_arr:
-            frag_str = molecule.to_xyz(comb)
-            energy = calculator.calc_energy(frag_str, config)
+    for size_n_combinations in combinations:
+        total_size_n_energy = []
+        for combination in size_n_combinations:
+            energy = calculator.calc_energy(molecule, combination, config)
             energy_str += str(energy) + " "
             output_str += "%.8f"%energy + " "
-            molecule.energies[comb] = energy
-            total_en_sub_arr.append(energy)
-        molecule.nmer_energies.append(total_en_sub_arr)
+            molecule.energies[combination] = energy
+            total_size_n_energy.append(energy)
+        molecule.nmer_energies.append(total_size_n_energy)
     return output_str
 
 # Get this printed to log file
@@ -106,7 +128,11 @@ def mbdecomp(nmer_energies):
     Output: list of nB interaction energies,
              e.g. for trimer [E1B,E2B,E3B]
     """
+    
+    # initialize array to hold return value
     nb_energies = []
+    
+    # i don't know what the rest of this does, Andy wrote it apparently
     esum = []
     nn = len(nmer_energies)
     for k in range(len(nmer_energies)):

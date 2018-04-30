@@ -196,6 +196,12 @@ class Molecule(object):
         self.mb_energies = []
 
     '''
+    Calculates the qchem energy
+
+    '''
+    
+    '''
+
     STILL NEED?
 
     def __repr__(self):

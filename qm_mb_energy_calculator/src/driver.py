@@ -115,9 +115,54 @@ for molecule in molecules:
     # calculate energy
     energy = mbdecomp.get_nmer_energies(molecule, config)
     # calculate mb_energies
-    molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies[::-1])
+    molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
     # write output to training set file
     training_set_file.write(str(molecule.get_num_atoms()) + '\n' + str(energy) + '\n' + molecule.to_xyz() + '\n')
+
+    # if log is enabled, write the log
+    if write_log:
+        json_output = {}
+        
+        # write molecule's xyz format to log file
+        log.write(molecule.to_xyz() + '\n')
+        # write molecule's fragment energies to log file
+        log.write(molecule.log_frag_energy())
+        log.write("N-body energies:\n")
+        # write molecule's multibody energy to log file
+        log.write(molecule.log_mb_energy(config["MBdecomp"].getint("max_nbody_energy")))
+        
+        if config["MBdecomp"].getboolean("kbody_energy"):
+            log.write("K-body energies:\n")
+            # get kbody energies
+            k_output = mbdecomp.get_kbody_energies(molecule)
+            k_dict = k_output[0]
+            k_diff = k_output[1]
+            for index in k_dict.keys():
+                log.write("{}: {}\n".format(index, "%.8f"%k_dict[index]))
+            log.write("K-body differences:\n")
+            for bodies in range(len(k_diff)):
+                log.write("V_{}B - K_{}B: {}\n".format(bodies+1, bodies+1, "%.8f"%k_diff[bodies]))
+        log.write("--------------\n")
+        
+        # Build json dictionary
+        
+        # put molecule's xyz format into json
+        json_output["molecule"] = molecule.to_xyz()
+        
+        # put fragment energies into json
+        json_output["frag_energies"] = {"E{}".format(key): molecule.energies[key] for key in molecule.energies.keys()}
+        
+        # put nbody energies into json
+        json_output["n-body_energies"] = {"V_{}B".format(molecule.mb_energies.index(energy) + 1): energy for energy in molecule.mb_energies}
+        
+        # put kbody energies into json
+        json_output["k-body_energies"] = k_dict
+        with open("json_output.json", 'w') as json_file:
+            json.dump(json_output, json_file, indent=4)
+
+
+            
+        
 
 """
 OLD CODE, COMMENTED

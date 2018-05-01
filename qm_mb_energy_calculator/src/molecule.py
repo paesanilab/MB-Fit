@@ -174,7 +174,7 @@ class Molecule(object):
     
 
     '''
-    Return a string representing the fragments of this Molecule specified by
+    Returns a string representing the fragments of this Molecule specified by
     the indicies in the fragments parameter in the xyz file format.
     '''
     def to_xyz(self, fragments = None):
@@ -188,7 +188,33 @@ class Molecule(object):
         return string[:-1]
 
     '''
-    Clears the energies, nmer_energies, and mb_energies fields to make way for new calculations
+    Returns a string containing indicies and energies of nbody fragment
+    combinations in the format of the log file
+    '''
+    def log_frag_energy(self):
+        string = ""
+        # for each item in energies, add its combination indicies and energy
+        # to the output string
+        for combination in self.energies.keys():
+            string += "E{}: {}\n".format(combination, "%.8f"%self.energies[combination])
+        return string
+
+    '''
+    Returns a string containing the many body interaction energoes, in the
+    format of the log file
+    '''
+    def log_mb_energy(self, limit):
+        string = ""
+        
+        for index in range(limit):
+            string += "V_{}B: {}\n".format(index + 1, "%.8f"%self.mb_energies[index])
+        
+        return string
+    
+
+    '''
+    Clears the energies, nmer_energies, and mb_energies fields to make way for
+    new calculations
     '''
     def clear(self):
         self.energies = {}

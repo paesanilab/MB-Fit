@@ -77,7 +77,7 @@ def get_nmer_energies(molecule, config):
 # Loop through each k-mer, and for each k-mer do a k-body decomp
 # Refine k-body energy function, we can discard some values returned from func
 # This is called k-body decomp
-def get_kbody_energies(mol):
+def get_kbody_energies(molecule):
     """
     Calculates the k-mer energies of the fragment
     subsets of a molecule. You can only run this function once you have
@@ -86,26 +86,40 @@ def get_kbody_energies(mol):
     Output: Many-body interaction energies of the subsets of molecules.
             Prints to terminal at the moment.
     """
-    comb = build_frag_indices(range(len(mol.fragments)), len(mol.fragments))
+
+    # get list of every possibe combinations of the indicies of the fragments,
+    # sorted by size. ie: [[1,2,3],[12,23,13],[123]]
+    nbody_combinations = build_frag_indices(range(len(molecule.fragments)), True)
+    # 
     kbody_dict = {}
-    kbody_diff = list(mol.mb_energies)
+    # 
+    kbody_diff = list(molecule.mb_energies)
   
-    # change comb to kbodys
-    for kbody_subset in comb:
-        for individual_kbody_indices in kbody_subset:
-            kbody_indices = build_frag_indices(individual_kbody_indices, 
-                len(individual_kbody_indices))
+    
+    # for each list of size n combinations of fragments
+    for size_n_combinations in nbody_combinations:
+        # for each combination of size n
+        for size_n_combination in size_n_combinations:
+            # create list of all possible combinations of that combination
+            kbody_combinations = build_frag_indices(size_n_combination, True)
+            # list of kbody energies, sorted into sublists by size. ie: [[1, 2, 3], [12,23,13], [123]]
             kbody_energies = []
-            for kbody_nfrags in kbody_indices:
-                kbody_sub_arr = []
-                for kbody_index in kbody_nfrags:
-                    kbody_sub_arr.append(mol.energies[kbody_index])
-                kbody_energies.append(kbody_sub_arr)
-            kbody_input_index = kbody_indices[::-1]
+            # for each list of size k combinations of fragments
+            for size_k_combinations in kbody_combinations:
+                # list of energies for size k bodies
+                size_k_energies = []
+                # for each combination of size k
+                for size_k_combination in size_k_combinations:
+                    # get the energy of that combination
+                    size_k_energies.append(molecule.energies[size_k_combination])
+                # add the list of energies for all combinations of size k to the total list of energies
+                kbody_energies.append(size_k_energies)
+
+            kbody_input_index = kbody_combinations
 
             # Although mbdecomp() returns as an list of energies, we only
             # want the last one
-            kbody_output_energy = mbdecomp(kbody_energies[::-1])[-1]
+            kbody_output_energy = mbdecomp(kbody_energies)[-1]
 
             # Likewise, we are only interested in one set of indices when
             # presenting our output
@@ -118,6 +132,10 @@ def get_kbody_energies(mol):
             kbody_diff[which_body_energy] -= kbody_output_energy
     return [kbody_dict, kbody_diff]
 
+
+"""
+Magic
+"""
 def mbdecomp(nmer_energies):
     """
     MB interaction energy decomposition

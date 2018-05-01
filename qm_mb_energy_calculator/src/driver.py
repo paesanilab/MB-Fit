@@ -135,6 +135,9 @@ for molecule in molecules:
             log.write("K-body energies:\n")
             # get kbody energies
             k_output = mbdecomp.get_kbody_energies(molecule)
+
+            #TODO: understand and comment this            
+
             k_dict = k_output[0]
             k_diff = k_output[1]
             for index in k_dict.keys():
@@ -159,63 +162,7 @@ for molecule in molecules:
         json_output["k-body_energies"] = k_dict
         with open("json_output.json", 'w') as json_file:
             json.dump(json_output, json_file, indent=4)
-
-
-            
         
-
-"""
-OLD CODE, COMMENTED
-while while_read:
-    if while_read:
-        count += 1
-        #print(mol_from_xyz)
-        #print(count)
-        energy = mbdecomp.get_nmer_energies(mol_from_xyz, config)
-        mol_from_xyz.mb_energies = mbdecomp.mbdecomp(
-            mol_from_xyz.nmer_energies[::-1])
-        training_set_file.write(str(mol_from_xyz.natoms)+
-            '\n'+str(energy)+'\n'+str(mol_from_xyz)+'\n')
-        
-        if write_log:
-            # Create a dictionary (for JSON) that collects all output info
-            # How to check the uniqueness of a molecule?
-            # One proposal: generate and check MD5 checksum
-            json_output = {}
-            
-            # Continue to write this in a log file
-            log.write(str(mol_from_xyz)+'\n')
-            log.write(mol_from_xyz.write_frag_energy())
-            log.write("N-body energies:\n")
-            log.write(mol_from_xyz.write_mb_energy(
-                  config["MBdecomp"].getint("max_nbody_energy")))
-            if config["MBdecomp"].getboolean("kbody_energy"):
-                  log.write("K-body energies:\n")
-                  k_output = mbdecomp.get_kbody_energies(mol_from_xyz)
-                  k_dict = k_output[0]
-                  k_diff = k_output[1]
-                  for index in k_dict.keys():
-                      log.write("{}: {}\n".format(index, "%.8f"%k_dict[index]))
-                  log.write("K-body differences:\n")
-                  for bodies in range(len(k_diff)):
-                      log.write("V_{}B - K_{}B: {}\n".format(bodies+1,
-                          bodies+1, "%.8f"%k_diff[bodies]))
-            log.write("--------------\n")
-
-            # Place some entries of output into dictionary
-            json_output["molecule"] = str(mol_from_xyz)
-            # nmer_energies
-            json_output["frag_energies"] = {"E{}".format(key): 
-                mol_from_xyz.energies[key] for key in 
-                mol_from_xyz.energies.keys()}        
-            json_output["n-body_energies"] = {
-                "V_{}B".format(mol_from_xyz.mb_energies.index(energy)+1):
-                energy for energy in mol_from_xyz.mb_energies}
-            json_output["k-body_energies"] = k_dict
-            with open('json_output.json', 'w') as fp:
-                json.dump(json_output, fp, indent=4)
-"""
-
 # We make an exception here in case there is no log file
 try:
     log.close()

@@ -57,16 +57,31 @@ Output: The calculated energy of the molecule. This can either have
 """
 def get_nmer_energies(molecule, config):
     if config["MBdecomp"].getboolean("mbdecomp"):
+        # if multibody decomposition is requested, get a list of all possible combinations of fragment indices sorted into sub lists by size
         combinations = build_frag_indices(range(len(molecule.fragments)), True)
     else:
+        # if not, the list will only contain 1 sublist with 1 combination
         combinations = build_frag_indices(range(len(molecule.fragments)), False)
+    # TODO: remove if unused?
     energy_str = ""
+    
+    # initialize string to build return value
     output_str = ""
+
+    # for every set of size n combinations...
     for size_n_combinations in combinations:
+        # list of all energies of fragment combinations of size n
         total_size_n_energy = []
+        
+        # for each combination of size n...
         for combination in size_n_combinations:
+            # calculate the energy of this set of fragments
             energy = calculator.calc_energy(molecule, combination, config)
+
+            # TODO: unused?
             energy_str += str(energy) + " "
+            
+            # build output_str with 9
             output_str += "%.8f"%energy + " "
             molecule.energies[combination] = energy
             total_size_n_energy.append(energy)

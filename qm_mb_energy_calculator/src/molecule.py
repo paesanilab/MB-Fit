@@ -47,7 +47,7 @@ class Atom(object):
     format
     '''
     def to_xyz(self):
-        return "{} {} {} {}".format(self.name, self.x, self.y, self.z)
+        return "{} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
 class Fragment(object):
     """
@@ -184,7 +184,7 @@ class Molecule(object):
         string = ""
         for index in fragments:
             # newline improves readability but might break psi4 or qchem
-            string += self.fragments[index].to_xyz() + "\n"
+            string += self.fragments[index].to_xyz()
         return string[:-1]
 
     '''

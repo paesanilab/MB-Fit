@@ -17,7 +17,8 @@ def __init__(database_name):
     connect = sqlite3.connect(database_name)
     cursor = connect.cursor()
     cursor.execute('''create table if not exists 
-    Molecules(mID int, mol blob, energies blob, updated date)''')
+        Molecules(mID int, mol blob, model text, package text, 
+        energies blob, updated date)''')
     return cursor, connect
 
 def query(cursor, table, obj_tuple, update=False):

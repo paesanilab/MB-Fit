@@ -21,6 +21,8 @@ try:
 except ImportError:
     pass
 
+import database
+
 def sym_to_num(symbol):
     """
     Converts symbols into numbers for TensorMol input
@@ -34,6 +36,25 @@ def calc_energy(molecule, fragment_indicies, config):
     """
     Compute the energy using a model requested by the user
     """
+
+# This section needs more thinking
+'''
+    # First, check if this exists in the database
+    # Begin by checking the existence of a database
+    db = config["database"]["name"]
+
+    # If no name is given, raise an error
+    if not db:
+        raise NameError
+
+    # Either create or connect to a database if a name is given
+    connect, cursor = database(db)
+    
+    # Now check if we are not updating the values in the database
+    if not config["database"]["update"]:
+        energies = query
+'''
+
     model = config["driver"]["model"]
     if model == "psi4":
         psi4.core.set_output_file("/dev/null", False)

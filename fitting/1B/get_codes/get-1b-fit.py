@@ -548,8 +548,32 @@ struct variable {
     double v_coul(const double& k,
                   const double * p1, const double * p2 );
 
+    double v_gau0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+
     double g[3]; // diff(value, p1 - p2)
 };
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_gau0(const double& r0, const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(-k*(r0 - r)*(r0 - r));
+    const double gg = 2*k(r0-r)*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
@@ -2003,11 +2027,36 @@ struct variable {
     double v_coul(const double& k,
                   const double * p1, const double * p2 );
                   
+    double v_gau0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
     void grads(const double& gg, double * grd1, double * grd2,
                const double * p1, const double * p2);
 
     double g[3]; // diff(value, p1 - p2)
 };
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_gau0(const double& r0, const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(-k*(r0 - r)*(r0 - r));
+    const double gg = 2*k(r0-r)*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
 
 //----------------------------------------------------------------------------//
 

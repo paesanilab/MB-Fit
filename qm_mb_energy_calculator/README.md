@@ -1,14 +1,100 @@
-#### Training Set Generation
-This directory contains the scripts to read in geometries using Open Babel's `pybel` and calculates their 1B energies using [PSI4](http://www.psicode.org), an open-source suite of ab initio quantum chemistry programs designed for efficient, high-accuracy simulations of a variety of molecular properties.
+# Training Set Generation
 
-Open Babel's `openbabel` module provides direct access to the C++ Open Babel library from Python [1]. The module comes with the `pybel` wrapper which provides convenience functions and classes that make it simpler to use the Open Babel libraries from Python, especially for file input/output and for accessing the attributes of atoms and molecules [2].  
+## Overview:
+This program can be used to calculate the many-body decomposition energies, as well as the k-mer energies of a molecule.
+These molecules can also be defined as fragments by the user, inside an xyz input file.
 
-Inside the `scripts` directory, `run_psi4_1B.py` uses `pybel` to read in a one-body xyz file and generate a one-body training set using PSI4. PSI4 output files are placed in a `calculations` directory within the current directory and are compressed into a zip file.
- 
-In the future, this will contain a script(s) to read in geometries and calculate 1B, 2B, 3B, and NB reference energies using PSI4. 
+## To use this program:
 
-References:
+### Setup:
+To begin, it is assumed that the user has installed a `conda` build of some kind.
+Otherwise, please follow this link: https://conda.io/docs/user-guide/install/index.html
 
-1.[Noel M. O’Boyle, Michael Banck, Craig A. James, Chris Morley, Tim Vandermeersch, Geoffrey R. Hutchison. Open Babel: An open chemical toolbox. J. Cheminf. 2011, 3, 33.](https://jcheminf.springeropen.com/articles/10.1186/1758-2946-3-33)
+To start, create a `conda` environment that includes Python 3, and TensorFlow. If TensorFlow is already installed, then update TensorFlow.
+```
+conda create -n foo python=3.6 tensorflow
+```
 
-2.[N.M. O’Boyle, C. Morley and G.R. Hutchison. Pybel: a Python wrapper for the OpenBabel cheminformatics toolkit. Chem. Cent. J. 2008, 2, 5.](https://ccj.springeropen.com/articles/10.1186/1752-153X-2-5)
+The above command creates an environment named `foo` with Python 3.6, as well as TensorFlow 1.4.0. If your system has Python 3 by default, then feel free to exclude the Python argument like so:
+```
+conda create -n foo tensorflow
+```
+
+To start, create a `conda` environment that includes Python 3. The following command creates a conda environment named `foo` that has Python 3.6:
+```
+conda create -n foo python=3.6
+```
+
+Once you have created your environment, activate it with this command:
+```
+source activate foo
+```
+
+At this point, you should be in the environment `foo`.
+
+Next, install `psi4`. The command is:
+```
+conda install -c psi4 psi4
+```
+
+Once you have finished installing `psi4`, feel free to run the test script under the tests directory:
+```
+cd tests
+./test.sh
+```
+
+### To run this program:
+
+For this program, you can run the program anywhere, as long as you have a `settings.ini` file and an xyz input file in your current working directory. The `input` option in `settings.ini` must match the name of the xyz file, including file extension.
+
+The xyz input follows standard xyz file conventions, but we require the comment line to include a list a numbers to denote the number of atoms per fragment. For example, for a water trimer:
+```
+9
+3 3 3
+O        -0.0005900753    0.0000000000   -0.0004526740
+H         0.9256102457    0.0000000000   -0.2481132352
+H        -0.0000930743    0.0000000000    0.9582869092
+O        -0.0005900753    2.0000000000   -0.0004526740
+H         0.9256102457    2.0000000000   -0.2481132352
+H        -0.0000930743    2.0000000000    0.9582869092
+O        -0.0005900753    4.0000000000   -0.0004526740
+H         0.9256102457    4.0000000000   -0.2481132352
+H        -0.0000930743    4.0000000000    0.9582869092
+```
+
+To distinguish terminal commands and output, a `$` is being used here. To run this program:
+```
+$ ls
+settings.ini 2mol_trimer.xyz
+$ python ../src/driver.py
+```
+
+## About `settings.ini`:
+
+Use this file to customize your options to use this program. This file must be in the same directory as your current working directory.
+
+#### [driver]: Settings pertaining to the initialization of the program.
+* input: The name of the xyz input file, including its file extension.
+* model: The calculation model we are using for calculations. Currently only supports `psi4`.
+
+#### [psi4]: Settings specific to the `psi4` model.
+* memory: The memory `psi4` will use for calculation.
+* method: The method `psi4` will use for calculation.
+* basis: The basis set `psi4` will use for calculation.
+* charge: Currently unused.
+* spin: Current unused.
+* threads: The amount of parallel threads `psi4` will use for calculation.
+
+
+#### [MBdecomp]: Settings pertaining many-body analysis of the molecule.
+* mbdecomp: Flag for enabling many-body decomposition.
+* cluster_analysis: Flag for writing output for cluster analysis. This must be set to `True` for the bottom few flags to work.
+* overwrite: Determines whether we wish to overwrite an output file, if one already exists. If append is also set to true, then overwrite will not occur.
+* append: Determines whether we wish to append to an output file, if one already exists.
+* max_nbody_energy: Prints up to the N-body energy of the molecule specified by this setting.
+* kbody_energy: Flag for enabling the many-body decomposition of the fragment subsets of the molecule.
+
+## To use TensorMol:
+Simply follow the instructions given on their repository here: https://github.com/jparkhill/TensorMol
+
+When performing `pip install`, use the command `pip install -e .` instead (no `sudo` permissions needed!). Once finished, download their pre-trained neural network to perform tests.

@@ -4,6 +4,9 @@ A module to figure out how to develop databases with sqlite3.
 import sqlite3
 from datetime import datetime
 
+# Much of the sqlite3 commands are hard-coded, but we do not need to make
+# things generic here (yet)
+
 def __init__(database_name):
     """
     Initializing the database for the user to work on.
@@ -17,47 +20,71 @@ def __init__(database_name):
     connect = sqlite3.connect(database_name)
     cursor = connect.cursor()
     cursor.execute('''create table if not exists 
-        Molecules(mID int, mol blob, model text, package text, 
-        energies blob, updated date)''')
+        Configs(ID text, config blob, natom int, nfrags int, tag text)''')
+    cursor.execute('''create table if not exists 
+        Energies(ID text, model text, cp int, E1 real, E2 real, E3 real, E12
+        real, E13 real, E23 real, E123 real, Enb real)''')
     return cursor, connect
 
-def query(cursor, table, obj_tuple, update=False):
+def query(cursor, table, **kwargs):
     """
     Looks for an existing molecule configuration and do things with it
-    Input: The cursor object, the name of the table, and the configuration,
-           and a boolean for updating
-    Output: The data that shall be returned if no inserting/updating
+    Input: The cursor object, the name of the table, and some arguments
+    Output: The data that shall be returned, or None
     """
-    cursor.execute('''select * from {} where mol=?'''.format(table),
-        (obj_tuple[1],))
-    data = cursor.fetchone()
-
-    if not data:
-        insert(cursor, table, obj_tuple)
-    elif update:
-        update(cursor, table, obj_tuple)
-    else:
-        print("Retrieving current data")
-        return data
+    query_input=""
+    
+    for key, value in kwargs.iteritems():
+        query_input += "{}={} and ".format(key, value)
+    query_input = query_input[:-4]
+      
+    cursor.execute('''select * from {} where {}'''.format(table, query_input))
+    return cursor.fetchone()
 
 
-def insert(cursor, table, obj_tuple):
+
+def insert(cursor, table, **kwargs):
     """
     Inserts an object tuple into the table
     Input: The cursor object, the name of the table, and the values
            required by the tuple itself
     """
-    print("New configuration")
-    cursor.execute('''insert into {} values{}'''.format(table, obj_tuple))
 
-def update(cursor, table, obj_tuple):
+    columns=[]
+    entries=[]
+    
+    for key, value in kwargs.iteritems():
+        columns.append(key)
+        entries.append(value)
+
+    list(tuple(columns))
+    tuple(entries)
+    ins_input = ins_input[:-4]
+
+    cursor.execute('''insert into {} {} values {}'''.format(table, 
+        columns,entries))
+
+def update(cursor, table, condition, **kwargs):
     """
     Updates a certain entry in the database
     """
     print("User intends to update energy calculation")
-    cursor.execute('''update {} set energies=?, updated=? where mol=?'''
-        .format(table), (obj_tuple[2], datetime.now(), obj_tuple[1],))
+    columns=[]
+    entries=[]
+    
+    for key, value in kwargs.iteritems():
+        columns.append(key)
+        entries.append(value)
 
+    list(tuple(columns))
+    tuple(entries)
+    ins_input = ins_input[:-4]
+
+    cursor.execute('''insert into {} {} values {}'''.format(table, 
+        columns,entries))
+
+    cursor.execute('''update {} set energies=?, updated=? where mol=?'''
+        .format(table), )
 
 def finalize(connection):
     """
@@ -70,6 +97,7 @@ def finalize(connection):
 # All lines below functional
 '''
 cursor, connect = __init__("a.db")
-insert(cursor,"Molecules",(1,0,0,0), True)
+insert(cursor,"Molecules",(1,0,0,0,0))
+print(type(query(cursor,"Molecules",(1,0,0,0,0)))) # fetchone returns a tuple
 finalize(connect)
 '''

@@ -38,7 +38,8 @@ def calc_energy(molecule, fragment_indicies, config):
     """
 
 # This section needs more thinking
-'''
+# Now, instead of passing a string, it passes in an entire molecule 
+
     # First, check if this exists in the database
     # Begin by checking the existence of a database
     db = config["database"]["name"]
@@ -50,21 +51,39 @@ def calc_energy(molecule, fragment_indicies, config):
     # Either create or connect to a database if a name is given
     connect, cursor = database(db)
     
-    # Now check if we are not updating the values in the database
-    if not config["database"]["update"]:
-        energies = query
-'''
+    # Query once
+    data = query(cursor, "Molecules", (molecule.to_xyz()))
 
+    # Finish if we do not need to update
+    if not config["database"]["update"] and data:
+        database.finalize(connect)
+        return some_property_of_data
+
+    # If we have reached here, we intend to update data or it is not found
     model = config["driver"]["model"]
+    
     if model == "psi4":
         psi4.core.set_output_file("/dev/null", False)
         psi4.set_memory(config["psi4"]["memory"])
-        return calc_psi4_energy(molecule, fragment_indicies, config)
+        energy = calc_psi4_energy(molecule, fragment_indicies, config)
     
-    if model == "TensorMol":
-        return TensorMol_convert_str(molecule, fragment_indicies, config)
-    if  model == "qchem":
-        return calc_qchem_energy(molecule, fragment_indicies, config)
+    elif model == "TensorMol":
+        energy = TensorMol_convert_str(molecule, fragment_indicies, config)
+  
+    elif model == "qchem":
+        energy = calc_qchem_energy(molecule, fragment_indicies, config)
+    else:
+        print("No such model exists!")
+        return 0
+
+    # If there was an existing entry, update
+    if data:
+        database.update(cursor, "Molecules", something)
+    # Else, insert new entry
+    else:
+        database.insert(cursor, "Molecules", something)
+    database.finalize(connect)
+    return energy
 
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):

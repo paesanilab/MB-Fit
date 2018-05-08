@@ -566,7 +566,7 @@ double variable::v_gau0(const double& r0, const double& k,
     const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
 
     const double exp1 = std::exp(-k*(r0 - r)*(r0 - r));
-    const double gg = 2*k(r0-r)*exp1/r;
+    const double gg = 2*k*(r0 - r)*exp1/r;
 
     g[0] *= gg;
     g[1] *= gg;
@@ -2048,7 +2048,7 @@ double variable::v_gau0(const double& r0, const double& k,
     const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
 
     const double exp1 = std::exp(-k*(r0 - r)*(r0 - r));
-    const double gg = 2*k(r0-r)*exp1/r;
+    const double gg = 2*k*(r0 - r)*exp1/r;
 
     g[0] *= gg;
     g[1] *= gg;

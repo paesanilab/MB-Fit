@@ -34,20 +34,52 @@ class Atom(object):
     Get the charge of this atom
     '''
     def get_charge(self):
-        return charge
+        return self.charge
 
     '''
     Get the number of unpaired electrons in this atom
     '''
     def get_unpaired(self):
-        return unpaired_electrons
+        return self.unpaired_electrons
 
     '''
     Returns a string representing the information in this atom in the xyz file
     format
     '''
     def to_xyz(self):
-        return "{} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+        return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
+    '''
+    Gets a hash representing this atom, should be unique and reproducable.
+    Does NOT DEPEND on charge, or unparied electrons
+
+    PROBABLY UNNEEDED, we can just use SHA2
+    '''
+    def get_hash(self):
+        # define number hash
+        # max atomic number is 119 (inclusve)
+        h_number += self.get_atomic_number()
+
+        # define x hash
+        # max x is 99 (inclusive), but goes up to 199 for negative values
+        h_x += 120 * (int)(self.x * 10 ** 8) # x * 10^8 (120 is hash multiplier for x)
+        if self.x < 0:
+            h_x = -h_x + 120 * (int)(100 * 10 ** 8) # if x was negative, change hash to positive and add offset
+        
+        # define y hash
+        # max y is 99 (inclusive), but goes up to 199 for negative values
+        h_y += 31900000000 * (int)(self.y * 10 ** 8) # x * 10^8 (120 is hash multiplier for x)
+        if self.x < 0:
+            h_y = -h_y + 31900000000 * (int)(100 * 10 ** 8) # if x was negative, change hash to positive and add offset
+        
+        # define z hash
+        # max z is 99 (inclusive), but goes up to 199 for negative values
+        h_z += 5180000000000000000 * (int)(self.z * 10 ** 8) # x * 10^8 (120 is hash multiplier for x)
+        if self.x < 0:
+            h_z = -h_z + 5180000000000000000 * (int)(100 * 10 ** 8) # if x was negative, change hash to positive and add offset
+
+        # sum the hashes
+        return h_number + h_x + h_y + h_z;
 
 class Fragment(object):
     """
@@ -81,6 +113,13 @@ class Fragment(object):
     '''
     def add_atom(self, atom):
         self.atoms.append(atom)
+
+    '''
+    Gets a list of the atoms in this Fragment
+    '''
+    def get_atoms(self):
+        return self.atoms[:] # copies a list in python
+
 
     '''
     Get the total charge of this fragment by summing the charges of the atoms
@@ -121,6 +160,7 @@ class Fragment(object):
             string += atom.to_xyz() + "\n"
         return string
 
+
 class Molecule(object):
     """
     A Molecule holds an array of fragments.
@@ -146,6 +186,21 @@ class Molecule(object):
         self.fragments.append(fragment)
 
     '''
+    Gets a list of all the fragments in this molecule
+    '''
+    def get_fragments(self):
+        return fragments[:] # this copies a list in python
+
+    '''
+    Gets a list of all the atoms in this molecule
+    '''
+    def get_atoms(self):
+        atoms = []
+        for fragment in self.fragments:
+            atoms += atoms.fragment.get_fragments()
+        return atoms
+
+    '''
     Get total charge of this Molecule by summing charges of Fragments.
     '''
     def get_charge(self):
@@ -162,6 +217,12 @@ class Molecule(object):
         upaired = 0
         for fragment in self.fragments:
             unpaired += fragment.get_unpaired()
+
+    '''
+    Gets the number of Fragments in this Molecule
+    '''
+    def get_num_fragments(self):
+        return len(self.fragments)
 
     '''
     Gets the number of Atoms in this Molecule
@@ -222,10 +283,27 @@ class Molecule(object):
         self.mb_energies = []
 
     '''
-    Calculates the qchem energy
-
+    Gets a hash unique hash, any two molecules that are significantly different
+    should have different hashes. Calling get_hash() multiple times on the same
+    molecule should result in the same hash
     '''
-    
+    def get_hash(self):
+        # define the hash
+        h = 0
+
+        # add the charge to the hash
+        h += self.get_charge();
+
+        # add the unpaired es to the hash
+        h += 20*self.get_unpaired();
+
+        # add atoms to the hash
+        
+        # get list of fragments
+        fragments = self.get_fragments()
+        
+        
+
     '''
 
     STILL NEED?

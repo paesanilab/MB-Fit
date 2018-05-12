@@ -39,15 +39,6 @@ def calc_energy(molecule, fragment_indicies, config):
 
 # This section needs more thinking
 # Now, instead of passing a string, it passes in an entire molecule 
-
-    # First, check if this exists in the database
-    # Begin by checking the existence of a database
-    db = config["database"]["name"]
-
-    # If no name is given, raise an error
-    if not db:
-        raise NameError
-
     # Either create or connect to a database if a name is given
     connect, cursor = database(db)
     

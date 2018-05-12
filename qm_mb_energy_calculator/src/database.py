@@ -64,27 +64,21 @@ def insert(cursor, table, **kwargs):
     cursor.execute('''insert into {} {} values {}'''.format(table, 
         columns,entries))
 
-def update(cursor, table, condition, **kwargs):
+def update(cursor, table, hashID, **kwargs):
     """
     Updates a certain entry in the database
+    Input: A pointer to the database, the table name, the object hash,
+           and the arguments to update
     """
-    print("User intends to update energy calculation")
-    columns=[]
-    entries=[]
+    update_input = ""
     
     for key, value in kwargs.iteritems():
-        columns.append(key)
-        entries.append(value)
+        update_input += "{}={},".format(key, value)
 
-    list(tuple(columns))
-    tuple(entries)
-    ins_input = ins_input[:-4]
+    update_input = update_input[:-1]
 
-    cursor.execute('''insert into {} {} values {}'''.format(table, 
-        columns,entries))
-
-    cursor.execute('''update {} set energies=?, updated=? where mol=?'''
-        .format(table), )
+    cursor.execute('''update {} set {} where ID={}'''
+        .format(table, update_input, hashID))
 
 def finalize(connection):
     """

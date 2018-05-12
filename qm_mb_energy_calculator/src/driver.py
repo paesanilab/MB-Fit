@@ -26,6 +26,9 @@ LOCAL MODULE IMPORTS
 # Calculates multi-body decomposition energies
 import mbdecomp
 
+# Script for implementing sqlite3 functionality
+import database
+
 # Holds information used in a molecule
 import molecule
 
@@ -95,7 +98,21 @@ if config["MBdecomp"].getboolean("cluster_analysis"):
     elif os.path.isfile(log_name):
         print("Error: File exists and don't know how to deal with it."+
             " No log file will be produced.")
-        
+
+"""
+Starts up the database, if any.
+"""
+# First, check if this exists in the database
+# Begin by checking the existence of a database
+db = config["database"]["name"]
+
+# If no name is given, raise an error
+if not db:
+    raise NameError
+
+# Initiate the database
+connect, cursor = database(db)
+
 '''
 Notes for output file:
 Let user decide what to do with log file.
@@ -112,6 +129,11 @@ molecules = xyz_to_molecules(f)
 
 # for each molecule from the input xyz file...
 for molecule in molecules:
+
+    database.insert(cursor, "Molecules", ID=molecule.get_SHA1(), "config", 
+        natom=molecule.get_num_atoms(), nfrags=molecule.get_num_fragments(), 
+        "tag")
+
     # calculate energy
     energy = mbdecomp.get_nmer_energies(molecule, config)
     # calculate mb_energies

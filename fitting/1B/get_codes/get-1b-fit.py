@@ -123,7 +123,7 @@ print(t1)
 
 
 nlp_touse = ['k']
-if var == 'coul0' or var == 'exp0':
+if var == 'coul0' or var == 'exp0' or var == 'gau0':
     nlp_touse.append('d')
 
 # Appending for mon1
@@ -850,7 +850,7 @@ for i in range(0,len(set_m1) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var == 'exp0' or var == 'coul0':
+            if var == 'exp0' or var == 'coul0' or var == 'gau0':
                 variables = '(m_d_' + t + ', m_k_' + t
             else:
                 variables = '(m_k_' + t
@@ -2379,7 +2379,7 @@ for i in range(0,len(set_m1) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var == 'exp0' or var == 'coul0':
+            if var == 'exp0' or var == 'coul0' or var == 'gau0':
                 variables = '(m_d_' + t + ', m_k_' + t
             else:
                 variables = '(m_k_' + t
@@ -2443,7 +2443,7 @@ for i in range(0,len(set_m1) - 1):
         t = ''.join(sorted(ti + tj))
         if not ti in vsites and not tj in vsites:
             variables = ""
-            if var == 'exp0' or var == 'coul0':
+            if var == 'exp0' or var == 'coul0' or var == 'gau0':
                 variables = '(m_d_' + t + ', m_k_' + t
             else:
                 variables = '(m_k_' + t

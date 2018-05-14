@@ -107,7 +107,7 @@ class Fragment(object):
     '''
     def get_unpaired(self):
         unpaired = 0
-        for unpaired in self.atoms:
+        for atom in self.atoms:
             unpaired += atom.get_unpaired()
         return unpaired
 
@@ -299,7 +299,6 @@ class Molecule(object):
     '''
     def get_SHA1(self):
         
-
         hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge())
         return sha1(hash_string).hexdigest()
         

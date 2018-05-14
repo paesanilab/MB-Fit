@@ -34,7 +34,7 @@ def query(cursor, table, **kwargs):
     """
     query_input=""
     
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         query_input += "{}={} and ".format(key, value)
     query_input = query_input[:-4]
       
@@ -53,7 +53,7 @@ def insert(cursor, table, **kwargs):
     columns=[]
     entries=[]
     
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         columns.append(key)
         entries.append(value)
 
@@ -72,7 +72,7 @@ def update(cursor, table, hashID, **kwargs):
     """
     update_input = ""
     
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         update_input += "{}={},".format(key, value)
 
     update_input = update_input[:-1]

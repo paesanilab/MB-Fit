@@ -51,44 +51,6 @@ class Atom(object):
     def to_xyz(self):
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
-    '''
-    Gets a hash representing this atom, should be unique and reproducable.
-    Does NOT DEPEND on charge, or unparied electrons
-
-    PROBABLY UNNEEDED, we can just use SHA2
-
-    Derek: Just use SHA1; collisions will be very, very rare. Also,
-           you implemented the hash function in the wrong class.
-    '''
-    def get_hash(self):
-        # define number hash
-        # max atomic number is 119 (inclusve)
-        h_number += self.get_atomic_number()
-
-        # define x hash
-        # max x is 99 (inclusive), but goes up to 199 for negative values
-        h_x += 120 * (int)(self.x * 10 ** 8) # x * 10^8 (120 is hash multiplier for x)
-        if self.x < 0:
-            h_x = -h_x + 120 * (int)(100 * 10 ** 8) # if x was negative, change hash to positive and add offset
-        
-        # define y hash
-        # max y is 99 (inclusive), but goes up to 199 for negative values
-        h_y += 31900000000 * (int)(self.y * 10 ** 8) # x * 10^8 (120 is hash multiplier for x)
-        if self.x < 0:
-            h_y = -h_y + 31900000000 * (int)(100 * 10 ** 8) # if x was negative, change hash to positive and add offset
-        
-        # define z hash
-        # max z is 99 (inclusive), but goes up to 199 for negative values
-        h_z += 5180000000000000000 * (int)(self.z * 10 ** 8) # x * 10^8 (120 is hash multiplier for x)
-        if self.x < 0:
-            h_z = -h_z + 5180000000000000000 * (int)(100 * 10 ** 8) # if x was negative, change hash to positive and add offset
-
-        # sum the hashes
-        return h_number + h_x + h_y + h_z;
-
-    
-        
-
 class Fragment(object):
     """
     A class for a fragment of a Molecule. Contains atoms
@@ -168,6 +130,27 @@ class Fragment(object):
             string += atom.to_xyz() + "\n"
         return string
 
+    '''
+    Returns a string representing the information in this fragment in the xyz
+    file format in STANDARD ORDER
+
+    STANDARD ORDER is currently defined as lexigraphical order based on the
+    atoms' to_xyz() string representaiton. Should probably be changed!
+    '''
+    def to_standard_xyz(self):
+        # Get list of atom strings
+        atom_strings = []
+        for atom in self.atoms:
+            atom_strings.append(atom.to_xyz())
+
+        # Order list of atom strings
+        atom_strings.sort()
+
+        # build string to output
+        string = ""
+        for atom_string in atom_strings:
+            string += atom_string + "\n"
+        return string
 
 class Molecule(object):
     """
@@ -252,9 +235,28 @@ class Molecule(object):
             fragments = range(len(self.fragments))
         string = ""
         for index in fragments:
-            # newline improves readability but might break psi4 or qchem
             string += self.fragments[index].to_xyz()
-        return string[:-1]
+        return string[:-1] # removes last character of string (extra newline)
+
+    '''
+    Returns a string representing the fragments of this Molecule in the xyz
+    file format in STANDARD ORDER.
+
+    STANDARD ORDER is currently defined as the lexigraphical order by the
+    to_standard_xyz() string representation of each fragment
+    '''
+    def to_standard_xyz(self):
+        # get list of fragment strings
+        fragment_strings = []
+        for fragment in self.fragments:
+            fragment_strings.append(fragment.to_standard_xyz())
+        # sort the list of fragment strings
+        fragment_strings.sort()
+        # build string for return
+        string = ""
+        for fragment_string in fragment_strings:
+           string += fragment_string
+        return string[:-1] # removes last character of string (extra newline)
 
     '''
     Returns a string containing indicies and energies of nbody fragment
@@ -291,33 +293,15 @@ class Molecule(object):
         self.mb_energies = []
 
     '''
-    Gets a hash unique hash, any two molecules that are significantly different
-    should have different hashes. Calling get_hash() multiple times on the same
-    molecule should result in the same hash
+    Generates a SHA1 hash based on our molecule.
+    We are using symbols, coordinates, and charges.
+    Spin multiplicity to be added later.
     '''
-    def get_hash(self):
-        # define the hash
-        h = 0
-
-        # add the charge to the hash
-        h += self.get_charge();
-
-        # add the unpaired es to the hash
-        h += 20*self.get_unpaired();
-
-        # add atoms to the hash
-        
-        # get list of fragments
-        fragments = self.get_fragments()
-
     def get_SHA1(self):
-        """
-        Generates a SHA1 hash based on our molecule.
-        We are using symbols, coordinates, and charges.
-        Spin multiplicity to be added later.
-        """
-        hash_string = self.to_xyz() + "\n" + str(self.get_charge())
-        return sha1(hash_string).hexdigest()        
+        
+
+        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge())
+        return sha1(hash_string).hexdigest()
         
 
     '''

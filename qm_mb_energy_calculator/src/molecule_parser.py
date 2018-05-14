@@ -1,4 +1,5 @@
 from molecule import Atom, Fragment, Molecule
+from exceptions import InvalidFormatException
 
 '''
 Generates a list of Molecule objects from the given xyz input file
@@ -41,12 +42,12 @@ def xyz_to_molecules(xyz):
         # check if the atoms in each fragment add up to the total number of atoms
         # from the first line of the xyz file
         if total_atoms != fragment_atoms:
-            raise InconsistentInputException("Total atom number in input file ({}) does not match sum of fragment atoms ({}).".format(total_atoms, fragment_atoms))
+            raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Total atom number in input file ({}) does not match sum of fragment atoms ({}).".format(total_atoms, fragment_atoms))
 
         # check if the given number of atoms equals the total number of atoms from
         # the first line of the xyz file
         if total_atoms != len(atoms):
-            raise InconsistentInputException("Total atom number in input file ({}) does not match actual number of atoms listed ({}).".format(total_atoms, len(atoms)))
+            raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Total atom number in input file ({}) does not match actual number of atoms listed ({}).".format(total_atoms, len(atoms)))
         
         # if no errors were encountered, then input is valid and a Molecule object
         # can be generated
@@ -92,19 +93,8 @@ def readline(xyz, error = False):
     value = xyz.readline()
     if value == "":
         if error:
-            raise InconsistentInputException("xyz file terminates in the middle of a Molecule")
+            raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Parsing ended in the middle of a molecule.")
     return value
-
-class InconsistentInputException(Exception):
-    """
-    Error thrown when user provides invalid input
-    """
-
-    '''
-    Initialize the error if with a message 
-    '''
-    def __init__(self, message):
-        self.message = message
 
 '''
 COMMENTED TEST CODE

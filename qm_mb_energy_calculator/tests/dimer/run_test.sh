@@ -6,20 +6,32 @@ log=test.log
 
 python3 $driver
 
-ndiff training_set.xyz expected/training_set.xyz > $log
+echo "training_set.xyz\n" > $log
+
+ndiff training_set.xyz expected/training_set.xyz >> $log
 exit_code=$?
-
-ndiff mbdecomp.log expected/mbdecomp.log >> $log
-exit_code=$(($exit_code + $?))
-
-ndiff -quiet -abserr 1.e-8 -separators '[ \t,()]' json_output.json expected/json_output.json >> $log
-exit_code=$(($exit_code + $?))
 
 if [ $exit_code -ne 0 ]
 then
-    echo "test error!"
-    exit $exit_code
-else
-    echo "test passed!"
-    rm -f timer.dat training_set.xyz mbdecomp.log json_output.json $log
+    echo "training_set.xyz differs!"
+fi
+
+echo "mbdecomp.log\n" >> $log
+
+ndiff mbdecomp.log expected/mbdecomp.log >> $log
+exit_code=$?
+
+if [ $exit_code -ne 0 ]
+then
+    echo "mbdecomp.log differs!"
+fi
+
+echo "json_output.json\n" >> $log
+
+ndiff -quiet -abserr 1.e-8 -separators '[ \t,()]' json_output.json expected/json_output.json >> $log
+exit_code=$?
+
+if [ $exit_code -ne 0 ]
+then
+    echo "json_output.json differs!"
 fi

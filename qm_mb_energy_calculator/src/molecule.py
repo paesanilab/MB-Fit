@@ -1,3 +1,5 @@
+from hashlib import sha1
+
 class Atom(object):
     """
     A class for an atom in a fragment, stores it's charge, number of unpaired
@@ -54,6 +56,9 @@ class Atom(object):
     Does NOT DEPEND on charge, or unparied electrons
 
     PROBABLY UNNEEDED, we can just use SHA2
+
+    Derek: Just use SHA1; collisions will be very, very rare. Also,
+           you implemented the hash function in the wrong class.
     '''
     def get_hash(self):
         # define number hash
@@ -80,6 +85,9 @@ class Atom(object):
 
         # sum the hashes
         return h_number + h_x + h_y + h_z;
+
+    
+        
 
 class Fragment(object):
     """
@@ -301,7 +309,15 @@ class Molecule(object):
         
         # get list of fragments
         fragments = self.get_fragments()
-        
+
+    def get_SHA1(self):
+        """
+        Generates a SHA1 hash based on our molecule.
+        We are using symbols, coordinates, and charges.
+        Spin multiplicity to be added later.
+        """
+        hash_string = self.to_xyz() + "\n" + str(self.get_charge())
+        return sha1(hash_string).hexdigest()        
         
 
     '''

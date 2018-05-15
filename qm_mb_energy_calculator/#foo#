@@ -1,0 +1,30 @@
+commit 1c78d3239e41af9742e1be89f9ed730ef9f38235
+Author: Derek Tse <xiexr151e@gmail.com>
+Date:   Tue May 1 18:34:14 2018 -0700
+
+    Updates
+
+commit 510d63ea620d77ba90fb4438b401785a3b3cec3e
+Author: Derek Tse <xiexr151e@gmail.com>
+Date:   Tue May 1 17:30:26 2018 -0700
+
+    Further development on sqlite3 module
+
+commit 347c87dab9a394bf5e7cc91ed6ce215402285e92
+Author: Derek Tse <xiexr151e@gmail.com>
+Date:   Mon Apr 30 14:55:58 2018 -0700
+
+    Wrapping sqlite3 into python
+
+commit 67a3f879eaef9fd4943b8e1462b56af186ade9d0
+Author: Derek Tse <xiexr151e@gmail.com>
+Date:   Thu Apr 26 17:44:55 2018 -0700
+
+    Update to schema
+
+commit 7a64357420a67cd102a68832b89eefe23c309404
+Author: Derek Tse <xiexr151e@gmail.com>
+Date:   Thu Apr 26 17:38:59 2018 -0700
+
+    Creation of a very basic schema
+

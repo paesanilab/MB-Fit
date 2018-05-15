@@ -11,8 +11,13 @@ except ImportError:
 LIBRARY IMPORTS
 """
 
-#TODO: I don't really know what these imports do?
+# System-related imports for all your file needs
 import os, sys
+from subprocess import call
+
+# Data compression modules
+import pickle
+import zlib
 
 # Imports the configparser
 import configparser
@@ -130,12 +135,26 @@ molecules = xyz_to_molecules(f)
 # for each molecule from the input xyz file...
 for molecule in molecules:
 
-    database.insert(cursor, "Molecules", ID=molecule.get_SHA1(), "config", 
-        natom=molecule.get_num_atoms(), nfrags=molecule.get_num_fragments(), 
-        "tag")
+    # Get some info to insert into table
+    mol_id = molecule.get_SHA1()
+    mol_nfrags = molecule.get_num_fragments()
+
+    # Compress molecule into a byte stream
+    compressed_mol = zlib.compress(pickle.dumps(molecule))
+
+    # Insert molecule into table 1
+    database.insert(cursor, "Molecules", ID=mol_id, config=compressed_mol, 
+        natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
 
     # calculate energy
     energy = mbdecomp.get_nmer_energies(molecule, config)
+
+    # Get model info to insert into another table
+    mol_model = config["psi4"]["method"] + "/" + config["psi4"]["basis"]
+
+    # Insert some energies into table 2
+    database.insert(cursor, "Energies", ID=mol_id, model=mol_model)
+
     # calculate mb_energies
     molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
     # write output to training set file
@@ -194,3 +213,5 @@ except:
 f.close()
 
 training_set_file.close()
+
+# Commit changes and close database here

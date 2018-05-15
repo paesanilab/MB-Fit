@@ -22,8 +22,9 @@ def __init__(database_name):
     cursor.execute('''create table if not exists 
         Configs(ID text, config blob, natom int, nfrags int, tag text)''')
     cursor.execute('''create table if not exists 
-        Energies(ID text, model text, cp int, E1 real, E2 real, E3 real, E12
-        real, E13 real, E23 real, E123 real, Enb real)''')
+        Energies(ID text, model text, cp int, E(0,) real, E(1,) real, E(2,)
+        real, E(0, 1) real, E(0, 2) real, E(1, 2) real, E(0, 1, 2) real, 
+        Enb real)''')
     return cursor, connect
 
 def query(cursor, table, **kwargs):

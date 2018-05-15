@@ -142,7 +142,7 @@ class Fragment(object):
         atom_strings = []
         for atom in self.atoms:
             atom_strings.append(atom.to_xyz())
-
+        
         # Order list of atom strings
         atom_strings.sort()
 
@@ -180,7 +180,7 @@ class Molecule(object):
     Gets a list of all the fragments in this molecule
     '''
     def get_fragments(self):
-        return fragments[:] # this copies a list in python
+        return self.fragments[:] # this copies a list in python
 
     '''
     Gets a list of all the atoms in this molecule
@@ -188,7 +188,7 @@ class Molecule(object):
     def get_atoms(self):
         atoms = []
         for fragment in self.fragments:
-            atoms += atoms.fragment.get_fragments()
+            atoms += fragment.get_atoms()
         return atoms
 
     '''
@@ -205,9 +205,10 @@ class Molecule(object):
     of Fragments.
     '''
     def get_unpaired(self):
-        upaired = 0
+        unpaired = 0
         for fragment in self.fragments:
             unpaired += fragment.get_unpaired()
+        return unpaired
 
     '''
     Gets the number of Fragments in this Molecule

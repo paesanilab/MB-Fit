@@ -15,13 +15,13 @@ except ImportError:
     print("Error: failed to import psi4")
     pass
 
+'''
 try:
     from TensorMol import *
     os.environ["CUDA_VISIBLE_DEVICES"]="CPU" # for TensorMol
 except ImportError:
     pass
-
-import database
+'''
 
 def sym_to_num(symbol):
     """
@@ -37,20 +37,6 @@ def calc_energy(molecule, fragment_indicies, config):
     Compute the energy using a model requested by the user
     """
 
-# This section needs more thinking
-# Now, instead of passing a string, it passes in an entire molecule 
-    # Either create or connect to a database if a name is given
-    connect, cursor = database(db)
-    
-    # Query once
-    data = query(cursor, "Molecules", (molecule.to_xyz()))
-
-    # Finish if we do not need to update
-    if not config["database"]["update"] and data:
-        database.finalize(connect)
-        return some_property_of_data
-
-    # If we have reached here, we intend to update data or it is not found
     model = config["driver"]["model"]
     
     if model == "psi4":
@@ -67,13 +53,6 @@ def calc_energy(molecule, fragment_indicies, config):
         print("No such model exists!")
         return 0
 
-    # If there was an existing entry, update
-    if data:
-        database.update(cursor, "Molecules", something)
-    # Else, insert new entry
-    else:
-        database.insert(cursor, "Molecules", something)
-    database.finalize(connect)
     return energy
 
 # Water network data is required to be in the same directory under ./networks !!

@@ -22,9 +22,10 @@ def __init__(database_name):
     cursor.execute('''create table if not exists 
         Configs(ID text, config blob, natom int, nfrags int, tag text)''')
     cursor.execute('''create table if not exists 
-        Energies(ID text, model text, cp int, E(0,) real, E(1,) real, E(2,)
-        real, E(0, 1) real, E(0, 2) real, E(1, 2) real, E(0, 1, 2) real, 
-        Enb real)''')
+        Energies(ID text, model text, cp int, E0 real, E1 real, E2
+        real, E01 real, E02 real, E12 real, E012 real, 
+        Enb blob)''')
+
     return cursor, connect
 
 def query(cursor, table, **kwargs):
@@ -55,12 +56,20 @@ def insert(cursor, table, **kwargs):
     entries=[]
     
     for key, value in kwargs.items():
+
+        print(key)
+
+        # Special string processing to remove special characters
+        key = key.translate(key.maketrans("", "", "(),"))
+        
         columns.append(key)
         entries.append(value)
 
-    list(tuple(columns))
-    tuple(entries)
-    ins_input = ins_input[:-4]
+    columns = tuple(columns)
+    entries = tuple(entries)
+
+    print(columns)
+    print(entries)
 
     cursor.execute('''insert into {} {} values {}'''.format(table, 
         columns,entries))

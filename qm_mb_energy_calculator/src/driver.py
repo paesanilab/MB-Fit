@@ -24,6 +24,9 @@ import configparser
 # Imports the json library
 import json
 
+# Binary conversion
+from sqlite3 import Binary
+
 """
 LOCAL MODULE IMPORTS
 """
@@ -140,11 +143,11 @@ for molecule in molecules:
     mol_nfrags = molecule.get_num_fragments()
 
     # Compress molecule into a byte stream
-    compressed_mol = "0"
-    #compressed_mol = zlib.compress(pickle.dumps(molecule))
+    #compressed_mol = "0"
+    compressed_mol = zlib.compress(pickle.dumps(molecule))
 
     # Insert molecule into table 1
-    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
+    database.insert(cursor, "Configs", ID=mol_id, config=buffer(compressed_mol), 
         natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
 
     # calculate energy

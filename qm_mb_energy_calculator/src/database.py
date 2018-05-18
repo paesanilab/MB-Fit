@@ -3,6 +3,7 @@ A module to figure out how to develop databases with sqlite3.
 """
 import sqlite3
 from datetime import datetime
+import re
 
 # Much of the sqlite3 commands are hard-coded, but we do not need to make
 # things generic here (yet)
@@ -52,18 +53,32 @@ def insert(cursor, table, **kwargs):
            required by the tuple itself
     """
 
-    columns=[]
-    entries=[]
+    columns = []
+    entries = []
+    invalid = '(), '
+    is_tuple = False
     
     for key, value in kwargs.items():
 
-        print(key)
-
-        # Special string processing to remove special characters
-        key = key.translate(key.maketrans("", "", "(),"))
+        # Build new string to conform with sqlite3
+        newkey = ''
+        print("Before: "+key)
+        for char in key:
+            if char not in invalid:
+                newkey += char
+            else:
+                is_tuple = True
+        if is_tuple:
+            newkey = 'E' + newkey
         
-        columns.append(key)
+        # Convert value to conform with sqlite3
+        if isinstance(value, (list,)):
+            value = tuple(value)
+
+        columns.append(newkey)
         entries.append(value)
+
+        print("After: "+newkey)
 
     columns = tuple(columns)
     entries = tuple(entries)

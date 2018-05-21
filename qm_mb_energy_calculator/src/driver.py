@@ -27,6 +27,9 @@ import json
 # Binary conversion
 from sqlite3 import Binary
 
+# Import Exceptions
+from exceptions import DatabaseUnspecifiedException
+
 """
 LOCAL MODULE IMPORTS
 """
@@ -116,9 +119,9 @@ db = config["database"]["name"]
 
 # If no name is given, raise an error
 if not db:
-    raise NameError
+    raise DatabaseUnspecifiedException("settings.ini", "database.name");
 
-# Initiate the database
+# Initiate the database and retrieve it's cursor and connection
 connect, cursor = database.__init__(db)
 
 '''
@@ -139,7 +142,9 @@ molecules = xyz_to_molecules(f)
 for molecule in molecules:
 
     # Get some info to insert into table
+    # Gets the SHA1 unique id of the molecule
     mol_id = molecule.get_SHA1()
+
     mol_nfrags = molecule.get_num_fragments()
 
     # Compress molecule into a byte stream
@@ -147,7 +152,7 @@ for molecule in molecules:
     compressed_mol = zlib.compress(pickle.dumps(molecule))
 
     # Insert molecule into table 1
-    database.insert(cursor, "Configs", ID=mol_id, config=buffer(compressed_mol), 
+    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
         natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
 
     # calculate energy

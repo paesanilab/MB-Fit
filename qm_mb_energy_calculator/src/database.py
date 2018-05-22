@@ -168,7 +168,6 @@ class Database():
         self.cursor.execute("select ID from Energies where ID=?", (self.molecule_id,))
         energies_row = self.cursor.fetchone()
         
-        
         # create a new row in the Configs table if such a row did not already exist
         if config_row is None: 
             insert(self.cursor, "Configs", ID=self.molecule_id, config="temp", # TODO: buffer doesn't work, "temp" should be buffer(compressed_mol)
@@ -176,8 +175,8 @@ class Database():
 
         # create a new row in the Energies table if such a row did not already exist
         if energies_row is None:
-            insert(self.cursor, "Energies", ID=self.molecule_id, model=model_in, cp=cp_in, E1="UNSET", E2="UNSET",
-                E3="UNSET", E12="UNSET", E13="UNSEt", E23="UNSET", E123="UNSET", Enb="UNSET")  
+            insert(self.cursor, "Energies", ID=self.molecule_id, model=model_in, cp=cp_in, E0="UNSET", E1="UNSET",
+                E2="UNSET", E01="UNSET", E02="UNSET", E12="UNSET", E012="UNSET", Enb="UNSET")  
 
     '''
     Checks if a certain molecule's n-mer energy is already in the database
@@ -201,7 +200,7 @@ class Database():
             raise RowOperationBeforeInitException("has_nmer_energy", self.name)
         
         # return whether energy of nmer is set
-        return energy != "UNSET"
+        return energy[0] != "UNSET"
         
 
     '''
@@ -219,14 +218,36 @@ class Database():
 
         # first check if energy row exists in database
         self.cursor.execute("select {} from Energies where ID=?".format(nmer_string), (self.molecule_id,))
-        energy = self.cursor.fetchone()
-        if energy is None:
+        energy_in_table = self.cursor.fetchone()
+        if energy_in_table is None:
             raise RowbaseOperationBeforeInitException("set_nmer_energy", self.name)
 
         # if row exists, then go ahead and update table entry
         self.cursor.execute("update Energies set {}=? where ID=?".format(nmer_string), (str(energy), self.molecule_id))
 
+    '''
+    Get's a certain molecule's n-mer energy
+    '''
+    def get_nmer_energy(self, nmer):
+        # check if molecle id is initialized
+        if not self.has_id():
+            raise MoleculeIDUnsetException("get_nmer_energy", self.name)
 
+        # makes nmer string out of combination passed in, at the end, format should be "E1", "E23", etc.
+        nmer_string = "E"
+        for index in nmer:
+            nmer_string += str(index)
+
+        # first check if energy row exists in database
+        self.cursor.execute("select {} from Energies where ID=?".format(nmer_string), (self.molecule_id,))
+        energy_in_table = self.cursor.fetchone()
+        if energy_in_table is None:
+            raise RowbaseOperationBeforeInitException("set_nmer_energy", self.name)
+
+        # TODO: some sort of check to see if energy is unset, if energy is unset, throw exception
+
+        # if row exists, return energy
+        return energy_in_table[0]
         
 
 # All lines below functional

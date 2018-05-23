@@ -6,6 +6,7 @@ from datetime import datetime
 import re
 from exceptions import MoleculeIDUnsetException
 from exceptions import RowOperationBeforeInitException
+import pickle
 
 # Much of the sqlite3 commands are hard-coded, but we do not need to make
 # things generic here (yet)
@@ -64,7 +65,6 @@ def insert(cursor, table, **kwargs):
 
         # Build new string to conform with sqlite3
         newkey = ''
-        print("Before: "+key)
         for char in key:
             if char not in invalid:
                 newkey += char
@@ -73,20 +73,13 @@ def insert(cursor, table, **kwargs):
         if is_tuple:
             newkey = 'E' + newkey
         
-        # Convert value to conform with sqlite3
-        if isinstance(value, (list,)):
-            value = tuple(value)
-
         columns.append(newkey)
         entries.append(value)
-
-        print("After: "+newkey)
 
     columns = tuple(columns)
     entries = tuple(entries)
 
-    print(columns)
-    print(entries)
+    #print(process_string(entries))
 
     cursor.execute('''insert into {} {} values {}'''.format(table, 
         columns,entries))
@@ -113,6 +106,28 @@ def finalize(connection):
     """
     connection.commit()
     connection.close()
+
+def process_string(pickled):
+
+    pickled = str(pickled)
+    print("Before: {}".format(pickled))
+    
+    places=[]
+    for index in range(len(pickled)):
+        if pickled[index] == "\'":
+            places.append(index)
+    print(places)
+    places = places[::-1]
+
+    while len(places) > 0:
+        pickled = pickled[:places[-1]] + "\'" + pickled[places[-1]:]
+        places.pop()
+        places = [index + 1 for index in places]
+    print("After: {}".format(pickled))
+    pickled = bytes(pickled, 'utf8')
+    print("End: {}".format(pickled))
+
+    return pickled
 
 """
 Data base class

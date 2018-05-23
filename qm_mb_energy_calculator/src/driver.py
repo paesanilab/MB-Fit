@@ -17,7 +17,6 @@ from subprocess import call
 
 # Data compression modules
 import pickle
-import zlib
 
 # Imports the configparser
 import configparser
@@ -147,14 +146,6 @@ for molecule in molecules:
 
     mol_nfrags = molecule.get_num_fragments()
 
-    # Compress molecule into a byte stream
-    #compressed_mol = "0"
-    compressed_mol = zlib.compress(pickle.dumps(molecule))
-
-    # Insert molecule into table 1
-    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
-        natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
-
     # calculate energy
     energy = mbdecomp.get_nmer_energies(molecule, config)
 
@@ -164,14 +155,24 @@ for molecule in molecules:
     # calculate mb_energies
     molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
 
+    # Pickle the mb_energies
+    compressed_energies = pickle.dumps(molecule.mb_energies)
+
     # Insert some energies into table 2
     # A quick fix to convert dictionary to all strings to comply with **kwargs
     database.insert(cursor, "Energies", ID=mol_id, model=mol_model, 
-        Enb=molecule.mb_energies, ** {str(k): v for k, 
+        Enb=compressed_energies, ** {str(k): v for k, 
         v in molecule.energies.items()})
 
     # write output to training set file
     training_set_file.write(str(molecule.get_num_atoms()) + '\n' + str(energy) + '\n' + molecule.to_xyz() + '\n')
+
+    # Compress molecule into a byte stream
+    compressed_mol = pickle.dumps(molecule)
+
+    # Insert molecule into table 1
+    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
+        natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
 
     # if log is enabled, write the log
     if write_log:

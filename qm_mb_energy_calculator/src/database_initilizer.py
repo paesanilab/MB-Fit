@@ -16,7 +16,7 @@ def initialize_database(database_name, directory, tag, model, cp):
     connection = sqlite3.connect(database_name)
 
     # create cursor
-    cursor = connection.cursor();
+    cursor = connection.cursor()
 
     # create the tables
     cursor.execute("""

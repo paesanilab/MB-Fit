@@ -2,7 +2,6 @@
 A module to figure out how to develop databases with sqlite3.
 """
 import sqlite3
-from datetime import datetime
 import re
 from exceptions import MoleculeIDUnsetException
 from exceptions import RowOperationBeforeInitException
@@ -32,19 +31,14 @@ def __init__(database_name):
 
     return cursor, connect
 
-def query(cursor, table, **kwargs):
+def query_id(cursor, table, id):
     """
     Looks for an existing molecule configuration and do things with it
     Input: The cursor object, the name of the table, and some arguments
     Output: The data that shall be returned, or None
     """
-    query_input=""
-    
-    for key, value in kwargs.items():
-        query_input += "{}={} and ".format(key, value)
-    query_input = query_input[:-4]
-      
-    cursor.execute('''select * from {} where {}'''.format(table, query_input))
+
+    cursor.execute('''select * from {} where ID=?'''.format(table), (id,))
     return cursor.fetchone()
 
 
@@ -106,28 +100,6 @@ def finalize(connection):
     """
     connection.commit()
     connection.close()
-
-def process_string(pickled):
-
-    pickled = str(pickled)
-    print("Before: {}".format(pickled))
-    
-    places=[]
-    for index in range(len(pickled)):
-        if pickled[index] == "\'":
-            places.append(index)
-    print(places)
-    places = places[::-1]
-
-    while len(places) > 0:
-        pickled = pickled[:places[-1]] + "\'" + pickled[places[-1]:]
-        places.pop()
-        places = [index + 1 for index in places]
-    print("After: {}".format(pickled))
-    pickled = bytes(pickled, 'utf8')
-    print("End: {}".format(pickled))
-
-    return pickled
 
 """
 Data base class
@@ -263,12 +235,3 @@ class Database():
 
         # if row exists, return energy
         return energy_in_table[0]
-        
-
-# All lines below functional
-'''
-cursor, connect = __init__("a.db")
-insert(cursor,"Molecules",(1,0,0,0,0))
-print(type(query(cursor,"Molecules",(1,0,0,0,0)))) # fetchone returns a tuple
-finalize(connect)
-'''

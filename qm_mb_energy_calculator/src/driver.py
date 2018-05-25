@@ -121,7 +121,7 @@ if not db:
     raise DatabaseUnspecifiedException("settings.ini", "database.name");
 
 # Initiate the database and retrieve it's cursor and connection
-connect, cursor = database.__init__(db)
+cursor, connect = database.__init__(db)
 
 '''
 Notes for output file:
@@ -143,36 +143,52 @@ for molecule in molecules:
     # Get some info to insert into table
     # Gets the SHA1 unique id of the molecule
     mol_id = molecule.get_SHA1()
-
-    mol_nfrags = molecule.get_num_fragments()
-
-    # calculate energy
-    energy = mbdecomp.get_nmer_energies(molecule, config)
-
-    # Get model info to insert into another table
-    mol_model = config["psi4"]["method"] + "/" + config["psi4"]["basis"]
     
-    # calculate mb_energies
-    molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
+    # Queries for existing energies
+    # If configuration exists, then check if the energies are already there
+    if data = database.query_id(cursor, "Configs", mol_id):
 
-    # Pickle the mb_energies
-    compressed_energies = pickle.dumps(molecule.mb_energies)
+        # I remove Enb because I'm not sure what we're using this for yet
+        energy_tuple = database.query_id(cursor, "Energies", mol_id)[:-1]
 
-    # Insert some energies into table 2
-    # A quick fix to convert dictionary to all strings to comply with **kwargs
-    database.insert(cursor, "Energies", ID=mol_id, model=mol_model, 
-        Enb=compressed_energies, ** {str(k): v for k, 
-        v in molecule.energies.items()})
+        # Now check if all energies are set
+        if "UNSET" not in energy_tuple:
+
+            # If they are, then we wish to convert tuple to string
+            energy = " ".join(energy_tuple)
+
+    else:
+        mol_nfrags = molecule.get_num_fragments()
+
+        # calculate energy
+        energy = mbdecomp.get_nmer_energies(molecule, config)
+        print(energy)
+
+        # Get model info to insert into another table
+        mol_model = config["psi4"]["method"] + "/" + config["psi4"]["basis"]
+        
+        # calculate mb_energies
+        molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
+
+        # Pickle the mb_energies
+        compressed_energies = pickle.dumps(molecule.mb_energies).hex()
+
+        # Insert some energies into table 2
+        # A quick fix to convert dictionary to all strings to comply with **kwargs
+        database.insert(cursor, "Energies", ID=mol_id, model=mol_model, 
+            Enb=compressed_energies, ** {str(k): v for k, 
+            v in molecule.energies.items()})
+
+        # Compress molecule into a byte stream
+        compressed_mol = pickle.dumps(molecule).hex()
+
+        # Insert molecule into table 1
+        database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
+            natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
 
     # write output to training set file
-    training_set_file.write(str(molecule.get_num_atoms()) + '\n' + str(energy) + '\n' + molecule.to_xyz() + '\n')
-
-    # Compress molecule into a byte stream
-    compressed_mol = pickle.dumps(molecule)
-
-    # Insert molecule into table 1
-    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
-        natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
+    training_set_file.write(str(molecule.get_num_atoms()) + '\n' +
+        str(energy) + '\n' + molecule.to_xyz() + '\n')
 
     # if log is enabled, write the log
     if write_log:

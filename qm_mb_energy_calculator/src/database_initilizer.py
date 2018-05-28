@@ -73,4 +73,4 @@ def get_filenames(directory):
     return filenames;
     
 
-initialize_database("testdb.db", "config_files", "someTag", "someModel", "cpT/F")
+initialize_database("testdb.db", "config_files", "someTag", "someModel", "True")

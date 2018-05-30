@@ -3,11 +3,12 @@ import os
 from molecule_parser import xyz_to_molecules
 import database
 import pickle
+import configparser
 
 """
 initializes a database from the config files in a directory
 """
-def initialize_database(database_name, directory, tag, model, cp):
+def initialize_database(database_name, directory):
     # add .db to database name if it doesn't already end in .db 
     if database_name[-3:] != ".db":
         database_name += ".db"
@@ -32,8 +33,25 @@ def initialize_database(database_name, directory, tag, model, cp):
         raise Exception("Directory {} does not exist".format(directory))
     filenames = get_filenames(directory)
 
+    # parse settings.ini file
+    config = configparser.ConfigParser(allow_no_value=False)
+    try:
+        config.read(directory + "/database_settings.ini")
+    except:
+        config.add_section("database")
+        config.set("database", "cp", "False")
+        config.set("database", "tag", "noTag")
+        config.set("database", "method", "HF")
+        config.set("database", "basis", "STO-3G")
+
+    model = config["database"]["method"] + "/" + config["database"]["basis"]
+    cp = config["database"]["cp"]
+    tag = config["database"]["tag"]
+
     # loop thru all files in directory
     for filename in filenames:
+        if filename[-4:] != ".xyz":
+            continue
         # open the file
         f = open(filename, "r")
         # get list of all molecules in file
@@ -44,7 +62,7 @@ def initialize_database(database_name, directory, tag, model, cp):
             # check if molecule already has rows in the table
             cursor.execute("select ID from Configs where ID=?", (hash_id,))
             config_row = cursor.fetchone()
-            cursor.execute("select ID from Energies where ID=?", (hash_id,))
+            cursor.execute("select ID from Energies where ID=? AND model=? AND cp=?", (hash_id, model, cp))
             energies_row = cursor.fetchone()
             
             # create a new row in the Configs table if such a row did not already exist
@@ -73,4 +91,4 @@ def get_filenames(directory):
     return filenames;
     
 
-initialize_database("testdb.db", "config_files", "someTag", "someModel", "True")
+initialize_database("testdb.db", "config_files")

@@ -2,6 +2,9 @@ import sqlite3
 import pickle
 import itertools
 import psi4
+import configparser
+
+import calculator
 
 # this file fills the missing energies in a database
 def fill_database(database_name):
@@ -36,11 +39,15 @@ def fill_database(database_name):
 
         # loop thru all the energies in the row
         for index, energy_entry in enumerate(energy_row[3:10]):
+          
             # check if energy entry is missing
             if energy_entry == "None":
                 combination = get_combination_from_index(index)
 
-                # psi4.core.set_output_file("/dev/null", False)
+                # Call the calculator function
+                energy = calculator.calc_energy(molecule, combination, config)
+
+            '''
                 psi4_string = molecule.to_xyz(combination)
                 psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
                 psi4_mol.update_geometry()
@@ -48,6 +55,7 @@ def fill_database(database_name):
 
                 # calculate energy using psi4
                 energy = psi4.energy(model, molecule=psi4_mol)
+            '''
 
                 # build energy string to perform insert into table
                 entry_string = "E"
@@ -57,9 +65,8 @@ def fill_database(database_name):
                 cursor.execute("UPDATE Energies SET {}=? WHERE ID=? AND model=? AND cp=?".format(entry_string), (energy, ID, model, cp))
     
     # commit changes to database
-    connection.commit();
-    connection.close();
-
+    connection.commit()
+    connection.close()
 
 # generates a combination from an index
 def get_combination_from_index(index):
@@ -71,5 +78,9 @@ def get_combination_from_index(index):
             [0, 2],
             [1, 2],
             [0, 1, 2]
-           ][index] 
+           ][index]
+
+config = configparser.ConfigParser(allow_no_value = False)
+try:
+    config.read("settings.ini")
 fill_database("testdb.db")

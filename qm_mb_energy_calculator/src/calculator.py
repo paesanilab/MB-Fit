@@ -40,7 +40,8 @@ def calc_energy(molecule, fragment_indicies, config):
     model = config["driver"]["model"]
     
     if model == "psi4":
-        psi4.core.set_output_file("/dev/null", False)
+        # psi4.core.set_output_file(molecule.get_SHA1()[:8] + method + "/" + 
+        #    basis + "_" + str(fragment_indicies), False)
         psi4.set_memory(config["psi4"]["memory"])
         energy = calc_psi4_energy(molecule, fragment_indicies, config)
     

@@ -35,6 +35,30 @@ def initialize_database(database_name, directory):
 
     # parse settings.ini file
     config = configparser.ConfigParser(allow_no_value=False)
+
+    # See if a config file already exists; if not, generate one
+    try:
+        config.read(directory + "/settings.ini")
+    except:
+        # Some hard-coded default (minimum) settings
+        config.add_section("driver")
+        config.add_section("database")
+        config.add_section("psi4")
+
+        config.set("driver", "model", "psi4")
+        config.set("database", "cp", "False")
+        config.set("database", "tag", "noTag")
+        config.set("database", "method", "HF")
+        config.set("database", "basis", "STO-3G")
+        config.set("psi4", "memory", "500MB")
+        config.set("psi4", "threads", 6)
+
+        # Now write the config file
+        config_out = open(directory + "/settings.ini", 'w')
+        config.write(config_out)
+
+
+    '''
     try:
         config.read(directory + "/database_settings.ini")
     except:
@@ -47,6 +71,7 @@ def initialize_database(database_name, directory):
     model = config["database"]["method"] + "/" + config["database"]["basis"]
     cp = config["database"]["cp"]
     tag = config["database"]["tag"]
+    '''
 
     # loop thru all files in directory
     for filename in filenames:
@@ -59,6 +84,11 @@ def initialize_database(database_name, directory):
         # for each molecule in the file
         for molecule in molecules:
             hash_id = molecule.get_SHA1()
+
+            # Create directory for molecule if does not exist already
+            # Currently set to first 8 digits of hash
+            os.system("mkdir -p {}".format(hash_id[:8]))
+
             # check if molecule already has rows in the table
             cursor.execute("select ID from Configs where ID=?", (hash_id,))
             config_row = cursor.fetchone()

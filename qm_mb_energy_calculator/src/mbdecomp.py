@@ -139,7 +139,7 @@ def get_kbody_energies(molecule):
             # Likewise, we are only interested in one set of indices when
             # presenting our output
             kbody_output_index = kbody_input_index[-1][0]
-            kbody_dict["K{}_{}B".format(kbody_output_index, 
+            kbody_dict["V{}_{}B".format(kbody_output_index, 
                 len(kbody_output_index))] = kbody_output_energy
 
             # Calculate k-body differences in comparison to our data

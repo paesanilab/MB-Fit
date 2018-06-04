@@ -56,6 +56,7 @@ def initialize_database(database_name, directory):
         # Now write the config file
         config_out = open(directory + "/settings.ini", 'w')
         config.write(config_out)
+        config_out.close()
 
 
     '''

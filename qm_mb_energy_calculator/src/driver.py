@@ -114,6 +114,7 @@ Starts up the database, if any.
 """
 # First, check if this exists in the database
 # Begin by checking the existence of a database
+'''
 db = config["database"]["name"]
 
 # If no name is given, raise an error
@@ -122,6 +123,7 @@ if not db:
 
 # Initiate the database and retrieve it's cursor and connection
 cursor, connect = database.__init__(db)
+'''
 
 '''
 Notes for output file:
@@ -140,6 +142,7 @@ molecules = xyz_to_molecules(f)
 # for each molecule from the input xyz file...
 for molecule in molecules:
 
+    '''
     # Get some info to insert into table
     # Gets the SHA1 unique id of the molecule
     mol_id = molecule.get_SHA1()
@@ -158,33 +161,37 @@ for molecule in molecules:
             energy = " ".join(energy_tuple)
 
     else:
-        mol_nfrags = molecule.get_num_fragments()
+    '''
+    
+    mol_nfrags = molecule.get_num_fragments()
 
-        # calculate energy
-        energy = mbdecomp.get_nmer_energies(molecule, config)
-        print(energy)
+    # calculate energy
+    energy = mbdecomp.get_nmer_energies(molecule, config)
+    #print(energy)
 
-        # Get model info to insert into another table
-        mol_model = config["psi4"]["method"] + "/" + config["psi4"]["basis"]
-        
-        # calculate mb_energies
-        molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
+    # Get model info to insert into another table
+    #mol_model = config["psi4"]["method"] + "/" + config["psi4"]["basis"]
+    
+    # calculate mb_energies
+    molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
 
-        # Pickle the mb_energies
-        compressed_energies = pickle.dumps(molecule.mb_energies).hex()
+    # Pickle the mb_energies
+    #compressed_energies = pickle.dumps(molecule.mb_energies).hex()
 
-        # Insert some energies into table 2
-        # A quick fix to convert dictionary to all strings to comply with **kwargs
-        database.insert(cursor, "Energies", ID=mol_id, model=mol_model, 
-            Enb=compressed_energies, ** {str(k): v for k, 
-            v in molecule.energies.items()})
+    # Insert some energies into table 2
+    # A quick fix to convert dictionary to all strings to comply with **kwargs
+    '''
+    database.insert(cursor, "Energies", ID=mol_id, model=mol_model, 
+        Enb=compressed_energies, ** {str(k): v for k, 
+        v in molecule.energies.items()})
 
-        # Compress molecule into a byte stream
-        compressed_mol = pickle.dumps(molecule).hex()
+    # Compress molecule into a byte stream
+    compressed_mol = pickle.dumps(molecule).hex()
 
-        # Insert molecule into table 1
-        database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
-            natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
+    # Insert molecule into table 1
+    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
+        natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
+    '''
 
     # write output to training set file
     training_set_file.write(str(molecule.get_num_atoms()) + '\n' +
@@ -203,7 +210,7 @@ for molecule in molecules:
         log.write(molecule.log_mb_energy(config["MBdecomp"].getint("max_nbody_energy")))
         
         if config["MBdecomp"].getboolean("kbody_energy"):
-            log.write("K-body energies:\n")
+            log.write("Individual N-body energies:\n")
             # get kbody energies
             k_output = mbdecomp.get_kbody_energies(molecule)
 
@@ -213,15 +220,20 @@ for molecule in molecules:
             k_diff = k_output[1]
             for index in k_dict.keys():
                 log.write("{}: {}\n".format(index, "%.8f"%k_dict[index]))
-            log.write("K-body differences:\n")
+            log.write("N-body differences:\n")
             for bodies in range(len(k_diff)):
                 log.write("V_{}B - K_{}B: {}\n".format(bodies+1, bodies+1, "%.8f"%k_diff[bodies]))
         log.write("--------------\n")
         
         # Build json dictionary
-        
+
+        json_output["ID"] = molecule.get_SHA1()
+
         # put molecule's xyz format into json
         json_output["molecule"] = molecule.to_xyz()
+
+        # put the computational model into json
+        json_output["model"] = config["psi4"]["method"]+"/"+config["psi4"]["basis"]
         
         # put fragment energies into json
         json_output["frag_energies"] = {"E{}".format(key): molecule.energies[key] for key in molecule.energies.keys()}
@@ -230,7 +242,7 @@ for molecule in molecules:
         json_output["n-body_energies"] = {"V_{}B".format(molecule.mb_energies.index(energy) + 1): energy for energy in molecule.mb_energies}
         
         # put kbody energies into json
-        json_output["k-body_energies"] = k_dict
+        json_output["individual_n-body_energies"] = k_dict
         with open("json_output.json", 'w') as json_file:
             json.dump(json_output, json_file, indent=4)
         
@@ -245,4 +257,4 @@ f.close()
 training_set_file.close()
 
 # Commit changes and close database here
-database.finalize(connect)
+#database.finalize(connect)

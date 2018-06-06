@@ -4,9 +4,12 @@ from exceptions import InvalidFormatException
 '''
 Generates a list of Molecule objects from the given xyz input file
 '''
-def xyz_to_molecules(xyz):
+def xyz_to_molecules(xyz, config):
     # define the list of Molecules
     molecules = []
+
+    # define the list of number of atoms per fragment
+    atoms_per_fragment = config["molecule"]["fragments"].split(",")
 
     # first line of next Molecule to parse, defined outside because it needs to
     # be updated inside the loop
@@ -20,7 +23,7 @@ def xyz_to_molecules(xyz):
         # read total number of atoms from xyz file
         total_atoms = int(firstline)
         # read atoms per fragment from xyz file
-        atoms_per_fragment = readline(xyz).split()
+        readline(xyz).split()
 
         # read atoms from xyz file
         atoms = []

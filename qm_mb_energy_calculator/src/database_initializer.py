@@ -43,14 +43,14 @@ def initialize_database(database_name, directory):
         print("Does not exist")
         # Some hard-coded default (minimum) settings
         config.add_section("driver")
-        config.add_section("database")
+        config.add_section("model")
         config.add_section("psi4")
 
         config.set("driver", "model", "psi4")
-        config.set("database", "cp", "False")
-        config.set("database", "tag", "noTag")
-        config.set("database", "method", "HF")
-        config.set("database", "basis", "STO-3G")
+        config.set("molecule", "tag", "noTag")
+        config.set("model", "cp", "False")
+        config.set("model", "method", "HF")
+        config.set("model", "basis", "STO-3G")
         config.set("psi4", "memory", "500MB")
         config.set("psi4", "threads", "6")
 

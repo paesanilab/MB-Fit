@@ -71,7 +71,7 @@ $ python ../src/driver.py
 ```
 
 ## Database usage:
-We assume that you have created a `settings.ini` with the specified settings, as well as a `.xyz` input file.
+We assume that you have created a `settings.ini` with the specified settings, as well as a `.xyz` input file. At the bare minimum, we ask that all values in [molecule] to be defined.
 First, run `python database_initializer.py` on the directory where your `settings.ini` is, which should be your working directory.
 Once completed, run `python database_filler.py` on the same directory. You may need `psi4` when running this script.
 
@@ -84,9 +84,9 @@ Use this file to customize your options to use this program. This file must be i
 * model: The calculation package we are using for calculations. Currently only supports `psi4`.
 
 #### [molecule]: Information about the molecule. This must be manually defined by the user.
-* fragments: A list to indicate the number of atoms in each fragment. By default, we assume the configuation is a monomer.
-* charges: A list to indicate the charge of each fragment. By default, all fragments have neutral charge.
-* spin: A list to indicate the spin multiplicity of each fragment. By default, all fragments have a spin multiplicity of 1.
+* fragments: A comma-separated list to indicate the number of atoms in each fragment. By default, we assume the configuation is a monomer.
+* charges: A comma-separated list to indicate the charge of each fragment. By default, all fragments have neutral charge.
+* spin: A comma-separated list to indicate the spin multiplicity of each fragment. By default, all fragments have a spin multiplicity of 1.
 
 #### [model]: Information about the methods regarding calculation.
 * method: The method used for calculation.

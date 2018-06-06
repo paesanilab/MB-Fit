@@ -96,8 +96,8 @@ def calc_psi4_energy(molecule, fragment_indicies, config):
     psi4_mol.update_geometry()
 
     psi4.set_num_threads(config["psi4"].getint("threads"))
-    energy = psi4.energy("{}/{}".format(config["psi4"]["method"],
-          config["psi4"]["basis"]), molecule=psi4_mol)
+    energy = psi4.energy("{}/{}".format(config["model"]["method"],
+          config["model"]["basis"]), molecule=psi4_mol)
     
     #print(energy)
     return energy

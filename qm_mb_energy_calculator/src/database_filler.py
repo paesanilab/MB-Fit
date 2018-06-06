@@ -47,16 +47,6 @@ def fill_database(database_name):
                 # Call the calculator function
                 energy = calculator.calc_energy(molecule, combination, config)
 
-            '''
-                psi4_string = molecule.to_xyz(combination)
-                psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
-                psi4_mol.update_geometry()
-                psi4.set_num_threads(1)
-
-                # calculate energy using psi4
-                energy = psi4.energy(model, molecule=psi4_mol)
-            '''
-
                 # build energy string to perform insert into table
                 entry_string = "E"
                 for i in combination:
@@ -81,6 +71,5 @@ def get_combination_from_index(index):
            ][index]
 
 config = configparser.ConfigParser(allow_no_value = False)
-try:
-    config.read("settings.ini")
+config.read("settings.ini")
 fill_database("testdb.db")

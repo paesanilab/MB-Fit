@@ -37,9 +37,10 @@ def initialize_database(database_name, directory):
     config = configparser.ConfigParser(allow_no_value=False)
 
     # See if a config file already exists; if not, generate one
-    try:
-        config.read(directory + "/settings.ini")
-    except:
+    print(directory)
+    options = config.read(directory + "/settings.ini")
+    if not options:
+        print("Does not exist")
         # Some hard-coded default (minimum) settings
         config.add_section("driver")
         config.add_section("database")
@@ -51,7 +52,7 @@ def initialize_database(database_name, directory):
         config.set("database", "method", "HF")
         config.set("database", "basis", "STO-3G")
         config.set("psi4", "memory", "500MB")
-        config.set("psi4", "threads", 6)
+        config.set("psi4", "threads", "6")
 
         # Now write the config file
         config_out = open(directory + "/settings.ini", 'w')
@@ -68,11 +69,11 @@ def initialize_database(database_name, directory):
         config.set("database", "tag", "noTag")
         config.set("database", "method", "HF")
         config.set("database", "basis", "STO-3G")
+    '''
 
     model = config["database"]["method"] + "/" + config["database"]["basis"]
     cp = config["database"]["cp"]
     tag = config["database"]["tag"]
-    '''
 
     # loop thru all files in directory
     for filename in filenames:
@@ -122,4 +123,4 @@ def get_filenames(directory):
     return filenames;
     
 
-initialize_database("testdb.db", "config_files")
+initialize_database("testdb.db", os.getcwd())

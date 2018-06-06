@@ -3,6 +3,7 @@
 ## Overview:
 This program can be used to calculate the many-body decomposition energies, as well as the k-mer energies of a molecule.
 These molecules can also be defined as fragments by the user, inside an xyz input file.
+As of June 2018, we are attempting to integrate a database into the program to streamline calcuations.
 
 ## To use this program:
 
@@ -69,20 +70,31 @@ settings.ini 2mol_trimer.xyz
 $ python ../src/driver.py
 ```
 
+## Database usage:
+We assume that you have created a `settings.ini` with the specified settings, as well as a `.xyz` input file.
+First, run `python database_initializer.py` on the directory where your `settings.ini` is, which should be your working directory.
+Once completed, run `python database_filler.py` on the same directory. You may need `psi4` when running this script.
+
 ## About `settings.ini`:
 
 Use this file to customize your options to use this program. This file must be in the same directory as your current working directory.
 
 #### [driver]: Settings pertaining to the initialization of the program.
 * input: The name of the xyz input file, including its file extension.
-* model: The calculation model we are using for calculations. Currently only supports `psi4`.
+* model: The calculation package we are using for calculations. Currently only supports `psi4`.
+
+#### [molecule]: Information about the molecule. This must be manually defined by the user.
+* fragments: A list to indicate the number of atoms in each fragment. By default, we assume the configuation is a monomer.
+* charges: A list to indicate the charge of each fragment. By default, all fragments have neutral charge.
+* spin: A list to indicate the spin multiplicity of each fragment. By default, all fragments have a spin multiplicity of 1.
+
+#### [model]: Information about the methods regarding calculation.
+* method: The method used for calculation.
+* basis: The basis set used for calculation.
+* cp: A boolean to whether use counterpoise correction in calculations.
 
 #### [psi4]: Settings specific to the `psi4` model.
 * memory: The memory `psi4` will use for calculation.
-* method: The method `psi4` will use for calculation.
-* basis: The basis set `psi4` will use for calculation.
-* charge: Currently unused.
-* spin: Current unused.
 * threads: The amount of parallel threads `psi4` will use for calculation.
 
 

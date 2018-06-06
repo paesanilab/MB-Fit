@@ -9,16 +9,10 @@ class Atom(object):
     '''
     Initialize a new atom from the given information
     '''
-    def __init__(self, name, charge, unpaired_electrons, x, y, z):
+    def __init__(self, name, x, y, z):
         # Single letter symbol corresponding to periodic table abbrehviation.
         # For example: H, O, N, Cl, He
         self.name = name
-        # Ionization of atom, positive values means missing electrons, negative
-        # values mean extra electrons
-        self.charge = charge
-        # Number of unpaired electrons. An electron is unpaired if it occupies
-        # an orbital without a second electron
-        self.unpaired_electrons = unpaired_electrons
         # x position in angstroms
         self.x = x
         # y position in angstroms
@@ -31,18 +25,6 @@ class Atom(object):
     '''
     def get_name(self):
         return self.name
-
-    '''
-    Get the charge of this atom
-    '''
-    def get_charge(self):
-        return self.charge
-
-    '''
-    Get the number of unpaired electrons in this atom
-    '''
-    def get_unpaired(self):
-        return self.unpaired_electrons
 
     '''
     Returns a string representing the information in this atom in the xyz file
@@ -59,24 +41,13 @@ class Fragment(object):
     '''
     Initialize a new Fragment with an empty atoms list
     '''
-    def __init__(self):
+    def __init__(self, charge, spin):
         # Array of atoms in this molecule
         self.atoms = []
-
-    '''
-    STILL NEEDED?
-    def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
-        s = ""
-        for symbol,coord in zip(self.symbols, self.coordinates):
-            s += "{:2s}".format(symbol)
-            for c in coord:
-                s += "{:22.14e}".format(c)
-            s += "\n"
-        return s
-    '''
+        # charge of this fragment
+        self.charge = charge
+        # spin multiplicity of this fragment
+        self.spin = spin
 
     '''
     Add an Atom to this Fragment.
@@ -92,24 +63,16 @@ class Fragment(object):
 
 
     '''
-    Get the total charge of this fragment by summing the charges of the atoms
-    within it.
+    Get the total charge of this fragment.
     '''
     def get_charge(self):
-        charge = 0
-        for atom in self.atoms:
-            charge += atom.get_charge()
-        return charge
+        return self.charge
 
     '''
-    Get the total number of unpaired electrons in this fragment by summing
-    the unpaired electrons of the Atoms within it
+    Get the spin multiplicity of this fragment
     '''
-    def get_unpaired(self):
-        unpaired = 0
-        for atom in self.atoms:
-            unpaired += atom.get_unpaired()
-        return unpaired
+    def get_spin(self):
+        return self.spin
 
     '''
     Gets the number of atoms in this fragment

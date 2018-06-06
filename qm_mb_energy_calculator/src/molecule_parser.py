@@ -1,109 +1,98 @@
 from molecule import Atom, Fragment, Molecule
 from exceptions import InvalidFormatException
+import configparser
+import os
 
 '''
-Generates a list of Molecule objects from the given xyz input file
+Generates a list of Molecule objects from xyz files in the given directory
 '''
-def xyz_to_molecules(xyz, config):
-    # define the list of Molecules
-    molecules = []
+def xyz_to_molecules(directory):
 
-    # define the list of number of atoms per fragment
-    atoms_per_fragment = config["molecule"]["fragments"].split(",")
+    # number of atoms in each fragment
+    atoms_per_fragment = []
+    # charge of each fragment
+    charge_per_fragment = []
+    # spin of each fragment
+    spin_per_fragment = []
 
-    # first line of next Molecule to parse, defined outside because it needs to
-    # be updated inside the loop
-    firstline = readline(xyz)
+    # get list of all files and subdirectories in directory
+    dir_contents = os.listdir(directory)
+    # find the settings.ini file in the directory
+    if "settings.ini" in dir_contents:
+        # create config object
+        config = configparser.ConfigParser(allow_no_value=False)
 
-    while True:
-    
-        # if firstline is empty, there are no more Molecules to parse
-        if firstline == "":
-            break
-        # read total number of atoms from xyz file
-        total_atoms = int(firstline)
-        # read atoms per fragment from xyz file
-        readline(xyz).split()
-
-        # read atoms from xyz file
-        atoms = []
-        line = xyz.readline()
-        while line and len(line.split()) == 4:
-            atoms.append(line)
-            line = xyz.readline()
-        firstline = line
+        # read the conflig file into the configuration
+        config.read(directory + "/settings.ini")
         
+        # the for loop just changes the string array to an int array
+        atoms_per_fragment = [int(atom_count) for atom_count in config["molecule"]["fragments"].split(",")]
+        charge_per_fragment = [int(charge) for charge in config["molecule"]["charges"].split(",")]
+        spin_per_fragment = [int(spin) for spin in config["molecule"]["spins"].split(",")]
 
-        # check to make sure total number of atoms, atoms per fragment, and given
-        # atoms all indicate the same number of total atoms
+    # define the list of molecules
+    molecules = [];
 
-        # sum the atoms that are supposed to be in each fragment
-        fragment_atoms = 0
-        for fragment in atoms_per_fragment:
-            fragment_atoms +=   int(fragment)
+    # loop thru all files in directory
+    for file_name in dir_contents:
+        # check if file_name is an xyz file
+        if file_name[-4:] == ".xyz":
+            # parse the xyz file
+            xyz = open(directory + "/" + file_name, "r")
+            while True:
 
-        # check if the atoms in each fragment add up to the total number of atoms
-        # from the first line of the xyz file
-        if total_atoms != fragment_atoms:
-            raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Total atom number in input file ({}) does not match sum of fragment atoms ({}).".format(total_atoms, fragment_atoms))
+                # read first line of file, should be num of atoms
+                atom_num_line = readline(xyz)
+                # check for end of input
+                if atom_num_line == "":
+                    break
 
-        # check if the given number of atoms equals the total number of atoms from
-        # the first line of the xyz file
-        if total_atoms != len(atoms):
-            raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Total atom number in input file ({}) does not match actual number of atoms listed ({}).".format(total_atoms, len(atoms)))
-        
-        # if no errors were encountered, then input is valid and a Molecule object
-        # can be generated
+                # check for consistance between number of atoms in xyz file
+                # and number of atoms in fragments array
+                if int(atom_num_line) != sum(atoms_per_fragment):
+                    raise Exception("Atom count specified in xyz file does not match count in ini file")
+                # read and discard the comment line
+                readline(xyz, True)
 
-        # construct a new Molecule object
-        molecule = Molecule()
-        
-        # loop through all the fragments, building them and adding them to the
-        # Molecule
-        for fragment_size in atoms_per_fragment:
-            # construct a new fragment
-            fragment = Fragment()
-            # loop through each atom in this fragment, adding it to the fragment
-            for index in range(int(fragment_size)):
-                # String representation of the atom at the beginning of the atoms
-                # list
-                atom_str = atoms[0]
-                atoms = atoms[1:]
-                # split the atom_str into [name, x, y, z]
-                atom_properties = atom_str.split()
-                # name is first element of atom_properties
-                name = atom_properties[0]
-                # charge is 0 for now
-                charge = 0
-                # unpaired electrons is 0 for now
-                unpaired_electrons = 0
-                # coordinates are 2nd, 3rd, and 4th items of atom_properties
-                x = float(atom_properties[1])
-                y = float(atom_properties[2])
-                z = float(atom_properties[3])
-                # construct Atom from its properties
-                atom = Atom(name, charge, unpaired_electrons, x, y, z)
-                # add the Atom the the Fragment
-                fragment.add_atom(atom)
-            # add the Fragment to the Molecule
-            molecule.add_fragment(fragment)
-        # append the Molecule to the list of Molecules
-        molecules.append(molecule)
-    # return the completed list of molecules
+                # init Molecule object
+                molecule = Molecule()
+
+                # start reading atom lines
+                for atom_count, charge, spin in zip(atoms_per_fragment, charge_per_fragment, spin_per_fragment):
+
+                    # init Fragment object
+                    fragment = Fragment(charge, spin)
+
+                    for i in range(0, atom_count):
+                        print(i)
+                        # read a line
+                        atom_line = readline(xyz, True)
+                        
+                        # extract atom info from line
+                        symbol, x, y, z = atom_line.split()
+
+                        # add atom to fragment
+                        fragment.add_atom(Atom(symbol, float(x), float(y), float(z)))
+                    
+                    # add fragment to molecule
+                    molecule.add_fragment(fragment)
+
+                # add molecule to list of molecules
+                molecules.append(molecule)
+
     return molecules
 
 def readline(xyz, error = False):
     value = xyz.readline()
+    print(value)
     if value == "":
         if error:
             raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Parsing ended in the middle of a molecule.")
     return value
 
-'''
-COMMENTED TEST CODE
-molecules = xyz_to_molecules(open("trimer_input.xyz", 'r'))
+
+molecules = xyz_to_molecules("config_files")
 for molecule in molecules:
     # why is there an extra newline?
     print("MOLECULE: \n")
     print(molecule.to_xyz([0, 1, 2]))
-'''

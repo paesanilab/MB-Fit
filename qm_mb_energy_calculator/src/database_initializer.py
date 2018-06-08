@@ -34,46 +34,18 @@ def initialize_database(database_name, directory):
     filenames = get_filenames(directory)
 
     # parse settings.ini file
-    config = configparser.ConfigParser(allow_no_value=False)
+    config = configparser.SafeConfigParser(allow_no_value=False)
 
     # See if a config file already exists; if not, generate one
     print(directory)
     options = config.read(directory + "/settings.ini")
-    if not options:
-        print("Does not exist")
-        # Some hard-coded default (minimum) settings
-        config.add_section("driver")
-        config.add_section("model")
-        config.add_section("psi4")
+    
+    # rather than attempting to generate a config file,
+    # we now create a section of defaults in the settings file itself
 
-        config.set("driver", "model", "psi4")
-        config.set("molecule", "tag", "noTag")
-        config.set("model", "cp", "False")
-        config.set("model", "method", "HF")
-        config.set("model", "basis", "STO-3G")
-        config.set("psi4", "memory", "500MB")
-        config.set("psi4", "threads", "6")
-
-        # Now write the config file
-        config_out = open(directory + "/settings.ini", 'w')
-        config.write(config_out)
-        config_out.close()
-
-
-    '''
-    try:
-        config.read(directory + "/database_settings.ini")
-    except:
-        config.add_section("database")
-        config.set("database", "cp", "False")
-        config.set("database", "tag", "noTag")
-        config.set("database", "method", "HF")
-        config.set("database", "basis", "STO-3G")
-    '''
-
-    model = config["database"]["method"] + "/" + config["database"]["basis"]
-    cp = config["database"]["cp"]
-    tag = config["database"]["tag"]
+    model = config["model"]["method"] + "/" + config["model"]["basis"]
+    cp = config["model"]["cp"]
+    tag = config["molecule"]["tag"]
 
     # loop thru all files in directory
     for filename in filenames:
@@ -82,7 +54,7 @@ def initialize_database(database_name, directory):
         # open the file
         f = open(filename, "r")
         # get list of all molecules in file
-        molecules = xyz_to_molecules(f)
+        molecules = xyz_to_molecules(f, config)
         # for each molecule in the file
         for molecule in molecules:
             hash_id = molecule.get_SHA1()
@@ -122,5 +94,4 @@ def get_filenames(directory):
             filenames.append(root + "/" + filename);
     return filenames;
     
-
 initialize_database("testdb.db", os.getcwd())

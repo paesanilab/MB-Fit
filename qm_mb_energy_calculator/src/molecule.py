@@ -131,6 +131,9 @@ class Molecule(object):
         # list of nmer_energies for this molecule, filled by get_nmer_energies
         self.nmer_energies = []
         self.mb_energies = []
+        self.natoms = []
+        self.charges = []
+        self.spins = []
         #TODO: consider other attributes required by this class
 
     '''

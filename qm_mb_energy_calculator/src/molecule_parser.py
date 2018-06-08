@@ -65,6 +65,9 @@ def xyz_to_molecules(f, config):
 
         # init Molecule object
         molecule = Molecule()
+        molecule.natoms = atoms_per_fragment
+        molecule.charges = charge_per_fragment
+        molecule.spins = spin_per_fragment
 
         # start reading atom lines
         for atom_count, charge, spin in zip(atoms_per_fragment, charge_per_fragment, spin_per_fragment):

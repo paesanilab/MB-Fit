@@ -1,21 +1,18 @@
 
 # coding: utf-8
 
-# In[ ]:
-
+# In[5]:
 
 import sys
 import os
 
 
-# In[ ]:
-
+# In[6]:
 
 # Check proper if input is provided
 
 
-# In[ ]:
-
+# In[7]:
 
 if len(sys.argv) != 3:
     print("Usage: ./script <input.in> <poly-direct.cpp_with_path> ")
@@ -25,8 +22,7 @@ else:
     directcpp = sys.argv[2]
 
 
-# In[ ]:
-
+# In[8]:
 
 # This should be the commandline argument
 #name = "A1B2Z2_C1D2.in"
@@ -36,15 +32,13 @@ mon1 = f.readline().split('\'')[1]
 mon2 = f.readline().split('\'')[1]
 
 
-# In[ ]:
-
+# In[9]:
 
 # This should be the second command line argument
 #directcpp = 'poly-direct.cpp'
 
 
-# In[ ]:
-
+# In[10]:
 
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
@@ -92,13 +86,17 @@ d_max_intra= '3.0'
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
 #C6 = ['310.915','216.702','172.445','172.445']
 #d6 = ['3.20676','3.38985','3.74833','3.0']
-C6 = ['310.915','216.702','172.445']
-d6 = ['3.20676','3.38985','3.74833']
+C6 = ['321.00932864','219.55020747','170.09525896']
+d6 = ['3.12663','3.64236','3.52744']
+
+# Obtain A and b of buckingham
+Abuck = ['9038.48','12608.9','24274.7']
+bbuck = ['3.12663','3.64236','3.52744']
 
 # Allow user to define Input and output cutoff
 # Save them 
-r2i = 6.0
-r2o = 7.0
+r2i = 7.0
+r2o = 8.0
 
 # FInd a way to get the degree
 #degree = 3
@@ -117,7 +115,7 @@ npoly = 597
 # coul0 [e^-k(d-d0)]/r
 # coul [e^-kd]/r
 # Recomendation is to use exp for intra and inter and coul for lone pairs
-var_intra = 'exp0'
+var_intra = 'exp'
 var_lp = 'coul'
 var_inter = 'exp'
 
@@ -128,15 +126,13 @@ E_range = '30.0'
 vsites = ['Z']
 
 
-# In[ ]:
-
+# In[11]:
 
 types_a = list(mon1)
 types_b = list(mon2)
 
 
-# In[ ]:
-
+# In[12]:
 
 # Generating the non linear parameter list
 nlparam = []
@@ -152,8 +148,7 @@ for i in range(0,len(types_b),2):
         t2.append(types_b[i])
 
 
-# In[ ]:
-
+# In[13]:
 
 # Appending for mon1
 nlp_touse_intra = ['k']
@@ -162,7 +157,7 @@ if var_intra == 'coul0' or var_intra == 'exp0':
 for i in range(len(t1)):
     if t1[i] in vsites:
         continue
-    for j in range(1,len(t1)):
+    for j in range(i + 1,len(t1)):
         if t1[j] in vsites:
             continue
         for nlp in nlp_touse_intra:
@@ -174,7 +169,7 @@ for i in range(len(t1)):
 for i in range(len(t2)):
     if t2[i] in vsites:
         continue
-    for j in range(1,len(t2)):
+    for j in range(i + 1,len(t2)):
         if t2[j] in vsites:
             continue
         for nlp in nlp_touse_intra:
@@ -216,8 +211,7 @@ for i in range(len(t1)):
             real_pairs.append(ps)
 
 
-# In[ ]:
-
+# In[14]:
 
 # Save number in num_nonlinear
 num_nonlinear = len(nlparam)
@@ -226,8 +220,7 @@ num_nonlinear = len(nlparam)
 
 # ## Creating mon1.h and mon2.h
 
-# In[ ]:
-
+# In[15]:
 
 mon1_class = open('mon1.h','w')
 
@@ -273,8 +266,7 @@ mon1_class.write(str(a))
 mon1_class.close()
 
 
-# In[ ]:
-
+# In[16]:
 
 mon1_class = open('mon2.h','w')
 
@@ -322,8 +314,7 @@ mon1_class.close()
 
 # ## Creating their cpp files
 
-# In[ ]:
-
+# In[17]:
 
 ff = open('mon1.cpp','w')
 
@@ -443,8 +434,7 @@ ff.write(a)
 ff.close()
 
 
-# In[ ]:
-
+# In[18]:
 
 ff = open('mon2.cpp','w')
 
@@ -569,8 +559,7 @@ ff.close()
 # ## Creating water monomer
 # If applicable...
 
-# In[ ]:
-
+# In[19]:
 
 if is_w != 0:
     ff = open('mon' + str(is_w) + '.cpp','w')
@@ -703,8 +692,7 @@ excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excl
 
 # ## Create training_set.h/cpp files
 
-# In[ ]:
-
+# In[20]:
 
 ff = open('training_set.h','w')
 a = """
@@ -744,8 +732,7 @@ ff.close()
 
 # ## X2B h file
 
-# In[ ]:
-
+# In[21]:
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -856,8 +843,7 @@ ff.close()
 
 # ## CPP file
 
-# In[ ]:
-
+# In[22]:
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1.cpp"
 ff = open(cppname,'w')
@@ -1480,10 +1466,230 @@ ff.write(a)
 ff.close()
 
 
+# ## Buckingham.h
+
+# In[23]:
+
+hname = "buckingham.h"
+ff = open(hname,'w')
+a = """
+#ifndef BUCKINGHAM_H
+#define BUCKINGHAM_H
+
+#include <cmath>
+#include <algorithm>
+
+
+
+struct x2b_buck {
+  x2b_buck();
+  x2b_buck(double *, double * , size_t, size_t);
+  ~x2b_buck();
+
+"""
+ff.write(a)
+for i in range(len(real_pairs)):
+    ff.write('  const double m_A_' + real_pairs[i] + ' = ' + Abuck[i] + ' ; \n')
+for i in range(len(real_pairs)):
+    ff.write('  const double m_b_' + real_pairs[i] + ' = ' + bbuck[i] + ' ; \n')
+    
+a = """
+
+  double get_buckingham();
+  double get_buckingham(double * grdx);
+
+
+  inline double buck(const double a, const double b,
+                     const double* p1, const double* p2, 
+                     double* g1, double* g2)
+  {
+  
+    const double dx = p1[0] - p2[0];
+    const double dy = p1[1] - p2[1];
+    const double dz = p1[2] - p2[2];
+
+    const double rsq = dx*dx + dy*dy + dz*dz;
+    const double r = std::sqrt(rsq);
+    
+    const double fac = a*exp(-b*r);
+    const double grd = b/r*fac;
+
+    g1[0] -= dx*grd;
+    g2[0] += dx*grd;
+
+    g1[1] -= dy*grd;
+    g2[1] += dy*grd;
+
+    g1[2] -= dz*grd;
+    g2[2] += dz*grd;
+
+    return fac;
+  }
+
+  inline double buck(const double a, const double b,
+                     const double* p1, const double* p2)
+  {
+  
+    const double dx = p1[0] - p2[0];
+    const double dy = p1[1] - p2[1];
+    const double dz = p1[2] - p2[2];
+
+    const double rsq = dx*dx + dy*dy + dz*dz;
+    const double r = std::sqrt(rsq);
+    
+    const double fac = a*exp(-b*r);
+
+    return fac;
+  }
+  
+};
+
+#endif
+
+"""
+ff.write(a)
+ff.close()
+
+
+# ## Buckingham.cpp
+
+# In[24]:
+
+cppname = "buckingham.cpp"
+ff = open(cppname,'w')
+a = """
+#include "buckingham.h"
+
+x2b_buck::x2b_buck() {
+  xyz1 = new double[3];
+  xyz2 = new double[3];
+}
+x2b_buck::~x2b_buck() {
+  delete[] xyz1;
+  delete[] xyz2;
+}
+
+x2b_buck::x2b_buck(double * c1, double * c2, size_t n1, size_t n2) {
+  xyz1 = new double[3*n1];
+  xyz2 = new double[3*n2];
+  std::copy(c1, c1 + 3*n1, xyz1);
+  std::copy(c2, c2 + 3*n2, xyz2);
+}
+
+double x2b_buck::get_buckingham() {
+
+  double ebuck = 0.0;
+"""
+ff.write(a)
+
+nc = 0
+set_m1 = []
+set_m2 = []
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if not types_a[i] in vsites:
+            ff.write('  const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz1 + ' + str(3 * nc) + ';\n')
+            set_m1.append(types_a[i] + '_' + str(n) + '_a')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+nc = 0
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if not types_b[i] in vsites:
+            ff.write('  const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz2 + ' + str(3 * nc) + ';\n')
+            set_m2.append(types_b[i] + '_' + str(n) + '_b')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(set_m1)):
+    for j in range(0,len(set_m2)):
+        ti = set_m1[i].split('_')[0]
+        tj = set_m2[j].split('_')[0]
+        t = ''.join(sorted(ti + tj))
+        ff.write('  ebuck += buck(m_A_' + t + ', m_b_' + t + ', ' + set_m1[i] + ', ' + set_m2[j] + ');\n')
+        
+    ff.write('\n')
+a = """
+  return ebuck;
+}
+
+double x2b_buck::get_buckingham(double * grd) {
+
+  double ebuck = 0.0;
+"""
+ff.write(a)
+
+nc = 0
+set_m1 = []
+set_m2 = []
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if not types_a[i] in vsites:
+            ff.write('  const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz1 + ' + str(3 * nc) + ';\n')
+            set_m1.append(types_a[i] + '_' + str(n) + '_a')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+nc = 0
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if not types_b[i] in vsites:
+            ff.write('  const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz2 + ' + str(3 * nc) + ';\n')
+            set_m2.append(types_b[i] + '_' + str(n) + '_b')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+nc = 0
+set_m1 = []
+set_m2 = []
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if not types_a[i] in vsites:
+            ff.write('  double* ' + types_a[i] + '_' + str(n) + '_a_g' + '= grd + ' + str(3 * nc) + ';\n')
+            set_m1.append(types_a[i] + '_' + str(n) + '_a')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if not types_b[i] in vsites:
+            ff.write('  double* ' + types_b[i] + '_' + str(n) + '_b_g' + '= grd + ' + str(3 * nc) + ';\n')
+            set_m2.append(types_b[i] + '_' + str(n) + '_b')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(set_m1)):
+    for j in range(0,len(set_m2)):
+        ti = set_m1[i].split('_')[0]
+        tj = set_m2[j].split('_')[0]
+        t = ''.join(sorted(ti + tj))
+        ff.write('  ebuck += buck(m_A_' + t + ', m_b_' + t + ',  \n             '                  + set_m1[i] + ', ' + set_m2[j] + ', ' + set_m1[i] + '_g, ' + set_m2[j] +  '_g);\n')
+        
+    ff.write('\n')
+a = """
+  return ebuck;
+}
+"""
+ff.write(a)
+ff.close()
+
+
 # ## Dispersion.h
 
-# In[ ]:
-
+# In[25]:
 
 hname = "dispersion.h"
 ff = open(hname,'w')
@@ -1605,8 +1811,7 @@ ff.close()
 
 # ## dispersion.cpp
 
-# In[ ]:
-
+# In[26]:
 
 cppname = "dispersion.cpp"
 ff = open(cppname,'w')
@@ -1742,8 +1947,7 @@ ff.close()
 
 # ## Fitting routine
 
-# In[ ]:
-
+# In[27]:
 
 cppname = "fit-2b.cpp"
 ff = open(cppname,'w')
@@ -2240,10 +2444,515 @@ ff.write(a)
 ff.close()
 
 
+# ## Fitting with TTM as underlying
+
+# In[28]:
+
+cppname = "fit-2b-wbuck.cpp"
+ff = open(cppname,'w')
+a = """
+#include <cmath>
+#include <cassert>
+#include <cstdlib>
+#include <ctime>
+
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <chrono>
+
+#include <gsl/gsl_multimin.h>
+
+#define RIDGE_REGRESSION 1
+
+#ifdef RIDGE_REGRESSION
+#   include "rwlsq.h"
+#else
+#   include "wlsq.h"
+#endif
+
+#include "mon1.h"
+#include "mon2.h"
+#include "fit-utils.h"
+#include "training_set.h"
+#include "x2b_""" + mon1 + """_""" + mon2 + """_v1.h"
+#include "electrostatics.h"
+#include "coulomb.h"
+#include "dispersion.h"
+#include "buckingham.h"
+
+
+#define dont_be_VERBOSE yes
+
+//#define DEBUG 
+
+#ifdef DEBUG
+#define PR(x) std::cout << #x << ": " << (x) << std::endl;
+#else
+#define PR(x)
+#endif /* DEBUG */
+
+using namespace std;
+
+namespace {
+
+static x2b_""" + mon1 + """_""" + mon2 + """::x2b_""" + mon1 + """_""" + mon2 + """_v1x model;
+
+
+#ifdef RIDGE_REGRESSION
+const double alpha = 0.0005;
+#endif
+
+// ##DEFINE HERE## energy range
+const double E_range = """ + E_range + """; // kcal/mol
+
+//----------------------------------------------------------------------------//
+
+static std::vector<tset::dimer> training_set;
+static std::vector<double> elec_e;
+static std::vector<double> disp_e;
+static std::vector<double> buck_e;
+static double* ts_weights = 0;
+
+namespace linear {
+
+//----------------------------------------------------------------------------//
+
+static double* A(0);
+static double* y(0);
+static double* params(0);
+
+//----------------------------------------------------------------------------//
+
+void allocate()
+{
+    A = new double[training_set.size()*model.nparams()];
+    y = new double[training_set.size()];
+
+    params = new double[model.nparams()];
+}
+
+//----------------------------------------------------------------------------//
+
+double compute_chisq(const gsl_vector* X, void* unused)
+{
+    model.set_nonlinear_parameters(X->data);
+
+    if (model.nonlinear_parameters_out_of_range())
+        return 1.0e+6;
+
+    PR(model_type::nparams())
+    for (size_t n = 0; n < training_set.size(); ++n) {
+        double mmm[model.nparams()];
+        y[n] = training_set[n].energy_twobody
+               - model.basis(training_set[n].xyz, mmm);
+        for (size_t p = 0; p < model.nparams(); ++p) {
+            A[p + n*model.nparams()] = mmm[p];
+        }
+    }
+
+#   ifdef VERBOSE
+    std::cout << "=== calling wlsq::solve() ["
+              << kit::wlsq::implementation()
+              << "] ===" << std::endl;
+#   endif
+
+    double chisq;
+
+//    try {
+#     ifdef RIDGE_REGRESSION
+      double penaltysq;
+      kit::rwlsq::solve(training_set.size(), model.nparams(),
+                        A, y, ts_weights, alpha, params, chisq, penaltysq);
+
+      std::cout << "<#> chisq = " << chisq
+                << " : penaltysq = " << penaltysq
+                << std::endl;
+#     else
+      int rank;
+      kit::wlsq::solve(training_set.size(), model_type::nparams(),
+                       A, y, ts_weights, params, chisq, rank);
+      std::cout << "<#> chisq = " << chisq
+                << " : rank = " << rank
+                << std::endl;
+#     endif
+
+      if (!gsl_finite (chisq)) {
+        return 10000000.0;
+      }
+//    } catch (const std::exception& e) {
+//      return 1000000.0;
+//    }
+#   ifdef VERBOSE
+    std::cout << "\\n--> chisq = " << chisq
+              << "\\n-->  rank = " << rank
+              << '\\n' << std::endl;
+#   endif
+
+    return chisq;
+}
+
+//----------------------------------------------------------------------------//
+
+} // namespace linear
+
+////////////////////////////////////////////////////////////////////////////////
+
+} // namespace
+
+////////////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "usage: fit-2b ts1 ..."
+                  << std::endl;
+        return 0;
+    }
+      
+    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+    srand(duration);
+
+    double x0[""" + str(len(nlparam)) + """];
+"""
+ff.write(a)
+for i in range(len(nlparam)):
+    if nlparam[i].startswith('d'):
+        if nlparam[i].startswith('d_intra'):
+            ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max_intra) - float(d_min_intra)) + ' + ' + d_min_intra + ';\n')
+        else:
+            ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(d_max) - float(d_min)) + ' + ' + d_min + ';\n')
+    else:
+        if nlparam[i].startswith('k_intra'):
+            ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max_intra) - float(k_min_intra)) + ' + ' + k_min_intra + ';\n')
+        else:
+            ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
+
+            
+a = """
+      
+
+    model.set_nonlinear_parameters(x0);
+
+    #   ifdef RIDGE_REGRESSION
+    std::cout << "<> using ridge regression with alpha = "
+              << alpha << std::endl;
+#   endif
+
+    std::cout << "\\n<><><> model type = '" << model.name() << "'\\n";
+
+    {
+        const char fn[] = "fit-2b-initial.cdl";
+        std::ofstream ofs(fn);
+        std::cout << "\\n>> dumping initial model as '" << fn << "' >>\\n\\n";
+        model.as_cdl(ofs);
+    }
+
+    ++argv;
+
+    try {
+        while (--argc != 0) {
+            size_t nd = tset::load_dimers(*argv, training_set);
+            std::cout << "'" << *(argv++) << "' : "
+                      << nd << " dimers" << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+
+    //
+    // assign weights
+    //
+
+    ts_weights = new double[training_set.size()];
+
+    double E_min;
+    size_t N_eff;
+
+    tset::setup_weights(training_set, E_range, E_min,
+                       ts_weights, N_eff, true);
+
+    std::cout << "\\n>>   E_min = " << E_min << " kcal/mol"
+                 "\\n>> E_range = " << E_range << " kcal/mol"
+                 "\\n\\n>> training set size = " << training_set.size()
+              << "\\n>>    effective size = " << N_eff << '\\n'
+              << std::endl;
+
+
+    // electrostatics
+    double tb_ref[training_set.size()];
+    for (size_t n = 0; n < training_set.size(); n++) {
+      // Saving reference 2b energies  
+      tb_ref[n] = training_set[n].energy_twobody ;
+
+      x::mon1 m1(training_set[n].xyz);
+      x::mon2 m2(training_set[n].xyz + 3*m1.get_realsites());
+
+      int system_nsites = m1.get_nsites() + m2.get_nsites();
+      int * system_is_w;
+      double* system_sitecrds;
+      double* system_charge;
+      double* system_polfac;
+      double* system_pol;
+
+      system_sitecrds = new double [system_nsites*3];
+      system_charge = new double [system_nsites];
+      system_polfac = new double [system_nsites];
+      system_pol = new double [system_nsites]; //allocates memory to the pointers
+      system_is_w = new int[system_nsites];
+      
+      std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
+      std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
+      
+      int * is_w_a = system_is_w;
+      int * is_w_b = system_is_w + m1.get_nsites();
+
+      std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
+                system_sitecrds);
+      std::copy(m2.get_sitecrds(), m2.get_sitecrds() + 3 * m2.get_nsites(),
+                system_sitecrds + 3 * m1.get_nsites());
+
+      std::copy(m1.get_charges(), m1.get_charges() + m1.get_nsites(),
+                system_charge);
+      std::copy(m2.get_charges(), m2.get_charges() + m2.get_nsites(),
+                system_charge + m1.get_nsites());
+
+      std::copy(m1.get_pol(), m1.get_pol() + m1.get_nsites(),
+                system_pol);
+      std::copy(m2.get_pol(), m2.get_pol() + m2.get_nsites(),
+                system_pol + m1.get_nsites());
+
+      std::copy(m1.get_polfacs(), m1.get_polfacs() + m1.get_nsites(),
+                system_polfac);
+      std::copy(m2.get_polfacs(), m2.get_polfacs() + m2.get_nsites(),
+                system_polfac + m1.get_nsites());
+
+
+      excluded_set_type exclude12;
+      excluded_set_type exclude13;
+      excluded_set_type exclude14;
+      
+      excluded_set_type exclude12_a;
+      excluded_set_type exclude13_a;
+      excluded_set_type exclude14_a;
+      
+      excluded_set_type exclude12_b;
+      excluded_set_type exclude13_b;
+      excluded_set_type exclude14_b;
+
+      for (auto i = m1.get_begin_12(); i != m1.get_end_12(); i++) {
+        exclude12.insert(*i);
+        exclude12_a.insert(*i);
+      }
+      for (auto i = m2.get_begin_12(); i != m2.get_end_12(); i++) {
+        std::pair<size_t,size_t> p =
+                      std::make_pair(i->first + m1.get_nsites() ,
+                                     i->second + m1.get_nsites());
+        exclude12.insert(p);
+        exclude12_b.insert(*i);
+      }
+
+      for (auto i = m1.get_begin_13(); i != m1.get_end_13(); i++) {
+        exclude13.insert(*i);
+        exclude13_a.insert(*i);
+      }
+      for (auto i = m2.get_begin_13(); i != m2.get_end_13(); i++) {
+        std::pair<size_t,size_t> p =
+                      std::make_pair(i->first + m1.get_nsites() ,
+                                     i->second + m1.get_nsites());
+        exclude13.insert(p);
+        exclude13_b.insert(*i);
+      }
+
+      for (auto i = m1.get_begin_14(); i != m1.get_end_14(); i++) {
+        exclude14.insert(*i);
+        exclude14_a.insert(*i);
+      }
+      for (auto i = m2.get_begin_14(); i != m2.get_end_14(); i++) {
+        std::pair<size_t,size_t> p =
+                      std::make_pair(i->first + m1.get_nsites() ,
+                                     i->second + m1.get_nsites());
+        exclude14.insert(p);
+        exclude14_b.insert(*i);
+      }
+
+      ttm::electrostatics m_electrostatics;
+
+      ttm::smear_ttm4x smr; 
+      smr.m_aDD_intra_12 = 0.3;
+      smr.m_aDD_intra_13 = 0.3;
+      smr.m_aDD_intra_14 = 0.055;
+
+      double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
+                                    system_sitecrds, exclude12, exclude13, exclude14, 
+                                    system_is_w, smr, 0);
+      double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
+                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                    is_w_a, smr, 0);
+      double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
+                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                    is_w_b, smr, 0);
+
+      // Take out electrostatic energy:
+      elec_e.push_back(ener - ener_a - ener_b);
+      training_set[n].energy_twobody -= elec_e[n];
+      // std::cerr << "Conf " << n << " : Elec= " << ener ;
+
+      // Now need to take out dispersion
+      x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
+      ener = disp.get_dispersion();
+      disp_e.push_back(ener);
+      training_set[n].energy_twobody -= ener ;
+      
+      // And the buckingham
+      x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
+      ener = buck.get_buckingham();
+      buck_e.push_back(ener);
+      training_set[n].energy_twobody -= ener ;
+
+      delete[] system_sitecrds ;
+      delete[] system_charge  ;
+      delete[] system_polfac  ;
+      delete[] system_pol ;
+      delete[] system_is_w;
+
+    }
+
+        linear::allocate();
+
+    gsl_vector* x = gsl_vector_alloc(model.get_num_nonlinear_params());
+    model.get_nonlinear_parameters(x->data);
+
+    gsl_multimin_function chisq_func;
+
+    chisq_func.n = model.get_num_nonlinear_params();
+    chisq_func.f = linear::compute_chisq;
+
+    gsl_vector* ss = gsl_vector_alloc(model.get_num_nonlinear_params());
+    gsl_vector_set_all(ss, 0.1);
+
+    std::cout << "\\n<> initial simplex sides:\\n";
+    for (size_t n = 0; n < model.get_num_nonlinear_params(); ++n)
+        std::cout << n << " : " << ss->data[n] << "\\n";
+
+    gsl_multimin_fminimizer* s =
+        gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2rand,
+                                      model.get_num_nonlinear_params());
+
+    gsl_multimin_fminimizer_set(s, &chisq_func, x, ss);
+
+    int iter(0), status(0);
+    //
+    // Main optimization loop
+    //
+
+    do {
+        ++iter;
+        status = gsl_multimin_fminimizer_iterate(s);
+
+        if (status)
+             break;
+
+        const double size = gsl_multimin_fminimizer_size(s);
+        status = gsl_multimin_test_size(size, 1e-4);
+        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+
+        if (status == GSL_SUCCESS)
+            std::cout << "!!! converged !!!" << std::endl;
+
+        std::cout << iter << ' ' << s->fval << ' ' << size << std::endl;
+        if (iter > 0 && iter%10 == 0) {
+            std::cout << "\\n<> solution:\\n";
+            for (size_t n = 0; n <  model.get_num_nonlinear_params(); ++n)
+                std::cout << n << " : " << s->x->data[n] << "\\n";
+            std::cout << "<>" << std::endl;
+        }
+    } while (status == GSL_CONTINUE && iter < 5000);
+
+    model.set_nonlinear_parameters(s->x->data);
+    linear::compute_chisq(s->x, 0);
+    model.set(linear::params);
+
+    gsl_vector_free(x);
+    gsl_vector_free(ss);
+    gsl_multimin_fminimizer_free(s);
+
+    //
+    // report
+    //
+
+    for (size_t i = 0; i < training_set.size(); ++i)
+      training_set[i].energy_twobody += elec_e[i] + disp_e[i];
+
+    ofstream correlation_file;
+    correlation_file.open ("correlation.dat");
+    double err_L2(0), err_wL2(0), err_Linf(0);
+    double err_L2_lo(0), err_Linf_lo(0), nlo(0);
+
+    for (size_t i = 0; i < training_set.size(); ++i) {
+
+        const double E_model = model(training_set[i].xyz) + elec_e[i] + disp_e[i] + buck_e[i];
+        const double delta = E_model - tb_ref[i];
+        if (std::abs(delta) > err_Linf)
+            err_Linf = std::abs(delta);
+
+  correlation_file <<  i+1   << "   "
+    << E_model  << "   "
+    <<  tb_ref[i]  << "    "
+          <<  delta*delta  << "    \\n" ;
+
+        err_L2 += delta*delta;
+        err_wL2 += ts_weights[i]*delta*delta;
+
+        if (training_set[i].energy_total - E_min < E_range) {
+            nlo += 1.0;
+            err_L2_lo += delta*delta;
+            if (std::abs(delta) > err_Linf_lo)
+                err_Linf_lo = std::abs(delta);
+        }
+    }
+
+    correlation_file.close();
+
+    err_L2 /= training_set.size();
+    err_wL2 /= training_set.size();
+
+    err_L2_lo /= nlo;
+
+    std::cout << "      err[L2] = " << std::sqrt(err_L2) << "    #rmsd of full ts\\n"
+              << "     err[wL2] = " << std::sqrt(err_wL2) << "   #weighted rmsd of full ts\\n"
+              << "    err[Linf] = " << err_Linf << "   #highest error in full ts\\n"
+              << "  err[L2,low] = " << std::sqrt(err_L2_lo) << "   #rmsd of low-energy ts \\n"
+              << "err[Linf,low] = " << err_Linf_lo << "   #highest error in low-energy ts "
+              << std::endl;
+
+    //
+    //  save
+    //
+
+    {
+        const char fn[] = "fit-2b.cdl";
+        std::ofstream ofs(fn);
+        std::cout << "\\n>> saving as '" << fn << "'\\n";
+        model.as_cdl(ofs);
+    }
+
+
+    return 0;
+}
+
+"""
+ff.write(a)
+ff.close()
+
+
 # ## Makefile
 
-# In[ ]:
-
+# In[29]:
 
 fname = "Makefile"
 ff = open(fname,'w')
@@ -2263,11 +2972,23 @@ training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
 x2b_""" + mon1 + """_""" + mon2 + """_v1.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
 dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o 
 
+FIT_OBJ_BUCK = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
+kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
+training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
+x2b_""" + mon1 + """_""" + mon2 + """_v1.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
+dispersion.o buckingham.o poly_2b_""" + mon1 + """_""" + mon2 + """.o 
+
 EVAL_OBJ = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
 kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
 training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
 x2b_""" + mon1 + """_""" + mon2 + """_v1x.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
 dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o
+
+EVAL_OBJ_BUCK = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
+kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
+training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
+x2b_""" + mon1 + """_""" + mon2 + """_v1x.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
+dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o buckingham.o
 
 all: libfit.a libeval.a fit-2b eval-2b
 # $(MAKE) libpot.a 2> err.txt > log.txt
@@ -2279,11 +3000,23 @@ libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
 libeval.a: $(addprefix $(OBJDIR)/, $(EVAL_OBJ))
 \t$(AR) cru libeval.a $(addprefix $(OBJDIR)/, $(EVAL_OBJ))
 
+libfitb.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ_BUCK))
+\t$(AR) cru libfitb.a $(addprefix $(OBJDIR)/, $(FIT_OBJ_BUCK))
+
+libevalb.a: $(addprefix $(OBJDIR)/, $(EVAL_OBJ_BUCK))
+\t$(AR) cru libevalb.a $(addprefix $(OBJDIR)/, $(EVAL_OBJ_BUCK))
+
 fit-2b: fit-2b.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
 
 eval-2b: eval-2b.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -leval -o $@
+
+fit-2b-wbuck: fit-2b-wbuck.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfitb -o $@
+
+eval-2b-wbuck: eval-2b-wbuck.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -levalb -o $@
 
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) -c $< $(LIBS) -o $@
@@ -2293,7 +3026,7 @@ $(OBJDIR)/.sentinel:
 \ttouch $@
 
 clean:
-\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit.a libeval fit-2b eval-2b
+\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a libeval*.a fit-2b-wbuck eval-2b-wbuck
 """
 ff.write(a)
 ff.close()
@@ -2301,8 +3034,7 @@ ff.close()
 
 # ## Poly_fit_header
 
-# In[ ]:
-
+# In[30]:
 
 fname = "poly_2b_" + mon1 + "_" + mon2 + ".h"
 ff = open(fname,'w')
@@ -2332,8 +3064,7 @@ ff.close()
 
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
-# In[ ]:
-
+# In[31]:
 
 fdirect = open(directcpp, 'r')
 fnamecpp = "poly_2b_" + mon1 + "_" + mon2 + ".cpp"
@@ -2368,8 +3099,7 @@ fpolycpp.close()
 
 # ## Evaluation code
 
-# In[ ]:
-
+# In[32]:
 
 ff = open('eval-2b.cpp','w')
 a = """
@@ -2594,10 +3324,244 @@ ff.write(a)
 ff.close()
 
 
+# ## Evaluation code with TTM
+
+# In[33]:
+
+ff = open('eval-2b-wbuck.cpp','w')
+a = """
+#include <cmath>
+#include <cassert>
+#include <cstdlib>
+
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+
+#include "mon1.h"
+#include "mon2.h"
+#include "training_set.h"
+#include "x2b_""" + mon1 + '_' + mon2 + """_v1x.h"
+#include "electrostatics.h"
+#include "coulomb.h"
+#include "dispersion.h"
+#include "buckingham.h"
+#include "io-xyz.h"
+
+#define GRADIENTS
+
+static std::vector<double> elec_e;
+static std::vector<double> disp_e;
+static std::vector<double> buck_e;
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "usage: eval fit-2b.nc dimer.xyz"
+                  << std::endl;
+        return 0;
+    }
+    std::cout << std::scientific << std::setprecision(9);
+    x2b_""" + mon1 + '_' + mon2 + """::x2b_""" + mon1 + '_' + mon2 + """_v1x pot;
+    std::vector<std::string> elements;
+    std::vector<double> crd;
+
+    try {
+        ++argv;
+        --argc;
+        pot.load_netcdf(*argv);
+
+        ++argv;
+        --argc;
+        std::ifstream ifs(*argv);
+
+        if(!ifs)
+            throw std::runtime_error("could not open the XYZ file");
+
+        std::string comment;
+        kit::io::load_xyz(ifs, comment, elements, crd);
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+    
+    double xyz[""" + str(3*(nat1 + nat2)) + """];
+    std::copy(crd.begin(), crd.end(), xyz);
+    
+    x::mon1 m1(xyz);
+    x::mon2 m2(xyz + 3*m1.get_realsites());
+    
+    int system_nsites = m1.get_nsites() + m2.get_nsites();
+    int * system_is_w;
+    double* system_sitecrds;
+    double* system_charge;
+    double* system_polfac;
+    double* system_pol;
+
+    system_sitecrds = new double [system_nsites*3];
+    system_charge = new double [system_nsites];
+    system_polfac = new double [system_nsites];
+    system_pol = new double [system_nsites]; //allocates memory to the pointers
+    system_is_w = new int[system_nsites];
+      
+    std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
+    std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
+    
+    int * is_w_a = system_is_w;
+    int * is_w_b = system_is_w + m1.get_nsites();
+    
+    std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
+              system_sitecrds);
+    std::copy(m2.get_sitecrds(), m2.get_sitecrds() + 3 * m2.get_nsites(),
+              system_sitecrds + 3 * m1.get_nsites());
+
+    std::copy(m1.get_charges(), m1.get_charges() + m1.get_nsites(),
+              system_charge);
+    std::copy(m2.get_charges(), m2.get_charges() + m2.get_nsites(),
+              system_charge + m1.get_nsites());
+
+    std::copy(m1.get_pol(), m1.get_pol() + m1.get_nsites(),
+              system_pol);
+    std::copy(m2.get_pol(), m2.get_pol() + m2.get_nsites(),
+              system_pol + m1.get_nsites());
+
+    std::copy(m1.get_polfacs(), m1.get_polfacs() + m1.get_nsites(),
+              system_polfac);
+    std::copy(m2.get_polfacs(), m2.get_polfacs() + m2.get_nsites(),
+              system_polfac + m1.get_nsites());
+
+    excluded_set_type exclude12;
+    excluded_set_type exclude13;
+    excluded_set_type exclude14;
+
+    excluded_set_type exclude12_a;
+    excluded_set_type exclude13_a;
+    excluded_set_type exclude14_a;
+      
+    excluded_set_type exclude12_b;
+    excluded_set_type exclude13_b;
+    excluded_set_type exclude14_b;
+
+    for (auto i = m1.get_begin_12(); i != m1.get_end_12(); i++) {
+      exclude12.insert(*i);
+      exclude12_a.insert(*i);
+    }
+    for (auto i = m2.get_begin_12(); i != m2.get_end_12(); i++) {
+      std::pair<size_t,size_t> p =
+                    std::make_pair(i->first + m1.get_nsites() ,
+                                   i->second + m1.get_nsites());
+      exclude12.insert(p);
+      exclude12_b.insert(*i);
+    }
+
+    for (auto i = m1.get_begin_13(); i != m1.get_end_13(); i++) {
+      exclude13.insert(*i);
+      exclude13_a.insert(*i);
+    }
+    for (auto i = m2.get_begin_13(); i != m2.get_end_13(); i++) {
+      std::pair<size_t,size_t> p =
+                    std::make_pair(i->first + m1.get_nsites() ,
+                                   i->second + m1.get_nsites());
+      exclude13.insert(p);
+      exclude13_b.insert(*i);
+    }
+
+    for (auto i = m1.get_begin_14(); i != m1.get_end_14(); i++) {
+      exclude14.insert(*i);
+      exclude14_a.insert(*i);
+    }
+    for (auto i = m2.get_begin_14(); i != m2.get_end_14(); i++) {
+      std::pair<size_t,size_t> p =
+                    std::make_pair(i->first + m1.get_nsites() ,
+                                   i->second + m1.get_nsites());
+      exclude14.insert(p);
+      exclude14_b.insert(*i);
+    }
+
+    ttm::electrostatics m_electrostatics;
+
+    ttm::smear_ttm4x smr; 
+    smr.m_aDD_intra_12 = 0.3;
+    smr.m_aDD_intra_13 = 0.3;
+    smr.m_aDD_intra_14 = 0.055;
+
+    double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
+                                  system_sitecrds, exclude12, exclude13, exclude14, 
+                                  system_is_w, smr, 0);
+    double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
+                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                  is_w_a, smr, 0);
+    double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
+                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                  is_w_b, smr, 0);
+
+    // Take out electrostatic energy:
+    elec_e.push_back(ener - ener_a - ener_b);
+      
+    // Now need to take out dispersion
+    x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
+    ener = disp.get_dispersion();
+    disp_e.push_back(ener);
+    
+    // Now need to take out buckingham
+    x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
+    ener = buck.get_dispersion();
+    buck_e.push_back(ener);
+    
+    double Epoly = pot(xyz);
+    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
+    std::cout << "E_poly2b = " << Epoly << std::endl;
+    std::cout << "E_elec2b = " << elec_e[0] << std::endl;
+    std::cout << "E_disp2b = " << disp_e[0] << std::endl;
+    std::cout << "E_buck2b = " << buck_e[0] << std::endl;
+    
+#ifdef GRADIENTS
+    const double eps = 1.0e-5;
+    double grd[""" + str(3*(nat1 + nat2)) + """];
+    std::fill(grd, grd + """ + str(3*(nat1 + nat2)) + """, 0.0);
+    Epoly = pot(xyz, grd);
+    std::cout << "E_grad = " << Epoly << std::endl;
+    for(size_t n = 0; n < """ + str(3*(nat1 + nat2)) + """; ++n){
+      const double x_orig = xyz[n];
+
+      xyz[n] = x_orig + eps;
+      const double Ep = pot(xyz) ;
+
+      xyz[n] = x_orig + 2*eps;
+      const double E2p = pot(xyz) ;
+
+      xyz[n] = x_orig - 2*eps;
+      const double E2m = pot(xyz) ;
+
+      xyz[n] = x_orig - eps;
+      const double Em = pot(xyz) ;
+
+      const double gfd = (8*(Ep - Em) - (E2p - E2m))/(12*eps);
+      xyz[n] = x_orig;
+
+      std::cout << elements[n/3] << "   "  << "Analit: " << grd[n] << " Numerical: " << gfd
+                     << " Diff: " << std::fabs(grd[n] - gfd) << '\\n';
+    }
+#endif
+
+    // Free memory
+    delete[] system_sitecrds ;
+    delete[] system_charge  ;
+    delete[] system_polfac  ;
+    delete[] system_pol ;
+    delete[] system_is_w;
+    
+    return 0;
+}
+"""
+ff.write(a)
+ff.close()
+
+
 # ## X2B.h for software
 
-# In[ ]:
-
+# In[34]:
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1x.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -2666,8 +3630,7 @@ ff.close()
 
 # ## X2B.cpp for software
 
-# In[ ]:
-
+# In[35]:
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1x.cpp"
 ff = open(cppname,'w')
@@ -3454,4 +4417,9 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::operator()(const double crd[""" + 
 """
 ff.write(a)
 ff.close()
+
+
+# In[ ]:
+
+
 

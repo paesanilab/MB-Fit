@@ -1,18 +1,21 @@
 
 # coding: utf-8
 
-# In[5]:
+# In[ ]:
+
 
 import sys
 import os
 
 
-# In[6]:
+# In[ ]:
+
 
 # Check proper if input is provided
 
 
-# In[7]:
+# In[ ]:
+
 
 if len(sys.argv) != 3:
     print("Usage: ./script <input.in> <poly-direct.cpp_with_path> ")
@@ -22,7 +25,8 @@ else:
     directcpp = sys.argv[2]
 
 
-# In[8]:
+# In[ ]:
+
 
 # This should be the commandline argument
 #name = "A1B2Z2_C1D2.in"
@@ -32,13 +36,15 @@ mon1 = f.readline().split('\'')[1]
 mon2 = f.readline().split('\'')[1]
 
 
-# In[9]:
+# In[ ]:
+
 
 # This should be the second command line argument
 #directcpp = 'poly-direct.cpp'
 
 
-# In[10]:
+# In[ ]:
+
 
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
@@ -126,13 +132,15 @@ E_range = '30.0'
 vsites = ['Z']
 
 
-# In[11]:
+# In[ ]:
+
 
 types_a = list(mon1)
 types_b = list(mon2)
 
 
-# In[12]:
+# In[ ]:
+
 
 # Generating the non linear parameter list
 nlparam = []
@@ -148,7 +156,8 @@ for i in range(0,len(types_b),2):
         t2.append(types_b[i])
 
 
-# In[13]:
+# In[ ]:
+
 
 # Appending for mon1
 nlp_touse_intra = ['k']
@@ -211,7 +220,8 @@ for i in range(len(t1)):
             real_pairs.append(ps)
 
 
-# In[14]:
+# In[ ]:
+
 
 # Save number in num_nonlinear
 num_nonlinear = len(nlparam)
@@ -220,7 +230,8 @@ num_nonlinear = len(nlparam)
 
 # ## Creating mon1.h and mon2.h
 
-# In[15]:
+# In[ ]:
+
 
 mon1_class = open('mon1.h','w')
 
@@ -266,7 +277,8 @@ mon1_class.write(str(a))
 mon1_class.close()
 
 
-# In[16]:
+# In[ ]:
+
 
 mon1_class = open('mon2.h','w')
 
@@ -314,7 +326,8 @@ mon1_class.close()
 
 # ## Creating their cpp files
 
-# In[17]:
+# In[ ]:
+
 
 ff = open('mon1.cpp','w')
 
@@ -434,7 +447,8 @@ ff.write(a)
 ff.close()
 
 
-# In[18]:
+# In[ ]:
+
 
 ff = open('mon2.cpp','w')
 
@@ -559,7 +573,8 @@ ff.close()
 # ## Creating water monomer
 # If applicable...
 
-# In[19]:
+# In[ ]:
+
 
 if is_w != 0:
     ff = open('mon' + str(is_w) + '.cpp','w')
@@ -692,7 +707,8 @@ excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excl
 
 # ## Create training_set.h/cpp files
 
-# In[20]:
+# In[ ]:
+
 
 ff = open('training_set.h','w')
 a = """
@@ -732,7 +748,8 @@ ff.close()
 
 # ## X2B h file
 
-# In[21]:
+# In[ ]:
+
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -843,7 +860,8 @@ ff.close()
 
 # ## CPP file
 
-# In[22]:
+# In[ ]:
+
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1.cpp"
 ff = open(cppname,'w')
@@ -1468,7 +1486,8 @@ ff.close()
 
 # ## Buckingham.h
 
-# In[23]:
+# In[ ]:
+
 
 hname = "buckingham.h"
 ff = open(hname,'w')
@@ -1497,7 +1516,9 @@ a = """
 
   double get_buckingham();
   double get_buckingham(double * grdx);
-
+  
+  double * xyz1;
+  double * xyz2;
 
   inline double buck(const double a, const double b,
                      const double* p1, const double* p2, 
@@ -1553,7 +1574,8 @@ ff.close()
 
 # ## Buckingham.cpp
 
-# In[24]:
+# In[ ]:
+
 
 cppname = "buckingham.cpp"
 ff = open(cppname,'w')
@@ -1689,7 +1711,8 @@ ff.close()
 
 # ## Dispersion.h
 
-# In[25]:
+# In[ ]:
+
 
 hname = "dispersion.h"
 ff = open(hname,'w')
@@ -1811,7 +1834,8 @@ ff.close()
 
 # ## dispersion.cpp
 
-# In[26]:
+# In[ ]:
+
 
 cppname = "dispersion.cpp"
 ff = open(cppname,'w')
@@ -1947,7 +1971,8 @@ ff.close()
 
 # ## Fitting routine
 
-# In[27]:
+# In[ ]:
+
 
 cppname = "fit-2b.cpp"
 ff = open(cppname,'w')
@@ -2446,7 +2471,8 @@ ff.close()
 
 # ## Fitting with TTM as underlying
 
-# In[28]:
+# In[ ]:
+
 
 cppname = "fit-2b-wbuck.cpp"
 ff = open(cppname,'w')
@@ -2952,7 +2978,8 @@ ff.close()
 
 # ## Makefile
 
-# In[29]:
+# In[ ]:
+
 
 fname = "Makefile"
 ff = open(fname,'w')
@@ -2990,7 +3017,7 @@ training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
 x2b_""" + mon1 + """_""" + mon2 + """_v1x.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
 dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o buckingham.o
 
-all: libfit.a libeval.a fit-2b eval-2b
+all: libfit.a libeval.a fit-2b eval-2b libfitb.a libevalb.a fit-2b-wbuck eval-2b-wbuck
 # $(MAKE) libpot.a 2> err.txt > log.txt
 
 
@@ -3034,7 +3061,8 @@ ff.close()
 
 # ## Poly_fit_header
 
-# In[30]:
+# In[ ]:
+
 
 fname = "poly_2b_" + mon1 + "_" + mon2 + ".h"
 ff = open(fname,'w')
@@ -3064,7 +3092,8 @@ ff.close()
 
 # ## Modifi poly-direct.cpp file to give just the non linear terms
 
-# In[31]:
+# In[ ]:
+
 
 fdirect = open(directcpp, 'r')
 fnamecpp = "poly_2b_" + mon1 + "_" + mon2 + ".cpp"
@@ -3099,7 +3128,8 @@ fpolycpp.close()
 
 # ## Evaluation code
 
-# In[32]:
+# In[ ]:
+
 
 ff = open('eval-2b.cpp','w')
 a = """
@@ -3326,7 +3356,8 @@ ff.close()
 
 # ## Evaluation code with TTM
 
-# In[33]:
+# In[ ]:
+
 
 ff = open('eval-2b-wbuck.cpp','w')
 a = """
@@ -3506,7 +3537,7 @@ int main(int argc, char** argv) {
     
     // Now need to take out buckingham
     x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
-    ener = buck.get_dispersion();
+    ener = buck.get_buckingham();
     buck_e.push_back(ener);
     
     double Epoly = pot(xyz);
@@ -3561,7 +3592,8 @@ ff.close()
 
 # ## X2B.h for software
 
-# In[34]:
+# In[ ]:
+
 
 hname = "x2b_" + mon1 + "_" + mon2 + "_v1x.h"
 polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_v1x.h"
@@ -3630,7 +3662,8 @@ ff.close()
 
 # ## X2B.cpp for software
 
-# In[35]:
+# In[ ]:
+
 
 cppname = "x2b_" + mon1 + "_" + mon2 + "_v1x.cpp"
 ff = open(cppname,'w')
@@ -4417,9 +4450,4 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::operator()(const double crd[""" + 
 """
 ff.write(a)
 ff.close()
-
-
-# In[ ]:
-
-
 

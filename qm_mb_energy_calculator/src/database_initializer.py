@@ -37,7 +37,6 @@ def initialize_database(database_name, directory):
     config = configparser.SafeConfigParser(allow_no_value=False)
 
     # See if a config file already exists; if not, generate one
-    print(directory)
     options = config.read(directory + "/settings.ini")
     
     # rather than attempting to generate a config file,
@@ -85,7 +84,7 @@ def initialize_database(database_name, directory):
 
 
 """
-gets list of all filenames in a director
+gets list of all filenames in a directory
 """
 def get_filenames(directory):
     filenames = []
@@ -94,4 +93,4 @@ def get_filenames(directory):
             filenames.append(root + "/" + filename);
     return filenames;
     
-initialize_database("testdb.db", os.getcwd())
+initialize_database("testdb.db", "config_files")

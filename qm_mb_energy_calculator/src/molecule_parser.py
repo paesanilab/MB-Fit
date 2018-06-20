@@ -76,7 +76,6 @@ def xyz_to_molecules(f, config):
             fragment = Fragment(charge, spin)
 
             for i in range(0, atom_count):
-                print(i)
                 # read a line
                 atom_line = readline(f, True)
                 
@@ -96,7 +95,6 @@ def xyz_to_molecules(f, config):
 
 def readline(xyz, error = False):
     value = xyz.readline()
-    print(value)
     if value == "":
         if error:
             raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Parsing ended in the middle of a molecule.")

@@ -1,8 +1,11 @@
 input_geometry_path:	geo.txt
 
 linear_geo:		false
+charge:			-2
+multiplicity:		1
+
 random:			Q
-num_configs:		4096
+num_configs:		8192
 geometric:		false
 linear:			true
 

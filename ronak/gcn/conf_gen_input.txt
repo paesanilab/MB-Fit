@@ -1,7 +1,7 @@
 'inputs/optimized.xyz'
 'inputs/normal_modes.dat'
 9 6
-Q 4096
+Q 8192
 'gcn/conf.xyz'
 .false. .true.
 .true.

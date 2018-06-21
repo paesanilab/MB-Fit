@@ -36,3 +36,6 @@ calculations*
 timer.dat
 output.dat
 submit.sh
+
+# psi4
+.clean

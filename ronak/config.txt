@@ -1,0 +1,10 @@
+input_geometry_path:	geo.txt
+
+linear_geo:		false
+random:			Q
+num_configs:		4096
+geometric:		false
+linear:			true
+
+method:			BLYP
+basis:			cc-pvdz

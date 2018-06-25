@@ -1,0 +1,7 @@
+'inputs/h2o_psi4_BLYP_cc-pvdz_optimized.xyz'
+'inputs/h2o_psi4_BLYP_cc-pvdz_normalmodes.dat'
+9 6
+Q 128
+'gcn/h2o_psi4_BLYP_cc-pvdz_configurations.xyz'
+false true
+.true.

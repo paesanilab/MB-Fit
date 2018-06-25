@@ -13,28 +13,11 @@ import os
 import sys
 
 import psi4helper
-import configparser
+import configuationloader
 import normalconfigurationgenerator
 
-# filepaths
-optimized_geometry_path = "inputs/optimized.xyz"
-normal_modes_path = "inputs/normal_modes.dat"
-
-gcn_input_path = "gcn/conf_gen_input.txt"
-gcn_output_path = "gcn/conf_gen_output.txt"
-
-gcn_executor_path = "gcn/executor.sh"
-
-norm_config_path = "gcn/conf.xyz"
-
-# psi4 Global Parameters
-memory = "1GB"
-num_threads = 2
-output_path = "temp/psi4.out"
-
-
 if len(sys.argv) == 2:
-	parse_fail, input_geo, linear_geo, charge, multiplicity, random, num_configs, geometric, linear, method, basis = configparser.parse_config(sys.argv[1])
+	parse_fail, name, input_geo, linear_geo, charge, multiplicity, random, num_configs, geometric, linear, method, basis = configuationloader.parse_config(sys.argv[1])
 else:
 	parse_fail = True
 	print("Usage: automated-psi4.py [config.txt]")
@@ -42,6 +25,23 @@ else:
 if parse_fail:
 	print("ERROR: The configuration file does not conform to the input format.")
 else:
+	# filepaths
+	optimized_geometry_path = "inputs/" + name + "_psi4_" + method + "_" + basis + "_optimized.xyz"
+	normal_modes_path = "inputs/" + name + "_psi4_" + method + "_" + basis + "_normalmodes.dat"
+
+	gcn_input_path = "gcn/" + name + "_psi4_" + method + "_" + basis + ".inp"
+	gcn_output_path = "gcn/" + name + "_psi4_" + method + "_" + basis + ".out"
+
+	gcn_executor_path = "gcn/" + name + "_psi4_" + method + "_" + basis + ".sh"
+
+	norm_config_path = "gcn/" + name + "_psi4_" + method + "_" + basis + "_configurations.xyz"
+
+	# psi4 Global Parameters
+	memory = "1GB"
+	num_threads = 2
+	output_path = "logs/" + name + "_psi4_" + method + "_" + basis + ".out"
+
+
 	psi4.core.set_output_file(output_path, False)
 	psi4.set_memory(memory)
 	psi4.set_num_threads(num_threads)
@@ -66,5 +66,5 @@ else:
 	psi4helper.frequency_calculations(mol, model, dim_null, normal_modes_path)
 	
 	# Step 3
-	# normalconfigurationgenerator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, dim_null, random, num_configs, geometric, linear)
+	normalconfigurationgenerator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, dim_null, random, num_configs, geometric, linear)
 			

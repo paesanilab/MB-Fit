@@ -47,33 +47,37 @@ def optimize_geometry(molecule, model, optimized_geometry_path):
 			
 	print("")
 	
-def frequency_calculations(molecule, model, dim_null, mode_type, normal_modes_path):
+def frequency_calculations(molecule, model, dim_null, normal_modes_path):
 	print("Determining normal modes and running frequency analysis...")
 
 	norm_formatter = "{:> 15.8f}"
 
 	total_energy, wavefunc = psi4.frequency(model, molecule=molecule, return_wfn=True)
 	
-	vib_info = wavefunc.frequency_analysis
+	vib_info_raw = wavefunc.frequency_analysis
+	vib_info = psi4.qcdb.vib.filter_nonvib(vib_info_raw)
 	
 	num_atoms = molecule.natom()
-	
 	num_modes = 3*num_atoms - dim_null
-	
-	additive = len(vib_info["omega"].data) - num_modes - 1
 
 	normal_out = ""
+	
+	frequencies = vib_info["omega"].data
+	reduced_masses = vib_info["mu"].data
+	
+	normal_modes = vib_info['x'].data
 
 	for i in range(1, 1 + num_modes):
-		index = additive + i
+		index = i - 1
 		
 		normal_out += "normal mode: " + str(i) + "\n"
-		normal_out += treat_imaginary(vib_info["omega"].data[index]) + "\n"
-		normal_out += "red_mass = " + str(vib_info["mu"].data[index]) + "\n"
+		normal_out += treat_imaginary(frequencies[index]) + "\n"
+		normal_out += "red_mass = " + str(reduced_masses[index]) + "\n"
 		
-		coords = vib_info[mode_type].data[index]
-		for i in range(num_atoms):
-			normal_out += norm_formatter.format(float(coords[3 * i])) + "\t" + norm_formatter.format(float(coords[3 * i + 1])) + "\t" + norm_formatter.format(float(coords[3 * i + 2])) + "\n"
+		for atom in range(num_atoms):
+			normal_out += norm_formatter.format(float(normal_modes[3 * atom + 0][index])) + "\t"
+			normal_out += norm_formatter.format(float(normal_modes[3 * atom + 1][index])) + "\t"
+			normal_out += norm_formatter.format(float(normal_modes[3 * atom + 2][index])) + "\n"
 		
 		normal_out += "\n"
 

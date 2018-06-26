@@ -222,6 +222,8 @@ if($poly_order > 0){
         $mono_all{join(':', @mono)} = undef;
     }
 
+    &check_for_filtered_monomials_and_do_it($input_file, \%mono_all, 1);
+
     print scalar keys %mono_all, " possible 1st degree monomials\n";
     $mono1_orb = find_orbits(\%mono_all);
     die unless scalar(keys %mono_all) == 0;

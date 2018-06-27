@@ -2,18 +2,26 @@
 A module for the different models for calculating the 
 energy of a set of atoms (a fragment)
 """
-import numpy
+try:
+    import numpy
+except:
+    pass
+
+from subprocess import call
 
 try:
     import psi4
 except ImportError:
+    print("Error: failed to import psi4")
     pass
 
+'''
 try:
     from TensorMol import *
     os.environ["CUDA_VISIBLE_DEVICES"]="CPU" # for TensorMol
 except ImportError:
     pass
+'''
 
 def sym_to_num(symbol):
     """
@@ -24,18 +32,29 @@ def sym_to_num(symbol):
     elif symbol == "H":
         return 1
 
-def calc_energy(frag_str, config):
+def calc_energy(molecule, fragment_indicies, config):
     """
     Compute the energy using a model requested by the user
     """
+
     model = config["driver"]["model"]
-    if model == "psi4":
-        psi4.core.set_output_file("/dev/null", False)
-        psi4.set_memory(config["psi4"]["memory"])
-        return calc_psi4_energy(frag_str, config)
     
-    if model == "TensorMol":
-        return TensorMol_convert_str(frag_str, config)
+    if model == "psi4":
+        # psi4.core.set_output_file(molecule.get_SHA1()[:8] + method + "/" + 
+        #    basis + "_" + str(fragment_indicies), False)
+        psi4.set_memory(config["psi4"]["memory"])
+        energy = calc_psi4_energy(molecule, fragment_indicies, config)
+    
+    elif model == "TensorMol":
+        energy = TensorMol_convert_str(molecule, fragment_indicies, config)
+  
+    elif model == "qchem":
+        energy = calc_qchem_energy(molecule, fragment_indicies, config)
+    else:
+        print("No such model exists!")
+        return 0
+
+    return energy
 
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):
@@ -68,25 +87,27 @@ def En(m, x_, manager):
     energy = Etotal[0]
     return energy
 
-def calc_psi4_energy(frag_str, config):
+def calc_psi4_energy(molecule, fragment_indicies, config):
     """
     Use PSI4 to compute the energy of a fragment
     """
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(frag_str)
+    psi4_string = molecule.to_xyz(fragment_indicies)
+    psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
     psi4_mol.update_geometry()
 
     psi4.set_num_threads(config["psi4"].getint("threads"))
-    energy = psi4.energy("{}/{}".format(config["psi4"]["method"],
-          config["psi4"]["basis"]), molecule=psi4_mol)
+    energy = psi4.energy("{}/{}".format(config["model"]["method"],
+          config["model"]["basis"]), molecule=psi4_mol)
     
     #print(energy)
     return energy
 
-def TensorMol_convert_str(frag_str, config):
+def TensorMol_convert_str(molecule, fragment_indicies, config):
     """
     Prepares input data 
     """
-    xyz_list = frag_str.split()
+    tensorMol_string = molecule.to_xyz(fragment_indicies)
+    xyz_list = tensorMol_string.split()
     atoms = numpy.array([])
     coords = numpy.array([])
     for i in range(int(len(xyz_list)/4)):
@@ -104,3 +125,46 @@ def calc_TensorMol_energy(atoms, coords, config):
     molset.mols.append(molecule)
     manager = GetWaterNetwork(molset)
     return En(molecule, coords, manager)
+
+"""
+Calculates energy using qchem
+"""
+def calc_qchem_energy(molecule, fragment_indicies, config):
+
+    #prepare Q-chem input fil from frag string
+
+    input_file = "qchem_input.txt"
+    output_file = "qchem_out.txt"
+    
+    # initialize qchem input string
+    qchem_input = "";
+    
+    # molecule format
+    qchem_input += "$molecule\n"
+
+    # charge and spin multiplicity
+    qchem_input += "0 1\n"
+
+    # atoms in the molecule
+    # might need to add whitespace before each line?
+    qchem_input += molecule.to_xyz(fragment_indicies)
+
+    qchem_input += "$end\n"
+
+    # Q-chem settings
+    qchem_input += "$rem\n"
+
+    qchem_input += "jobtype " + "sp" + "\n"
+    qchem_input += "method " + config["Qchem"]["method"] + "\n"
+    qchem_input += "basis " + config["Qchem"]["basis"] + "\n"
+
+    qchem_input += "$end"
+ 
+    call(["mkdir", "qchem"]);
+    
+    f = open("qchem/qchem_in",'w');
+    f.write(qchem_input)
+    f.close();    
+    
+    # call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
+    return 0

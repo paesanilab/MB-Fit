@@ -1,112 +1,251 @@
 """
 A driver for the modules
 """
+
 try:
     import tensorflow
 except ImportError:
     pass
 
+"""
+LIBRARY IMPORTS
+"""
+
+# System-related imports for all your file needs
 import os, sys
+from subprocess import call
+
+# Data compression modules
+import pickle
+
+# Imports the configparser
 import configparser
+# Imports the json library
 import json
 
+# Binary conversion
+from sqlite3 import Binary
+
+# Import Exceptions
+from exceptions import DatabaseUnspecifiedException
+
+"""
+LOCAL MODULE IMPORTS
+"""
+
+# Calculates multi-body decomposition energies
 import mbdecomp
+
+# Script for implementing sqlite3 functionality
+import database
+
+# Holds information used in a molecule
 import molecule
 
-tr_set = './training_set.xyz'
-log_name = './mbdecomp.log'
-overwrite = 'w'
-append = 'a'
-write_log = False
+# Parses an xyz file into a molecule object
+from molecule_parser import xyz_to_molecules
 
+"""
+CONFIG FILE INITIALIZATION
+"""
+
+# Config file, set by user, contains instructions for operation
 config = configparser.ConfigParser(allow_no_value=False)
+
+# read the conflig file into the configuration
 config.read("settings.ini")
 
 
-f = open(config["driver"]["input"], 'r')
-training_set_file = open('./training_set.xyz', 'w')
+"""
+FILEPATH INITIALIZATION
+"""
 
-# Open the log file here
+# Filepath to the training set file
+tr_set = './training_set.xyz'
+
+# Filepath to the log file
+log_name = './mbdecomp.log'
+
+# Filepath to the input xyz file
+input_path = config["driver"]["input"]
+
+"""
+OPEN FILES TO READ AND WRITE
+"""
+
+# open the input file
+f = open(input_path, 'r')
+
+# open the training set file
+training_set_file = open(tr_set, 'w')
+
+"""
+INITIALIZE LOG FILE AND CHECK WHAT TYPE OF LOGGING IS TO BE DONE
+"""
+
+# True if a log file is to be written
+write_log = False
+
+# Open the log file if cluster_anaylsis
 if config["MBdecomp"].getboolean("cluster_analysis"):
             
-    # Check if the file already exists, and do something about it
+    # Check if the append flag is set to true
     if config["MBdecomp"].getboolean("append"):
+        # If both append and overwrite flags are True, print a warning message
         if config["MBdecomp"].getboolean("overwrite"):
             print("Warning: Both flags selected. Will append " + 
                 "to file if it exists.")
+        # Open the log file in append mode
         log = open(log_name, 'a')
         write_log = True
+    # Check if overwrite flag is set to true
     elif config["MBdecomp"].getboolean("overwrite"):
+        # Open the log file in write mode
         log = open(log_name, 'w')
         write_log = True
 
-    # If file exists and both flags are set to false
+    # If file exists and both flags are set to false, no not log
     elif os.path.isfile(log_name):
         print("Error: File exists and don't know how to deal with it."+
             " No log file will be produced.")
-        
 
+"""
+Starts up the database, if any.
+"""
+# First, check if this exists in the database
+# Begin by checking the existence of a database
+'''
+db = config["database"]["name"]
 
-while_read = 1
-count = 0
+# If no name is given, raise an error
+if not db:
+    raise DatabaseUnspecifiedException("settings.ini", "database.name");
+
+# Initiate the database and retrieve it's cursor and connection
+cursor, connect = database.__init__(db)
+'''
+
 '''
 Notes for output file:
 Let user decide what to do with log file.
 By default, if a log file already exists, terminate.
 We can also let the user append or overwrite the existing file.
 '''
-while while_read:
-    mol_from_xyz = molecule.Molecule()
-    while_read = mol_from_xyz.read_xyz(f)
-    if while_read:
-        count += 1
-        #print(mol_from_xyz)
-        #print(count)
-        energy = mbdecomp.get_nmer_energies(mol_from_xyz, config)
-        mol_from_xyz.mb_energies = mbdecomp.mbdecomp(
-            mol_from_xyz.nmer_energies[::-1])
-        training_set_file.write(str(mol_from_xyz.natoms)+
-            '\n'+str(energy)+'\n'+str(mol_from_xyz)+'\n')
+
+"""
+RUN CALCULATIONS ON THE USER'S INPUT
+"""
+
+# parse array of molecules from input xyz file
+molecules = xyz_to_molecules(f)
+
+# for each molecule from the input xyz file...
+for molecule in molecules:
+
+    '''
+    # Get some info to insert into table
+    # Gets the SHA1 unique id of the molecule
+    mol_id = molecule.get_SHA1()
+    
+    # Queries for existing energies
+    # If configuration exists, then check if the energies are already there
+    if data = database.query_id(cursor, "Configs", mol_id):
+
+        # I remove Enb because I'm not sure what we're using this for yet
+        energy_tuple = database.query_id(cursor, "Energies", mol_id)[:-1]
+
+        # Now check if all energies are set
+        if "UNSET" not in energy_tuple:
+
+            # If they are, then we wish to convert tuple to string
+            energy = " ".join(energy_tuple)
+
+    else:
+    '''
+    
+    mol_nfrags = molecule.get_num_fragments()
+
+    # calculate energy
+    energy = mbdecomp.get_nmer_energies(molecule, config)
+    #print(energy)
+
+    # Get model info to insert into another table
+    #mol_model = config["psi4"]["method"] + "/" + config["psi4"]["basis"]
+    
+    # calculate mb_energies
+    molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)
+
+    # Pickle the mb_energies
+    #compressed_energies = pickle.dumps(molecule.mb_energies).hex()
+
+    # Insert some energies into table 2
+    # A quick fix to convert dictionary to all strings to comply with **kwargs
+    '''
+    database.insert(cursor, "Energies", ID=mol_id, model=mol_model, 
+        Enb=compressed_energies, ** {str(k): v for k, 
+        v in molecule.energies.items()})
+
+    # Compress molecule into a byte stream
+    compressed_mol = pickle.dumps(molecule).hex()
+
+    # Insert molecule into table 1
+    database.insert(cursor, "Configs", ID=mol_id, config=compressed_mol, 
+        natom=molecule.get_num_atoms(), nfrags=mol_nfrags, tag="tag")
+    '''
+
+    # write output to training set file
+    training_set_file.write(str(molecule.get_num_atoms()) + '\n' +
+        str(energy) + '\n' + molecule.to_xyz() + '\n')
+
+    # if log is enabled, write the log
+    if write_log:
+        json_output = {}
         
-        if write_log:
-            # Create a dictionary (for JSON) that collects all output info
-            # How to check the uniqueness of a molecule?
-            # One proposal: generate and check MD5 checksum
-            json_output = {}
-            
-            # Continue to write this in a log file
-            log.write(str(mol_from_xyz)+'\n')
-            log.write(mol_from_xyz.write_frag_energy())
-            log.write("N-body energies:\n")
-            log.write(mol_from_xyz.write_mb_energy(
-                  config["MBdecomp"].getint("max_nbody_energy")))
-            if config["MBdecomp"].getboolean("kbody_energy"):
-                  log.write("K-body energies:\n")
-                  k_output = mbdecomp.get_kbody_energies(mol_from_xyz)
-                  k_dict = k_output[0]
-                  k_diff = k_output[1]
-                  for index in k_dict.keys():
-                      log.write("{}: {}\n".format(index, "%.8f"%k_dict[index]))
-                  log.write("K-body differences:\n")
-                  for bodies in range(len(k_diff)):
-                      log.write("V_{}B - K_{}B: {}\n".format(bodies+1,
-                          bodies+1, "%.8f"%k_diff[bodies]))
-            log.write("--------------\n")
+        # write molecule's xyz format to log file
+        log.write(molecule.to_xyz() + '\n')
+        # write molecule's fragment energies to log file
+        log.write(molecule.log_frag_energy())
+        log.write("N-body energies:\n")
+        # write molecule's multibody energy to log file
+        log.write(molecule.log_mb_energy(config["MBdecomp"].getint("max_nbody_energy")))
+        
+        if config["MBdecomp"].getboolean("kbody_energy"):
+            log.write("Individual N-body energies:\n")
+            # get kbody energies
+            k_output = mbdecomp.get_kbody_energies(molecule)
 
-            # Place some entries of output into dictionary
-            json_output["molecule"] = str(mol_from_xyz)
-            # nmer_energies
-            json_output["frag_energies"] = {"E{}".format(key): 
-                mol_from_xyz.energies[key] for key in 
-                mol_from_xyz.energies.keys()}        
-            json_output["n-body_energies"] = {
-                "V_{}B".format(mol_from_xyz.mb_energies.index(energy)+1):
-                energy for energy in mol_from_xyz.mb_energies}
-            json_output["k-body_energies"] = k_dict
-            with open('json_output.json', 'w') as fp:
-                json.dump(json_output, fp, indent=4)
+            #TODO: understand and comment this            
 
+            k_dict = k_output[0]
+            k_diff = k_output[1]
+            for index in k_dict.keys():
+                log.write("{}: {}\n".format(index, "%.8f"%k_dict[index]))
+            log.write("N-body differences:\n")
+            for bodies in range(len(k_diff)):
+                log.write("V_{}B - K_{}B: {}\n".format(bodies+1, bodies+1, "%.8f"%k_diff[bodies]))
+        log.write("--------------\n")
+        
+        # Build json dictionary
 
+        json_output["ID"] = molecule.get_SHA1()
+
+        # put molecule's xyz format into json
+        json_output["molecule"] = molecule.to_xyz()
+
+        # put the computational model into json
+        json_output["model"] = config["psi4"]["method"]+"/"+config["psi4"]["basis"]
+        
+        # put fragment energies into json
+        json_output["frag_energies"] = {"E{}".format(key): molecule.energies[key] for key in molecule.energies.keys()}
+        
+        # put nbody energies into json
+        json_output["n-body_energies"] = {"V_{}B".format(molecule.mb_energies.index(energy) + 1): energy for energy in molecule.mb_energies}
+        
+        # put kbody energies into json
+        json_output["individual_n-body_energies"] = k_dict
+        with open("json_output.json", 'w') as json_file:
+            json.dump(json_output, json_file, indent=4)
+        
 # We make an exception here in case there is no log file
 try:
     log.close()
@@ -116,3 +255,6 @@ except:
 f.close()
 
 training_set_file.close()
+
+# Commit changes and close database here
+#database.finalize(connect)

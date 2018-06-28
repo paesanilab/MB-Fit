@@ -1,2 +1,5 @@
 PWD=$(pwd -P)
-export PATH=$PWD/polynomial_generation/src:$PWD/fitting/1B/get_codes:$PATH
+PATH=$PWD/configuration_generator/norm_distribution/src:$PATH
+PATH=$PWD/polynomial_generation/src:$PATH
+PATH=$PWD/fitting/1B/get_codes:$PATH
+export PATH

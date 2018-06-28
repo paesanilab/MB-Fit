@@ -23,12 +23,12 @@ def treat_imaginary(contents):
     return result
 
 # Main Functions
-def optimize_geometry(molecule, model, optimized_geometry_path):
+def optimize_geometry(molecule, config, optimized_geometry_path):
     print("Optimizing geometry...")
 
-    opt_formatter =  "{:< 16.10f}"
+    opt_formatter =  "{:< 12.6f}"
 
-    e = psi4.optimize(model, molecule=molecule)
+    e = psi4.optimize(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule)
     
     num_atoms = molecule.natom()
 
@@ -39,39 +39,39 @@ def optimize_geometry(molecule, model, optimized_geometry_path):
         for i in range(num_atoms):
             atom = molecule.symbol(i)
 
-            x = opt_formatter.format(molecule.x(i))
-            y = opt_formatter.format(molecule.y(i))
-            z = opt_formatter.format(molecule.z(i))
+            x = opt_formatter.format(molecule.x(i) / molecule.input_units_to_au())
+            y = opt_formatter.format(molecule.y(i) / molecule.input_units_to_au())
+            z = opt_formatter.format(molecule.z(i) / molecule.input_units_to_au())
             
             opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
             
     print("")
     
-def frequency_calculations(molecule, model, dim_null, normal_modes_path):
+def frequency_calculations(molecule, config, normal_modes_path):
     print("Determining normal modes and running frequency analysis...")
 
-    norm_formatter = "{:> 15.8f}"
+    norm_formatter = "{:> 12.4f}"
 
-    total_energy, wavefunc = psi4.frequency(model, molecule=molecule, return_wfn=True)
+    total_energy, wavefunc = psi4.frequency(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule, return_wfn=True)
     
     vib_info_raw = wavefunc.frequency_analysis
     vib_info = psi4.qcdb.vib.filter_nonvib(vib_info_raw)
-    
-    num_atoms = molecule.natom()
-    num_modes = 3*num_atoms - dim_null
 
     normal_out = ""
     
-    frequencies = vib_info["omega"].data
+    frequencies = wavefunc.frequencies().to_array()
     reduced_masses = vib_info["mu"].data
     
     normal_modes = vib_info['x'].data
+
+    num_modes = len(frequencies)
+    num_atoms = molecule.natom()
 
     for i in range(1, 1 + num_modes):
         index = i - 1
         
         normal_out += "normal mode: " + str(i) + "\n"
-        normal_out += treat_imaginary(frequencies[index]) + "\n"
+        normal_out += str(frequencies[index]) + "\n"
         normal_out += "red_mass = " + str(reduced_masses[index]) + "\n"
         
         for atom in range(num_atoms):
@@ -81,7 +81,6 @@ def frequency_calculations(molecule, model, dim_null, normal_modes_path):
         
         normal_out += "\n"
 
-
     with open(normal_modes_path, 'w') as norm_file:
         norm_file.write(normal_out)
 
@@ -89,3 +88,5 @@ def frequency_calculations(molecule, model, dim_null, normal_modes_path):
 
     print("Normal mode/frequency analysis complete.")
     print("")
+
+    return 3 * num_atoms - num_modes

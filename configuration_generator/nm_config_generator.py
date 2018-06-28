@@ -21,7 +21,7 @@ def generate(molecule, gcn_input_path, gcn_output_path, optimized_geometry_path,
     
     with open(gcn_executor_path, 'w') as executor_file:
         executor_file.write("#!/bin/bash\n\n")
-        executor_file.write("gcn/src/generate_configs_normdistrbn < " + gcn_input_path + " > " + gcn_output_path + "\n")
+        executor_file.write("src/generate_configs_normdistrbn < " + gcn_input_path + " > " + gcn_output_path + "\n")
         executor_file.write("exit 0")
         
     os.system("bash " + gcn_executor_path)

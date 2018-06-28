@@ -13,11 +13,11 @@ import os
 import sys
 
 import psi4helper
-import configuationloader
-import normalconfigurationgenerator
+import config_loader
+import nm_config_generator
 
 if len(sys.argv) == 2:
-    parse_fail, name, input_geo, linear_geo, charge, multiplicity, random, num_configs, geometric, linear, method, basis = configuationloader.parse_config(sys.argv[1])
+    parse_fail, name, input_geo, linear_geo, charge, multiplicity, random, num_configs, geometric, linear, method, basis = config_loader.parse_config(sys.argv[1])
 else:
     parse_fail = True
     print("Usage: automated-psi4.py [config.txt]")
@@ -66,5 +66,5 @@ else:
     psi4helper.frequency_calculations(mol, model, dim_null, normal_modes_path)
     
     # Step 3
-    normalconfigurationgenerator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, dim_null, random, num_configs, geometric, linear)
+    nm_config_generator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, dim_null, random, num_configs, geometric, linear)
 

@@ -12,7 +12,7 @@ import psi4
 import os
 import sys
 
-import psi4helper
+import psi4_helper
 import config_loader
 import nm_config_generator
 
@@ -60,10 +60,10 @@ else:
         dim_null = 6
     
     # Step 1
-    psi4helper.optimize_geometry(mol, model, optimized_geometry_path)
+    psi4_helper.optimize_geometry(mol, model, optimized_geometry_path)
     
     # Step 2
-    psi4helper.frequency_calculations(mol, model, dim_null, normal_modes_path)
+    psi4_helper.frequency_calculations(mol, model, dim_null, normal_modes_path)
     
     # Step 3
     nm_config_generator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, dim_null, random, num_configs, geometric, linear)

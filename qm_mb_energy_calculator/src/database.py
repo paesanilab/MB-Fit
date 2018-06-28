@@ -5,6 +5,7 @@ import sqlite3
 import re
 from exceptions import MoleculeIDUnsetException
 from exceptions import RowOperationBeforeInitException
+from exceptions import EnergyUnsetException
 import pickle
 
 # Much of the sqlite3 commands are hard-coded, but we do not need to make
@@ -121,7 +122,7 @@ class Database():
 
     '''
     Update the molecule ID, which dictates what molecule we are working with.
-    Molecule ID MUST be set before any oeprations can be performed.
+    Molecule ID MUST be set before any oprations can be performed.
     '''
     def set_molecule_id(self, molecule_id):
         self.molecule_id = molecule_id
@@ -232,6 +233,10 @@ class Database():
             raise RowbaseOperationBeforeInitException("set_nmer_energy", self.name)
 
         # TODO: some sort of check to see if energy is unset, if energy is unset, throw exception
+
+        #if it was this easy then they would've typed it? This is my try xD
+        if energy_in_table[0] is "UNSET":
+            raise EnergyUnsetException("get_nmer_energy", self.name)
 
         # if row exists, return energy
         return energy_in_table[0]

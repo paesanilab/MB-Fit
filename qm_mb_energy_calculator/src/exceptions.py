@@ -36,3 +36,11 @@ Raised when the user tries to modify a row in a database without first initializ
 class RowOperationBeforeInitException(Exception):
     def __init__(self, operation, database):
         self.message = "Must class init_molecule() before performing operation {} in database {}".format(operation, database)
+
+"""
+Raised when the user tries to modify a row in a database without first initializing it
+"""
+class EnergyUnsetException(Exception):
+    def __init__(self, operation, database):
+        self.message = "Must first set energy with Database.set_nmer_energy(nmer, energy): before performing operation {} in database {}".format(operation, database)
+

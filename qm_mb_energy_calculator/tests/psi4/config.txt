@@ -1,0 +1,14 @@
+
+initial_molecule_file_name = molecule.txt
+normal_modes_output_file_name = normal_modes.dat
+molecule_output_file_name = molecule.xyz
+
+charge = 0
+multiplicity = 1
+
+psi4_memory_setting = 1GB
+dev_output = True
+nthreads = 2
+method = BLYP
+basis = cc-pvdz
+psi4_output_file_name = psi4.out

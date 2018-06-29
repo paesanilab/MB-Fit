@@ -37,3 +37,6 @@ submit.sh
 
 # psi4
 .clean
+
+# test diffs
+*.dif

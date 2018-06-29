@@ -34,7 +34,7 @@ then
     err=$(($err+1))
 fi
 
-fn=h2o_psi4_blyp_cc-pvdz.out
+fn=h2o_psi4_blyp_cc-pvdz_gcn.out
 diff <(sed -e '$d' expected/$fn) <(sed -e '$d' outputs/$fn) > $fn.dif
 if [ $? -ne 0 ]
 then

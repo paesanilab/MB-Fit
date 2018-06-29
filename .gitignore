@@ -26,6 +26,7 @@
 # Executables
 *.exe
 *.app
+generate_configs_normdistrbn
 
 # Gvim and Python related
 *.swp
@@ -36,7 +37,8 @@ timer.dat
 submit.sh
 
 # psi4
-.clean
+*.clean
+
 
 # test diffs
 *.dif

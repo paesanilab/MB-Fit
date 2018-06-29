@@ -45,19 +45,14 @@ log_name = name + "_" + config['program']['code'] + "_" + config['model']['metho
 optimized_geometry_path = "outputs/" + log_name + "_optimized.xyz"
 normal_modes_path = "outputs/" + log_name + "_normalmodes.dat"
     
-gcn_input_path = "outputs/" + log_name + ".inp"
-gcn_output_path = "outputs/" + log_name + ".out"
+gcn_input_path = "outputs/" + log_name + "_gcn.inp"
+gcn_output_path = "outputs/" + log_name + "_gcn.out"
     
 norm_config_path = "outputs/" + log_name + "_configurations.xyz"
 
-# quantum chemistry code global parameters
-memory = "1GB"
-num_threads = 2
 output_path = "outputs/" + log_name + ".log"
 
 if config['program']['code'] == "psi4":
-    print(os.path.abspath(output_path))
-
     psi4.core.set_output_file(output_path, False)
     psi4.set_memory(config['program']['memory'])
     psi4.set_num_threads(int(config['program']['num_threads']))

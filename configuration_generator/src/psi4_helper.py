@@ -21,6 +21,14 @@ def treat_imaginary(contents):
     result = result[:plus_loc]
     
     return result
+    
+def filter_neg_zero(string, num_zeros):
+    zeros = num_zeros * "0"
+    
+    if "-0." + zeros in string:
+        string = str.replace(string, "-0." + zeros, " 0." + zeros)
+        
+    return string
 
 # Main Functions
 def optimize_geometry(molecule, config, optimized_geometry_path):
@@ -40,9 +48,9 @@ def optimize_geometry(molecule, config, optimized_geometry_path):
         for i in range(num_atoms):
             atom = molecule.symbol(i)
 
-            x = opt_formatter.format(molecule.x(i) / molecule.input_units_to_au())
-            y = opt_formatter.format(molecule.y(i) / molecule.input_units_to_au())
-            z = opt_formatter.format(molecule.z(i) / molecule.input_units_to_au())
+            x = filter_neg_zero(opt_formatter.format(molecule.x(i) / molecule.input_units_to_au()), 6) 
+            y = filter_neg_zero(opt_formatter.format(molecule.y(i) / molecule.input_units_to_au()), 6)
+            z = filter_neg_zero(opt_formatter.format(molecule.z(i) / molecule.input_units_to_au()), 6)
             
             opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
             
@@ -78,9 +86,9 @@ def frequency_calculations(molecule, config, normal_modes_path):
         normal_out += "red_mass = " + mass_formatter.format(reduced_masses[index]) + "\n"
         
         for atom in range(num_atoms):
-            normal_out += norm_formatter.format(float(normal_modes[3 * atom + 0][index])) + "\t"
-            normal_out += norm_formatter.format(float(normal_modes[3 * atom + 1][index])) + "\t"
-            normal_out += norm_formatter.format(float(normal_modes[3 * atom + 2][index])) + "\n"
+            normal_out += filter_neg_zero(norm_formatter.format(float(normal_modes[3 * atom + 0][index])), 4) + "\t"
+            normal_out += filter_neg_zero(norm_formatter.format(float(normal_modes[3 * atom + 1][index])), 4) + "\t"
+            normal_out += filter_neg_zero(norm_formatter.format(float(normal_modes[3 * atom + 2][index])), 4) + "\n"
         
         normal_out += "\n"
 

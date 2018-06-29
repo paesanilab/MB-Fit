@@ -27,6 +27,7 @@ def optimize_geometry(molecule, config, optimized_geometry_path):
     print("Optimizing geometry...")
 
     opt_formatter =  "{:< 12.6f}"
+    energy_formatter = "{:.6f}"
 
     e = psi4.optimize(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule)
     
@@ -34,7 +35,7 @@ def optimize_geometry(molecule, config, optimized_geometry_path):
 
     with open(optimized_geometry_path, 'w') as opt_geo_file:
         opt_geo_file.write(str(num_atoms) + "\n")
-        opt_geo_file.write(str(e) + "\n")
+        opt_geo_file.write(energy_formatter.format(e) + "\n")
         
         for i in range(num_atoms):
             atom = molecule.symbol(i)
@@ -51,7 +52,9 @@ def frequency_calculations(molecule, config, normal_modes_path):
     print("Determining normal modes and running frequency analysis...")
 
     norm_formatter = "{:> 12.4f}"
-
+    freq_formatter = "{:.2f}"
+    mass_formatter = "{:.6f}"
+    
     total_energy, wavefunc = psi4.frequency(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule, return_wfn=True)
     
     vib_info_raw = wavefunc.frequency_analysis
@@ -71,8 +74,8 @@ def frequency_calculations(molecule, config, normal_modes_path):
         index = i - 1
         
         normal_out += "normal mode: " + str(i) + "\n"
-        normal_out += str(frequencies[index]) + "\n"
-        normal_out += "red_mass = " + str(reduced_masses[index]) + "\n"
+        normal_out += freq_formatter.format(frequencies[index]) + "\n"
+        normal_out += "red_mass = " + mass_formatter.format(reduced_masses[index]) + "\n"
         
         for atom in range(num_atoms):
             normal_out += norm_formatter.format(float(normal_modes[3 * atom + 0][index])) + "\t"

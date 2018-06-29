@@ -6,7 +6,7 @@
 
 import os
 
-def generate(molecule, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, config, dim_null):
+def generate(molecule, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, config, dim_null):
     print("Running normal distribution configuration generator...")
 
     cg_params = config['config_generator']

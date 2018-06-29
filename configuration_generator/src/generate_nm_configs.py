@@ -48,8 +48,6 @@ normal_modes_path = "outputs/" + log_name + "_normalmodes.dat"
 gcn_input_path = "outputs/" + log_name + ".inp"
 gcn_output_path = "outputs/" + log_name + ".out"
     
-gcn_executor_path = "outputs/" + log_name + ".sh"
-    
 norm_config_path = "outputs/" + log_name + "_configurations.xyz"
 
 # quantum chemistry code global parameters
@@ -75,5 +73,5 @@ if config['program']['code'] == "psi4":
     dim_null = psi4_helper.frequency_calculations(mol, config, normal_modes_path)
 
     # Step 3
-    nm_config_generator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, gcn_executor_path, config, dim_null)
+    nm_config_generator.generate(mol, gcn_input_path, gcn_output_path, optimized_geometry_path, normal_modes_path, norm_config_path, config, dim_null)
 

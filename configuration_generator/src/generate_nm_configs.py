@@ -18,8 +18,8 @@ from argparse import ArgumentParser
 import psi4_helper
 import nm_config_generator
 
-arg_parser = ArgumentParser(description='Generates the normal configurations.')
-arg_parser.add_argument('config', metavar='config', type=str, nargs=1, help='Provide the path the the .ini containing the parameters to run the script.')
+arg_parser = ArgumentParser(description='Generates configurations based on normal modes.')
+arg_parser.add_argument('config', metavar='config', type=str, nargs=1, help='Provide the path to the .ini containing the settings for this script.')
 
 args = arg_parser.parse_args()
 

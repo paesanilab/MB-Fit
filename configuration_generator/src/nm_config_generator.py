@@ -15,7 +15,7 @@ def generate(molecule, gcn_input_path, gcn_output_path, optimized_geometry_path,
         input_file.write("\'" + optimized_geometry_path + "\'\n")					# optimized geometry
         input_file.write("\'" + normal_modes_path + "\'\n")							# normal modes
         input_file.write(str(3 * molecule.natom()) + " " + str(dim_null) + "\n")    # dim; dimnull
-        input_file.write(cg_params['random'] + " " + str(3 * molecule.natom() - dim_null) + "\n")       # random method; nconfigs
+        input_file.write(cg_params['random'] + " " + cg_params['num_configs'] + "\n")       # random method; nconfigs
         input_file.write("\'" + norm_config_path + "\'\n")                    		# output one-body configurations
         input_file.write(cg_params['geometric'] + " " + cg_params['linear'] + "\n") # geometric, linear
         input_file.write(".true.")                                            		# verbose

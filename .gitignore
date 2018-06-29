@@ -25,16 +25,14 @@
 
 # Executables
 *.exe
-*.out
 *.app
 
-# Gvim and Python realted
+# Gvim and Python related
 *.swp
 *.swo
 __pycache__/
 calculations*
 timer.dat
-output.dat
 submit.sh
 
 # psi4

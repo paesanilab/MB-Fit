@@ -153,7 +153,11 @@ PROGRAM generate_configs_normdistrbn
      WRITE(*,*) 'Number of configurations to generate must be greater than 1.'
      STOP
   ENDIF
-
+  IF (((linear .EQV. .TRUE.) .AND. (geometric .EQV. .TRUE.)) .OR. ((linear .EQV. .FALSE.) .AND. (geometric .EQV. .FALSE.))) THEN
+     WRITE(*,*) 'Choose either a linear or a geometric temperature progression.'
+     STOP
+  ENDIF
+  
   ALLOCATE(atom_type(dim/3), sqrt_mass(dim), q(dim), r(dim), rn(dim))
   ALLOCATE(w(dim), d(dim))
   ALLOCATE(G(dim, dim), U(dim, dim-dimnull), C(dim-dimnull, dim-dimnull))
@@ -173,11 +177,11 @@ PROGRAM generate_configs_normdistrbn
   U(:,:) = 0.0d0
   OPEN(unit = 54, file = input_normal_modes, status = 'old', action = 'read')
   DO k = 1, dim-dimnull   ! vibrational degrees of freedom
-     READ(54,*)           ! normal mode: k
+     READ(54,*)           ! normal mode index k
      READ(54,*) w(k)      ! frequency in cm^(-1)
      READ(54,*)           ! reduced mass
      DO i = 1, dim/3
-        READ(54,*) U(i*3-2,k), U(i*3-1,k), U(i*3,k) ! mass-weighted Cartesian coordinates
+        READ(54,*) U(i*3-2,k), U(i*3-1,k), U(i*3,k) ! normal modes, Cartesian coordinates
      ENDDO
      READ(54,*)
   ENDDO
@@ -191,7 +195,7 @@ PROGRAM generate_configs_normdistrbn
   ALLOCATE(A(0:maxindexA))
 
   IF (geometric .EQV. .TRUE.) THEN
-     Tmin = w(1)/autocm                 ! assume lowest frequency is first
+     Tmin = dabs(w(1))/autocm           ! assume lowest frequency is first
      Tmax = 2.0d0*w(dim-dimnull)/autocm ! assume highest frequency is last
      Amin = 1.0d0
      Amax = 2.0d0
@@ -222,9 +226,6 @@ PROGRAM generate_configs_normdistrbn
      DO n = 1, maxindexA
         A(n) = A(n-1) + factorA
      END DO
-  ELSE
-     WRITE(*,*) 'Choose geometric or linear temperature progression.'
-     STOP
   END IF
 
   ! convert to atomic units:
@@ -232,7 +233,7 @@ PROGRAM generate_configs_normdistrbn
   q(:) = q(:)/bohr
   w(:) = w(:)/autocm
 
-  ! unscale the normal modes:
+  ! mass-scale and normalize the normal modes:
   DO k=1, dim-dimnull
      U(:,k)=U(:,k)*sqrt_mass(:)    
      U(:,k)=U(:,k)/SQRT(SUM(U(:,k)**2))    
@@ -330,7 +331,7 @@ PROGRAM generate_configs_normdistrbn
         ENDDO
 
      END DO  ! n = 0, nmax
-     T(:) = -1.0d0*T(:) ! Move on to "einstein temperature" distributions.
+     T(:) = -1.0d0*T(:) ! Move on to "Einstein temperature" distributions.
                         ! Negative values of temperature are introduced solely
                         ! to indicate use of the "fixed-A" distribution.
   END DO  ! m = 0,1 

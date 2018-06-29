@@ -55,9 +55,7 @@ then
     echo "test failed"
 else
     echo "test passed"
-    rm timer.dat
-    rm -r input gcn logs
-    rm *.dif
+    ./clean_test.sh
 fi
 
 exit $err

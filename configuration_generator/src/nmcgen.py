@@ -65,21 +65,36 @@ filenames = {
     "gcn_output": log_name + "_gcn.out",
     "norm_config": log_name + "_configurations.xyz",
 }
-
-
-with open(input_geo_fn, 'r') as input_file:
-    molecule = Molecule(config['molecule']['charge'], config['molecule']['multiplicity'], input_file.read())
-    
+  
 if config['program']['code'] == "psi4":
     psi4.core.set_output_file(log_name + ".log", False)
     psi4.set_memory(config['program']['memory'])
     psi4.set_num_threads(int(config['program']['num_threads']))
 
+with open(input_geo_fn, 'r') as input_file:
+    molecule = Molecule(config['molecule']['charge'], config['molecule']['multiplicity'], input_file.read())
+
 # Step 1
-qcalc.optimize(molecule, config, filenames['optimized_geometry'])
+if 'optimized' not in config['files'] or  config['files']['optimized'] != 'true':
+    qcalc.optimize(molecule, config, filenames['optimized_geometry'])
+else:
+    print("Optimized geometry already provided, skipping optimization.\n")
+    with open(input_geo_fn, 'r') as input_file:
+        with open(filenames['optimized_geometry'], 'w') as opt_geo_file:
+            opt_geo_file.write(input_file.read())
 
 # Step 2
-dim_null = qcalc.frequencies(molecule, config, filenames['normal_modes'])
+if 'input_normal_modes' not in config['files']:
+    dim_null = qcalc.frequencies(molecule, config, filenames['normal_modes'])
+else:
+    print("Normal modes already provided, skipping frequency calculation.\n")
+    with open(config['files']['input_normal_modes'], 'r') as input_file:
+        contents = input_file.read()
+        
+        with open(filenames['normal_modes'], 'w') as normal_modes_file:
+            normal_modes_file.write(contents)
+            
+        dim_null = 3 * molecule.num_atoms - contents.count('normal mode')
 
 # Step 3
 gcn_runner.generate(config, dim_null, molecule.num_atoms, filenames)

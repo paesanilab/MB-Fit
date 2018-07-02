@@ -8,28 +8,49 @@ The driver script can be run from the command line with a single positional inpu
 
 **Configuation file format:**
 ```
-[file_input]
-input_geometry_path =	h2o.xyz     *the .xyz file containing the starting geometry*
+[files]
+input_geometry_path =	h2o.xyz     | the .xyz file containing the starting geometry
+
+output_path =           outputs/    | the path to output all produced files
+# OPTIONAL: default value = outputs/ 
 
 [molecule]
-charge =		        0           *the charge of the molecule*
-multiplicity =		    1           *the spin multiplicity of the molecule*
+charge =		        0           | the charge of the molecule
+# OPTIONAL: default value = 0
+
+multiplicity =		    1           | the spin multiplicity of the molecule
+# OPTIONAL: default value = 1
 
 [config_generator]
-random =		        Q           *whether a Q(uasirandom) or P(suedorandom) sequence is to be used*
-num_configs =		    128         *the number of configurations to generate*
-geometric =		        false       *whether or not a geometric progression is to be used for temperature T and A*
-linear =		        true        *whether or not a linear progression is to be used for temperature T and A*
+random =		        Q           | whether a Q(uasirandom) or P(suedorandom) sequence is to be used
+# OPTIONAL: default value = Q
+
+num_configs =		    128         | the number of configurations to generate
+
+geometric =		        false       | whether or not a geometric progression is to be used for temperature T and A
+# OPTIONAL: default value = false
+
+linear =		        true        | whether or not a linear progression is to be used for temperature T and A
+# OPTIONAL: default value = true
 
 [model]
-method =		        blyp        *the calculation model method to use*
-basis =			        cc-pvdz     *the calculation model basis to use*
+method =		        blyp        | the calculation model method to use
+basis =			        cc-pvdz     | the calculation model basis to use
 
 [program]
-code = 			        psi4        *which quantum chemistry code to use for the calculations*
-memory = 		        1GB         *the amount of memory to allocate to the selected code*
-num_threads = 		    2           *the number of threads to run on for the selected code*
+code = 			        psi4        | which quantum chemistry code to use for the calculations
+# OPTIONAL: default value = psi4
+
+memory = 		        1GB         | the amount of memory to allocate to the selected code
+# OPTIONAL: default value = 1GB
+
+num_threads = 		    1           | the number of threads to run on for the selected code
+# OPTIONAL: default value = 1 
 ```
+
+**Note:**  
+In the section `[files]`, the parameter `optimized = true` indicates that the supplied goemetry is already optimized, and thereby skips the optimization step.  
+In the section`[files]`, including the parameter `input_normal_modes = filepath` uses the normal modes provided by the file and skips the frequency calculation step. 
 
 ## Outputs
 All files are prefixed with `name_code_model_basis`.

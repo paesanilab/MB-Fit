@@ -31,7 +31,7 @@ def filter_neg_zero(string, num_zeros):
     return string
 
 # Main Functions
-def optimize_geometry(molecule, config, optimized_geometry_path):
+def optimize(molecule, config, optimized_geometry_fn):
     print("Optimizing geometry...")
 
     opt_formatter =  "{:< 12.6f}"
@@ -41,7 +41,7 @@ def optimize_geometry(molecule, config, optimized_geometry_path):
     
     num_atoms = molecule.natom()
 
-    with open(optimized_geometry_path, 'w') as opt_geo_file:
+    with open(optimized_geometry_fn, 'w') as opt_geo_file:
         opt_geo_file.write(str(num_atoms) + "\n")
         opt_geo_file.write(energy_formatter.format(e) + "\n")
         
@@ -53,10 +53,12 @@ def optimize_geometry(molecule, config, optimized_geometry_path):
             z = filter_neg_zero(opt_formatter.format(molecule.z(i) / molecule.input_units_to_au()), 6)
             
             opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
-            
+    
     print("")
     
-def frequency_calculations(molecule, config, normal_modes_path):
+    return molecule
+    
+def frequencies(molecule, config, normal_modes_fn):
     print("Determining normal modes and running frequency analysis...")
 
     norm_formatter = "{:> 12.4f}"
@@ -92,7 +94,7 @@ def frequency_calculations(molecule, config, normal_modes_path):
         
         normal_out += "\n"
 
-    with open(normal_modes_path, 'w') as norm_file:
+    with open(normal_modes_fn, 'w') as norm_file:
         norm_file.write(normal_out)
 
     #print(vib_info)

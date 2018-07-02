@@ -11,7 +11,7 @@ then
     exit
 fi
 
-python3 ../src/generate_nm_configs.py settings.ini
+python3 ../src/nmcgen.py settings.ini
 if [ $? -ne 0 ]
 then
     echo "Error: Execution of generate_nm_configs.py failed"

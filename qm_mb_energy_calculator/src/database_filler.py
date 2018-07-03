@@ -3,6 +3,7 @@ import pickle
 import itertools
 import psi4
 import configparser
+import sys
 
 import calculator
 
@@ -10,13 +11,25 @@ import calculator
 def fill_database(database_name):
     # add .db to the database name if it doesn't already end in .db
     if database_name[-3:] != ".db":
+        print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
+    
+    print("Filling database {}".format(database_name))
 
     # create connection
     connection = sqlite3.connect(database_name)
 
     # create cursor
     cursor = connection.cursor()
+
+    try:
+        cursor.execute("PRAGMA table_info('schema_version')");
+    except:
+        print("{} exists but is not a valid database file. \n Terminating database filling.".format(database_name))
+        sys.exit(1)
+
+    print("Filling database {}".format(database_name))
+      
 
     # get a list of all the rows with missing energies
     cursor.execute("SELECT * FROM Energies WHERE E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None'")
@@ -58,6 +71,8 @@ def fill_database(database_name):
     connection.commit()
     connection.close()
 
+    print("Filling of database {} successful".format(database_name))
+
 # generates a combination from an index
 def get_combination_from_index(index):
     return [
@@ -70,6 +85,10 @@ def get_combination_from_index(index):
             [0, 1, 2]
            ][index]
 
-config = configparser.ConfigParser(allow_no_value = False)
-config.read("settings.ini")
-fill_database("testdb.db")
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Incorrect number of arguments");
+        print("Usage: python database_filler.py <database_name>")
+    config = configparser.ConfigParser(allow_no_value = False)
+    config.read("settings.ini")
+    fill_database(sys.argv[1])

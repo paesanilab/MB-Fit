@@ -4,6 +4,7 @@ from molecule_parser import xyz_to_molecules
 import database
 import pickle
 import configparser
+import sys
 
 """
 initializes a database from the config files in a directory
@@ -11,6 +12,7 @@ initializes a database from the config files in a directory
 def initialize_database(database_name, directory):
     # add .db to database name if it doesn't already end in .db 
     if database_name[-3:] != ".db":
+        print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
 
     # create connection
@@ -19,6 +21,13 @@ def initialize_database(database_name, directory):
     # create cursor
     cursor = connection.cursor()
 
+    try:
+        cursor.execute("PRAGMA table_info('schema_version')");
+    except:
+        print("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
+        sys.exit(1)
+
+        
     # create the tables
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS Configs(ID text, config BLOB, natoms INT,
@@ -28,9 +37,14 @@ def initialize_database(database_name, directory):
         CREATE TABLE IF NOT EXISTS Energies(ID TEXT, model TEXT, cp INT,
         E0 REAL, E1 REAL, E2 REAL, E01 REAL, E02 REAL, E12 REAL, E012 REAL, Enb BLOB)
         """)
-    
+
+    # list of all filenames to parse
+    filenames = []
+
     if not os.path.isdir(directory):
-        raise Exception("Directory {} does not exist".format(directory))
+        print("{} is not a directory or xyz file. \n Terminating database initialization.".format(directory))
+        sys.exit(1)
+    print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
     filenames = get_filenames(directory)
 
     # parse settings.ini file
@@ -82,6 +96,8 @@ def initialize_database(database_name, directory):
     connection.commit()
     connection.close()
 
+    print("Initializing of database {} successful".format(database_name))
+
 
 """
 gets list of all filenames in a directory
@@ -92,5 +108,10 @@ def get_filenames(directory):
         for filename in files:
             filenames.append(root + "/" + filename);
     return filenames;
-    
-initialize_database("testdb.db", "config_files")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Incorrect number of arguments");
+        print("Usage: python database_initializer.py <database_name> <config_directory>")
+        sys.exit(1)   
+    initialize_database(sys.argv[1], sys.argv[2])

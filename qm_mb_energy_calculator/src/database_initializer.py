@@ -44,6 +44,7 @@ def initialize_database(settings, database_name, directory):
     if not os.path.isdir(directory):
         print("{} is not a directory or xyz file. \n Terminating database initialization.".format(directory))
         sys.exit(1)
+
     print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
     filenames = get_filenames(directory)
 
@@ -122,6 +123,6 @@ def get_filenames(directory):
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Incorrect number of arguments");
-        print("Usage: python database_initializer.py <database_name> <config_directory>")
+        print("Usage: python database_initializer.py <settings_file> <database_name> <config_directory>")
         sys.exit(1)   
     initialize_database(sys.argv[1], sys.argv[2], sys.argv[3])

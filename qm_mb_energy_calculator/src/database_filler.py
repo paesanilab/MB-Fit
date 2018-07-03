@@ -41,7 +41,7 @@ def fill_database(settings, database_name, directory):
 
     # loop thru all entries in the database and fill in missing energies
     for energy_row in rows:
-        # has id of this molecule
+        # hash id of this molecule
         ID = energy_row[0]
         # model to use to calc energy of this molecule
         model = energy_row[1]
@@ -92,5 +92,5 @@ def get_combination_from_index(index):
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Incorrect number of arguments");
-        print("Usage: python database_filler.py <database_name> <directory>")
+        print("Usage: python database_filler.py <settings_file> <database_name> <directory>")
     fill_database(sys.argv[1], sys.argv[2], sys.argv[3])

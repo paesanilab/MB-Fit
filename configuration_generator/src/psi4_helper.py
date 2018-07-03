@@ -37,7 +37,7 @@ def optimize(molecule, config, optimized_geometry_fn):
     opt_formatter =  "{:< 12.6f}"
     energy_formatter = "{:.6f}"
 
-    e = psi4.optimize(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule)
+    e = psi4.optimize(config['config_generator']['method'] + '/' + config['config_generator']['basis'], molecule=molecule)
     
     num_atoms = molecule.natom()
 
@@ -65,7 +65,7 @@ def frequencies(molecule, config, normal_modes_fn):
     freq_formatter = "{:.2f}"
     mass_formatter = "{:.6f}"
     
-    total_energy, wavefunc = psi4.frequency(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule, return_wfn=True)
+    total_energy, wavefunc = psi4.frequency(config['config_generator']['method'] + '/' + config['config_generator']['basis'], molecule=molecule, return_wfn=True)
     
     vib_info_raw = wavefunc.frequency_analysis
     vib_info = psi4.qcdb.vib.filter_nonvib(vib_info_raw)

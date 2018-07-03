@@ -2,7 +2,10 @@
 
 gcn=../norm_distribution/src/generate_configs_normdistrbn
 
-mkdir -p outputs
+mkdir actual
+mkdir diffs
+mkdir diffs/logs
+mkdir diffs/config_files
 err=0
 
 if [ ! -x $gcn ]
@@ -18,35 +21,35 @@ then
     err=$(($err+1))
 fi
 
-fn=h2o_psi4_blyp_cc-pvdz_optimized.xyz
-diff expected/$fn outputs/$fn > $fn.dif
+fn=h2oopt.xyz
+diff expected/$fn actual/$fn > diffs/$fn.dif
 if [ $? -ne 0 ]
 then
-    echo "Error: optimized geometries differ - check $fn.dif"
+    echo "Error: optimized geometries differ - check diffs/$fn.dif"
     err=$(($err+1))
 fi
 
-fn=h2o_psi4_blyp_cc-pvdz_normalmodes.dat
-diff expected/$fn outputs/$fn > $fn.dif
+fn=logs/h2o_psi4_blyp_cc-pvdz_normalmodes.dat
+diff expected/$fn actual/$fn > diffs/$fn.dif
 if [ $? -ne 0 ]
 then
-    echo "Error: normalmodes differ - check $fn.dif"
+    echo "Error: normalmodes differ - check diffs/$fn.dif"
     err=$(($err+1))
 fi
 
-fn=h2o_psi4_blyp_cc-pvdz_gcn.out
-diff <(sed -e '$d' expected/$fn) <(sed -e '$d' outputs/$fn) > $fn.dif
+fn=logs/h2o_psi4_blyp_cc-pvdz_gcn.out
+diff <(sed -e '$d' expected/$fn) <(sed -e '$d' actual/$fn) > diffs/$fn.dif
 if [ $? -ne 0 ]
 then
-    echo "Error: nmcgen output differs - check $fn.dif"
+    echo "Error: nmcgen output differs - check diffs/$fn.dif"
     err=$(($err+1))
 fi
 
-fn=h2o_psi4_blyp_cc-pvdz_configurations.xyz
-diff expected/$fn outputs/$fn > $fn.dif
+fn=config_files/configs.xyz
+diff expected/$fn actual/$fn > diffs/$fn.dif
 if [ $? -ne 0 ]
 then
-    echo "Error: configurations differ - check $fn.dif"
+    echo "Error: configurations differ - check diffs/$fn.dif"
     err=$(($err+1))
 fi
 

@@ -9,7 +9,7 @@ import sys
 """
 initializes a database from the config files in a directory
 """
-def initialize_database(database_name, directory):
+def initialize_database(settings, database_name, directory):
     # add .db to database name if it doesn't already end in .db 
     if database_name[-3:] != ".db":
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
@@ -51,13 +51,13 @@ def initialize_database(database_name, directory):
     config = configparser.SafeConfigParser(allow_no_value=False)
 
     # See if a config file already exists; if not, generate one
-    options = config.read(directory + "/settings.ini")
+    config.read(settings)
     
     # rather than attempting to generate a config file,
     # we now create a section of defaults in the settings file itself
 
-    model = config["model"]["method"] + "/" + config["model"]["basis"]
-    cp = config["model"]["cp"]
+    model = config["energy_calculator"]["method"] + "/" + config["energy_calculator"]["basis"]
+    cp = config["energy_calculator"]["cp"]
     tag = config["molecule"]["tag"]
 
     # loop thru all files in directory
@@ -89,9 +89,19 @@ def initialize_database(database_name, directory):
                 # convert hex string into byte array bytes.fromhex(config)
                 cursor.execute("INSERT INTO Configs (ID, config, natoms, nfrags, tag) VALUES ('{}', '{}', '{}', '{}', '{}')".format(hash_id, config, molecule.get_num_atoms(), molecule.get_num_fragments(), tag))
 
+            # number of fragments in this molecule
+            fragment_count = molecule.get_num_fragments()
+
             # create a new row in the Energies table if such a row did not already exist
             if energies_row is None:
-                cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, model, cp))
+                if fragment_count == 3:
+                    cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, model, cp))
+                elif fragment_count == 2:
+                    cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'None', 'N/A', 'None', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, model, cp))
+                elif fragment_count == 1:
+                    cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, model, cp))
+                else:
+                    print("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
     
     connection.commit()
     connection.close()
@@ -110,8 +120,8 @@ def get_filenames(directory):
     return filenames;
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print("Incorrect number of arguments");
         print("Usage: python database_initializer.py <database_name> <config_directory>")
         sys.exit(1)   
-    initialize_database(sys.argv[1], sys.argv[2])
+    initialize_database(sys.argv[1], sys.argv[2], sys.argv[3])

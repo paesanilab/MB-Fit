@@ -48,25 +48,30 @@ config.read_dict({
 config.read(args.config[0])
 
 # filenames
-input_geo_fn = config['files']['input_geometry']
+input_geo_fn = config['files']['unoptimized_geometry']
 
 if input_geo_fn.endswith('.xyz'):
     name = input_geo_fn[:-4]
 else:
     raise IOError("Input geometry not an .xyz")  
 
-output_id = name + "_" + config['program']['code'] + "_" + config['model']['method'] + "_" + config['model']['basis']
-log_name = config['files']['output_path'] + output_id
+output_id = name + "_" + config['config_generator']['code'] + "_" + config['config_generator']['method'] + "_" + config['config_generator']['basis']
+log_name = config['files']['log_path'] + "/" + output_id
 
 filenames = {
-    "optimized_geometry": log_name + "_optimized.xyz",
+    "optimized_geometry": config['files']['optimized_geometry'],
     "normal_modes": log_name + "_normalmodes.dat",
     "gcn_input": log_name + "_gcn.inp",
     "gcn_output": log_name + "_gcn.out",
-    "norm_config": log_name + "_configurations.xyz",
+    "norm_config": config['files']['xyz_files'] + "/configs.xyz",
 }
+
+if not os.path.isdir(config['files']['log_path']):
+    os.mkdir(config['files']['log_path'])
+if not os.path.isdir(config['files']['xyz_files']):
+    os.mkdir(config['files']['xyz_files'])
   
-if config['program']['code'] == "psi4":
+if config['config_generator']['code'] == "psi4":
     psi4.core.set_output_file(log_name + ".log", False)
     psi4.set_memory(config['program']['memory'])
     psi4.set_num_threads(int(config['program']['num_threads']))

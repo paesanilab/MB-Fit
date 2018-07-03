@@ -37,7 +37,7 @@ def calc_energy(molecule, fragment_indicies, config):
     Compute the energy using a model requested by the user
     """
 
-    model = config["driver"]["model"]
+    model = config["energy_calculator"]["code"]
     
     if model == "psi4":
         # psi4.core.set_output_file(molecule.get_SHA1()[:8] + method + "/" + 
@@ -95,9 +95,9 @@ def calc_psi4_energy(molecule, fragment_indicies, config):
     psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
     psi4_mol.update_geometry()
 
-    psi4.set_num_threads(config["psi4"].getint("threads"))
-    energy = psi4.energy("{}/{}".format(config["model"]["method"],
-          config["model"]["basis"]), molecule=psi4_mol)
+    psi4.set_num_threads(config["psi4"].getint("num_threads"))
+    energy = psi4.energy("{}/{}".format(config["energy_calculator"]["method"],
+          config["energy_calculator"]["basis"]), molecule=psi4_mol)
     
     #print(energy)
     return energy

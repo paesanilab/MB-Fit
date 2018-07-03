@@ -8,14 +8,12 @@ import sys
 import calculator
 
 # this file fills the missing energies in a database
-def fill_database(database_name):
+def fill_database(settings, database_name, directory):
     # add .db to the database name if it doesn't already end in .db
     if database_name[-3:] != ".db":
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
     
-    print("Filling database {}".format(database_name))
-
     # create connection
     connection = sqlite3.connect(database_name)
 
@@ -34,6 +32,12 @@ def fill_database(database_name):
     # get a list of all the rows with missing energies
     cursor.execute("SELECT * FROM Energies WHERE E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None'")
     rows = cursor.fetchall()
+
+    # parse settings.ini file
+    config = configparser.SafeConfigParser(allow_no_value=False)
+
+    # See if a config file already exists; if not, generate one
+    config.read(settings)
 
     # loop thru all entries in the database and fill in missing energies
     for energy_row in rows:
@@ -86,9 +90,7 @@ def get_combination_from_index(index):
            ][index]
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 4:
         print("Incorrect number of arguments");
-        print("Usage: python database_filler.py <database_name>")
-    config = configparser.ConfigParser(allow_no_value = False)
-    config.read("settings.ini")
-    fill_database(sys.argv[1])
+        print("Usage: python database_filler.py <database_name> <directory>")
+    fill_database(sys.argv[1], sys.argv[2], sys.argv[3])

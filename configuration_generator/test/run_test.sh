@@ -3,6 +3,8 @@
 gcn=../norm_distribution/src/generate_configs_normdistrbn
 
 mkdir actual
+mkdir actual/logs
+mkdir actual/config_files
 mkdir diffs
 mkdir diffs/logs
 mkdir diffs/config_files

@@ -167,14 +167,14 @@ class Molecule(object):
         return charge
 
     '''
-    Get total unpaired electrons in this Molecule by summing unpaired electrons
+    Get total spin multiplicity of this Molecule by summing spin
     of Fragments.
     '''
-    def get_unpaired(self):
-        unpaired = 0
+    def get_spin(self):
+        spin = 0
         for fragment in self.fragments:
-            unpaired += fragment.get_unpaired()
-        return unpaired
+            spin += fragment.get_spin()
+        return spin
 
     '''
     Gets the number of Fragments in this Molecule

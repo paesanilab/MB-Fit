@@ -66,11 +66,6 @@ filenames = {
     "norm_config": config['files']['xyz_files'] + "/configs.xyz",
 }
 
-if not os.path.isdir(config['files']['log_path']):
-    os.mkdir(config['files']['log_path'])
-if not os.path.isdir(config['files']['xyz_files']):
-    os.mkdir(config['files']['xyz_files'])
-  
 if config['config_generator']['code'] == "psi4":
     psi4.core.set_output_file(log_name + ".log", False)
     psi4.set_memory(config['program']['memory'])

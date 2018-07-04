@@ -91,7 +91,7 @@ def calc_psi4_energy(molecule, fragment_indicies, config):
     """
     Use PSI4 to compute the energy of a fragment
     """
-    psi4_string = molecule.to_xyz(fragment_indicies)
+    psi4_string = molecule.to_xyz(fragment_indicies) + "\n" + str(molecule.get_charge()) + " " + str(molecule.get_spin())
     psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
     psi4_mol.update_geometry()
 

@@ -35,8 +35,8 @@ config = ConfigParser(allow_no_value=False)
 # Config Default Values
 config.read_dict({
     'files':            {'output_path': 'outputs/'},
-    'molecule':         {'charge': '0',
-                         'multiplicity': '1'},
+    'molecule':         {'charges': '0',
+                         'spins': '1'},
     'config_generator': {'random': 'Q',
                          'geometric': 'false',
                          'linear': 'true'},
@@ -72,7 +72,7 @@ if config['config_generator']['code'] == "psi4":
     psi4.set_num_threads(int(config['program']['num_threads']))
 
 with open(input_geo_fn, 'r') as input_file:
-    molecule = Molecule(config['molecule']['charge'], config['molecule']['multiplicity'], input_file.read())
+    molecule = Molecule(config['molecule']['charges'], config['molecule']['spins'], input_file.read())
 
 # Step 1
 if 'optimized' not in config['files'] or  config['files']['optimized'] != 'true':

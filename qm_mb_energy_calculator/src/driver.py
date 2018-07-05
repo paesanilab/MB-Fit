@@ -102,7 +102,6 @@ for molecule in molecules:
 
     # calculate energy
     energy = mbdecomp.get_nmer_energies(molecule, config)
-    print(molecule.nmer_energies)
     
     # calculate mb_energies
     molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)

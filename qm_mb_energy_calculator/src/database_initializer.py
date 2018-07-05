@@ -1,7 +1,6 @@
 import sqlite3
 import os
 from molecule_parser import xyz_to_molecules
-import database
 import pickle
 import configparser
 import sys
@@ -24,9 +23,12 @@ def initialize_database(settings, database_name, directory):
     try:
         cursor.execute("PRAGMA table_info('schema_version')");
     except:
-        print("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
+        raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
         sys.exit(1)
 
+    if not os.path.isdir(directory):
+        raise ValueError("{} is not a directory. \n Terminating database initialization.".format(directory))
+        sys.exit(1)
         
     # create the tables
     cursor.execute("""
@@ -41,10 +43,6 @@ def initialize_database(settings, database_name, directory):
     # list of all filenames to parse
     filenames = []
 
-    if not os.path.isdir(directory):
-        print("{} is not a directory or xyz file. \n Terminating database initialization.".format(directory))
-        sys.exit(1)
-
     print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
     filenames = get_filenames(directory)
 
@@ -58,7 +56,7 @@ def initialize_database(settings, database_name, directory):
     # we now create a section of defaults in the settings file itself
 
     model = config["energy_calculator"]["method"] + "/" + config["energy_calculator"]["basis"]
-    cp = config["energy_calculator"]["cp"]
+    cp = config["energy_calculator"].getboolean("cp")
     tag = config["molecule"]["tag"]
 
     # loop thru all files in directory
@@ -102,7 +100,7 @@ def initialize_database(settings, database_name, directory):
                 elif fragment_count == 1:
                     cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, model, cp))
                 else:
-                    print("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
+                    raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
     
     connection.commit()
     connection.close()

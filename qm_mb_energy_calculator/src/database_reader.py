@@ -17,7 +17,7 @@ def generate_fitting_input(settings, database_name, output_path):
     try:
         cursor.execute("PRAGMA table_info('schema_version')");
     except:
-        print("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
+        raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
         sys.exit(1)
 
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
@@ -78,7 +78,7 @@ def generate_fitting_input(settings, database_name, output_path):
             output.write(molecule.to_xyz() + "\n")
             pass
         else:
-            print("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
+            raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
             
 
 if __name__ == "__main__":

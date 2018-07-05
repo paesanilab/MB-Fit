@@ -23,7 +23,7 @@ def fill_database(settings, database_name, directory):
     try:
         cursor.execute("PRAGMA table_info('schema_version')");
     except:
-        print("{} exists but is not a valid database file. \n Terminating database filling.".format(database_name))
+        raise ValueError("{} exists but is not a valid database file. \n Terminating database filling.".format(database_name))
         sys.exit(1)
 
     print("Filling database {}".format(database_name))

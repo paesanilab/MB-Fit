@@ -2,18 +2,11 @@
 A module for the different models for calculating the 
 energy of a set of atoms (a fragment)
 """
-try:
-    import numpy
-except:
-    pass
-
+import numpy
+import os
 from subprocess import call
 
-try:
-    import psi4
-except ImportError:
-    print("Error: failed to import psi4")
-    pass
+import psi4
 
 '''
 try:
@@ -22,16 +15,6 @@ try:
 except ImportError:
     pass
 '''
-
-def sym_to_num(symbol):
-    """
-    Converts symbols into numbers for TensorMol input
-    """
-    if symbol == "O":
-        return 8
-    elif symbol == "H":
-        return 1
-
 
 def calculate_energy(molecule, fragment_indicies, model, cp, config):
     """
@@ -62,8 +45,11 @@ def calculate_energy(molecule, fragment_indicies, model, cp, config):
     code = config["energy_calculator"]["code"]
     
     if code == "psi4":
-        # throw away output
-        psi4.core.set_output_file("/dev/null", False)
+        # write output to a log file
+        log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" +  str(fragment_indicies) + ".out"
+        if not os.path.exists(os.path.dirname(log_file)):
+            os.makedirs(os.path.dirname(log_file))
+        psi4.core.set_output_file(log_file, False)
         return calc_psi4_energy(molecule, fragment_indicies, model, cp, config)
     
     elif code == "TensorMol":
@@ -101,7 +87,7 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     """
 
     # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
-    psi4_string = molecule.to_xyz(fragment_indicies) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin(fragment_indicies))
+    psi4_string = molecule.to_xyz(fragment_indicies, cp) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin(fragment_indicies))
 
     # Constructs the psi4 Molecule from the string representation by making a call to a psi4 library function
     psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
@@ -114,14 +100,6 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
 
     # Set the amount of memory to use based on configuration
     psi4.set_memory(config["psi4"]["memory"])
-
-    # set the name of the bsse_type to calculate energy
-    if cp == "True":
-        cp_type = "cp"
-    else:
-        cp_type = "nocp"
-
-    print(model)
 
     # Perform library call to calculate energy of molecule
     return psi4.energy(model, molecule=psi4_mol)
@@ -139,6 +117,15 @@ def TensorMol_convert_str(molecule, fragment_indicies, config):
         coords = numpy.append(coords, xyz_list[i*4+1:(i+1)*4])
     coords = coords.reshape(atoms.size, 3)
     return calc_TensorMol_energy(atoms, coords, config)
+
+def sym_to_num(symbol):
+    """
+    Converts atomic symbols into atomic numbers for TensorMol input
+    """
+    if symbol == "O":
+        return 8
+    elif symbol == "H":
+        return 1
 
 def calc_TensorMol_energy(atoms, coords, config):
     """

@@ -18,9 +18,6 @@ def xyz_to_molecules(f, config):
     # spin of each fragment
     spin_per_fragment = []
 
-    # get list of all files and subdirectories in directory
-    #dir_contents = os.listdir(directory)
-
     # Don't try to find the settings.ini, we should now REQUIRE it instead
     '''
     if "settings.ini" in dir_contents:

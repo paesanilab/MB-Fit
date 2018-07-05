@@ -53,7 +53,7 @@ CONFIG FILE INITIALIZATION
 config = configparser.ConfigParser(allow_no_value=False)
 
 # read the conflig file into the configuration
-config.read("settings.ini")
+config.read("driver_settings.ini")
 
 
 """
@@ -88,7 +88,7 @@ write_log = False
 
 # Open the log file if cluster_anaylsis
 if config["MBdecomp"].getboolean("cluster_analysis"):
-            
+    
     # Check if the append flag is set to true
     if config["MBdecomp"].getboolean("append"):
         # If both append and overwrite flags are True, print a warning message
@@ -103,7 +103,7 @@ if config["MBdecomp"].getboolean("cluster_analysis"):
         # Open the log file in write mode
         log = open(log_name, 'w')
         write_log = True
-
+    
     # If file exists and both flags are set to false, no not log
     elif os.path.isfile(log_name):
         print("Error: File exists and don't know how to deal with it."+
@@ -137,7 +137,7 @@ RUN CALCULATIONS ON THE USER'S INPUT
 """
 
 # parse array of molecules from input xyz file
-molecules = xyz_to_molecules(f)
+molecules = xyz_to_molecules(f, config)
 
 # for each molecule from the input xyz file...
 for molecule in molecules:

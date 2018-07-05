@@ -101,7 +101,7 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     """
 
     # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
-    psi4_string = molecule.to_xyz(fragment_indicies) + "\n" + str(molecule.get_charge()) + " " + str(molecule.get_spin())
+    psi4_string = molecule.to_xyz(fragment_indicies) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin(fragment_indicies))
 
     # Constructs the psi4 Molecule from the string representation by making a call to a psi4 library function
     psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
@@ -120,6 +120,8 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
         cp_type = "cp"
     else:
         cp_type = "nocp"
+
+    print(model)
 
     # Perform library call to calculate energy of molecule
     return psi4.energy(model, molecule=psi4_mol)

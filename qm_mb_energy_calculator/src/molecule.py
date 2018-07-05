@@ -160,20 +160,24 @@ class Molecule(object):
     '''
     Get total charge of this Molecule by summing charges of Fragments.
     '''
-    def get_charge(self):
+    def get_charge(self, fragments = None):
+        if fragments == None:
+            fragments = range(len(self.fragments))
         charge = 0
-        for fragment in self.fragments:
-            charge += fragment.get_charge()
+        for index in fragments:
+            charge += self.fragments[index].get_charge()
         return charge
 
     '''
     Get total spin multiplicity of this Molecule by summing spin
     of Fragments.
     '''
-    def get_spin(self):
+    def get_spin(self, fragments = None):
+        if fragments == None:
+            fragments = range(len(self.fragments))
         spin = 0
-        for fragment in self.fragments:
-            spin += fragment.get_spin()
+        for index in fragments:
+            spin += self.fragments[index].get_spin()
         return spin
 
     '''

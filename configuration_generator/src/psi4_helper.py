@@ -47,6 +47,10 @@ def optimize(molecule, config, optimized_geometry_fn):
         
         for i in range(num_atoms):
             atom = molecule.symbol(i)
+            
+            if len(atom) > 1:
+                atom = atom[:1] + atom[-1:].lower()
+            
 
             x = filter_neg_zero(opt_formatter.format(molecule.x(i) / molecule.input_units_to_au()), 6) 
             y = filter_neg_zero(opt_formatter.format(molecule.y(i) / molecule.input_units_to_au()), 6)

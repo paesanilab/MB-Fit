@@ -36,7 +36,8 @@ script:
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimer; source activate psi4env; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimers; source activate psi4env; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh        
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh  
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/pythonTests; python executeTests.py      
 
     # training set generation
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/src; make

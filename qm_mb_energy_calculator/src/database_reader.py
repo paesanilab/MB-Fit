@@ -28,7 +28,7 @@ def generate_fitting_input(settings, database_name, output_path):
 
     # open file for writing
     output = open(output_path, "w");
-
+    
     # loop thru all the rows with filled energies
     for energy_row in rows:
         # add each row to output file in proper format

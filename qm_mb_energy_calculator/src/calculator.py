@@ -32,75 +32,97 @@ def sym_to_num(symbol):
     elif symbol == "H":
         return 1
 
-def calc_energy(molecule, fragment_indicies, config):
+
+def calculate_energy(molecule, fragment_indicies, model, cp, config):
     """
-    Compute the energy using a model requested by the user
+    Computes energy of the given fragments of a molecule.
+
+    Uses only the fragments indicated by the fragment indices array.
+
+    Parameters
+    ----------
+    arg1: Molecule
+        The Molecule to calculate the energy of.
+    arg2: int list
+        Which fragments to take into account when calculating energy.
+    arg3: str
+        What model to use to calcuate the enrgy. Saved as method/basis
+    arg4: boolean
+        Whether to use Superposition Corrections for the basis set
+    arg5: ConfigParser
+        Contains settings, etc, that dictate how to calculate energy.
+
+    Returns
+    -------
+    int
+        Calculated Energy.
     """
 
-    model = config["energy_calculator"]["code"]
+    # check which library to use to calculate the energy
+    code = config["energy_calculator"]["code"]
     
-    if model == "psi4":
-        # psi4.core.set_output_file(molecule.get_SHA1()[:8] + method + "/" + 
-        #    basis + "_" + str(fragment_indicies), False)
-        psi4.set_memory(config["psi4"]["memory"])
-        energy = calc_psi4_energy(molecule, fragment_indicies, config)
+    if code == "psi4":
+        # throw away output
+        psi4.core.set_output_file("/dev/null", False)
+        return calc_psi4_energy(molecule, fragment_indicies, model, cp, config)
     
-    elif model == "TensorMol":
-        energy = TensorMol_convert_str(molecule, fragment_indicies, config)
+    elif code == "TensorMol":
+        return TensorMol_convert_str(molecule, fragment_indicies, config)
   
-    elif model == "qchem":
-        energy = calc_qchem_energy(molecule, fragment_indicies, config)
+    elif code == "qchem":
+        return calc_qchem_energy(molecule, fragment_indicies, config)
     else:
-        print("No such model exists!")
-        return 0
+        raise ValueError("{} is not a valid code library".format(code))
 
-    return energy
 
-# Water network data is required to be in the same directory under ./networks !!
-def GetWaterNetwork(a):
+def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     """
-    TensorMol function that loads a pretrained water network
-    """
-    TreatedAtoms = a.AtomTypes()
-    PARAMS["tf_prec"] = "tf.float64"
-    PARAMS["NeuronType"] = "sigmoid_with_param"
-    PARAMS["sigmoid_alpha"] = 100.0
-    PARAMS["HiddenLayers"] = [500, 500, 500]
-    PARAMS["EECutoff"] = 15.0
-    PARAMS["EECutoffOn"] = 0
-    PARAMS["Elu_Width"] = 4.6  # when elu is used EECutoffOn should always equal to 0
-    PARAMS["EECutoffOff"] = 15.0
-    PARAMS["DSFAlpha"] = 0.18
-    PARAMS["AddEcc"] = True
-    PARAMS["KeepProb"] = [1.0, 1.0, 1.0, 1.0]
-    d = MolDigester(TreatedAtoms, name_="ANI1_Sym_Direct", OType_="EnergyAndDipole")
-    tset = TensorMolData_BP_Direct_EE_WithEle(a, d, order_=1, num_indis_=1, type_="mol",  WithGrad_ = True)
-    manager=TFMolManage("water_network",tset,False,"fc_sqdiff_BP_Direct_EE_ChargeEncode_Update_vdw_DSF_elu_Normalize_Dropout",False,False)
-    return manager
+    Uses psi4 library to compute energy of a molecule
 
-def En(m, x_, manager):
-    """
-    Use TensorMol to compute the energy of a fragment
-    """
-    mtmp = Mol(m.atoms,x_)
-    Etotal, Ebp, Ebp_atom, Ecc, Evdw, mol_dipole, atom_charge, gradient = manager.EvalBPDirectEEUpdateSingle(mtmp, PARAMS["AN1_r_Rc"], PARAMS["AN1_a_Rc"],PARAMS["EECutoffOff"], True)
-    energy = Etotal[0]
-    return energy
+    Uses only the fragments indicated by the fragment indices array.
 
-def calc_psi4_energy(molecule, fragment_indicies, config):
+    Parameters
+    ----------
+    arg1: Molecule
+        The Molecule to calculate the energy of.
+    arg2: int list
+        Which fragments to take into account when calculating energy.
+    arg3: str
+        What model to use to calcuate the enrgy. Saved as method/basis
+    arg4: boolean
+        Whether to use Superposition Corrections for the basis set
+    arg5: ConfigParser
+        Contains settings, etc, that dictate how to calculate energy.
+
+    Returns
+    -------
+    int
+        Calculated Energy.
     """
-    Use PSI4 to compute the energy of a fragment
-    """
+
+    # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
     psi4_string = molecule.to_xyz(fragment_indicies) + "\n" + str(molecule.get_charge()) + " " + str(molecule.get_spin())
+
+    # Constructs the psi4 Molecule from the string representation by making a call to a psi4 library function
     psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
+
+    # Updates geometry of psi4 Molecule. !!! Unsure what this does !!!
     psi4_mol.update_geometry()
 
+    # Set the number of threads to use to compute based on configuration
     psi4.set_num_threads(config["psi4"].getint("num_threads"))
-    energy = psi4.energy("{}/{}".format(config["energy_calculator"]["method"],
-          config["energy_calculator"]["basis"]), molecule=psi4_mol)
-    
-    #print(energy)
-    return energy
+
+    # Set the amount of memory to use based on configuration
+    psi4.set_memory(config["psi4"]["memory"])
+
+    # set the name of the bsse_type to calculate energy
+    if cp == "True":
+        cp_type = "cp"
+    else:
+        cp_type = "nocp"
+
+    # Perform library call to calculate energy of molecule
+    return psi4.energy(model, molecule=psi4_mol)
 
 def TensorMol_convert_str(molecule, fragment_indicies, config):
     """
@@ -130,8 +152,27 @@ def calc_TensorMol_energy(atoms, coords, config):
 Calculates energy using qchem
 """
 def calc_qchem_energy(molecule, fragment_indicies, config):
+    """
+    Uses q-chem library to compute energy of a molecule
 
-    #prepare Q-chem input fil from frag string
+    Uses only the fragments indicated by the fragment indices array.
+
+    Parameters
+    ----------
+    arg1: Molecule
+        The Molecule to calculate the energy of.
+    arg2: int list
+        Which fragments to take into account when calculating energy.
+    arg3: ConfigParser
+        Contains settings, etc, that dictate how to calculate energy.
+
+    Returns
+    -------
+    int
+        Calculated Energy.
+    """
+
+    #prepare Q-chem input file from frag string
 
     input_file = "qchem_input.txt"
     output_file = "qchem_out.txt"
@@ -168,3 +209,35 @@ def calc_qchem_energy(molecule, fragment_indicies, config):
     
     # call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
     return 0
+
+# Water network data is required to be in the same directory under ./networks !!
+def GetWaterNetwork(a):
+    """
+    TensorMol function that loads a pretrained water network
+    """
+    TreatedAtoms = a.AtomTypes()
+    PARAMS["tf_prec"] = "tf.float64"
+    PARAMS["NeuronType"] = "sigmoid_with_param"
+    PARAMS["sigmoid_alpha"] = 100.0
+    PARAMS["HiddenLayers"] = [500, 500, 500]
+    PARAMS["EECutoff"] = 15.0
+    PARAMS["EECutoffOn"] = 0
+    PARAMS["Elu_Width"] = 4.6  # when elu is used EECutoffOn should always equal to 0
+    PARAMS["EECutoffOff"] = 15.0
+    PARAMS["DSFAlpha"] = 0.18
+    PARAMS["AddEcc"] = True
+    PARAMS["KeepProb"] = [1.0, 1.0, 1.0, 1.0]
+    d = MolDigester(TreatedAtoms, name_="ANI1_Sym_Direct", OType_="EnergyAndDipole")
+    tset = TensorMolData_BP_Direct_EE_WithEle(a, d, order_=1, num_indis_=1, type_="mol",  WithGrad_ = True)
+    manager=TFMolManage("water_network",tset,False,"fc_sqdiff_BP_Direct_EE_ChargeEncode_Update_vdw_DSF_elu_Normalize_Dropout",False,False)
+    return manager
+
+def En(m, x_, manager):
+    """
+    Use TensorMol to compute the energy of a fragment
+    """
+    mtmp = Mol(m.atoms,x_)
+    Etotal, Ebp, Ebp_atom, Ecc, Evdw, mol_dipole, atom_charge, gradient = manager.EvalBPDirectEEUpdateSingle(mtmp, PARAMS["AN1_r_Rc"], PARAMS["AN1_a_Rc"],PARAMS["EECutoffOff"], True)
+    energy = Etotal[0]
+    return energy
+

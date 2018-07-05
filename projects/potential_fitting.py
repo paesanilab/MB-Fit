@@ -57,6 +57,11 @@ def potential_fit(project_directory):
 
     generate_training_set(project_directory, config)
 
+    # Step 7: generate fitting code
+
+    # generate_fitting(project_directory, config)
+
+    # remove unneeded empty directories
     os.system("find . -type d -empty -delete")
 
 def generate_configs(project_directory, config):
@@ -77,6 +82,8 @@ def generate_polynomials(project_directory, config):
 def generate_training_set(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_reader.py settings.ini " + config['files']['database'] + " " + config['files']['training_set'] + "/training_set.xyz")
     
+def generate_fitting(project_directory, config):
+    os.system("python " + config['files']['directory'] + "/../fitting/1B/get_codes/get-1b-fit.py " + config['files']['poly_in_path'] + " " + config['files']['poly_path'] + " settings.ini")
       
 
 if __name__ == "__main__":

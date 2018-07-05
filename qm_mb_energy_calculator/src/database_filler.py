@@ -62,7 +62,7 @@ def fill_database(settings, database_name, directory):
                 combination = get_combination_from_index(index)
 
                 # Call the calculator function
-                energy = calculator.calc_energy(molecule, combination, config)
+                energy = calculator.calculate_energy(molecule, combination, model, cp, config)
 
                 # build energy string to perform insert into table
                 entry_string = "E"

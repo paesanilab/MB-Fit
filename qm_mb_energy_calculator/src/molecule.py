@@ -264,7 +264,7 @@ class Molecule(object):
         return string
 
     '''
-    Returns a string containing the many body interaction energoes, in the
+    Returns a string containing the many body interaction energies, in the
     format of the log file
     '''
     def log_mb_energy(self, limit):

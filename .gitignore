@@ -25,14 +25,20 @@
 
 # Executables
 *.exe
-*.out
 *.app
+generate_configs_normdistrbn
 
-# Gvim and Python realted
+# Gvim and Python related
 *.swp
 *.swo
 __pycache__/
 calculations*
 timer.dat
-output.dat
 submit.sh
+
+# psi4
+*.clean
+
+
+# test diffs
+*.dif

@@ -20,7 +20,11 @@ def generate(config, dim_null, num_atoms, filenames):
         input_file.write(gcn_params['geometric'] + " " + gcn_params['linear'] + "\n") # geometric, linear
         input_file.write(".true.") # verbose
         
-    os.system("./../norm_distribution/src/generate_configs_normdistrbn < " + filenames['gcn_input'] + " > " + filenames['gcn_output'])
+    
+    script_path = os.path.dirname(os.path.realpath(__file__))
+
+    path = script_path[:-4]
+    os.system(path + "/norm_distribution/src/generate_configs_normdistrbn < " + filenames['gcn_input'] + " > " + filenames['gcn_output'])
     
     print("Normal Distribution Configuration generation complete.")
 

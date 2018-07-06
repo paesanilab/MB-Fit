@@ -1,6 +1,6 @@
 # gcn_runner.py
 # 
-# Wrapper that calls Sandra's FORTRAN GCN scripts.
+# Wrapper that calls Sandra's FORTRAN GCN executable.
 #
 # @author Ronak
 

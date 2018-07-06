@@ -10,23 +10,32 @@ from database import Database
 initializes a database from the config files in a directory
 """
 def initialize_database(settings, database_name, directory):
+    """
+    Initializes a new database or adds energies to be calculated to an existing one.
+
+    settings is the .ini file used to initialize the database
+    
+    database_name is the name of the file to save the database in
+
+    directory is the directory of the config.xyz files to add to the database
+    """
+
     # add .db to database name if it doesn't already end in .db 
     if database_name[-3:] != ".db":
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
 
-    database = Database(database_name)
-
+    # make sure that the config_files directory is actually a directory
     if not os.path.isdir(directory):
         raise ValueError("{} is not a directory. \n Terminating database initialization.".format(directory))
         sys.exit(1)
     
+    database = Database(database_name)
+    
     database.create()
     
-    # list of all filenames to parse
-    filenames = []
-
     print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
+    # get a list of all the files in the directory
     filenames = get_filenames(directory)
 
     # parse settings.ini file
@@ -60,10 +69,10 @@ def initialize_database(settings, database_name, directory):
     print("Initializing of database {} successful".format(database_name))
 
 
-"""
-gets list of all filenames in a directory
-"""
 def get_filenames(directory):
+    """
+    gets list of all filenames in a directory
+    """
     filenames = []
     for root, dirs, files in os.walk(directory):
         for filename in files:

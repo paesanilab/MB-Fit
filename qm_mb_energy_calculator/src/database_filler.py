@@ -5,11 +5,19 @@ import psi4
 import configparser
 import sys
 from database import Database
-
 import calculator
 
-# this file fills the missing energies in a database
 def fill_database(settings, database_name, directory):
+    """
+    Walks through a database and calculates all missing energies
+    
+    settings is the .ini file to use to fill this database
+
+    database_name is file the database is stored in
+
+    directory is unued. # should probably be removed.
+
+    """
     # add .db to the database name if it doesn't already end in .db
     if database_name[-3:] != ".db":
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
@@ -26,11 +34,17 @@ def fill_database(settings, database_name, directory):
     config.read(settings)
 
     while True:
+        # get a calculation to perform from the database
         calculation = database.get_missing_energy()
+
+        # if there are no calculations left to perform, exit the loop
         if calculation is None:
             break
+        
+        # calculate the missing energy
         calculation.energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, True if calculation.cp == "True" else False, config)
 
+        # update the energy in the database
         database.set_energy(calculation)
 
     # commit changes to database

@@ -3,6 +3,10 @@ import sqlite3
 from database import Database
 
 def plot_difference(database_name, method1, method2, basis1, basis2, cp1, cp2, energy):
+    """
+    Takes in two different sets of method/basis/cp and prints the average difference in energy for the same molecules between them
+    """
+    
     # add .db to the database name if it doesn't already end in .db
     if database_name[-3:] != ".db":
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
@@ -10,10 +14,12 @@ def plot_difference(database_name, method1, method2, basis1, basis2, cp1, cp2, e
 
     database = Database(database_name)
     
+    # get array of pairs of energies computed in the two different ways
     energy_pairs = database.get_comparison_energies(method1, method2, basis1, basis2, cp1, cp2, energy)
 
     differences = []    
     for energy_pair in energy_pairs:
+        # make sure both energies are numbers and not "N/A" MIGHT BE UNNEEDED?
         if not energy_pair[0] == "N/A" and not energy_pair[1] == "N/A":
             differences.append(energy_pair[0] - energy_pair[1])
     try:

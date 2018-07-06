@@ -1,36 +1,23 @@
 import sys
 import sqlite3
 import pickle
+from database import Database
 
 def generate_fitting_input(settings, database_name, output_path):
     # add .db to database name if it doesn't already end in .db 
     if database_name[-3:] != ".db":
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
-
-    # create connection
-    connection = sqlite3.connect(database_name)
-
-    # create cursor
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("PRAGMA table_info('schema_version')");
-    except:
-        raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
-        sys.exit(1)
+    
+    database = Database(database_name)
 
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
-    # get a list of all the rows with filled energies
-    cursor.execute("SELECT * FROM Energies WHERE NOT (E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None')")
-    rows = cursor.fetchall()
-
     # open file for writing
     output = open(output_path, "w");
-    
+
     # loop thru all the rows with filled energies
-    for energy_row in rows:
+    for calculation in rows:
         # add each row to output file in proper format
         # hash id of this molecule
         ID = energy_row[0]

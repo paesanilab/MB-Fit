@@ -292,5 +292,5 @@ class Molecule(object):
     '''
     def get_SHA1(self):
         
-        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge())
+        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin())
         return sha1(hash_string.encode()).hexdigest()

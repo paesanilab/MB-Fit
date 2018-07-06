@@ -4,6 +4,7 @@ from molecule_parser import xyz_to_molecules
 import pickle
 import configparser
 import sys
+from database import Database
 
 """
 initializes a database from the config files in a directory
@@ -14,32 +15,14 @@ def initialize_database(settings, database_name, directory):
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
 
-    # create connection
-    connection = sqlite3.connect(database_name)
-
-    # create cursor
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("PRAGMA table_info('schema_version')");
-    except:
-        raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
-        sys.exit(1)
+    database = Database(database_name)
 
     if not os.path.isdir(directory):
         raise ValueError("{} is not a directory. \n Terminating database initialization.".format(directory))
         sys.exit(1)
-        
-    # create the tables
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Configs(ID text, config BLOB, natoms INT,
-        nfrags INT, tag TEXT)
-        """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Energies(ID TEXT, model TEXT, cp INT,
-        E0 REAL, E1 REAL, E2 REAL, E01 REAL, E02 REAL, E12 REAL, E012 REAL, Enb BLOB)
-        """)
-
+    
+    database.create()
+    
     # list of all filenames to parse
     filenames = []
 
@@ -52,11 +35,10 @@ def initialize_database(settings, database_name, directory):
     # See if a config file already exists; if not, generate one
     config.read(settings)
     
-    # rather than attempting to generate a config file,
-    # we now create a section of defaults in the settings file itself
-
-    model = config["energy_calculator"]["method"] + "/" + config["energy_calculator"]["basis"]
-    cp = config["energy_calculator"].getboolean("cp")
+    # Read values from the config file
+    method = config["energy_calculator"]["method"]
+    basis = config["energy_calculator"]["basis"]
+    cp = config["energy_calculator"]["cp"]
     tag = config["molecule"]["tag"]
 
     # loop thru all files in directory
@@ -69,42 +51,12 @@ def initialize_database(settings, database_name, directory):
         molecules = xyz_to_molecules(f, config)
         # for each molecule in the file
         for molecule in molecules:
-            hash_id = molecule.get_SHA1()
+            # add this molecule to the database
+            database.add_molecule(molecule, method, basis, cp, tag)
 
-            # Create directory for molecule if does not exist already
-            # Currently set to first 8 digits of hash
-            os.system("mkdir -p {}".format(hash_id[:8]))
-
-            # check if molecule already has rows in the table
-            cursor.execute("select ID from Configs where ID=?", (hash_id,))
-            config_row = cursor.fetchone()
-            cursor.execute("select ID from Energies where ID=? AND model=? AND cp=?", (hash_id, model, cp))
-            energies_row = cursor.fetchone()
-            
-            # create a new row in the Configs table if such a row did not already exist
-            if config_row is None:
-                pick = pickle.dumps(molecule)
-                config = pick.hex() # turn byte array into hex string
-                # convert hex string into byte array bytes.fromhex(config)
-                cursor.execute("INSERT INTO Configs (ID, config, natoms, nfrags, tag) VALUES ('{}', '{}', '{}', '{}', '{}')".format(hash_id, config, molecule.get_num_atoms(), molecule.get_num_fragments(), tag))
-
-            # number of fragments in this molecule
-            fragment_count = molecule.get_num_fragments()
-
-            # create a new row in the Energies table if such a row did not already exist
-            if energies_row is None:
-                if fragment_count == 3:
-                    cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, model, cp))
-                elif fragment_count == 2:
-                    cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'None', 'N/A', 'None', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, model, cp))
-                elif fragment_count == 1:
-                    cursor.execute("INSERT INTO Energies (ID, model, cp, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', 'None', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, model, cp))
-                else:
-                    raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
+    database.save()
+    database.close()
     
-    connection.commit()
-    connection.close()
-
     print("Initializing of database {} successful".format(database_name))
 
 

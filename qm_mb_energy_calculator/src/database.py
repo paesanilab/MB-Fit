@@ -3,9 +3,8 @@ A module to figure out how to develop databases with sqlite3.
 """
 import sqlite3
 import re
-from exceptions import MoleculeIDUnsetException
-from exceptions import RowOperationBeforeInitException
 import pickle
+import sys
 
 # Much of the sqlite3 commands are hard-coded, but we do not need to make
 # things generic here (yet)
@@ -108,130 +107,132 @@ class Database():
     '''
     Initialize the database
     '''
-    def __init__(self, name):
-        self.name = name
-        self.cursor, self.connection = __init__(name)
-        self.molecule_id = None
+    def __init__(self, file_name):
+        self.connection = sqlite3.connect(file_name)
+        self.cursor = self.connection.cursor()
+
+        try:
+            self.cursor.execute("PRAGMA table_info('schema_version')");
+        except:
+            raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
+            sys.exit(1)
 
     '''
-    Close the database
+    Saves changes to the database
+    '''
+    def save(self):
+        self.connection.commit()
+
+    '''
+    Closes the database
     '''
     def close(self):
-        finalize(self.connection)
+        self.connection.close()
 
     '''
-    Update the molecule ID, which dictates what molecule we are working with.
-    Molecule ID MUST be set before any oeprations can be performed.
+    Create the tables in the database
     '''
-    def set_molecule_id(self, molecule_id):
-        self.molecule_id = molecule_id
+    def create(self):
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Configs(ID text, config BLOB, natoms INT,
+            nfrags INT)
+            """)
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Energies(ID TEXT, method TEXT, basis TEXT, cp TEXT, tag TEXT,
+            E0 REAL, E1 REAL, E2 REAL, E01 REAL, E02 REAL, E12 REAL, E012 REAL, Enb BLOB)
+            """)
 
     '''
-    Clears the molecule ID,
+    Add rows to the database
     '''
-    def clear_molecule_id(self):
-        self.molecule_id = None
+    def add_molecule(self, molecule, method, basis, cp, tag):
+        hash_id = molecule.get_SHA1()
 
-    '''
-    Checks if molecule ID is set
-    '''
-    def has_id(self):
-        return id is not None
-
-    '''
-    Initializes the molecule in the database by creating tables and inserting
-    basic information into the table
-
-    MUST be called before a molecule's data can be added from the database
-    '''
-    def init_molecule(self, config, natoms, nfrags, tag_in, model_in, cp_in):
-        # check if molecule id is initialized
-        if not self.has_id():
-            raise MoleculeIDUnsetException("init_molecule()", self.name)
-
-        # check if molecule already has rows in the table
-        self.cursor.execute("select ID from Configs where ID=?", (self.molecule_id,))
+        self.cursor.execute("select ID from Configs where ID=?", (hash_id,))
         config_row = self.cursor.fetchone()
-        self.cursor.execute("select ID from Energies where ID=?", (self.molecule_id,))
-        energies_row = self.cursor.fetchone()
+        if config_row is None:
+            config = pickle.dumps(molecule).hex()
+            self.cursor.execute("INSERT INTO Configs (ID, config, natoms, nfrags) VALUES ('{}', '{}', '{}', '{}')".format(hash_id, config, molecule.get_num_atoms(), molecule.get_num_fragments()))
+
         
-        # create a new row in the Configs table if such a row did not already exist
-        if config_row is None: 
-            insert(self.cursor, "Configs", ID=self.molecule_id, config="temp", # TODO: buffer doesn't work, "temp" should be buffer(compressed_mol)
-                natom=natoms, nfrags=nfrags, tag=tag_in)
+        self.cursor.execute("select ID from Energies where ID=? AND method=? AND basis=? AND cp=? AND tag=?", (hash_id, method, basis, cp, tag))
+        energies_row = self.cursor.fetchone()
 
         # create a new row in the Energies table if such a row did not already exist
         if energies_row is None:
-            insert(self.cursor, "Energies", ID=self.molecule_id, model=model_in, cp=cp_in, E0="UNSET", E1="UNSET",
-                E2="UNSET", E01="UNSET", E02="UNSET", E12="UNSET", E012="UNSET", Enb="UNSET")  
+            fragment_count = molecule.get_num_fragments();
+            if fragment_count == 3:
+                self.cursor.execute("INSERT INTO Energies (ID, method, basos, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, method, basis, cp, tag))
+            elif fragment_count == 2:
+                self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'N/A', 'None', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, method, basis, cp, tag))
+            elif fragment_count == 1:
+                self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, method, basis, cp, tag))
+            else:
+                raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
+
 
     '''
-    Checks if a certain molecule's n-mer energy is already in the database
+    Gets one row with a mising energy
     '''
-    def has_nmer_energy(self, nmer):
-        # check if molecule id is initialized
-        if not self.has_id():
-            raise MoleculeIDUnsetException("has_nmer_energy", self.name)
+    def get_missing_energy(self):
+        self.cursor.execute("SELECT * FROM Energies WHERE E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None'")
+        row = self.cursor.fetchone()
+        if row is None:
+            return None
 
-        # makes nmer string out of combination passed in, at the end, format should be "E1", "E23", etc.
-        nmer_string = "E"
-        for index in nmer:
-            nmer_string += str(index)
-
-        # fetch nmer energy from database
-        self.cursor.execute("select {} from Energies where ID=?".format(nmer_string), (self.molecule_id,))
-        energy = self.cursor.fetchone()
-
-        # check if row was never initialized
-        if energy is None:
-            raise RowOperationBeforeInitException("has_nmer_energy", self.name)
+        ID = row[0]
+        method = row[1]
+        basis = row[2]
+        cp = row[3]
+        tag = row[4]
+        fragments = [0] if row[5] == "None" else [1] if row[6] == "None" else [2] if row[7] == "None" else [0,1] if row[8] == "None" else [1,2] if row[9] == "None" else [0,2] if row[10] == "None" else [0,1,2]
+       
+        self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (ID,))
+        molecule = pickle.loads(bytes.fromhex(self.cursor.fetchone()[1]))
+        return Calculation(molecule, method, basis, cp, tag, fragments, None)
         
-        # return whether energy of nmer is set
-        return energy[0] != "UNSET"
-        
 
     '''
-    Set's a certain molecule's n-mer energy, or resets it if already set
+    Set an energy in the database
     '''
-    def set_nmer_energy(self, nmer, energy):
-        # check if molecle id is initialized
-        if not self.has_id():
-            raise MoleculeIDUnsetException("set_nmer_energy", self.name)
-
-        # makes nmer string out of combination passed in, at the end, format should be "E1", "E23", etc.
-        nmer_string = "E"
-        for index in nmer:
-            nmer_string += str(index)
-
-        # first check if energy row exists in database
-        self.cursor.execute("select {} from Energies where ID=?".format(nmer_string), (self.molecule_id,))
-        energy_in_table = self.cursor.fetchone()
-        if energy_in_table is None:
-            raise RowbaseOperationBeforeInitException("set_nmer_energy", self.name)
-
-        # if row exists, then go ahead and update table entry
-        self.cursor.execute("update Energies set {}=? where ID=?".format(nmer_string), (str(energy), self.molecule_id))
+    def set_energy(self, calculation):
+        entry_string = "E"
+        for index in calculation.fragments:
+            entry_string += str(index)
+        self.cursor.execute("UPDATE Energies SET {}=? WHERE ID=? AND method=? AND basis=? AND cp=? AND tag=?".format(entry_string), (calculation.energy, calculation.molecule.get_SHA1(), calculation.method, calculation.basis, calculation.cp, calculation.tag))
 
     '''
-    Get's a certain molecule's n-mer energy
+    Gets list of all the Molecules with calculated energies
+    TODO
     '''
-    def get_nmer_energy(self, nmer):
-        # check if molecle id is initialized
-        if not self.has_id():
-            raise MoleculeIDUnsetException("get_nmer_energy", self.name)
+    def get_complete_calculations(self):
+        # get a list of all the rows with filled energies
+        self.cursor.execute("SELECT * FROM Energies WHERE NOT (E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None')")
+        rows = self.cursor.fetchall()
 
-        # makes nmer string out of combination passed in, at the end, format should be "E1", "E23", etc.
-        nmer_string = "E"
-        for index in nmer:
-            nmer_string += str(index)
+        calculations = []
 
-        # first check if energy row exists in database
-        self.cursor.execute("select {} from Energies where ID=?".format(nmer_string), (self.molecule_id,))
-        energy_in_table = self.cursor.fetchone()
-        if energy_in_table is None:
-            raise RowbaseOperationBeforeInitException("set_nmer_energy", self.name)
+        for row in rows:
+            ID = row[0]
+            method = row[1]
+            basis = row[2]
+            cp = row[3]
+            tag = row[4]
+            fragments = [0] if row[5] == "None" else [1] if row[6] == "None" else [2] if row[7] == "None" else [0,1] if row[8] == "None" else [1,2] if row[9] == "None" else [0,2] if row[10] == "None" else [0,1,2]
+       
+            self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (ID,))
+            molecule = pickle.loads(bytes.fromhex(self.cursor.fetchone()[1]))
 
-        # TODO: some sort of check to see if energy is unset, if energy is unset, throw exception
+            calculations.append(Calculation(molecule, method, basis, cp, tag, fragments, energy))
 
-        # if row exists, return energy
-        return energy_in_table[0]
+        return calculations
+
+class Calculation():
+    def __init__(self, molecule, method, basis, cp, tag, fragments, energy):
+        self.molecule = molecule
+        self.method = method
+        self.basis = basis
+        self.cp = cp
+        self.tag = tag
+        self.fragments = fragments
+        self.energy = energy

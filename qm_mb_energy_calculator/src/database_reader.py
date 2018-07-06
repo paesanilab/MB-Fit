@@ -13,60 +13,22 @@ def generate_fitting_input(settings, database_name, output_path):
 
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
+    molecule_energy_pairs = database.get_complete_energies()
+
     # open file for writing
     output = open(output_path, "w");
 
-    # loop thru all the rows with filled energies
-    for calculation in rows:
-        # add each row to output file in proper format
-        # hash id of this molecule
-        ID = energy_row[0]
-        # model to use to calc energy of this molecule
-        model = energy_row[1]
-        # wheter to use cp on calcs
-        cp = energy_row[2]
-        # fetch the Configs row
-        cursor.execute("SELECT * FROM Configs WHERE ID=?", (ID,))
-        config_row = cursor.fetchone()
+    for molecule_energy_pair in molecule_energy_pairs:
+        molecule = molecule_energy_pair[0]
+        energies = molecule_energy_pair[1]
+        output.write(str(molecule.get_num_atoms()) + "\n")
+        
+        for energy in energies:
+            output.write(str(energy) + " ")
 
-        # load molecule object
-        molecule = pickle.loads(bytes.fromhex(config_row[1]))
+        output.write("\n")
 
-        num_frags = molecule.get_num_fragments()
-        num_atoms = molecule.get_num_atoms()
-
-        if num_frags == 3:
-            # write number of atoms
-            output.write(str(num_atoms) + "\n")
-            # write energies in comment line
-            for i in range(3, 10):
-                output.write(str(energy_row[i]) + " ")
-            output.write("\n")
-            # write xyz coordinates
-            output.write(molecule.to_xyz() + "\n")
-            pass
-        elif num_frags == 2:
-            # write number of atoms
-            output.write(str(num_atoms) + "\n")
-            # write energies in comment line
-            for i in [3, 4, 6]:
-                output.write(str(energy_row[i]) + " ")
-            output.write("\n")
-            # write xyz coordinates
-            output.write(molecule.to_xyz() + "\n")
-            pass
-        elif num_frags == 1:
-            # write number of atoms
-            output.write(str(num_atoms) + "\n")
-            # write energies in comment line
-            output.write(str(energy_row[3]) + " ")
-            output.write("\n")
-            # write xyz coordinates
-            output.write(molecule.to_xyz() + "\n")
-            pass
-        else:
-            raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
-            
+        output.write(molecule.to_xyz() + "\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

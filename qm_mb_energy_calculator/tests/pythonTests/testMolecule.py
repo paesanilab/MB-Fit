@@ -57,7 +57,7 @@ class TestFragment(unittest.TestCase):
     Tests the add_atom() and get_atoms() functions of the Fragment class
     """
     def test_add_atom_and_get_atoms(self):
-        fragment = Fragment(0, 0)
+        fragment = Fragment(0, 1)
 
         # get_atom() should return list of length 0 before any atoms added to fragment
         self.assertEqual(len(fragment.get_atoms()), 0)
@@ -261,7 +261,7 @@ class TestMolecule(unittest.TestCase):
         # get_atoms() should return list of len 0 before any atoms added to Molecule
         self.assertEqual(len(molecule.get_atoms()), 0)
 
-        fragment0 = Fragment(0, 0)
+        fragment0 = Fragment(0, 1)
         atom0 = Atom("H", 0, 0, 0)
 
         fragment0.add_atom(atom0)
@@ -273,7 +273,7 @@ class TestMolecule(unittest.TestCase):
         self.assertEqual(len(molecule.get_atoms()), 1)
         
         
-        fragment1 = Fragment(0, 0)
+        fragment1 = Fragment(0, 1)
         atom1 = Atom("H", 0, 0, 0)
         atom2 = Atom("He", 234, -0.1, 32)
         atom3 = Atom("He", 34, 43.53, 0)
@@ -320,8 +320,8 @@ class TestMolecule(unittest.TestCase):
     def test_get_spin(self):
         molecule = Molecule()
 
-        # get_spin() should return 0 before any fragments added to Molecule
-        self.assertEqual(molecule.get_spin(), 0)
+        # get_spin() should return 1 before any fragments added to Molecule
+        self.assertEqual(molecule.get_spin(), 1)
         
         fragment0 = Fragment(-1, 3)
 
@@ -334,8 +334,8 @@ class TestMolecule(unittest.TestCase):
 
         molecule.add_fragment(fragment1)
 
-        # get_spin() should return 4 after second fragment added to Molecule
-        self.assertEquals(molecule.get_spin(), 4)
+        # get_spin() should return 3 after second fragment added to Molecule
+        self.assertEquals(molecule.get_spin(), 3)
 
     """
     Tests the get_num_fragments() function of the Molecule class

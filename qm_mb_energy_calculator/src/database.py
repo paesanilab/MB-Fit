@@ -205,27 +205,71 @@ class Database():
     Gets list of all the Molecules with calculated energies
     TODO
     '''
-    def get_complete_calculations(self):
+    def get_complete_energies(self):
         # get a list of all the rows with filled energies
         self.cursor.execute("SELECT * FROM Energies WHERE NOT (E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None')")
         rows = self.cursor.fetchall()
 
-        calculations = []
+        molecule_energy_pairs = []
 
         for row in rows:
-            ID = row[0]
-            method = row[1]
-            basis = row[2]
-            cp = row[3]
-            tag = row[4]
-            fragments = [0] if row[5] == "None" else [1] if row[6] == "None" else [2] if row[7] == "None" else [0,1] if row[8] == "None" else [1,2] if row[9] == "None" else [0,2] if row[10] == "None" else [0,1,2]
-       
-            self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (ID,))
+            self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (row[0],))
             molecule = pickle.loads(bytes.fromhex(self.cursor.fetchone()[1]))
+            num_frags = molecule.get_num_fragments()
+            
+            energies = []
 
-            calculations.append(Calculation(molecule, method, basis, cp, tag, fragments, energy))
+            if num_frags == 3:
+                for i in range(5, 12):
+                    energies.append(row[i])
+            elif num_frags == 2:
+                for i in [5, 6, 8]:
+                    energies.append(row[i])
+            elif num_frags == 1:
+                energies.append(row[5])
+            else:
+                raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
 
-        return calculations
+            molecule_energy_pairs.append([molecule, energies])
+
+        return molecule_energy_pairs
+
+    '''
+    Gets two lists of energies with different method, basis, and cp to compare
+    '''
+    def get_comparison_energies(self, method1, method2, basis1, basis2, cp1, cp2, energy):
+         
+        # get rows pertaining to category 1
+        self.cursor.execute("SELECT ID FROM Energies WHERE method=? AND basis=? AND cp=?", (method1, basis1, cp1))
+        category1_IDs = self.cursor.fetchall()
+        self.cursor.execute("SELECT {} FROM Energies WHERE method=? AND basis=? AND cp=?".format(energy), (method1, basis1, cp1))
+        category1_energies = self.cursor.fetchall()
+
+        # get rows pertaining to category 2
+        self.cursor.execute("SELECT ID FROM Energies WHERE method=? AND basis=? AND cp=?", (method2, basis2, cp2))
+        category2_IDs = self.cursor.fetchall()
+        self.cursor.execute("SELECT {} FROM Energies WHERE method=? AND basis=? AND cp=?".format(energy), (method2, basis2, cp2))
+        category2_energies = self.cursor.fetchall()
+
+        # make list of all ids
+        IDs = category1_IDs.copy()
+        for ID in category2_IDs:
+            if ID not in category1_IDs:
+                IDs.append(ID)
+        
+        energy_pairs = []
+        
+        for ID in IDs:
+            try:
+                category1_energy = category1_energies[category1_IDs.index(ID)][0]
+                category2_energy = category2_energies[category2_IDs.index(ID)][0]
+            
+                energy_pairs.append([category1_energy, category2_energy])
+            except ValueError:
+                pass
+
+        return energy_pairs;
+
 
 class Calculation():
     def __init__(self, molecule, method, basis, cp, tag, fragments, energy):

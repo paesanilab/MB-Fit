@@ -59,7 +59,6 @@ if config['program']['code'] == "psi4":
 
     # Defining the molecule
     geo = input_geo + "\n" + config['molecule']['charge'] + " " + config['molecule']['multiplicity']
-    geo += "\n" + "symmetry C1"
     mol = psi4.geometry(geo)
 
     # Step 1

@@ -30,7 +30,7 @@ filenames, log_name = config_loader.process_files(config)
   
 qcalc.init(config, log_name)
 
-with open(config['files']['input_geometry'], 'r') as input_file:
+with open(config['files']['unoptimized_geometry'], 'r') as input_file:
     molecule = Molecule(input_file.read())
 
 # Step 1

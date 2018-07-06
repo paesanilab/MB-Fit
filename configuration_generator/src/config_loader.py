@@ -15,14 +15,14 @@ def load():
 
     # Config Default Values
     config.read_dict({
-        'files':            {'output_path': 'outputs/'},
-        'molecule':         {'charge': '0',
-                             'multiplicity': '1'},
+        'files':            {'log_path': 'outputs/'},
+        'molecule':         {'charges': '0',
+                             'spins': '1'},
         'config_generator': {'random': 'P',
                              'geometric': 'false',
-                             'linear': 'true'},
-        'program':          {'code': 'psi4',
-                             'memory': '1GB',
+                             'linear': 'true', 
+                             'code': 'psi4'},
+        'psi4':             {'memory': '1GB',
                              'num_threads': '1'}
     })
 
@@ -32,7 +32,7 @@ def load():
     
 def process_files(config):
     # filenames
-    input_geo_fn = config['files']['input_geometry']
+    input_geo_fn = config['files']['unoptimized_geometry']
 
     if input_geo_fn.endswith('.xyz'):
         slash_split = input_geo_fn.split("/")
@@ -46,8 +46,8 @@ def process_files(config):
     if 'name' in config['files']:
         name = config['files']['name']
 
-    output_id = name + "_" + config['program']['code'] + "_" + config['model']['method'] + "_" + config['model']['basis']
-    log_name = config['files']['output_path'] + output_id
+    output_id = name + "_" + config['config_generator']['code'] + "_" + config['config_generator']['method'] + "_" + config['config_generator']['basis']
+    log_name = config['files']['log_path'] + "/" + output_id
 
     filenames = {
         "optimized_geometry": log_name + "_optimized.xyz",
@@ -56,5 +56,11 @@ def process_files(config):
         "gcn_output": log_name + "_gcn.out",
         "norm_config": log_name + "_configurations.xyz",
     }
+
+    if "optimized_geometry" in config["files"]:
+        filenames["optimized_geometry"] = config["files"]["optimized_geometry"]
+
+    if "xyz_files" in config["files"]:
+        filenames["norm_config"] = config["files"]["xyz_files"] + "/configs.xyz"
     
     return filenames, log_name

@@ -14,14 +14,14 @@ def init(config, log_name):
     psi4_helper.init(config, log_name)
 
 def verify_program(config):
-    if config['program']['code'] not in supported_programs:
+    if config['config_generator']['code'] not in supported_programs:
         raise ValueError(config['program']['code'] + " is not the name of a supported program")
         
 def optimize(molecule, config):
     verify_program(config)
     
-    if config['program']['code'] == "psi4":
-        psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charge'], config['molecule']['multiplicity'])
+    if config['config_generator']['code'] == "psi4":
+        psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charges'], config['molecule']['spins'])
     
         psi4_molecule, energy = psi4_helper.optimize(psi4_molecule, config)
          
@@ -32,7 +32,7 @@ def optimize(molecule, config):
 def frequencies(molecule, config):
     verify_program(config)
     
-    if config['program']['code'] == "psi4":
-        psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charge'], config['molecule']['multiplicity'])
+    if config['config_generator']['code'] == "psi4":
+        psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charges'], config['molecule']['spins'])
     
         return psi4_helper.frequencies(psi4_molecule, config)

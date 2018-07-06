@@ -6,7 +6,7 @@ Automated script to generate the optimized geometry, normal modes, and a set of 
 `python nmcgen.py [config.ini]`
 The driver script can be run from the command line with a single positional input being the `.ini` file that contains the configuration settings for the script.
 
-**Configuation file format:**
+**Configuration file format:**
 ```
 [files]
 input_geometry_path =   h2o.xyz     | the .xyz file containing the starting geometry

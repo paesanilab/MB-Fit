@@ -50,6 +50,7 @@ def process_files(config):
     log_name = config['files']['output_path'] + output_id
 
     filenames = {
+        "input_geometry": input_geo_fn,
         "optimized_geometry": log_name + "_optimized.xyz",
         "normal_modes": log_name + "_normalmodes.dat",
         "gcn_input": log_name + "_gcn.inp",

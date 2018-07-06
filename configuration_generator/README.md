@@ -17,7 +17,7 @@ name =                  h2o         | the name used in the output files
 output_path =           outputs/    | the path to output all produced files
 # OPTIONAL: default value = outputs/
 
-optimize =              false       | wether or not to skip the optimization step. if true, the input geometry will be assumed to be optimized.
+optimize =              true        | wether or not to optimize the geometry.
 # OPTIONAL: default value = false
 
 input_normal_modes = h2o_normal.dat | the path to the normal modes (in gcn format) to use for calculations. if provided, frequency calculation will be skipped

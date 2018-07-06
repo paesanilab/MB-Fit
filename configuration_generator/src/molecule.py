@@ -6,8 +6,8 @@ import psi4
 import numpy as np
 
 class Molecule:    
-    def __init__(self, xyz):
-        self.read_xyz(xyz)
+    def __init__(self, xyz, au_conversion=1.0):
+        self.read_xyz(xyz, au_conversion)
     
     def read_xyz(self, xyz, au_conversion=1.0):
         self.num_atoms = 0
@@ -44,11 +44,3 @@ class Molecule:
             result += str(self.coordinates[i][2]) + "\n"
                 
         return result
-        
-    def read_psi4_mol(self, psi4_mol, au_conversion=1.0):
-        self.read_xyz(psi4_mol.create_psi4_string_from_molecule(), au_conversion)
-    
-    def psi4(self, config):
-        geo = str(self) + "\n" + config['molecule']['charge'] + " " + config['molecule']['multiplicity']
-        
-        return psi4.geometry(geo)

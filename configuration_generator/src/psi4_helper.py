@@ -4,11 +4,22 @@
 #
 # @author Ronak
 
-import psi4
 import os
 import sys
 
+from molecule import Molecule
 import numpy as np
+
+try:
+    import psi4
+except:
+    print("psi4 not found")
+
+
+def init(config, log_name):
+    psi4.core.set_output_file(log_name + ".log", False)
+    psi4.set_memory(config['program']['memory'])
+    psi4.set_num_threads(int(config['program']['num_threads']))
 
 def optimize(molecule, config):
     print("Optimizing geometry...")
@@ -50,3 +61,11 @@ def frequencies(molecule, config):
     print("")
     
     return normal_modes, frequencies, red_masses
+    
+def read_psi4_mol(psi4_mol, au_conversion=1.0):
+    return Molecule(psi4_mol.create_psi4_string_from_molecule(), au_conversion)
+
+def psi4_mol(molecule, charge, multiplicity):
+    geo = str(molecule) + "\n" + charge + " " + multiplicity
+        
+    return psi4.geometry(geo)

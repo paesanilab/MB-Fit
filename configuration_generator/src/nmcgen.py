@@ -14,6 +14,7 @@
 import psi4
 import os
 import sys
+import shutil
 
 from configparser import ConfigParser
 
@@ -40,9 +41,11 @@ if 'optimize' not in config['files'] or config['files']['optimize'] == 'true':
     output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
 else:
     print("Optimized geometry already provided, skipping optimization.\n")
-    with open(input_geo_fn, 'r') as input_file:
-        with open(filenames['optimized_geometry'], 'w') as opt_geo_file:
-            opt_geo_file.write(input_file.read())
+    
+    try:
+        shutil.copyfile(input_geo_fn, filenames['optimized_geometry'])
+    except:
+        welp = "it's the same file"
 
 # Step 2
 if 'input_normal_modes' not in config['files']:
@@ -52,11 +55,14 @@ if 'input_normal_modes' not in config['files']:
     output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
 else:
     print("Normal modes already provided, skipping frequency calculation.\n")
+    
+    try:
+        shutil.copyfile(config['files']['input_normal_modes'], filenames['normal_modes'])
+    except:
+        welp = "it's the same file"
+    
     with open(config['files']['input_normal_modes'], 'r') as input_file:
         contents = input_file.read()
-        
-        with open(filenames['normal_modes'], 'w') as normal_modes_file:
-            normal_modes_file.write(contents)
             
         dim_null = 3 * molecule.num_atoms - contents.count('normal mode')
 

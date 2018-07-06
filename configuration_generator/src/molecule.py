@@ -2,7 +2,6 @@
 #
 # definition for the Molecule class that holds data for molecules in nmcgen
 
-import psi4
 import numpy as np
 
 class Molecule:    

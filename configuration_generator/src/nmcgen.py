@@ -11,7 +11,6 @@
 #
 # @author Ronak
 
-import psi4
 import os
 import sys
 import shutil

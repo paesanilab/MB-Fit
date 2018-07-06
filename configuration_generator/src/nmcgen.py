@@ -16,67 +16,28 @@ import os
 import sys
 
 from configparser import ConfigParser
-from argparse import ArgumentParser
 
 from molecule import Molecule
 import qcalc
 
-import psi4_helper
 import gcn_runner
+import config_loader
 
+import output_writer
 
-arg_parser = ArgumentParser(description='Generates configurations based on normal modes.')
-arg_parser.add_argument('config', metavar='config', type=str, nargs=1, help='Provide the path to the .ini containing the settings for this script.')
-
-args = arg_parser.parse_args()
-
-config = ConfigParser(allow_no_value=False)
-
-# Config Default Values
-config.read_dict({
-    'files':            {'output_path': 'outputs/'},
-    'molecule':         {'charge': '0',
-                         'multiplicity': '1'},
-    'config_generator': {'random': 'Q',
-                         'geometric': 'false',
-                         'linear': 'true'},
-    'program':          {'code': 'psi4',
-                         'memory': '1GB',
-                         'num_threads': '1'}
-})
-
-config.read(args.config[0])
-
-# filenames
-input_geo_fn = config['files']['input_geometry']
-
-if input_geo_fn.endswith('.xyz'):
-    name = input_geo_fn[:-4]
-else:
-    raise IOError("Input geometry not an .xyz")  
-
-output_id = name + "_" + config['program']['code'] + "_" + config['model']['method'] + "_" + config['model']['basis']
-log_name = config['files']['output_path'] + output_id
-
-filenames = {
-    "optimized_geometry": log_name + "_optimized.xyz",
-    "normal_modes": log_name + "_normalmodes.dat",
-    "gcn_input": log_name + "_gcn.inp",
-    "gcn_output": log_name + "_gcn.out",
-    "norm_config": log_name + "_configurations.xyz",
-}
+config = config_loader.load()
+filenames, log_name = config_loader.process_files(config)
   
-if config['program']['code'] == "psi4":
-    psi4.core.set_output_file(log_name + ".log", False)
-    psi4.set_memory(config['program']['memory'])
-    psi4.set_num_threads(int(config['program']['num_threads']))
+qcalc.init(config, log_name)
 
-with open(input_geo_fn, 'r') as input_file:
-    molecule = Molecule(config['molecule']['charge'], config['molecule']['multiplicity'], input_file.read())
+with open(config['files']['input_geometry'], 'r') as input_file:
+    molecule = Molecule(input_file.read())
 
 # Step 1
-if 'optimized' not in config['files'] or  config['files']['optimized'] != 'true':
-    qcalc.optimize(molecule, config, filenames['optimized_geometry'])
+if 'optimize' not in config['files'] or config['files']['optimize'] == 'true':
+    molecule, energy = qcalc.optimize(molecule, config)
+    
+    output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
 else:
     print("Optimized geometry already provided, skipping optimization.\n")
     with open(input_geo_fn, 'r') as input_file:
@@ -85,7 +46,10 @@ else:
 
 # Step 2
 if 'input_normal_modes' not in config['files']:
-    dim_null = qcalc.frequencies(molecule, config, filenames['normal_modes'])
+    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, config)
+    dim_null = 3 * molecule.num_atoms - len(normal_modes)
+    
+    output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
 else:
     print("Normal modes already provided, skipping frequency calculation.\n")
     with open(config['files']['input_normal_modes'], 'r') as input_file:

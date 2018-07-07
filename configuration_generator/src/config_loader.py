@@ -15,7 +15,8 @@ def load():
 
     # Config Default Values
     config.read_dict({
-        'files':            {'log_path': 'outputs/'},
+        'files':            {'log_path': 'outputs/',
+                             'optimize': 'true'},
         'molecule':         {'charges': '0',
                              'spins': '1'},
         'config_generator': {'random': 'P',
@@ -50,6 +51,7 @@ def process_files(config):
     log_name = config['files']['log_path'] + "/" + output_id
 
     filenames = {
+        "input_geometry": input_geo_fn,
         "optimized_geometry": log_name + "_optimized.xyz",
         "normal_modes": log_name + "_normalmodes.dat",
         "gcn_input": log_name + "_gcn.inp",

@@ -26,7 +26,7 @@ class TestMonomers(unittest.TestCase):
 
     def testcompareDataBases(self):
         for test in self.tests:
-            if os.system("ndiff -quiet -abserr 1.e-8 expected/" + test + ".xyz " + test + ".xyz") >> 8 != 0:
+            if os.system("ndiff -quiet -abserr 1.e-5 expected/" + test + ".xyz " + test + ".xyz") >> 8 != 0:
                 self.fail()
 
     def tearDown(self):

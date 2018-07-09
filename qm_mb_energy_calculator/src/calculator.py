@@ -6,7 +6,13 @@ import numpy
 import os
 from subprocess import call
 
-import psi4
+has_psi4 = True
+
+try:
+    import psi4
+except ImportError:
+    print("Psi4 Not available")
+    has_psi4 = False
 
 '''
 try:
@@ -87,13 +93,10 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     """
 
     # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
-    psi4_string = molecule.to_xyz(fragment_indicies, cp) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin(fragment_indicies))
+    psi4_string = molecule.to_xyz(fragment_indicies, cp) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin_multiplicity(fragment_indicies))
 
     # Constructs the psi4 Molecule from the string representation by making a call to a psi4 library function
-    psi4_mol = psi4.core.Molecule.create_molecule_from_string(psi4_string)
-
-    # Updates geometry of psi4 Molecule. !!! Unsure what this does !!!
-    psi4_mol.update_geometry()
+    psi4_mol = psi4.geometry(psi4_string)
 
     # Set the number of threads to use to compute based on configuration
     psi4.set_num_threads(config["psi4"].getint("num_threads"))
@@ -118,6 +121,8 @@ def TensorMol_convert_str(molecule, fragment_indicies, config):
     coords = coords.reshape(atoms.size, 3)
     return calc_TensorMol_energy(atoms, coords, config)
 
+
+# should be improved to work with all atoms
 def sym_to_num(symbol):
     """
     Converts atomic symbols into atomic numbers for TensorMol input

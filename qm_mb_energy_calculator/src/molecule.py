@@ -48,15 +48,15 @@ class Fragment(object):
     '''
     Initialize a new Fragment with an empty atoms list
     '''
-    def __init__(self, charge, spin):
+    def __init__(self, charge, spin_multiplicity):
         # Array of atoms in this molecule
         self.atoms = []
         # charge of this fragment
         self.charge = charge
-        # spin multiplicity of this fragment
-        if spin < 1:
-            raise ValueError("Fragment cannot have spin multiplicity {}. Must be greater than or equal to 1.".format(spin))
-        self.spin = spin
+        # spin_multiplicity multiplicity of this fragment
+        if spin_multiplicity < 1:
+            raise ValueError("Fragment cannot have spin_multiplicity multiplicity {}. Must be greater than or equal to 1.".format(spin_multiplicity))
+        self.spin_multiplicity = spin_multiplicity
 
     '''
     Add an Atom to this Fragment.
@@ -78,10 +78,10 @@ class Fragment(object):
         return self.charge
 
     '''
-    Get the spin multiplicity of this fragment
+    Get the spin_multiplicity multiplicity of this fragment
     '''
-    def get_spin(self):
-        return self.spin
+    def get_spin_multiplicity(self):
+        return self.spin_multiplicity
 
     '''
     Gets the number of atoms in this fragment
@@ -152,7 +152,7 @@ class Molecule(object):
         self.mb_energies = []
         self.natoms = []
         self.charges = []
-        self.spins = []
+        self.spin_multiplicitys = []
         #TODO: consider other attributes required by this class
 
     '''
@@ -188,16 +188,16 @@ class Molecule(object):
         return charge
 
     '''
-    Get total spin multiplicity of this Molecule by summing spin
+    Get total spin_multiplicity multiplicity of this Molecule by summing spin_multiplicity
     of Fragments.
     '''
-    def get_spin(self, fragments = None):
+    def get_spin_multiplicity(self, fragments = None):
         if fragments == None:
             fragments = range(len(self.fragments))
-        spin = 1
+        spin_multiplicity = 1
         for index in fragments:
-            spin += self.fragments[index].get_spin() - 1
-        return spin
+            spin_multiplicity += self.fragments[index].get_spin_multiplicity() - 1
+        return spin_multiplicity
 
     '''
     Gets the number of Fragments in this Molecule
@@ -292,5 +292,5 @@ class Molecule(object):
     '''
     def get_SHA1(self):
         
-        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin())
+        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()

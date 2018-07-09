@@ -22,4 +22,5 @@ then
 else
     echo "test passed!"
     rm -f timer.dat training_set.xyz mbdecomp.log json_output.json $log
+    rm -rf logs
 fi

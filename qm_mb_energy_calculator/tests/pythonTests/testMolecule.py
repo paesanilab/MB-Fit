@@ -97,20 +97,20 @@ class TestFragment(unittest.TestCase):
 
 
     """
-    Tests the get_spin() function of the Fragment class
+    Tests the get_spin_multiplicity() function of the Fragment class
     """
-    def test_get_spin(self):
+    def test_get_spin_multiplicity(self):
         fragment = Fragment(0, 2)
         
-        self.assertEqual(fragment.get_spin(), 2)        
+        self.assertEqual(fragment.get_spin_multiplicity(), 2)        
 
         fragment = Fragment(-3, 1)
         
-        self.assertEqual(fragment.get_spin(), 1)        
+        self.assertEqual(fragment.get_spin_multiplicity(), 1)        
         
         fragment = Fragment(12, 5)
         
-        self.assertEqual(fragment.get_spin(), 5)        
+        self.assertEqual(fragment.get_spin_multiplicity(), 5)        
 
 
     """
@@ -315,27 +315,27 @@ class TestMolecule(unittest.TestCase):
         self.assertEquals(molecule.get_charge(), 2)
 
     """
-    Tests the get_spin() function of the Molecule class
+    Tests the get_spin_multiplicity() function of the Molecule class
     """
-    def test_get_spin(self):
+    def test_get_spin_multiplicity(self):
         molecule = Molecule()
 
-        # get_spin() should return 1 before any fragments added to Molecule
-        self.assertEqual(molecule.get_spin(), 1)
+        # get_spin_multiplicity() should return 1 before any fragments added to Molecule
+        self.assertEqual(molecule.get_spin_multiplicity(), 1)
         
         fragment0 = Fragment(-1, 3)
 
         molecule.add_fragment(fragment0)
 
-        # get_spin() should return 3 after first fragment added to Molecule
-        self.assertEquals(molecule.get_spin(), 3)
+        # get_spin_multiplicity() should return 3 after first fragment added to Molecule
+        self.assertEquals(molecule.get_spin_multiplicity(), 3)
 
         fragment1 = Fragment(3, 1)
 
         molecule.add_fragment(fragment1)
 
-        # get_spin() should return 3 after second fragment added to Molecule
-        self.assertEquals(molecule.get_spin(), 3)
+        # get_spin_multiplicity() should return 3 after second fragment added to Molecule
+        self.assertEquals(molecule.get_spin_multiplicity(), 3)
 
     """
     Tests the get_num_fragments() function of the Molecule class

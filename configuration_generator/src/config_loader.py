@@ -33,7 +33,7 @@ def load():
     
 def process_files(config):
     # filenames
-    input_geo_fn = config['files']['unoptimized_geometry']
+    input_geo_fn = config['files']['input_geometry']
 
     if input_geo_fn.endswith('.xyz'):
         slash_split = input_geo_fn.split("/")
@@ -52,7 +52,7 @@ def process_files(config):
 
     filenames = {
         "input_geometry": input_geo_fn,
-        "optimized_geometry": log_name + "_optimized.xyz",
+        "optimized_geometry": output_id + "_optimized.xyz",
         "normal_modes": log_name + "_normalmodes.dat",
         "gcn_input": log_name + "_gcn.inp",
         "gcn_output": log_name + "_gcn.out",
@@ -63,6 +63,6 @@ def process_files(config):
         filenames["optimized_geometry"] = config["files"]["optimized_geometry"]
 
     if "xyz_files" in config["files"]:
-        filenames["norm_config"] = config["files"]["xyz_files"] + "/configs.xyz"
+        filenames["norm_config"] = config["files"]["xyz_files"] + "/" + output_id + "_configs.xyz"
     
     return filenames, log_name

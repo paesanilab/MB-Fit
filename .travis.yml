@@ -49,3 +49,4 @@ script:
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_pf6.sh
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_minimum.sh
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_saddle.sh
+    - cd $TRAVIS_BUILD_DIR/configuration_generator/test; bash run_test.sh

@@ -47,7 +47,7 @@ then
     err=$(($err+1))
 fi
 
-fn=config_files/configs.xyz
+fn=config_files/h2o_psi4_blyp_cc-pvdz_configs.xyz
 diff expected/$fn actual/$fn > diffs/$fn.dif
 if [ $? -ne 0 ]
 then

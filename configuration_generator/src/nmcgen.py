@@ -30,11 +30,11 @@ filenames, log_name = config_loader.process_files(config)
   
 qcalc.init(config, log_name)
 
-with open(config['files']['unoptimized_geometry'], 'r') as input_file:
+with open(config['files']['input_geometry'], 'r') as input_file:
     molecule = Molecule(input_file.read())
 
 # Step 1
-if config['files'].getboolean('optimize'):
+if config['config_generator'].getboolean('optimize'):
     molecule, energy = qcalc.optimize(molecule, config)
     
     output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])

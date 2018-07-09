@@ -1,7 +1,7 @@
 # Psi4 Setup Guide
 
 # General:
-This guide will show you how to setup your anaconda enviornment to run psi4 development branch.
+This guide will show you how to setup your anaconda enviornment to run the psi4 development branch.
 
 # Install anaconda
 

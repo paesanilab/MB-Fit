@@ -13,7 +13,9 @@ database_initializer.py creates a database containing specified configurations. 
 python database_initializer.py <settings file> <database name> <config files directory>
 ```
 settings file: a file ending in .ini containing all the settings needed to initialize a database.
+
 database name: the name of the file to store the database in. ".db" will be added to the end if the name does not already end in ".db".
+
 config files directory: the path to a directory containing any number of files ending in ".xyz". All configurations in all files ending in ".xyz" are initialized into the database, files not ending in ".xyz" are ignored.
 
 ## Filling a database:
@@ -24,7 +26,9 @@ database_filler.py fills a database. This means it loops through all the configu
 python database_filler.py <settings file> <database name> <config files directory>
 ```
 settings file: a file ending in .ini containing all the settings needed to fill a database.
+
 database name: the name of the file the database is stored in. ".db" will be added to the end if the name does not already end in ".db".
+
 config files directory: currently unused. Will probably be removed.
 
 ## Getting a training set from a database:
@@ -35,5 +39,7 @@ database_reader.py generates a training set from all the configurations in a dat
 python database_reader.py <settings file> <database name> <training set file>
 ```
 settings file: a file ending in .ini containing all the settings needed to generate a training set.
+
 database name: the name of the file the database is stored in. ".db" will be added to the end if the name does not already end in ".db".
+
 training set file: the name of the file where the training set should be generated. Should end in ".xyz".

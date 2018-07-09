@@ -18,7 +18,7 @@ output_path =           outputs/    | the path to output all produced files
 # OPTIONAL: default value = outputs/
 
 optimize =              true        | wether or not to optimize the geometry.
-# OPTIONAL: default value = false
+# OPTIONAL: default value = true
 
 input_normal_modes = h2o_normal.dat | the path to the normal modes (in gcn format) to use for calculations. if provided, frequency calculation will be skipped
 # OPTIONAL: default value = None (as in do the frequency calculation)

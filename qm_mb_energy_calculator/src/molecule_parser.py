@@ -1,5 +1,4 @@
 from molecule import Atom, Fragment, Molecule
-from exceptions import InvalidFormatException
 import configparser
 import os
 
@@ -17,9 +16,6 @@ def xyz_to_molecules(f, config):
     charge_per_fragment = []
     # spin of each fragment
     spin_per_fragment = []
-
-    # get list of all files and subdirectories in directory
-    #dir_contents = os.listdir(directory)
 
     # Don't try to find the settings.ini, we should now REQUIRE it instead
     '''
@@ -59,7 +55,7 @@ def xyz_to_molecules(f, config):
         # check for consistance between number of atoms in xyz file
         # and number of atoms in fragments array
         if int(atom_num_line) != sum(atoms_per_fragment):
-            raise Exception("Atom count specified in xyz file does not match count in ini file")
+            raise ValueError("Atom count specified in xyz file does not match count in ini file")
         # read and discard the comment line
         readline(f, True)
 
@@ -97,7 +93,7 @@ def readline(xyz, error = False):
     value = xyz.readline()
     if value == "":
         if error:
-            raise InvalidFormatException(xyz.name, "<PLACEHOLDER>", "Parsing ended in the middle of a molecule.")
+            raise ValueError("Parsing ended in middle of molecule")
     return value
 
 '''

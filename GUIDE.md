@@ -24,6 +24,8 @@ but keep it smaller for tests.
 
 Activate your psi4dev conda enviornment
 
+1) move into the configuration_generator/norm_distribution/src and run "make"
+
 2) Move into projects/ and call python potential_fitting.py <dir name>
 where <dir name> is the name of your project directory.
 
@@ -56,7 +58,12 @@ ie A3 for O3, A1B2, for CO2, A2B4 for N2O4, etc
 change [fitting] number_of_atoms appropraitely
 change [fitting] number_of_electrostatic_sites = number of atoms
 
-######### TODO ############### UPDATE EXCLUDED PAIRS
+For the below sections indexing is based on order defined in your geometry
+[fitting] excluded_pairs_12 should equal an array of all the pairs of
+atoms that are bonded. ie: if atoms 0-1, and 0-2 are bonded, add [0,1] and [0,2] to the list.
+[fitting] excluded_pairs_13 should equal an array of all angles in the atom
+where the two atoms are at the ends of the angle. ie: if atoms 0-1-2 form an angle,
+add [0,2] to the list
 
 10) open fitting/1B/get_codes/prepare_1b_fitting_code.sh in a text editor
 
@@ -68,13 +75,13 @@ change the username (ebullvul to your username)
 
 11) use mkdir to make a fitcode directory inside <your project directory>
 
-12) switch to fitcode psi4 enviornment
+12) switch to fitcode conda enviornment
 
 13) move into the fitcode directory and call
 
 ../../../fitting/1B/get_codes/prepare_1b_fitting_code.sh <abs path to .in file in your project directory> <abs path to poly directory>
 
-14) run ./fit_-1b ../training_set/training_set.xyz
+14) run ./fit-1b ../training_set/training_set.xyz
 
 15) run ncgen -o fit-1b.nc fit-1b.cdl
 
@@ -95,9 +102,6 @@ conda create -n fit-code python=3.6 anaconda
 
 activate:
 conda activate fit-code
-
-conda remove -n fit-code gcc stdgcc
-conda install gcc libgcc
 
 Your fitcode enviornment should be set up!
 

@@ -34,7 +34,7 @@ with open(config['files']['input_geometry'], 'r') as input_file:
     molecule = Molecule(input_file.read())
 
 # Step 1
-if 'optimize' not in config['files'] or config['files']['optimize'] == 'true':
+if 'optimize' not in config['files'] or config['files'].getboolean('optimize'):
     molecule, energy = qcalc.optimize(molecule, config)
     
     output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
@@ -42,7 +42,7 @@ else:
     print("Optimized geometry already provided, skipping optimization.\n")
     
     try:
-        shutil.copyfile(input_geo_fn, filenames['optimized_geometry'])
+        shutil.copyfile(filenames['input_geometry'], filenames['optimized_geometry'])
     except:
         welp = "it's the same file"
 

@@ -1,7 +1,9 @@
 import sys
+sys.path.insert(0, "../../")
 import sqlite3
 import pickle
 from database import Database
+import constants
 
 def generate_fitting_input(settings, database_name, output_path):
     """
@@ -47,7 +49,7 @@ def generate_fitting_input(settings, database_name, output_path):
         
         # write the energies to the output file
         for energy in energies:
-            output.write(str((float(energy) - float(min_energy)) * 627.509) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energy) - float(min_energy)) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
         output.write("\n")
 

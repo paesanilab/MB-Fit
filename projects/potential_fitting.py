@@ -98,7 +98,7 @@ def generate_input(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../polynomial_generation/src/generate_input_poly.py " + config['files']['poly_in_path'])
 
 def generate_polynomials(project_directory, config):
-    os.system(config['files']['directory'] + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + config['poly_generator']['order'] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['log_path'] + "/poly_log.log")
+    os.system(config['files']['directory'] + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + config['poly_generator']['order'] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_path'] + "/poly.log")
 
 def run_maple(project_directory, config):
     # maple commands can only run on maple machine

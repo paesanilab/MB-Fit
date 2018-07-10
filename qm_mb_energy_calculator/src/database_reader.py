@@ -1,5 +1,7 @@
 import sys
 import os
+
+# this is messy, I hope there is a better way to do this!
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import sqlite3
 import pickle

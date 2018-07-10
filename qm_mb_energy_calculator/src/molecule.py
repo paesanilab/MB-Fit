@@ -70,7 +70,6 @@ class Fragment(object):
     def get_atoms(self):
         return self.atoms[:] # copies a list in python
 
-
     '''
     Get the total charge of this fragment.
     '''

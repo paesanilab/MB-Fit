@@ -25,8 +25,8 @@ class Database():
         try:
             self.cursor.execute("PRAGMA table_info('schema_version')");
         except:
-            raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name))
-            sys.exit(1)
+            self.close()
+            raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name)) from None
 
     def save(self):
         """
@@ -124,6 +124,18 @@ class Database():
         molecule = pickle.loads(bytes.fromhex(self.cursor.fetchone()[1]))
 
         return Calculation(molecule, method, basis, cp, tag, fragments, None)
+
+    def missing_energies(self):
+        """
+        A generator to generate all the missing energies
+        """
+        while True:
+            calculation = self.get_missing_energy()
+            
+            if calculation is None:
+                break
+
+            yield calculation
         
 
     def set_energy(self, calculation):
@@ -139,6 +151,7 @@ class Database():
         # update the energy value in the corresponding row of the table
         self.cursor.execute("UPDATE Energies SET {}=? WHERE ID=? AND method=? AND basis=? AND cp=? AND tag=?".format(entry_string), (calculation.energy, calculation.molecule.get_SHA1(), calculation.method, calculation.basis, calculation.cp, calculation.tag))
 
+# should probably be changed to a generator once we find a way to store the optimized geometry
     def get_complete_energies(self):
         """
         Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, E12, E02, E012], where N/A energies are left out

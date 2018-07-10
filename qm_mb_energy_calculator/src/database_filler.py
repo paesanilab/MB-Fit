@@ -32,14 +32,8 @@ def fill_database(settings, database_name, directory):
 
     # See if a config file already exists; if not, generate one
     config.read(settings)
-
-    while True:
-        # get a calculation to perform from the database
-        calculation = database.get_missing_energy()
-
-        # if there are no calculations left to perform, exit the loop
-        if calculation is None:
-            break
+    
+    for calculation in database.missing_energies():
         
         # calculate the missing energy
         calculation.energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, True if calculation.cp == "True" else False, config)

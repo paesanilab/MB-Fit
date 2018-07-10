@@ -25,7 +25,7 @@ def plot_difference(database_name, method1, method2, basis1, basis2, cp1, cp2, e
     try:
         print("Average Difference in Energy: {:3.3e}".format(sum(differences) / len(differences)))
     except ZeroDivisionError as error:
-        raise ValueError("No Matching energies for both categories for those methods and basises.") from error
+        raise ValueError("No Matching energies for both categories for those methods and basises.") from None
 
 if __name__ == "__main__":
     if sys.argv[1] == "difference":

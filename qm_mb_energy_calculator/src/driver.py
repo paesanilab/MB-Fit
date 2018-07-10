@@ -86,7 +86,7 @@ if config["MBdecomp"].getboolean("cluster_analysis"):
         write_log = True
     # Check if log type is invalid
     elif config["driver"]["log_type"] != "none":
-        raise ValueError("Ivalid log_type {}".format(config["driver"]["log_type"]))
+        raise ValueError("Invalid log_type {}".format(config["driver"]["log_type"]))
 
 """
 RUN CALCULATIONS ON THE USER'S INPUT

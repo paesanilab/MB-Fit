@@ -17,8 +17,8 @@ name =                  h2o         | the name used in the output files
 output_path =           outputs/    | the path to output all produced files
 # OPTIONAL: default value = outputs/
 
-optimize =              true        | wether or not to optimize the geometry.
-# OPTIONAL: default value = false
+optimize =              true        | whether or not to optimize the geometry. If false, will assume already optimized geometry and skip the optimization process.
+# OPTIONAL: default value = true
 
 input_normal_modes = h2o_normal.dat | the path to the normal modes (in gcn format) to use for calculations. if provided, frequency calculation will be skipped
 # OPTIONAL: default value = None (as in do the frequency calculation)
@@ -45,6 +45,8 @@ linear =                true        | whether or not a linear progression is to 
 [model]
 method =                blyp        | the calculation model method to use
 basis =	                cc-pvdz     | the calculation model basis to use
+ecp =                   def2-ecp    | the effective core potential and associated basis set to be used for qchem, if necessary
+# OPTIONAL: default value = none
 
 [program]
 code =                  psi4        | which quantum chemistry code to use for the calculations

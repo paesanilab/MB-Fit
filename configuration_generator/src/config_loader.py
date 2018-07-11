@@ -56,6 +56,8 @@ def process_files(config):
         "gcn_input": log_name + "_gcn.inp",
         "gcn_output": log_name + "_gcn.out",
         "norm_config": log_name + "_configurations.xyz",
+        "qchem_input": log_name + ".inp"
+        "qchem_output": log_name + ".out"
     }
     
     return filenames, log_name

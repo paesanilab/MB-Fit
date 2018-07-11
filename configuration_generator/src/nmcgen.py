@@ -35,9 +35,13 @@ with open(config['files']['input_geometry'], 'r') as input_file:
 
 # Step 1
 if 'optimize' not in config['files'] or config['files'].getboolean('optimize'):
-    molecule, energy = qcalc.optimize(molecule, config)
-    
-    output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
+    if config['program']['code'] == 'psi4':    
+        molecule, energy = qcalc.psi4optimize(molecule, config)
+        
+        output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
+    if config['program']['code'] == 'qchem':
+        energy, geometry_list = qcalc.qchemoptimize(filenames, config)
+        output_writer.qchem_write_optimized_geo(geometry_list, energy, filenames['optimized_geometry'])
 else:
     print("Optimized geometry already provided, skipping optimization.\n")
     

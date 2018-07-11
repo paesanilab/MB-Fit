@@ -33,6 +33,13 @@ class Atom(object):
     def to_xyz(self):
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
+    '''
+    Returns a string representing the information in this atom in the xyz file
+    format, specifying this atom as a ghost atom
+    '''
+    def to_ghost_xyz(self):
+        return "@{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
 class Fragment(object):
     """
     A class for a fragment of a Molecule. Contains atoms
@@ -41,13 +48,15 @@ class Fragment(object):
     '''
     Initialize a new Fragment with an empty atoms list
     '''
-    def __init__(self, charge, spin):
+    def __init__(self, charge, spin_multiplicity):
         # Array of atoms in this molecule
         self.atoms = []
         # charge of this fragment
         self.charge = charge
-        # spin multiplicity of this fragment
-        self.spin = spin
+        # spin_multiplicity multiplicity of this fragment
+        if spin_multiplicity < 1:
+            raise ValueError("Fragment cannot have spin_multiplicity multiplicity {}. Must be greater than or equal to 1.".format(spin_multiplicity))
+        self.spin_multiplicity = spin_multiplicity
 
     '''
     Add an Atom to this Fragment.
@@ -69,10 +78,10 @@ class Fragment(object):
         return self.charge
 
     '''
-    Get the spin multiplicity of this fragment
+    Get the spin_multiplicity multiplicity of this fragment
     '''
-    def get_spin(self):
-        return self.spin
+    def get_spin_multiplicity(self):
+        return self.spin_multiplicity
 
     '''
     Gets the number of atoms in this fragment
@@ -91,6 +100,16 @@ class Fragment(object):
         string = ""
         for atom in self.atoms:
             string += atom.to_xyz() + "\n"
+        return string
+
+    '''
+    Returns a string represeting the information in this fragment in the xyz
+    file format specifying the atoms in this fragment as ghost atoms
+    '''
+    def to_ghost_xyz(self):
+        string = ""
+        for atom in self.atoms:
+            string += atom.to_ghost_xyz() + "\n"
         return string
 
     '''
@@ -133,7 +152,7 @@ class Molecule(object):
         self.mb_energies = []
         self.natoms = []
         self.charges = []
-        self.spins = []
+        self.spin_multiplicitys = []
         #TODO: consider other attributes required by this class
 
     '''
@@ -160,21 +179,25 @@ class Molecule(object):
     '''
     Get total charge of this Molecule by summing charges of Fragments.
     '''
-    def get_charge(self):
+    def get_charge(self, fragments = None):
+        if fragments == None:
+            fragments = range(len(self.fragments))
         charge = 0
-        for fragment in self.fragments:
-            charge += fragment.get_charge()
+        for index in fragments:
+            charge += self.fragments[index].get_charge()
         return charge
 
     '''
-    Get total unpaired electrons in this Molecule by summing unpaired electrons
+    Get total spin_multiplicity multiplicity of this Molecule by summing spin_multiplicity
     of Fragments.
     '''
-    def get_unpaired(self):
-        unpaired = 0
-        for fragment in self.fragments:
-            unpaired += fragment.get_unpaired()
-        return unpaired
+    def get_spin_multiplicity(self, fragments = None):
+        if fragments == None:
+            fragments = range(len(self.fragments))
+        spin_multiplicity = 1
+        for index in fragments:
+            spin_multiplicity += self.fragments[index].get_spin_multiplicity() - 1
+        return spin_multiplicity
 
     '''
     Gets the number of Fragments in this Molecule
@@ -196,13 +219,16 @@ class Molecule(object):
     Returns a string representing the fragments of this Molecule specified by
     the indicies in the fragments parameter in the xyz file format.
     '''
-    def to_xyz(self, fragments = None):
+    def to_xyz(self, fragments = None, cp = False):
         # by default, use all fragments
         if fragments == None:
             fragments = range(len(self.fragments))
         string = ""
-        for index in fragments:
-            string += self.fragments[index].to_xyz()
+        for index in range(len(self.fragments)):
+            if index in fragments:
+                string += self.fragments[index].to_xyz()
+            elif cp:
+                string += self.fragments[index].to_ghost_xyz() 
         return string[:-1] # removes last character of string (extra newline)
 
     '''
@@ -238,7 +264,7 @@ class Molecule(object):
         return string
 
     '''
-    Returns a string containing the many body interaction energoes, in the
+    Returns a string containing the many body interaction energies, in the
     format of the log file
     '''
     def log_mb_energy(self, limit):
@@ -266,84 +292,5 @@ class Molecule(object):
     '''
     def get_SHA1(self):
         
-        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge())
+        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
-        
-
-    '''
-
-    STILL NEED?
-
-    def __repr__(self):
-        ret_str = ""
-        for frag in self.fragments:
-            ret_str += str(frag)
-        return ret_str[:-1]
-
-    def write_frag_energy(self):
-        """
-        Outputs energies and coordinates of fragment combinations compliant to
-        the xyz input file.
-        """
-        ret_str = ""
-        for energy in self.energies.keys():
-            # Issue with using "%16.8f"%: it will fill up unused bytes with
-            # blanks. Presumably null characters?
-            ret_str += "E{}: {}\n".format(energy, "%.8f"%self.energies[energy])
-        return ret_str
-
-    def write_mb_energy(self, limit):
-        """
-        Outputs the many body interaction energies.
-        """
-        ret_str = ""
-        for i in range(limit):
-            ret_str += "V_{}B: {}\n".format(i+1,"%.8f"%self.mb_energies[i])
-        return ret_str
-
-    def mol_comb_str(self, comb):
-        """ 
-        Builds a string representation of a part of the molecule.
-        """
-        ret_str = ""
-        for frag_index in comb:
-            ret_str += str(self.fragments[frag_index])
-        return ret_str
-     
-    def read_xyz(self,xyzfile):
-        """
-        Read molecule information from xyzfile
-        xyzfile must be a file handle
-        """
-        try:
-            self.natoms = int(xyzfile.readline())
-
-            # Since we are still storing amount of monomer atoms in comment
-            # Note: Want to write an error-catching mechanism here for
-            #       when number of atoms do not match with given
-            self.comment = xyzfile.readline().split()
-
-            # Error catching mechanism
-            total_from_comment = 0
-            for natom in self.comment:
-                total_from_comment += int(natom)
-            # Should the total amount not match, raise an error
-            if total_from_comment != self.natoms:
-                print("Error: Fragment atoms do not add to total atoms in xyz file")
-                raise ValueError
-          
-            for mono_natoms in self.comment:
-                mono_natoms = int(mono_natoms)
-                new_frag = Fragment()
-                for atom in range(mono_natoms):
-                    tokens = xyzfile.readline().split()
-                    new_frag.symbols.append(tokens[0])
-                    new_frag.coordinates.append(
-                        [float(coord) for coord in tokens[1:]])
-                    new_frag.natoms += 1
-                self.fragments.append(new_frag)
-
-            return 1
-        except ValueError:
-            return 0
-    '''

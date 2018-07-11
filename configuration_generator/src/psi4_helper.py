@@ -18,13 +18,13 @@ except:
 
 def init(config, log_name):
     psi4.core.set_output_file(log_name + ".log", False)
-    psi4.set_memory(config['program']['memory'])
-    psi4.set_num_threads(int(config['program']['num_threads']))
+    psi4.set_memory(config['psi4']['memory'])
+    psi4.set_num_threads(int(config['psi4']['num_threads']))
 
 def optimize(molecule, config):
     print("Optimizing geometry...")
 
-    e = psi4.optimize(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule)
+    e = psi4.optimize(config['config_generator']['method'] + '/' + config['config_generator']['basis'], molecule=molecule)
     
     print("")
     
@@ -33,7 +33,7 @@ def optimize(molecule, config):
 def frequencies(molecule, config):
     print("Determining normal modes and running frequency analysis...")
     
-    total_energy, wavefunc = psi4.frequency(config['model']['method'] + '/' + config['model']['basis'], molecule=molecule, return_wfn=True)
+    total_energy, wavefunc = psi4.frequency(config['config_generator']['method'] + '/' + config['config_generator']['basis'], molecule=molecule, return_wfn=True)
     
     vib_info_raw = wavefunc.frequency_analysis
     vib_info = psi4.qcdb.vib.filter_nonvib(vib_info_raw)

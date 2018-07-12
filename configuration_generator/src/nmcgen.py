@@ -39,7 +39,7 @@ if 'optimize' not in config['files'] or config['files'].getboolean('optimize'):
         molecule, energy = qcalc.psi4optimize(molecule, config)
         
         output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
-    if config['program']['code'] == 'qchem':
+    elif config['program']['code'] == 'qchem':
         energy, geometry_list = qcalc.qchemoptimize(filenames, config)
         output_writer.qchem_write_optimized_geo(geometry_list, energy, filenames['optimized_geometry'])
 else:
@@ -52,8 +52,12 @@ else:
 
 # Step 2
 if 'input_normal_modes' not in config['files']:
-    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, config)
-    dim_null = 3 * molecule.num_atoms - len(normal_modes)
+    if config['program']['code'] == 'psi4':     
+        normal_modes, frequencies, red_masses = qcalc.psi4frequencies(molecule, config)
+        dim_null = 3 * molecule.num_atoms - len(normal_modes)
+    elif config['program']['code'] == 'qchem':
+        normal_modes, frequencies, red_masses, num_atoms = qcalc.qchemfrequencies(filenames, config)
+        dim_null = 3 * num_atoms - len(normal_modes)
     
     output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
 else:

@@ -15,7 +15,7 @@ def load():
 
     # Config Default Values
     config.read_dict({
-        'files':            {'log_path': 'outputs/',
+        'files':            {'log_path': 'outputs',
                              'optimize': 'true'},
         'molecule':         {'charges': '0',
                              'spins': '1'},
@@ -33,7 +33,7 @@ def load():
     
 def process_files(config):
     # filenames
-    input_geo_fn = config['files']['input_geometry']
+    input_geo_fn = config['files']['unoptimized_geometry']
 
     if input_geo_fn.endswith('.xyz'):
         slash_split = input_geo_fn.split("/")
@@ -52,15 +52,15 @@ def process_files(config):
 
     filenames = {
         "input_geometry": input_geo_fn,
-        "optimized_geometry": output_id + "_optimized.xyz",
+        "optimized_geometry": log_name + "_optimized.xyz",
         "normal_modes": log_name + "_normalmodes.dat",
         "gcn_input": log_name + "_gcn.inp",
         "gcn_output": log_name + "_gcn.out",
         "norm_config": log_name + "_configurations.xyz",
-        "qchem_opt_input": log_name + "_qchem_optimization.inp"
-        "qchem_freq_input": log_name + "_qchem_frequencies.inp"
-        "qchem_opt_output": log_name + "_qchem_optimization.out"
-        "qchem_freq_output": log_name + "_qchem_frequencies.outp"
+        "qchem_opt_input": log_name + "_qchem_optimization.inp",
+        "qchem_freq_input": log_name + "_qchem_frequencies.inp",
+        "qchem_opt_output": log_name + "_qchem_optimization.out",
+        "qchem_freq_output": log_name + "_qchem_frequencies.out"
     }
 
     if "optimized_geometry" in config["files"]:

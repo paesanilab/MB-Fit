@@ -14,8 +14,8 @@ unoptimized_geometry =  h2o.xyz     | the .xyz file containing the starting geom
 name =                  h2o         | the name used in the output files
 # OPTIONAL: default value = the unoptimized_geometry filename up until the first underscore, not including .xyz
 
-log_path =              outputs/    | the path to output all produced files
-# OPTIONAL: default value = outputs/
+log_path =              outputs     | the directory to output all produced files
+# OPTIONAL: default value = outputs
 
 optimize =              true        | whether or not to optimize the geometry.
 # OPTIONAL: default value = true

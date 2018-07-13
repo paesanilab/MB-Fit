@@ -79,9 +79,9 @@ def frequencies(infile_name, outfile_name, charge, multiplicity, opt_geo_file, m
                 if found:
                     if "Mode:" in line:
                         num_modes = len(line.split())-1
-                        frequencies = next(outfile).split()[1:]
+                        frequencies = list(map(lambda x: float(x), next(outfile).split()[1:]))
                         next(outfile)
-                        red_masses = next(outfile).split()[2:]
+                        red_masses = list(map(lambda x: float(x), next(outfile).split()[2:]))
                         next(outfile)
                         next(outfile)
                         next(outfile)
@@ -89,6 +89,9 @@ def frequencies(infile_name, outfile_name, charge, multiplicity, opt_geo_file, m
                         for atom in range(num_atoms):
                             modes_of_atom = list(filter(lambda x: x.strip(), next(outfile).split("   ")))[1:]
                             modes_of_atom = list(map(lambda x: x.split(), modes_of_atom))
+                            for x in modes_of_atom:
+                                for y in x:
+                                    y = float(y)
                             modes_of_each_atom.append(modes_of_atom)  
                         for mode in range(num_modes):
                             array = np.zeros((num_atoms, 3))

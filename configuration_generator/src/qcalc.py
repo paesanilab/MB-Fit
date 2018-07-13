@@ -11,8 +11,9 @@ supported_programs = ['psi4', 'qchem']
 
 def init(config, log_name):
     verify_program(config)
-        
-    psi4_helper.init(config, log_name)
+    
+    if config['config_generator']['code'] == 'psi4':
+        psi4_helper.init(config, log_name)
 
 def verify_program(config):
     if config['config_generator']['code'] not in supported_programs:
@@ -31,7 +32,8 @@ def psi4optimize(molecule, config):
 
 def qchemoptimize(filenames, config):
     verify_program(config)
-    qchem_helper.optimize(filenames['qchem_opt_input'], filenames['qchem_opt_output'], config['molecule']['charges'], config['molecule']['spins'], config['files']['unoptimized_geometry'], config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
+    energy, molecule = qchem_helper.optimize(filenames['qchem_opt_input'], filenames['qchem_opt_output'], config['molecule']['charges'], config['molecule']['spins'], config['files']['unoptimized_geometry'], config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
+    return energy, molecule
     
         
 def psi4frequencies(molecule, config):

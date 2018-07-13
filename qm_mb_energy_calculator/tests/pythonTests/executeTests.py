@@ -1,9 +1,11 @@
 import unittest
 import testMolecule
 import sys
+sys.path.insert(0, "./monomers")
+import testMonomers
 
 # declare test suite of all tests
-suite = unittest.TestSuite([testMolecule.suite])
+suite = unittest.TestSuite([testMolecule.suite, testMonomers.suite])
 
 # execute the test suite
 result = unittest.TextTestRunner(verbosity=2).run(suite)

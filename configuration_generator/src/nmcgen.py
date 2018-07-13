@@ -34,7 +34,7 @@ with open(config['files']['input_geometry'], 'r') as input_file:
     molecule = Molecule(input_file.read())
 
 # Step 1
-if 'optimize' not in config['files'] or config['files'].getboolean('optimize'):
+if config['config_generator'].getboolean('optimize'):
     molecule, energy = qcalc.optimize(molecule, config)
     
     output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])

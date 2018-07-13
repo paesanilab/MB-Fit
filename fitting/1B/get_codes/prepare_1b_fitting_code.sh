@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]; then
+if [ $# -ne 2 ]; then
   echo "USAGE: $0 <arg1> <arg2>"
   echo "Arg 1 is the absolute path to the .in file used to generate the polynomials"
   echo "Arg 2 is the path to the folder were the poly*.cpp files are."
@@ -8,13 +8,13 @@ if [ $# -ne 3 ]; then
 fi
 
 INPUT=$1
-POLY_CPP_PATH=../polynomial_generation
+POLY_CPP_PATH=/server-home1/ebullvul/potential_fitting/projects/CO2/poly
 PYTHON_SCRIPT=get-1b-fit.py
-PYTHON_SCRIPT_PATH=$(which $PYTHON_SCRIPT)
-TEMPLATE_PATH=${PYTHON_SCRIPT_PATH/get-1b-fit.py/template}
+PYTHON_SCRIPT_PATH=/server-home1/ebullvul/potential_fitting/fitting/1B/get_codes
+TEMPLATE_PATH=$PYTHON_SCRIPT_PATH/template
 
 # Getting the system name
-FNAME=$(basename "${INPUT}")
+FNAME=$(basename "${INPUT}" .in)
 
 cp $1 .
 cp $POLY_CPP_PATH/poly-direct.cpp .
@@ -44,7 +44,7 @@ mv tmp poly_1b_${FNAME}_v1.cpp
 echo "Executing python generator script"
 
 # Execute python script
-python3 $PYTHON_SCRIPT_PATH $INPUT poly-direct.cpp ../config.ini
+python3 $PYTHON_SCRIPT_PATH/$PYTHON_SCRIPT $INPUT poly-direct.cpp ../config.ini
 mv ../config.initmp ../config.ini
 
 # Copy the rest of the files

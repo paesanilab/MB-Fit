@@ -76,7 +76,7 @@ def get_nmer_energies(molecule, config):
         # for each combination of size n...
         for combination in size_n_combinations:
             # calculate the energy of this set of fragments
-            energy = calculator.calc_energy(molecule, combination, config)
+            energy = calculator.calculate_energy(molecule, combination, config["model"]["method"] + "/" + config["model"]["basis"], config["model"].getboolean("cp"), config)
 
             # TODO: unused?
             energy_str += str(energy) + " "

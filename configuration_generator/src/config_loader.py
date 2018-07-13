@@ -15,14 +15,15 @@ def load():
 
     # Config Default Values
     config.read_dict({
-        'files':            {'output_path': 'outputs/'},
-        'molecule':         {'charge': '0',
-                             'multiplicity': '1'},
+        'files':            {'log_path': 'outputs/',
+                             'optimize': 'true'},
+        'molecule':         {'charges': '0',
+                             'spins': '1'},
         'config_generator': {'random': 'P',
                              'geometric': 'false',
-                             'linear': 'true'},
-        'program':          {'code': 'psi4',
-                             'memory': '1GB',
+                             'linear': 'true', 
+                             'code': 'psi4'},
+        'psi4':             {'memory': '1GB',
                              'num_threads': '1'}
     })
 
@@ -46,12 +47,12 @@ def process_files(config):
     if 'name' in config['files']:
         name = config['files']['name']
 
-    output_id = name + "_" + config['program']['code'] + "_" + config['model']['method'] + "_" + config['model']['basis']
-    log_name = config['files']['output_path'] + output_id
+    output_id = name + "_" + config['config_generator']['code'] + "_" + config['config_generator']['method'] + "_" + config['config_generator']['basis']
+    log_name = config['files']['log_path'] + "/" + output_id
 
     filenames = {
         "input_geometry": input_geo_fn,
-        "optimized_geometry": log_name + "_optimized.xyz",
+        "optimized_geometry": output_id + "_optimized.xyz",
         "normal_modes": log_name + "_normalmodes.dat",
         "gcn_input": log_name + "_gcn.inp",
         "gcn_output": log_name + "_gcn.out",
@@ -61,5 +62,11 @@ def process_files(config):
         "qchem_opt_output": log_name + "_qchem_optimization.out"
         "qchem_freq_output": log_name + "_qchem_frequencies.outp"
     }
+
+    if "optimized_geometry" in config["files"]:
+        filenames["optimized_geometry"] = config["files"]["optimized_geometry"]
+
+    if "xyz_files" in config["files"]:
+        filenames["norm_config"] = config["files"]["xyz_files"] + "/" + output_id + "_configs.xyz"
     
     return filenames, log_name

@@ -15,13 +15,13 @@ def init(config, log_name):
     psi4_helper.init(config, log_name)
 
 def verify_program(config):
-    if config['program']['code'] not in supported_programs:
-        raise ValueError(config['program']['code'] + " is not the name of a supported program")
+    if config['config_generator']['code'] not in supported_programs:
+        raise ValueError(config['config_generator']['code'] + " is not the name of a supported program")
         
 def psi4optimize(molecule, config):
     verify_program(config)
     
-    psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charge'], config['molecule']['multiplicity'])
+    psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charges'], config['molecule']['spins'])
     
     psi4_molecule, energy = psi4_helper.optimize(psi4_molecule, config)
          
@@ -31,17 +31,17 @@ def psi4optimize(molecule, config):
 
 def qchemoptimize(filenames, config):
     verify_program(config)
-    qchem_helper.optimize(filenames['qchem_opt_input'], filenames['qchem_opt_output'], config['molecule']['charge'], config['molecule']['multiplicity'], config['files']['input_geometry_path'], config['model']['method'], config['model']['basis'], config['model']['ecp'])
+    qchem_helper.optimize(filenames['qchem_opt_input'], filenames['qchem_opt_output'], config['molecule']['charges'], config['molecule']['spins'], config['files']['unoptimized_geometry'], config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     
         
 def psi4frequencies(molecule, config):
     verify_program(config)
     
-    psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charge'], config['molecule']['multiplicity'])
+    psi4_molecule = psi4_helper.psi4_mol(molecule, config['molecule']['charges'], config['molecule']['spins'])
     
     return psi4_helper.frequencies(psi4_molecule, config)
 
 def qchemfrequencies(filenames, config):
     verify_program(config)
-    return qchem_helper.frequencies(filenames["qchem_freq_input"], filenames["qchem_freq_output"], config['molecule']['charge'], config['molecule']['multiplicity'], filenames['optimized_geometry'], config['model']['method'], config['model']['basis'], config['model']['ecp'])
+    return qchem_helper.frequencies(filenames["qchem_freq_input"], filenames["qchem_freq_output"], config['molecule']['charges'], config['molecule']['spins'], filenames['optimized_geometry'], config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     

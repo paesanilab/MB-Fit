@@ -30,18 +30,19 @@ filenames, log_name = config_loader.process_files(config)
   
 qcalc.init(config, log_name)
 
-with open(config['files']['input_geometry'], 'r') as input_file:
+with open(config['files']['unoptimized_geometry'], 'r') as input_file:
     molecule = Molecule(input_file.read())
 
 # Step 1
 if 'optimize' not in config['files'] or config['files'].getboolean('optimize'):
-    if config['program']['code'] == 'psi4':    
+    if config['config_generator']['code'] == 'psi4':    
         molecule, energy = qcalc.psi4optimize(molecule, config)
         
         output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
-    elif config['program']['code'] == 'qchem':
+    elif config['config_generator']['code'] == 'qchem':
         energy, geometry_list = qcalc.qchemoptimize(filenames, config)
         output_writer.qchem_write_optimized_geo(geometry_list, energy, filenames['optimized_geometry'])
+
 else:
     print("Optimized geometry already provided, skipping optimization.\n")
     
@@ -52,7 +53,7 @@ else:
 
 # Step 2
 if 'input_normal_modes' not in config['files']:
-    if config['program']['code'] == 'psi4':     
+    if config['config_generator']['code'] == 'psi4':     
         normal_modes, frequencies, red_masses = qcalc.psi4frequencies(molecule, config)
         dim_null = 3 * molecule.num_atoms - len(normal_modes)
     elif config['program']['code'] == 'qchem':

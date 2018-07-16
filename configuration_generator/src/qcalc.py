@@ -31,7 +31,7 @@ def optimize(molecule, filenames, config):
     
     elif config['config_generator']['code'] == 'qchem':
         verify_program(config)
-        energy, qchem_mol = qchem_helper.optimize(filenames['qchem_opt_input'], filenames['qchem_opt_output'], config['molecule']['charges'], config['molecule']['spins'], molecule, config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
+        energy, qchem_mol = qchem_helper.optimize(molecule, filenames, config)
         molecule = qchem_helper.read_qchem_mol(qchem_mol, molecule.num_atoms)
         return molecule, energy
 
@@ -45,5 +45,5 @@ def frequencies(molecule, filenames, config):
         return psi4_helper.frequencies(psi4_molecule, config)
 
     elif config['config_generator']['code'] == 'qchem':  
-        return qchem_helper.frequencies(filenames["qchem_freq_input"], filenames["qchem_freq_output"], config['molecule']['charges'], config['molecule']['spins'], molecule, config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
+        return qchem_helper.frequencies(molecule, filenames, config)
 

@@ -9,7 +9,7 @@ The driver script can be run from the command line with a single positional inpu
 **Configuration file format:**
 ```
 [files]
-unoptimized_geometry =  h2o.xyz     | the .xyz file containing the starting geometry
+input_geometry =        h2o.xyz     | the .xyz file containing the starting geometry
 
 name =                  h2o         | the name used in the output files
 # OPTIONAL: default value = the unoptimized_geometry filename up until the first underscore, not including .xyz

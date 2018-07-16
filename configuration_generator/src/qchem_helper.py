@@ -25,21 +25,22 @@ def write_qchem_input(file_name, charge, multiplicity, molecule, jobtype, method
     f.close()
 
 #Uses the method defined above to create a QChem input file, then runs QChem, parses the file to look for the optimized geometry using keywords, and returns the energy as well as a list containing the lines of the optimized geometry in the output file
-def optimize(infile_name, outfile_name, charge, multiplicity, molecule, method, basis, ecp):
+def optimize(molecule, filenames, config):
     #Write the inputfile and call QChem    
-    write_qchem_input(infile_name, charge, multiplicity, molecule, 'opt', method, basis, ecp)
+    write_qchem_input(filenames['qchem_opt_input'], config['molecule']['charges'], config['molecule']['spins'], molecule, 'opt', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     print("Optimizing geometry...")    
     subprocess.call("qchem %s %s" % (infile_name, outfile_name))
     
     found = False
     #found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
     qchem_mol = []
-    with open(outfile_name, "r") as outfile:
+    with open(filenames['qchem_opt_output'], "r") as outfile:
         for line in outfile:
             if found:
                 if "ATOM" in line:
                     for i in range(molecule.num_atoms):
                         qchem_mol.append(next(outfile))
+                        #Returns a list containing the lines with the optimized geometry coordinates
                     return e, qchem_mol
             elif "Final energy is" in line:
                 e = line.split()[3]                
@@ -51,15 +52,15 @@ def read_qchem_mol(qchem_mol, num_atoms, au_conversion = 1.0):
         molecule += line[9:] + "\n"
     return Molecule(molecule, au_conversion = 1.0)
 
-def frequencies(infile_name, outfile_name, charge, multiplicity, optimized_molecule, method, basis, ecp):
-    write_qchem_input(infile_name, charge, multiplicity, optimized_molecule, 'freq', method, basis, ecp)
+def frequencies(optimized_molecule, filenames, config):
+    write_qchem_input(filenames['qchem_freq_input'], config['molecule']['charges'], config['molecule']['spins'], optimized_molecule, 'freq', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     print("Determining normal modes and running frequency analysis...")    
-    subprocess.call("qchem %s %s" % (infile_name, outfile_name))
+    subprocess.call("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']))
     found = False
     modes_of_each_atom = []
     #modes_of_each_atom is a list that contains the mode of each atom line by line; it is not in the desired output format and is an intermediate step into getting the desired format
     normal_modes = []
-    with open(outfile_name, "r") as outfile:
+    with open(filenames['qchem_freq_output'], "r") as outfile:
         for line in outfile:
             if found:
                 if "Mode:" in line:
@@ -87,8 +88,8 @@ def frequencies(infile_name, outfile_name, charge, multiplicity, optimized_molec
                         modes_of_each_atom.append(modes_of_atom) 
                     #Creates an empty array and then fills it in to list out each normal mode 
                     for mode in range(num_modes):
-                        array = np.zeros((molecule.num_atoms, 3))
-                        for atom in range(molecule.num_atoms):
+                        array = np.zeros((optimized_molecule.num_atoms, 3))
+                        for atom in range(optimized_molecule.num_atoms):
                             array[atom]=modes_of_each_atom[atom][mode]
                         normal_modes.append(array)
                     return normal_modes, frequencies, red_masses

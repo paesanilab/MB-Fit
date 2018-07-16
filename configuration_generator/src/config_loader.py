@@ -33,7 +33,7 @@ def load():
     
 def process_files(config):
     # filenames
-    input_geo_fn = config['files']['unoptimized_geometry']
+    input_geo_fn = config['files']['input_geometry']
 
     if input_geo_fn.endswith('.xyz'):
         slash_split = input_geo_fn.split("/")

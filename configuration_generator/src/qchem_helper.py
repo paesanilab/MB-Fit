@@ -8,28 +8,29 @@ from molecule import Molecule
 #Creates and writes an input file in the format for QChem
 def write_qchem_input(file_name, charge, multiplicity, molecule, jobtype, method, basis, ecp):
 
-    #$molecule section        
-    f.write("$molecule\n")
-    f.write("{} {}\n".format(charge, multiplicity))
-    f.write(str(molecule))
-    f.write("$end\n")
-    f.write("\n")
+    with open(file_name, 'w') as f:
+        #$molecule section        
+        f.write("$molecule\n")
+        f.write("{} {}\n".format(charge, multiplicity))
+        f.write(str(molecule))
+        f.write("$end\n")
+        f.write("\n")
 
-    #$rem variables
-    f.write("$rem\n")
-    f.write("jobtype " + jobtype + "\n")
-    f.write("method " + method + "\n")
-    f.write("basis " + basis + "\n")
-    f.write("ecp " + ecp + "\n")
-    f.write("$end\n")
-    f.close()
+        #$rem variables
+        f.write("$rem\n")
+        f.write("jobtype " + jobtype + "\n")
+        f.write("method " + method + "\n")
+        f.write("basis " + basis + "\n")
+        f.write("ecp " + ecp + "\n")
+        f.write("$end\n")
+        f.close()
 
 #Uses the method defined above to create a QChem input file, then runs QChem, parses the file to look for the optimized geometry using keywords, and returns the energy as well as a list containing the lines of the optimized geometry in the output file
 def optimize(molecule, filenames, config):
     #Write the inputfile and call QChem    
     write_qchem_input(filenames['qchem_opt_input'], config['molecule']['charges'], config['molecule']['spins'], molecule, 'opt', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     print("Optimizing geometry...")    
-    subprocess.call("qchem %s %s" % (infile_name, outfile_name))
+    subprocess.run("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']), shell = True)
     
     found = False
     #found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
@@ -41,7 +42,7 @@ def optimize(molecule, filenames, config):
                     for i in range(molecule.num_atoms):
                         qchem_mol.append(next(outfile))
                         #Returns a list containing the lines with the optimized geometry coordinates
-                    return e, qchem_mol
+                    return float(e), qchem_mol
             elif "Final energy is" in line:
                 e = line.split()[3]                
                 found = True
@@ -49,13 +50,13 @@ def optimize(molecule, filenames, config):
 def read_qchem_mol(qchem_mol, num_atoms, au_conversion = 1.0):
     molecule = """\n\n"""
     for line in qchem_mol:
-        molecule += line[9:] + "\n"
+        molecule += line[9:]
     return Molecule(molecule, au_conversion = 1.0)
 
 def frequencies(optimized_molecule, filenames, config):
     write_qchem_input(filenames['qchem_freq_input'], config['molecule']['charges'], config['molecule']['spins'], optimized_molecule, 'freq', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     print("Determining normal modes and running frequency analysis...")    
-    subprocess.call("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']))
+    subprocess.run("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']), shell = True)
     found = False
     modes_of_each_atom = []
     #modes_of_each_atom is a list that contains the mode of each atom line by line; it is not in the desired output format and is an intermediate step into getting the desired format
@@ -95,6 +96,6 @@ def frequencies(optimized_molecule, filenames, config):
                     return normal_modes, frequencies, red_masses
                  
                 #Uses "INFRARED INTENSITIES (KM/MOL)" as a keyword to find where the normal modes are                      
-                elif "INFRARED INTENSITIES (KM/MOL)" in line:
-                    found = True
+            elif "INFRARED INTENSITIES (KM/MOL)" in line:
+                found = True
                 

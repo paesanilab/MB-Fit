@@ -15,11 +15,11 @@ def load():
 
     # Config Default Values
     config.read_dict({
-        'files':            {'log_path': 'outputs',
-                             'optimize': 'true'},
+        'files':            {'log_path': 'outputs'},
         'molecule':         {'charges': '0',
                              'spins': '1'},
-        'config_generator': {'random': 'P',
+        'config_generator': {'optimize': 'true',
+                             'random': 'P',
                              'geometric': 'false',
                              'linear': 'true', 
                              'code': 'psi4'},

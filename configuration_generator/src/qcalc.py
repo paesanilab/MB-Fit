@@ -30,7 +30,6 @@ def optimize(molecule, filenames, config):
         return molecule, energy
     
     elif config['config_generator']['code'] == 'qchem':
-        verify_program(config)
         energy, qchem_mol = qchem_helper.optimize(molecule, filenames, config)
         molecule = qchem_helper.read_qchem_mol(qchem_mol, molecule.num_atoms)
         return molecule, energy

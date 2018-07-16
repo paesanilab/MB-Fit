@@ -25,19 +25,6 @@ def write_optimized_geo(molecule, energy, optimized_geometry_fn):
                 
                 opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
 
-def qchem_write_optimized_geo(geometry_list, energy, optimized_geometry_fn):
-    with open(optimized_geometry_fn, 'w+') as opt_geo_file:
-    #Using 'w+' instead of 'w' creates the file if it doesn't exist -- add to write_optimized_geo?
-        opt_geo_file.write(str(len(geometry_list))+ "\n")
-        opt_geo_file.write(energy_formatter.format(float(energy)) + "\n")    
-        for i in range(len(geometry_list)):
-            atom, x, y, z = geometry_list[i].split()[1:]
-
-            x = filter_neg_zero(opt_formatter.format(float(x)), 6) 
-            y = filter_neg_zero(opt_formatter.format(float(y)), 6) 
-            z = filter_neg_zero(opt_formatter.format(float(z)), 6) 
-                
-            opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
 
 def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_fn):
     normal_out = ""

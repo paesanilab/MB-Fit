@@ -30,19 +30,14 @@ filenames, log_name = config_loader.process_files(config)
   
 qcalc.init(config, log_name)
 
-with open(config['files']['unoptimized_geometry'], 'r') as input_file:
-    if config['config_generator']['code'] == 'psi4':   
-        molecule = Molecule(input_file.read())
+with open(config['files']['unoptimized_geometry'], 'r') as input_file: 
+    molecule = Molecule(input_file.read())
 
 # Step 1
-if 'optimize' not in config['files'] or config['files'].getboolean('optimize'):
-    if config['config_generator']['code'] == 'psi4':    
-        molecule, energy = qcalc.psi4optimize(molecule, config)
+if config['config_generator'].getboolean('optimize'):  
+    molecule, energy = qcalc.optimize(molecule, filenames, config)
         
-        output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
-    elif config['config_generator']['code'] == 'qchem':
-        energy, geometry_list = qcalc.qchemoptimize(filenames, config)
-        output_writer.qchem_write_optimized_geo(geometry_list, energy, filenames['optimized_geometry'])
+    output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
 
 else:
     print("Optimized geometry already provided, skipping optimization.\n")
@@ -54,15 +49,13 @@ else:
 
 # Step 2
 if 'input_normal_modes' not in config['files']:
-    if config['config_generator']['code'] == 'psi4':     
-        normal_modes, frequencies, red_masses = qcalc.psi4frequencies(molecule, config)
-        num_atoms = molecule.num_atoms
-        dim_null = 3 * num_atoms - len(normal_modes)
-    elif config['config_generator']['code'] == 'qchem':
-        normal_modes, frequencies, red_masses, num_atoms = qcalc.qchemfrequencies(filenames, config)
-        dim_null = 3 * num_atoms - len(normal_modes)
+    
+    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, filenames, config)
+    num_atoms = molecule.num_atoms
+    dim_null = 3 * num_atoms - len(normal_modes)    
     
     output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
+
 else:
     print("Normal modes already provided, skipping frequency calculation.\n")
     

@@ -1,34 +1,17 @@
-import os
-import sys
+# qchem_helper
+# @author April
+
+import subprocess
 import numpy as np
-
-#Gets the number of atoms by checking the first non-empty line
-def get_natoms(xyzfile):
-    with open(xyzfile, 'r') as f:
-        for line in f:
-            if line.strip():        
-                natoms = line
-                return int(natoms)
-
-def get_coordinates(xyzfile):
-    coordinates = """"""    
-    with open(xyzfile, 'r') as f:
-        coords_list = f.readlines()[2:]
-    for coord in coords_list:
-        coordinates += coord
-    return coordinates
+from molecule import Molecule
         
 #Creates and writes an input file in the format for QChem
-def write_qchem_input(file_name, charge, multiplicity, xyzfile, jobtype, method, basis, ecp):
-    if ".inp" in file_name or ".in" in file_name:
-        f = open(file_name, "w+")
-    else:
-        f = open(file_name+".inp", "w+")
+def write_qchem_input(file_name, charge, multiplicity, molecule, jobtype, method, basis, ecp):
 
     #$molecule section        
     f.write("$molecule\n")
     f.write("{} {}\n".format(charge, multiplicity))
-    f.write(get_coordinates(xyzfile))
+    f.write(str(molecule))
     f.write("$end\n")
     f.write("\n")
 
@@ -42,64 +25,75 @@ def write_qchem_input(file_name, charge, multiplicity, xyzfile, jobtype, method,
     f.close()
 
 #Uses the method defined above to create a QChem input file, then runs QChem, parses the file to look for the optimized geometry using keywords, and returns the energy as well as a list containing the lines of the optimized geometry in the output file
-def optimize(infile_name, outfile_name, charge, multiplicity, xyzfile, method, basis, ecp):
+def optimize(infile_name, outfile_name, charge, multiplicity, molecule, method, basis, ecp):
     #Write the inputfile and call QChem    
-    write_qchem_input(infile_name, charge, multiplicity, xyzfile, 'opt', method, basis, ecp)
-    os.system("qchem %s %s" % (infile_name, outfile_name))
+    write_qchem_input(infile_name, charge, multiplicity, molecule, 'opt', method, basis, ecp)
+    print("Optimizing geometry...")    
+    subprocess.call("qchem %s %s" % (infile_name, outfile_name))
     
     found = False
     #found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
-    parse = True
-    molecule = []
+    qchem_mol = []
     with open(outfile_name, "r") as outfile:
         for line in outfile:
-            if parse:
-                if found:
-                    if "ATOM" in line:
-                        for i in range(3):
-                            molecule.append(next(outfile))
-                        parse = False
-                elif "Final energy is" in line:
-                    e = line.split()[3]                
-                    found = True
-    return e, molecule
-                
-def frequencies(infile_name, outfile_name, charge, multiplicity, opt_geo_file, method, basis, ecp):
-    write_qchem_input(infile_name, charge, multiplicity, opt_geo_file, 'freq', method, basis, ecp)
-    os.system("qchem %s %s" % (infile_name, outfile_name))
+            if found:
+                if "ATOM" in line:
+                    for i in range(molecule.num_atoms):
+                        qchem_mol.append(next(outfile))
+                    return e, qchem_mol
+            elif "Final energy is" in line:
+                e = line.split()[3]                
+                found = True
+
+def read_qchem_mol(qchem_mol, num_atoms, au_conversion = 1.0):
+    molecule = """\n\n"""
+    for line in qchem_mol:
+        molecule += line[9:] + "\n"
+    return Molecule(molecule, au_conversion = 1.0)
+
+def frequencies(infile_name, outfile_name, charge, multiplicity, optimized_molecule, method, basis, ecp):
+    write_qchem_input(infile_name, charge, multiplicity, optimized_molecule, 'freq', method, basis, ecp)
+    print("Determining normal modes and running frequency analysis...")    
+    subprocess.call("qchem %s %s" % (infile_name, outfile_name))
     found = False
-    parse = True
-    num_atoms = get_natoms(opt_geo_file)
     modes_of_each_atom = []
     #modes_of_each_atom is a list that contains the mode of each atom line by line; it is not in the desired output format and is an intermediate step into getting the desired format
     normal_modes = []
     with open(outfile_name, "r") as outfile:
         for line in outfile:
-            if parse:
-                if found:
-                    if "Mode:" in line:
-                        num_modes = len(line.split())-1
-                        frequencies = list(map(lambda x: float(x), next(outfile).split()[1:]))
+            if found:
+                if "Mode:" in line:
+                    #Extracts the number of modes from the line with 'Mode: 1, 2, 3..'                        
+                    num_modes = len(line.split())-1
+                    #Extracts the frequencies from the line after
+                    frequencies = list(map(lambda x: float(x), next(outfile).split()[1:]))
+                    next(outfile)
+                    #Extracts the reduced masses from the line 2 lines after
+                    red_masses = list(map(lambda x: float(x), next(outfile).split()[2:]))
+                    for i in range(4):
                         next(outfile)
-                        red_masses = list(map(lambda x: float(x), next(outfile).split()[2:]))
-                        next(outfile)
-                        next(outfile)
-                        next(outfile)
-                        next(outfile)
-                        for atom in range(num_atoms):
-                            modes_of_atom = list(filter(lambda x: x.strip(), next(outfile).split("   ")))[1:]
-                            modes_of_atom = list(map(lambda x: x.split(), modes_of_atom))
-                            for x in modes_of_atom:
-                                for y in x:
-                                    y = float(y)
-                            modes_of_each_atom.append(modes_of_atom)  
-                        for mode in range(num_modes):
-                            array = np.zeros((num_atoms, 3))
-                            for atom in range(num_atoms):
-                                array[atom]=modes_of_each_atom[atom][mode]
-                            normal_modes.append(array)
-                        return normal_modes, frequencies, red_masses, num_atoms
-                                       
+                    #Gets the normal modes from the lines 4 lines after
+                    for atom in range(optimized_molecule.num_atoms):
+                        #Each line is split into a list modes_of_atom, containing the x y z coordinate of each normal mode of the element in order.
+                        #strip() removes all the strings containing only spaces in the .split() list. The [1:] removes the element name and returns only the normal modes
+                        modes_of_atom = list(filter(lambda x: x.strip(), next(outfile).split("   ")))[1:]
+                        #Each normal mode, originally in a string, is split into a list [x, y, z]
+                        modes_of_atom = list(map(lambda x: x.split(), modes_of_atom))
+                        #Converts the normal mode coordinates from string to float
+                        for x in modes_of_atom:
+                            for y in x:
+                                y = float(y)
+                        #This list of the normal modes of 1 atom, modes_of_atom, is appended to a larger list modes_of_each_atom
+                        modes_of_each_atom.append(modes_of_atom) 
+                    #Creates an empty array and then fills it in to list out each normal mode 
+                    for mode in range(num_modes):
+                        array = np.zeros((molecule.num_atoms, 3))
+                        for atom in range(molecule.num_atoms):
+                            array[atom]=modes_of_each_atom[atom][mode]
+                        normal_modes.append(array)
+                    return normal_modes, frequencies, red_masses
+                 
+                #Uses "INFRARED INTENSITIES (KM/MOL)" as a keyword to find where the normal modes are                      
                 elif "INFRARED INTENSITIES (KM/MOL)" in line:
                     found = True
                 

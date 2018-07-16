@@ -17,9 +17,6 @@ name =                  h2o         | the name used in the output files
 log_path =              outputs     | the directory to output all produced files
 # OPTIONAL: default value = outputs
 
-optimize =              true        | whether or not to optimize the geometry.
-# OPTIONAL: default value = true
-
 input_normal_modes = h2o_normal.dat | the path to the normal modes (in gcn format) to use for calculations. if provided, frequency calculation will be skipped
 # OPTIONAL: default value = None (as in do the frequency calculation)
 
@@ -31,6 +28,9 @@ spins =                  1          | the spin multiplicity of the molecule
 # OPTIONAL: default value = 1
 
 [config_generator]
+optimize =              true        | whether or not to optimize the geometry.
+# OPTIONAL: default value = true
+
 random =                P           | whether a Q(uasirandom) or P(suedorandom) sequence is to be used
 # OPTIONAL: default value = P
 

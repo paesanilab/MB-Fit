@@ -6,7 +6,7 @@ def generate_input_poly(settings):
     """
     Generates the input for the polynomial generator
 
-    Will be file with name like A1B2C2.in, etc
+    Will be file with name like A1B2C2.in, etc as specified in the settings file
     """
 
     # create configparser
@@ -16,6 +16,7 @@ def generate_input_poly(settings):
     # get the string representation of the molecule by getting the A1B2C2, etc part of the name
     molecule = os.path.splitext(config["files"]["poly_in_path"])[-2]
 
+    # file will be automatically closed after block by with open as ... syntax
     with open(config["files"]["poly_in_path"], "w") as poly_in_file:
         # split along _ to seperate fragments
         number_of_fragments = len(molecule.split('_'))
@@ -39,55 +40,105 @@ def generate_input_poly(settings):
             # add types list to list of types lists
             types_list.append(types)
 
-        # loop thru each type list and generate each fragment's "set"
+        # loop thru each type list and generate each fragment's set of uniquely named atoms
         sets_list = []
+
+        # starts at 97 ('a') for first fragment, incremeneted for each fragment
         letter = 97
         for types in types_list:
             frag_set = []
+            
+            # loop thru every other character in types, get the letters (A, B, C) but not numbers (1, 2, 3)
             for i in range(0, len(types), 2):
-                n = 1
-                if (int(types[i + 1]) == 1):
-                    if not types[i] in virtual_sites:
-                        frag_set.append(types[i] + '_' +  '_' + chr(letter))
-                else:
-                    for j in range(int(types[i + 1])):
-                        if not types[i] in virtual_sites:
-                            frag_set.append(types[i] + '_' + str(n) + '_' + chr(letter))
-                            n = n + 1
 
+                # check if there is only one of this atom in this fragment by looking at the character after the letter, which is a number signifying how many of that atom are in this fragment
+                if (int(types[i + 1]) == 1):
+
+                    # check if this atom is not a virtual site
+                    if not types[i] in virtual_sites:
+
+                        # add it to the fragment's set without a number in format A__a
+                        frag_set.append(types[i] + '_' +  '_' + chr(letter))
+
+                # otherwise there is more than one of this atom in this fragment
+                else:
+
+                    # counter to count how many of this atom are in the fragment
+                    num_atoms = 1
+
+                    # loop thru as many atoms as there are of this type in this fragment
+                    for j in range(int(types[i + 1])):
+                        
+                        # check if this atom is not a virtual sight
+                        if not types[i] in virtual_sites:
+
+                            # add it to the fragment's set with a number in format A_1_a
+                            frag_set.append(types[i] + '_' + str(num_atoms) + '_' + chr(letter))
+                            num_atoms += 1
+
+            # loop thru every character in types again, this time to look for virtual sites
             for i in range(0, len(types), 2):
-                n = 1
-                for j in range(int(types[i + 1])):
-                    if types[i] in virtual_sites:
-                        frag_set.append(types[i] + '_' + str(n) + '_' + chr(letter))
-                        n = n + 1
+
+                # counter to count how many of this virtual site are in the fragment
+                num_atoms = 1
+
+                # check if atom is a virtual site
+                if types[i] in virtual_sites:
+
+                    # look one character ahead to see how many of these virtual sites are in the fragment
+                    for j in range(int(types[i + 1])):
+
+                        # add virtual site to set in format X_1_a
+                        frag_set.append(types[i] + '_' + str(num_atoms) + '_' + chr(letter))
+                        num_atoms += 1
+
             # add this fragment's set to list of sets
             sets_list.append(frag_set)
+
+            # increment the letter, so next fragment has next lowercase letter alphabetically
             letter += 1
-    
+
         # write new line to file
         poly_in_file.write('\n')
         
         # loop thru each fragment and write its variables to the file
         for frag_set in sets_list:
+
+            # loop thru every combination of atoms in this fragment
             for i in range(0, len(frag_set) - 1):
                 for j in range(i + 1, len(frag_set)):
-                    ti = frag_set[i].split('_')
-                    tj = frag_set[j].split('_')
-                    t = ''.join(sorted(ti[0] + tj[0]))
-                    if not ti[0] in virtual_sites and not tj[0] in virtual_sites:
-                        poly_in_file.write("add_variable['" + ti[0] + ti[1] + "', '" + ti[2] + "', '" + tj[0] + tj[1] + "', '" + tj[2] + "', 'x-intra-" + t + "']\n")
+
+                    # split the first atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                    split_atom1 = frag_set[i].split('_')
+                    # split the second atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                    split_atom2 = frag_set[j].split('_')
+
+                    # combine first element of each split atom in alphabetical order to get something like "AA", or "AB"
+                    combined_letters = ''.join(sorted(split_atom1[0] + split_atom2[0]))
+
+                    # check if neither atom is a virtual site
+                    if not split_atom1[0] in virtual_sites and not split_atom2[0] in virtual_sites:
+
+                        # write valiable to file in proper format
+                        poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2] + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-intra-" + combined_letters + "']\n")
         
-        # loop thru every pair of fragments and add variables for interfragmental interactions
+        # loop thru every pair of fragments and add write variables to file for interfragmental interactions
         for frag_set1 in sets_list:
+            # loop thru all frag_set2 that come after frag_set1
             for frag_set2 in sets_list[sets_list.index(frag_set1) + 1:]:
-                
+
+                # loop thru every comination of atoms from the frag_sets
                 for i in range(0,len(frag_set1)):
                     for j in range(0,len(frag_set2)):
-                        ti = frag_set1[i].split('_')
-                        tj = frag_set2[j].split('_')
-                        t = ''.join(sorted(ti[0] + tj[0]))
-                        poly_in_file.write("add_variable['" + ti[0] + ti[1] + "', '" + ti[2] + "', '" + tj[0] + tj[1] + "', '" + tj[2] + "', 'x-" + t + "']\n")
+                        
+                        # split the first atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                        split_atom1 = frag_set1[i].split('_')
+                        # split the second atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                        split_atom2 = frag_set2[j].split('_')
+                        
+                        # combine first element of each split atom in alphabetical order to get something like "AA", or "AB"
+                        combined_letters = ''.join(sorted(split_atom1[0] + split_atom2[0]))
+                        poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2] + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-" + combined_letters + "']\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

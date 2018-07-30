@@ -86,7 +86,7 @@ class Database():
 
             # energies that do not apply to a molecule, due to having less than three fragments, are set to N/A, while all other energies are set to None
             if fragment_count == 3:
-                self.cursor.execute("INSERT INTO Energies (ID, method, basos, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, method, basis, cp, tag))
+                self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, method, basis, cp, tag))
             elif fragment_count == 2:
                 self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'N/A', 'None', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, method, basis, cp, tag))
             elif fragment_count == 1:

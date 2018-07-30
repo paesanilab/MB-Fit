@@ -90,7 +90,7 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     
 
     # file to write logs from psi4 calculation
-    log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" +  str(fragment_indicies) + ".out"
+    log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
     
     # create file's directory if it does not already exist
     if not os.path.exists(os.path.dirname(log_file)):
@@ -189,7 +189,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
 
     # atoms in the molecule
     # might need to add whitespace before each line?
-    qchem_input += molecule.to_xyz(fragment_indicies, cp)
+    qchem_input += molecule.to_xyz(fragment_indicies, cp) + "\n"
 
     qchem_input += "$end\n"
 
@@ -203,7 +203,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
     qchem_input += "$end"
  
     # file to write qchem input in
-    log_file_in = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" +  str(fragment_indicies) + ".in"
+    log_file_in = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".in"
     
     # make sure directory exists prior to writing to file
     if not os.path.exists(os.path.dirname(log_file_in)):
@@ -213,11 +213,20 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
     f.close()
     
     # file to write qchem output in
-    log_file_out = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" +  str(fragment_indicies) + ".out"
-    
+    log_file_out = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
+
     # perform system call to run qchem
-    call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> " + log_file_out])
-    return 0
+    # want to save log stuff rather than put in /dev/null?
+    os.system("qchem " +  log_file_in + " " + log_file_out + " >> /dev/null")
+    
+    # find the energy inside the qchem file output
+    # the with open as syntax automatically closes the file
+    with open(log_file_out) as qchem_out:
+        for line in qchem_out:
+            if line.find("Total energy in the final basis set = ") != -1:
+                return float(line[line.find("Total energy in the final basis set = ") + 39:])
+
+    raise ValueError("Qchem failed to output an energy or this program failed to find the outputted energy")
 
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):
@@ -250,3 +259,12 @@ def En(m, x_, manager):
     energy = Etotal[0]
     return energy
 
+def fragments_to_energy_key(fragments):
+    """
+    Generate a simple string from an array of fragments. [1,2,3] -> E123, [0] -> E0
+    For use in naming of log files
+    """
+    key = "E"
+    for fragment in fragments:
+        key += str(fragment)
+    return key

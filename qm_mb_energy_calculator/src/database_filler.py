@@ -34,7 +34,7 @@ def fill_database(settings, database_name, directory):
     config.read(settings)
     
     for calculation in database.missing_energies():
-        
+
         # calculate the missing energy
         calculation.energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, True if calculation.cp == "True" else False, config)
 

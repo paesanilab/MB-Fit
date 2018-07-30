@@ -117,7 +117,7 @@ class Database():
         tag = row[4]
 
         # this is a messy hardcoding, but essentially it gets an array of the fragments needed to calculate a missing energy
-        fragments = [0] if row[5] == "None" else [1] if row[6] == "None" else [2] if row[7] == "None" else [0,1] if row[8] == "None" else [1,2] if row[9] == "None" else [0,2] if row[10] == "None" else [0,1,2]
+        fragments = [0] if row[5] == "None" else [1] if row[6] == "None" else [2] if row[7] == "None" else [0,1] if row[8] == "None" else [0,2] if row[9] == "None" else [1,2] if row[10] == "None" else [0,1,2]
        
         # retrieve and uncompress the molecule from the Configs table
         self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (ID,))

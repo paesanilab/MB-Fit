@@ -56,7 +56,7 @@ def read_qchem_mol(qchem_mol, num_atoms, au_conversion = 1.0):
 def frequencies(optimized_molecule, filenames, config):
     write_qchem_input(filenames['qchem_freq_input'], config['molecule']['charges'], config['molecule']['spins'], optimized_molecule, 'freq', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
     print("Determining normal modes and running frequency analysis...")    
-    subprocess.run("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']), shell = True)
+    subprocess.run("qchem %s %s" % (filenames['qchem_freq_input'], filenames['qchem_freq_output']), shell = True)
     found = False
     modes_of_each_atom = []
     #modes_of_each_atom is a list that contains the mode of each atom line by line; it is not in the desired output format and is an intermediate step into getting the desired format

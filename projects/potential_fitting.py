@@ -4,7 +4,7 @@ import sys
 import os
 import configparser
 
-def potential_fit(project_directory):
+def potential_fit(project_directory, start_location = 0):
     """
     Runs the whole potential fitting workflow on a project directory
     """
@@ -24,48 +24,49 @@ def potential_fit(project_directory):
 
     # create all required directories
 
-    if not os.path.isdir(config['files']['log_path']):
-        os.mkdir(config['files']['log_path'])
-    if not os.path.isdir(config['files']['xyz_files']):
-        os.mkdir(config['files']['xyz_files'])
-    if not os.path.isdir(config['files']['poly_path']):
-        os.mkdir(config['files']['poly_path'])
-    if not os.path.isdir(config['files']['training_set']):
-        os.mkdir(config['files']['training_set'])
+    if start_location <= 0:
+        if not os.path.isdir(config['files']['log_path']):
+            os.mkdir(config['files']['log_path'])
+        if not os.path.isdir(config['files']['xyz_files']):
+            os.mkdir(config['files']['xyz_files'])
+        if not os.path.isdir(config['files']['poly_path']):
+            os.mkdir(config['files']['poly_path'])
+        if not os.path.isdir(config['files']['training_set']):
+            os.mkdir(config['files']['training_set'])
 
     # Step 1: generate configurations
 
-    generate_configs(project_directory, config)
+    if start_location <= 1:
+        generate_configs(project_directory, config)
 
     # Step 2: initialize database
 
-    initialize_database(project_directory, config)
+    if start_location <= 2:
+        initialize_database(project_directory, config)
 
     # Step 3: fill database
 
-    fill_database(project_directory, config)
+    if start_location <= 3:
+        fill_database(project_directory, config)
 
     # Step 4: create input file for polynomial
 
-    generate_input(project_directory, config)
+    if start_location <= 4:
+        generate_input(project_directory, config)
 
     # Step 5: generate polynomials
 
-    os.chdir(config['files']['poly_path'])
+    if start_location <= 5:
+        os.chdir(config['files']['poly_path'])
+        generate_polynomials(project_directory, config)
+        os.chdir("..")
 
-    generate_polynomials(project_directory, config)
+    # Step 6: generate training set xyz file
 
-    # Step 6: run maple on polynomails
+    if start_location <= 6:
+        generate_training_set(project_directory, config)
 
-    #run_maple(project_directory, config)
-
-    os.chdir("..")
-
-    # Step 7: generate training set xyz file
-
-    generate_training_set(project_directory, config)
-
-    # Step 8: generate fitting code
+    # Step 7: generate fitting code
 
     #os.chdir(config['files']['fit_code'])
 
@@ -135,9 +136,14 @@ def generate_fitting(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../fitting/1B/get_codes/prepare_1b_fitting_code.sh" + config['files']['directory'] + "/" + project_directory + config['files']['poly_in_path'] + " " + config['files']['directory'] + "/" + config['files']['poly_path'])
       
 
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 2:
+        potential_fit(sys.argv[1])
+    elif len(sys.argv) == 3:
+        potential_fit(sys.argv[1], int(sys.argv[2]))
+    else:
         print("Incorrect number of command line arguments")
         print("Usage: python potential_fitting.py <project_directory>")
         exit(1)
-    potential_fit(sys.argv[1])

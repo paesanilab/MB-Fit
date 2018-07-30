@@ -14,6 +14,7 @@ except ImportError:
     print("Psi4 Not available")
     has_psi4 = False
 
+# this is commented because we are not making TensorMol a priority
 '''
 try:
     from TensorMol import *
@@ -51,7 +52,6 @@ def calculate_energy(molecule, fragment_indicies, model, cp, config):
     code = config["energy_calculator"]["code"]
     
     if code == "psi4":
-        # write output to a log file
         return calc_psi4_energy(molecule, fragment_indicies, model, cp, config)
     
     elif code == "TensorMol":
@@ -88,6 +88,8 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
         Calculated Energy.
     """
     
+    if not has_psi4:
+        raise ImportError("psi4 is not avaible to perform energy calculation")
 
     # file to write logs from psi4 calculation
     log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
@@ -217,7 +219,8 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
 
     # perform system call to run qchem
     # want to save log stuff rather than put in /dev/null?
-    os.system("qchem " +  log_file_in + " " + log_file_out + " >> /dev/null")
+    if os.system("qchem " +  log_file_in + " " + log_file_out + " >> /dev/null") != 0:
+        raise ValueError("There was a qchem error. It is possible that qchem is not available on this machine")
     
     # find the energy inside the qchem file output
     # the with open as syntax automatically closes the file

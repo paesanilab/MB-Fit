@@ -97,7 +97,7 @@ def fill_database(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_filler.py settings.ini " + config['files']['database'] + " " + config['files']['xyz_files'])
 
 def generate_input(project_directory, config):
-    os.system("python " + config['files']['directory'] + "/../polynomial_generation/src/generate_input_poly.py " + config['files']['poly_in_path'])
+    os.system("python " + config['files']['directory'] + "/../polynomial_generation/src/generate_input_poly.py settings.ini")
 
 def generate_polynomials(project_directory, config):
     os.system(config['files']['directory'] + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + config['poly_generator']['order'] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_path'] + "/poly.log")

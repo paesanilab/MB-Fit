@@ -35,10 +35,11 @@ def generate_fitting_input(settings, database_name, output_path):
     
     # temporary code only works for 1b
     
-    # find the lowest energy. In future, lowest energy should be energy of optimized geometry, but for now, it is assumed the database contains the optimized geometry (or something close enough)
-    min_energy = molecule_energy_pairs[0][1][0]
-    for molecule_energy_pair in molecule_energy_pairs:
-        min_energy = min_energy if min_energy < molecule_energy_pair[1][0] else molecule_energy_pair[1][0]
+    # find the optimized geometry energy from the database
+    try:
+        opt_energy = database.get_energies("%", "%", "%", "opt")[0][1][0]
+    except IndexError:
+        raise ValueError("No optimized geometry in database. Terminating training set generation") from None
 
     # open output file for writing
     output = open(output_path, "w")
@@ -52,7 +53,7 @@ def generate_fitting_input(settings, database_name, output_path):
         
         # write the energies to the output file
         for energy in energies:
-            output.write(str((float(energy) - float(min_energy)) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energy) - float(opt_energy)) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
         output.write("\n")
 

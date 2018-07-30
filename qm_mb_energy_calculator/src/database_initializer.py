@@ -58,10 +58,18 @@ def initialize_database(settings, database_name, directory):
         f = open(filename, "r")
         # get list of all molecules in file
         molecules = xyz_to_molecules(f, config)
-        # for each molecule in the file
-        for molecule in molecules:
-            # add this molecule to the database
-            database.add_molecule(molecule, method, basis, cp, tag)
+        
+        # if this file contains omptimized geometries, add a special tag
+        if filename[-8:] == ".opt.xyz":
+            # for each molecule in the file
+            for molecule in molecules:
+                # add this molecule to the database
+                database.add_molecule(molecule, method, basis, cp, "opt")
+        else: 
+            # for each molecule in the file
+            for molecule in molecules:
+                # add this molecule to the database
+                database.add_molecule(molecule, method, basis, cp, tag)
 
     database.save()
     database.close()

@@ -103,7 +103,7 @@ class Database():
         """
 
         # find a single row missing at least one energy
-        self.cursor.execute("SELECT * FROM Energies WHERE E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None'")
+        self.cursor.execute("SELECT * FROM Energies WHERE E0='None' OR E1='None' OR E2='None' OR E01='None' OR E02='None' OR E12='None' OR E012='None'")
         row = self.cursor.fetchone()
 
         # if there is no such row, then the database is complete!
@@ -154,12 +154,22 @@ class Database():
 # should probably be changed to a generator once we find a way to store the optimized geometry
     def get_complete_energies(self):
         """
-        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, E12, E02, E012], where N/A energies are left out
+        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, E02, E12, E012], where N/A energies are left out
 
         """
 
-        # get a list of all the rows with completely filled energies
-        self.cursor.execute("SELECT * FROM Energies WHERE NOT (E0='None' OR E1='None' OR E2='None' OR E01='None' OR E12='None' OR E02='None' OR E012='None')")
+        return self.get_energies("%", "%", "%", "%")
+
+    def get_energies(self, method, basis, cp, tag):
+        """
+        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, E02, E12, E012] of molecules in the database with the given
+        method, basis, cp and tag.
+
+        % can be used as a wildcard to stand in for any method, basis, cp, or tag. 
+        """
+        
+        self.cursor.execute("SELECT * FROM Energies WHERE method LIKE '{}' AND basis LIKE '{}' AND cp LIKE '{}' AND tag LIKE '{}' AND NOT (E0='None' OR E1='None' OR E2='None' OR E01='None' OR E02='None' OR E12='None' OR E012='None')".format(method, basis, cp, tag))
+        
         rows = self.cursor.fetchall()
 
         molecule_energy_pairs = []
@@ -188,6 +198,7 @@ class Database():
             molecule_energy_pairs.append([molecule, energies])
 
         return molecule_energy_pairs
+
 
     def get_comparison_energies(self, method1, method2, basis1, basis2, cp1, cp2, energy):
         """

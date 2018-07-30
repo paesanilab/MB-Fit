@@ -87,6 +87,7 @@ called from the command line. So I called everything from the command line for c
 
 def generate_configs(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../configuration_generator/src/nmcgen.py settings.ini")
+    os.system("cp " + config['files']['optimized_geometry'] + " " + config['files']['xyz_files'] + "/config.opt.xyz")
 
 def initialize_database(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_initializer.py settings.ini " + config['files']['database'] + " " + config['files']['xyz_files'])

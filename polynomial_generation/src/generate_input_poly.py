@@ -80,11 +80,7 @@ def generate_input_poly(settings):
         
         # loop thru every pair of fragments and add variables for interfragmental interactions
         for frag_set1 in sets_list:
-            for frag_set2 in sets_list:
-                
-                # if both frag sets are the same, do not generate interfragmental interactions
-                if frag_set1 is frag_set2:
-                    continue
+            for frag_set2 in sets_list[sets_list.index(frag_set1) + 1:]:
                 
                 for i in range(0,len(frag_set1)):
                     for j in range(0,len(frag_set2)):

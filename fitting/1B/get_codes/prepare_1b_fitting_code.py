@@ -31,7 +31,7 @@ def prepare_1b_fitting_code(settings, in_path, poly_path, fit_path):
             if "Total number of terms: " in line:
 
                 # parse number of terms from line
-                number_of_terms = str(line[line.index(":") + 2])
+                number_of_terms = str(line[line.index(":") + 2:])
                 break
 
     # save the old settings file to .tmp so we can restore it later

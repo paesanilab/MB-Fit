@@ -381,6 +381,12 @@ def execute_maple(settings, poly_directory):
 
     os.chdir(poly_directory)
 
+    # clear any old files, because for some reason maple appends to existing files instead of clobbering
+    os.system("rm poly-grd.c")
+    os.system("rm poly-nogrd.c")
+    os.system("rm poly-grd.cpp")
+    os.system("rm poly-nogrd.cpp")
+
     os.system("maple poly-grd.maple")
     os.system("maple poly-nogrd.maple")
 
@@ -435,7 +441,7 @@ def compile_fit_code(settings, fit_directory):
     os.system("make")
     os.chdir(original_dir)
 
-def fit_training_set(settings, fit_code, training_set, fitted_code):
+def fit_training_set(settings, fit_code, training_set, fit_directory, fitted_code):
     """
     Fits the fit code to a given training set
 
@@ -443,13 +449,27 @@ def fit_training_set(settings, fit_code, training_set, fitted_code):
         settings    - the file containing all relevent settings information
         fit_code    - the code to fit
         training_set - the training set to fit the code to
+        fit_directory - the directory where the .cdl and .dat files will end up
         fitted_code - file to write final fitted code to
 
     Returns:
         None
     """
+
+    if not os.path.isdir(fit_directory):
+        os.mkdir(fit_directory)
     
+    if not os.path.isdir(os.path.dirname(fitted_code)):
+        os.mkdir(os.path.dirname(fitted_code))
+
     os.system(fit_code + " " + training_set)
+
+    os.system("ncgen -o fit-1b.nc fit-1b.cdl")
+
+    os.system("mv fit-1b.cdl " + fit_directory + "/")
+    os.system("mv fit-1b-initial.cdl " + fit_directory + "/")
+    os.system("mv correlation.dat " + fit_directory + "/")
+    os.system("mv fit-1b.nc " + fitted_code)
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

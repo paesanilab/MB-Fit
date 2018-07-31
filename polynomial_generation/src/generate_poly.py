@@ -13,8 +13,19 @@ def generate_poly(settings):
 
     # open output files for polynomials, will automatically be closed by with open as syntax
     with open(config["files"]["poly_path"] + "/vars.cpp", "w") as out_vars, open(config["files"]["poly_path"] + "/poly-direct.cpp", "w") as out_cpp, open(config["files"]["poly_path"] + "/poly-nogrd.maple", "w") as out_maple_nogrd, open(config["files"]["poly_path"] + "/poly-grd.maple", "w") as out_maple_grd, open(input_file, "r") as in_poly:
+        
+        # read the add_molecule definitions to get a list of the fragments
         fragments = parse_fragments(in_poly)
-        print(fragments)
+
+        # Parse the molecule names to determine and name the atoms in the system
+
+        atom_names = []
+        number_per_fragment = []
+        index_this_fragment = []
+        fragname = 'a'
+        
+        for fragment in fragments:
+            pass
 
 def parse_fragments(input_file):
     fragments = []

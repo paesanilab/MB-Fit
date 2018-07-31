@@ -2,7 +2,7 @@ import sys
 import os
 import configparser
 
-def generate_input_poly(settings):
+def generate_input_poly(settings, poly_input):
     """
     Generates the input for the polynomial generator
 
@@ -14,10 +14,10 @@ def generate_input_poly(settings):
     config.read(settings)
 
     # get the string representation of the molecule by getting the A1B2C2, etc part of the name
-    molecule = os.path.splitext(config["files"]["poly_in_path"])[-2]
+    molecule = os.path.splitext(poly_input)[0].split("/")[-1]
 
     # file will be automatically closed after block by with open as ... syntax
-    with open(config["files"]["poly_in_path"], "w") as poly_in_file:
+    with open(poly_input, "w") as poly_in_file:
         # split along _ to seperate fragments
         number_of_fragments = len(molecule.split('_'))
 

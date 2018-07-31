@@ -7,7 +7,7 @@ import sys
 from database import Database
 import calculator
 
-def fill_database(settings, database_name, directory):
+def fill_database(settings, database_name, directory = "unused"): # argument is unused, but I haven't removed yet because it will break a lot of code
     """
     Walks through a database and calculates all missing energies
     

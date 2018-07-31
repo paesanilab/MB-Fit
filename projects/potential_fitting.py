@@ -97,7 +97,7 @@ def fill_database(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_filler.py settings.ini " + config['files']['database'] + " " + config['files']['xyz_files'])
 
 def generate_input(project_directory, config):
-    os.system("python " + config['files']['directory'] + "/../polynomial_generation/src/generate_input_poly.py settings.ini")
+    os.system("python " + config['files']['directory'] + "/../polynomial_generation/src/generate_input_poly.py settings.ini " + config['files']['poly_in_path'])
 
 def generate_polynomials(project_directory, config):
     os.system(config['files']['directory'] + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + config['poly_generator']['order'] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_path'] + "/poly.log")
@@ -138,60 +138,233 @@ def generate_fitting(project_directory, config):
 
 import sys
 import os
+import configparser
 sys.path.insert(0, "../qm_mb_energy_calculator/src")
 sys.path.insert(0, "../polynomial_generation/src")
-sys.path.insert(0, "../configuration_generator/src")
 
-import database_initializer, database_filler, training_set_generator, generate_input_poly, geometry_optimizer
+def create_dirs(settings):
+    """
+    Creates the log directory
 
-def optimize_geometry(settings):
+    Args:
+        settings    - the file containing all relevent settings information
+
+    Returns:
+        None
+    """
+
     config = configparser.ConfigParser(allow_no_value=False)
     config.read(settings)
 
-    geometry_optimizer.optimize_geometry(settings, config["files"]["input_geometry"], config["files"]["optimized_geometry"])
+    if not os.path.isdir(config['files']['log_path']):
+        os.mkdir(config['files']['log_path'])
+
+def optimize_geometry(settings, unopt_geo, opt_geo):
+    """
+    Optimizes the geometry of the given molecule
+
+    Args:
+        settings    - the file containing all relevent settings information
+        unopt_geo   - file to read the unoptimized geoemtry
+        opt_geo     - file to write the optimized geometry
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
+    import geometry_optimizer
+   
+    if not os.path.isdir(os.path.dirname(opt_geo)):
+        os.mkdir(os.path.dirname(opt_geo))
+
+    geometry_optimizer.optimize_geometry(settings, unopt_geo, opt_geo)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
+
+def generate_normal_modes(settings, geo, normal_modes):
+    """
+    Generates the normal modes for the given molecule
+
+    Args:
+        settigns    - the file containing all relevent settings information
+        geo         - file to read optimized geometry
+        normal_modes - file to write normal modes
+
+    Returns:
+        None
+
+    Other Effects:
+        Writes DIM NULL to console
+    """
     
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
+    import normal_modes_generator
+   
+    if not os.path.isdir(os.path.dirname(normal_modes)):
+        os.mkdir(os.path.dirname(normal_modes))
 
-def generate_normal_modes(settings):
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    normal_modes_generator.generate_normal_modes(settings, geo, normal_modes)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
 
-def generate_configurations(settings):
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+def generate_configurations(settings, geo, normal_modes, dim_null, configurations):
+    """
+    Generates configurations for a given molecule from a set of normal modes
+
+    Args:
+        settings    - the file containing all relevent settings information
+        geo         - file to read optimized geometry
+        normal_modes - file to read normal modes
+        dim_null    - the DIM NULL of this molecule, see generate_normal_modes()
+        configurations - file to write configurations
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
+    import configuration_generator
+   
+    if not os.path.isdir(configurations):
+        os.mkdir(configurations)
+
+    configuration_generator.generate_configurations(settings, geo, normal_modes, dim_null, configurations)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
 
-def init_database(settings):
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+def init_database(settings, database_name, config_files):
+    """
+    Creates a database from the given config files. Can be called on a new file
+    to create a new database, or an existing database to add more energies to be calculated
 
-    database_initializer.initialize_database(settings, config["files"]["database"], config["files"]["xyz_files"])
+    Args:
+        settings    - the file containing all relevent settings information
+        database_name - file to make this database in
+        config_files - directory with .xyz and optimized geometry .opt.xyz inside
 
-def fill_database(settings):
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    Returns:
+        None
+    """
 
-    database_initializer.initialize_database(settings, config["files"]["database"])
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src")
+    import database_initializer
 
-def generate_training_set(settings, method = "%", basis = "%", cp = "%"):
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    if not os.path.isdir(os.path.dirname(database_name)):
+        os.mkdir(os.path.dirname(database_name))
 
-    training_set_generator.generate_training_set(settings, config["files"]["database"], config["files"]["training_set"], method, basis, cp)
+    database_initializer.initialize_database(settings, database_name, config_files)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src") 
+
+def fill_database(settings, database_name):
+    """
+    Fills a given database with calculated energies, MAY TAKE A WHILE
     
-def generate_poly_input(settings):
-    generate_input_poly.generate_input_poly(settings)
+    Args:
+        settings    - the file containing all relevent settings information
+        database_name - the file in which the database is stored
 
-def generate_polynomials(settings):
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src")
+    import database_filler
+
+    database_filler.fill_database(settings, database_name, "unused")
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src") 
+
+def generate_training_set(settings, database_name, training_set, method = "%", basis = "%", cp = "%"):
+    """
+    Generates a training set from the energies inside a database.
+
+    Specific method, bnasis, and cp may be specified to only use energies calculated
+    with a specific model.
+
+    '%' can be used to stand in as a wild card, meaning any method/basis/cp is ok
+
+    Args:
+        settings    - the file containing all relevent settings information
+        database_name - the file in which the database is stored
+        training_set - the file to write the training set to
+        method      - only use energies calcualted by this method
+        basis       - only use energies calculated in this basis
+        cp          - only use energies calculated with the same cp
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src")
+    import training_set_generator
+
+    if not os.path.isdir(os.path.dirname(training_set)):
+        os.mkdir(os.path.dirname(training_set))
+
+    training_set_generator.generate_training_set(settings, database_name, training_set, method, basis, cp)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src") 
+    
+def generate_poly_input(settings, poly_in_path):
+    """
+    Generates an input file for the polynomial generation script
+
+    Args:
+        settings    - the file containing all relevent settings information
+        poly_in_path - the file to write the polynomial generation input
+                     name of file should be in format A1B2.in, it is ok to have
+                     extra directories prior to file name (thisplace/thatplace/A3.in)
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src")
+    import generate_input_poly
+
+    if not os.path.isdir(os.path.dirname(poly_in_path)):
+        os.mkdir(os.path.dirname(poly_in_path))
+
+    generate_input_poly.generate_input_poly(settings, poly_in_path)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src") 
+
+
+def generate_polynomials(settings, poly_in_path, order, poly_directory):
+    """
+    Generates the maple and cpp polynomial codes
+
+    Args:
+        settings    - the file containing all relevent settings information
+        poly_in_path - the file to read polynomial input from
+        order - the order of the polynomial to generate
+        poly_directory - the directory to place the polynomial files in
+    """
+
     config = configparser.ConfigParser(allow_no_value=False)
     config.read(settings)
-    config.set("files", "proj_directory", os.path.dirname(os.path.abspath(__file__)))
 
-    os.chrdir(configparser["files"]["poly_path"])
+    original_dir = os.getcwd()
 
-    os.system("./poly-gen_mb-nrg.pl " + config["poly_generator"]["order"] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_path'] + "/poly.log")
+    if not os.path.isdir(poly_directory):
+        os.mkdir(poly_directory)
 
-    os.chrdir(configparser["files"]["proj_directory"])
+    os.chdir(poly_directory)
+
+    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + str(order) + " " + original_dir + "/" + poly_in_path + " > poly.log")
+
+    os.chdir(original_dir)
 
 def execute_maple(settings):
     config = configparser.ConfigParser(allow_no_value=False)

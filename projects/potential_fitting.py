@@ -435,8 +435,21 @@ def compile_fit_code(settings, fit_directory):
     os.system("make")
     os.chdir(original_dir)
 
-def fit_training_set(settings, fit_code, training_set):
-    pass
+def fit_training_set(settings, fit_code, training_set, fitted_code):
+    """
+    Fits the fit code to a given training set
+
+    Args:
+        settings    - the file containing all relevent settings information
+        fit_code    - the code to fit
+        training_set - the training set to fit the code to
+        fitted_code - file to write final fitted code to
+
+    Returns:
+        None
+    """
+    
+    os.system(fit_code + " " + training_set)
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

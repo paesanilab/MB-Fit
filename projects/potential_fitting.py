@@ -136,7 +136,77 @@ def generate_fitting(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../fitting/1B/get_codes/prepare_1b_fitting_code.sh" + config['files']['directory'] + "/" + project_directory + config['files']['poly_in_path'] + " " + config['files']['directory'] + "/" + config['files']['poly_path'])
       
 
+import sys
+import os
+sys.path.insert(0, "../qm_mb_energy_calculator/src")
+sys.path.insert(0, "../polynomial_generation/src")
+sys.path.insert(0, "../configuration_generator/src")
 
+import database_initializer, database_filler, training_set_generator, generate_input_poly, geometry_optimizer
+
+def optimize_geometry(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+    geometry_optimizer.optimize_geometry(settings, config["files"]["input_geometry"], config["files"]["optimized_geometry"])
+    
+
+def generate_normal_modes(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+
+def generate_configurations(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+
+def init_database(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+    database_initializer.initialize_database(settings, config["files"]["database"], config["files"]["xyz_files"])
+
+def fill_database(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+    database_initializer.initialize_database(settings, config["files"]["database"])
+
+def generate_training_set(settings, method = "%", basis = "%", cp = "%"):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+    training_set_generator.generate_training_set(settings, config["files"]["database"], config["files"]["training_set"], method, basis, cp)
+    
+def generate_poly_input(settings):
+    generate_input_poly.generate_input_poly(settings)
+
+def generate_polynomials(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+    config.set("files", "proj_directory", os.path.dirname(os.path.abspath(__file__)))
+
+    os.chrdir(configparser["files"]["poly_path"])
+
+    os.system("./poly-gen_mb-nrg.pl " + config["poly_generator"]["order"] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_path'] + "/poly.log")
+
+    os.chrdir(configparser["files"]["proj_directory"])
+
+def execute_maple(settings):
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+    config.set("files", "proj_directory", os.path.dirname(os.path.abspath(__file__)))
+
+    os.chrdir(configparser["files"]["poly_path"])
+
+    os.system("maple poly-grd.maple")
+    os.system("maple poly-nogrd.maple")
+
+    os.system("./clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
+    os.system("./clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
+
+    os.chrdir(configparser["files"]["proj_directory"])
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

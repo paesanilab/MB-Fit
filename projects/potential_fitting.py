@@ -350,6 +350,9 @@ def generate_polynomials(settings, poly_in_path, order, poly_directory):
         poly_in_path - the file to read polynomial input from
         order - the order of the polynomial to generate
         poly_directory - the directory to place the polynomial files in
+
+    Returns:
+        None
     """
 
     config = configparser.ConfigParser(allow_no_value=False)
@@ -366,20 +369,56 @@ def generate_polynomials(settings, poly_in_path, order, poly_directory):
 
     os.chdir(original_dir)
 
-def execute_maple(settings):
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
-    config.set("files", "proj_directory", os.path.dirname(os.path.abspath(__file__)))
+def execute_maple(settings, poly_directory):
+    """
+    Runs maple on the polynomial files to turn them into actual cpp files
 
-    os.chrdir(configparser["files"]["poly_path"])
+    Args:
+        settings    - the file containing all relevent settings information
+        poly_directory - the directory with all the polynomial files
+    """
+
+    original_dir = os.getcwd()
+
+    os.chrdir(poly_directory)
 
     os.system("maple poly-grd.maple")
     os.system("maple poly-nogrd.maple")
 
-    os.system("./clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
-    os.system("./clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
+    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
+    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
 
-    os.chrdir(configparser["files"]["proj_directory"])
+    os.chrdir(original_dir)
+
+def generate_fit_code(settings, poly_in_path, poly_path, fit_directory):
+    """
+    Generates the fit code based on the polynomials
+
+    Only works for 1b right now
+
+    Args:
+        settings    - the file containing all relevent settings information
+        poly_in_path - the A3B2.in type file
+        poly_path   - directory where polynomial files are
+        fit_directory - directory to generate fit code in
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes/src")
+    import prepare_1b_fitting_code
+
+    if not os.path.isdir(fit_directory):
+        os.mkdir(fit_directory)
+    
+    prepare_1b_fitting_code.prepare_1b_fitting_code(settings, poly_in_path, poly_path, fit_directory)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes/src") 
+
+def fit_training_set(settings, fit_code, training_set):
+    pass
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

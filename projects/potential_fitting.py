@@ -139,8 +139,6 @@ def generate_fitting(project_directory, config):
 import sys
 import os
 import configparser
-sys.path.insert(0, "../qm_mb_energy_calculator/src")
-sys.path.insert(0, "../polynomial_generation/src")
 
 def create_dirs(settings):
     """
@@ -253,7 +251,8 @@ def init_database(settings, database_name, config_files):
     """
 
     # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
+    print(sys.path)
     import database_initializer
 
     if not os.path.isdir(os.path.dirname(database_name)):
@@ -261,7 +260,7 @@ def init_database(settings, database_name, config_files):
 
     database_initializer.initialize_database(settings, database_name, config_files)
 
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src") 
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
 def fill_database(settings, database_name):
     """
@@ -276,12 +275,12 @@ def fill_database(settings, database_name):
     """
 
     # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
     import database_filler
 
     database_filler.fill_database(settings, database_name, "unused")
 
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src") 
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
 def generate_training_set(settings, database_name, training_set, method = "%", basis = "%", cp = "%"):
     """
@@ -305,7 +304,7 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
     """
 
     # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
     import training_set_generator
 
     if not os.path.isdir(os.path.dirname(training_set)):
@@ -313,7 +312,7 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
 
     training_set_generator.generate_training_set(settings, database_name, training_set, method, basis, cp)
 
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_calculator/src") 
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
     
 def generate_poly_input(settings, poly_in_path):
     """
@@ -380,7 +379,7 @@ def execute_maple(settings, poly_directory):
 
     original_dir = os.getcwd()
 
-    os.chrdir(poly_directory)
+    os.chdir(poly_directory)
 
     os.system("maple poly-grd.maple")
     os.system("maple poly-nogrd.maple")
@@ -388,7 +387,7 @@ def execute_maple(settings, poly_directory):
     os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
     os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
 
-    os.chrdir(original_dir)
+    os.chdir(original_dir)
 
 def generate_fit_code(settings, poly_in_path, poly_path, fit_directory):
     """
@@ -407,7 +406,7 @@ def generate_fit_code(settings, poly_in_path, poly_path, fit_directory):
     """
 
     # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes/src")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes")
     import prepare_1b_fitting_code
 
     if not os.path.isdir(fit_directory):
@@ -415,7 +414,26 @@ def generate_fit_code(settings, poly_in_path, poly_path, fit_directory):
     
     prepare_1b_fitting_code.prepare_1b_fitting_code(settings, poly_in_path, poly_path, fit_directory)
 
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes/src") 
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
+
+def compile_fit_code(settings, fit_directory):
+    """
+    Compiles the fit code in the given directory
+
+    Args:
+        settings    - the file containing all relevent settings information
+        fit_directory - the directory with the fit code
+
+    Returns:
+        None
+    """
+
+    original_dir = os.getcwd()
+
+    os.chdir(fit_directory)
+    os.system("make clean")
+    os.system("make")
+    os.chdir(original_dir)
 
 def fit_training_set(settings, fit_code, training_set):
     pass

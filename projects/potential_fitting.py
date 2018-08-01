@@ -174,6 +174,8 @@ def optimize_geometry(settings, unopt_geo, opt_geo):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
     import geometry_optimizer
    
+    if os.path.dirname(opt_geo) == "":
+        opt_geo = "./" + opt_geo
     if not os.path.isdir(os.path.dirname(opt_geo)):
         os.mkdir(os.path.dirname(opt_geo))
 
@@ -201,6 +203,8 @@ def generate_normal_modes(settings, geo, normal_modes):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
     import normal_modes_generator
    
+    if os.path.dirname(normal_modes) == "":
+        normal_modes = "./" + normal_modes
     if not os.path.isdir(os.path.dirname(normal_modes)):
         os.mkdir(os.path.dirname(normal_modes))
 
@@ -255,6 +259,8 @@ def init_database(settings, database_name, config_files):
     print(sys.path)
     import database_initializer
 
+    if os.path.dirname(database_name) == "":
+        database_name = "./" + database_name
     if not os.path.isdir(os.path.dirname(database_name)):
         os.mkdir(os.path.dirname(database_name))
 
@@ -307,6 +313,8 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
     import training_set_generator
 
+    if os.path.dirname(training_set) == "":
+        training_set = "./" + training_set
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
@@ -332,6 +340,9 @@ def generate_poly_input(settings, poly_in_path):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src")
     import generate_input_poly
 
+
+    if os.path.dirname(poly_in_path) == "":
+        poly_in_path = "./" + poly_in_path
     if not os.path.isdir(os.path.dirname(poly_in_path)):
         os.mkdir(os.path.dirname(poly_in_path))
 
@@ -458,7 +469,8 @@ def fit_training_set(settings, fit_code, training_set, fit_directory, fitted_cod
 
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
-    
+    if os.path.dirname(fitted_code) == "":
+        fitted_code = "./" + fitted_code
     if not os.path.isdir(os.path.dirname(fitted_code)):
         os.mkdir(os.path.dirname(fitted_code))
 

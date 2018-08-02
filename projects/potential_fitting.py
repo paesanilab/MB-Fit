@@ -47,7 +47,7 @@ def potential_fit(project_directory, start_location = 0):
     # Step 3: fill database
 
     if start_location <= 3:
-        fill_database(project_directory, config)
+        fill_energy_database(project_directory, config)
 
     # Step 4: create input file for polynomial
 
@@ -58,13 +58,13 @@ def potential_fit(project_directory, start_location = 0):
 
     if start_location <= 5:
         os.chdir(config['files']['poly_path'])
-        generate_polynomials(project_directory, config)
+        generate_polys(project_directory, config)
         os.chdir("..")
 
     # Step 6: generate training set xyz file
 
     if start_location <= 6:
-        generate_training_set(project_directory, config)
+        generate_train_set(project_directory, config)
 
     # Step 7: generate fitting code
 
@@ -93,13 +93,13 @@ def generate_configs(project_directory, config):
 def initialize_database(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_initializer.py settings.ini " + config['files']['database'] + " " + config['files']['xyz_files'])
 
-def fill_database(project_directory, config):
+def fill_energy_database(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_filler.py settings.ini " + config['files']['database'] + " " + config['files']['xyz_files'])
 
 def generate_input(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../polynomial_generation/src/generate_input_poly.py settings.ini " + config['files']['poly_in_path'])
 
-def generate_polynomials(project_directory, config):
+def generate_polys(project_directory, config):
     os.system(config['files']['directory'] + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + config['poly_generator']['order'] + " " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_in_path'] + " > " + config['files']['directory'] + "/" + project_directory + "/" + config['files']['poly_path'] + "/poly.log")
 
 def run_maple(project_directory, config):
@@ -111,7 +111,7 @@ def run_maple(project_directory, config):
     os.system(config['files']['directory'] + "/../polynomial_generation/src/clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
     os.system(config['files']['directory'] + "/../polynomial_generation/src/clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
 
-def generate_training_set(project_directory, config):
+def generate_train_set(project_directory, config):
     os.system("python " + config['files']['directory'] + "/../qm_mb_energy_calculator/src/database_reader.py settings.ini " + config['files']['database'] + " " + config['files']['training_set'] + "/training_set.xyz")
     
 def generate_fitting(project_directory, config):

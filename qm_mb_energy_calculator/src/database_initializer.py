@@ -28,7 +28,6 @@ def initialize_database(settings, database_name, directory):
     # make sure that the config_files directory is actually a directory
     if not os.path.isdir(directory):
         raise ValueError("{} is not a directory. \n Terminating database initialization.".format(directory))
-        sys.exit(1)
     
     database = Database(database_name)
     
@@ -52,23 +51,32 @@ def initialize_database(settings, database_name, directory):
 
     # loop thru all files in directory
     for filename in filenames:
+
+        # if the filename does not end in .xyz, then skip it
         if filename[-4:] != ".xyz":
             continue
+
         # open the file
-        f = open(filename, "r")
+        xyz_file = open(filename, "r")
         # get list of all molecules in file
-        molecules = xyz_to_molecules(f, config)
+
+        molecules = xyz_to_molecules(xyz_file, config)
         
-        # if this file contains omptimized geometries, add a special tag
+        # if this file contains omptimized geometries, tell the database so
         if filename[-8:] == ".opt.xyz":
+
             # for each molecule in the file
             for molecule in molecules:
-                # add this molecule to the database
+
+                # add this molecule to the database, optimized flag set to true
                 database.add_calculation(molecule, method, basis, cp, tag, True)
+
         else: 
+
             # for each molecule in the file
             for molecule in molecules:
-                # add this molecule to the database
+
+                # add this molecule to the database, optimized flag set to false
                 database.add_calculation(molecule, method, basis, cp, tag, False)
 
     database.save()

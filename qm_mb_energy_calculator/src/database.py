@@ -4,6 +4,9 @@ Contains the Database class, used to read and write to a database
 import sqlite3
 import pickle
 import sys
+from molecule import Atom, Fragment, Molecule
+import itertools
+import datetime
 
 class Database():
     """
@@ -49,51 +52,122 @@ class Database():
         Creates the required tables in the database, if they do not exists
         """
         
-        # create the Configs table, which contains ID (SHA1 hash of the molecule), config (molecule data compressed as hexidecimal string), natoms (number of atoms), nfrags (number of fragments).
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS Configs(ID text, config BLOB, natoms INT,
-            nfrags INT)
-            """)
+        # create the Models table 
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Models(method TEXT, basis TEXT, cp INT)
+            """
+        )
 
-        # create the Energies table, which contains ID (SHA1 hash of the molecule), method, basis, cp (wheter counterpoise correction was used), tag (way to mark certain calculations), E0-E012 (nmer energies of the fragments in this molecule), and Enb (nbody energies)
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS Energies(ID TEXT, method TEXT, basis TEXT, cp TEXT, tag TEXT,
-            E0 REAL, E1 REAL, E2 REAL, E01 REAL, E02 REAL, E12 REAL, E012 REAL, Enb BLOB)
-            """)
+        # create the Molecules table
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Molecules(hash TEXT)
+            """
+        )
 
-    def add_molecule(self, molecule, method, basis, cp, tag):
+        # create the Fragments table
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, charge INT, spin INT)
+            """
+        )
+
+        # create the Atoms table
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Atoms(fragment_id INT, symbol TEXT, x REAL, y REAL, z REAL)
+            """
+        )
+
+        # create the Calculations table
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Calculations(molecule_id INT, model_id INT, tag TEXT, optimized INT)
+            """
+        )
+
+        # create the Energies table
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Energies(calculation_id INT, job_id INT, energy_index INT, energy REAL)
+            """
+        )
+
+        # create the Jobs table
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Jobs(status TEXT, log_file TEXT, start_date TEXT, end_date TEXT)
+            """
+        )
+
+    def add_calculation(self, molecule, method, basis, cp, tag, optimized):
         """
         Add a molecule to the database to have its energies calculated.
         """
-        hash_id = molecule.get_SHA1()
 
-        # find if a row exists for this molecule in the Configs table
-        self.cursor.execute("select ID from Configs where ID=?", (hash_id,))
-        config_row = self.cursor.fetchone()
+        # check if this model is not already in Models table
+        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Models WHERE method=? AND basis=? AND cp=?)", (method, basis, cp)).fetchone()[0]:
 
-        # if there is no row for this molecule in the Configs table, create one
-        if config_row is None:
-            config = pickle.dumps(molecule).hex() # Compress molecule data
-            self.cursor.execute("INSERT INTO Configs (ID, config, natoms, nfrags) VALUES ('{}', '{}', '{}', '{}')".format(hash_id, config, molecule.get_num_atoms(), molecule.get_num_fragments()))
+            # create entry in Models table
+            self.cursor.execute("INSERT INTO Models (method, basis, cp) VALUES (?, ?, ?)", (method, basis, cp))
+            
+            # get id of this model
+            model_id = self.cursor.lastrowid
 
-        # find if a row exists for this molecule with this specific set of method/basis/cp/tag in the Energies table
-        self.cursor.execute("select ID from Energies where ID=? AND method=? AND basis=? AND cp=? AND tag=?", (hash_id, method, basis, cp, tag))
-        energies_row = self.cursor.fetchone()
+        else:
 
-        # create a new row in the Energies table if such a row did not already exist
-        if energies_row is None:
-            fragment_count = molecule.get_num_fragments();
+            # get id of this model
+            model_id = self.cursor.execute("SELECT ROWID FROM Models WHERE method=? AND basis=? AND cp=?", (method, basis, cp)).fetchone()[0]
 
-            # energies that do not apply to a molecule, due to having less than three fragments, are set to N/A, while all other energies are set to None
-            if fragment_count == 3:
-                self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'None', 'None', 'None', 'None', 'None', 'None')".format(hash_id, method, basis, cp, tag))
-            elif fragment_count == 2:
-                self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'None', 'N/A', 'None', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, method, basis, cp, tag))
-            elif fragment_count == 1:
-                self.cursor.execute("INSERT INTO Energies (ID, method, basis, cp, tag, E0, E1, E2, E01, E02, E12, E012, Enb) VALUES ('{}', '{}', '{}', '{}', '{}', 'None', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'N/A', 'None')".format(hash_id, method, basis, cp, tag))
-            else:
-                raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
+        # get the SHA1 hash of this molecule
+        molecule_hash = molecule.get_SHA1()
 
+        # check if this molecule is not already in Molecules table
+        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Molecules WHERE hash=?)", (molecule_hash,)).fetchone()[0]:
+
+            # create entry in Molecules table
+            self.cursor.execute("INSERT INTO Molecules (hash) VALUES (?)", (molecule_hash,))
+        
+            # get id of this molecule
+            molecule_id = self.cursor.lastrowid
+
+            # insert molecule's fragments into the table
+            for fragment in molecule.get_fragments():
+                self.cursor.execute("INSERT INTO Fragments (molecule_id, charge, spin) VALUES (?, ?, ?)", (molecule_id, fragment.get_charge(), fragment.get_spin_multiplicity()))
+                
+                # get id of this fragment
+                fragment_id = self.cursor.lastrowid
+
+                # insert fragment's atoms into the table
+                for atom in fragment.get_atoms():
+                   self.cursor.execute("INSERT INTO Atoms (fragment_id, symbol, x, y, z) VALUES (?, ?, ?, ?, ?)", (fragment_id, atom.get_name(), atom.get_x(), atom.get_y(), atom.get_z())) 
+                    
+        else:
+            
+            # get id of this molecule
+            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE hash=?", (molecule_hash,)).fetchone()[0]
+
+        # check if the calculation is not already in the Calculations table
+
+        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Calculations WHERE molecule_id=? AND model_id=? AND tag=? AND optimized=?)", (molecule_id, model_id, tag, optimized)).fetchone()[0]:
+            
+            # create entry in Calculations table
+            self.cursor.execute("INSERT INTO Calculations (molecule_id, model_id, tag, optimized) VALUES (?, ?, ?, ?)", (molecule_id, model_id, tag, optimized))
+
+            # get id of this calculation
+            calculation_id = self.cursor.lastrowid
+
+            # add rows to the Energies table
+            for energy_index in range(number_of_energies(molecule.get_num_fragments())):
+                # create a job for this energy
+                self.cursor.execute("INSERT INTO Jobs (status) VALUES (?)", ("pending",))
+
+                # get the id of this job
+                job_id = self.cursor.lastrowid
+        
+                # insert row into Energies table for this energy
+                self.cursor.execute("INSERT INTO Energies (calculation_id, energy_index, job_id) VALUES (?, ?, ?)", (calculation_id, energy_index, job_id))
 
     def get_missing_energy(self):
         """
@@ -102,28 +176,42 @@ class Database():
         The user should calculate the energy, set the calculation.energy field to the resultant energy, and then call set_energy(calculation)
         """
 
-        # find a single row missing at least one energy
-        self.cursor.execute("SELECT * FROM Energies WHERE E0='None' OR E1='None' OR E2='None' OR E01='None' OR E02='None' OR E12='None' OR E012='None'")
-        row = self.cursor.fetchone()
-
-        # if there is no such row, then the database is complete!
-        if row is None:
+        # retrieve a pending job from the Jobs table
+        try:
+            job_id = self.cursor.execute("SELECT ROWID FROM Jobs WHERE status=?", ("pending",)).fetchone()[0]
+        except TypeError:
+            # this error will be thrown if there are no more energies to calculate, because None[0] throws a TypeError
             return None
+        
+        # retrieve the calculation and energy to be calculated for this job from the Energies table
+        calculation_id, energy_index = self.cursor.execute("SELECT calculation_id, energy_index FROM Energies WHERE job_id=?", (job_id,)).fetchone()
 
-        ID = row[0]
-        method = row[1]
-        basis = row[2]
-        cp = row[3]
-        tag = row[4]
+        # retrieve the molecule and model from the Calculations table
+        molecule_id, model_id, tag, optimized = self.cursor.execute("SELECT molecule_id, model_id, tag, optimized FROM Calculations WHERE ROWID=?", (calculation_id,)).fetchone()
 
-        # this is a messy hardcoding, but essentially it gets an array of the fragments needed to calculate a missing energy
-        fragments = [0] if row[5] == "None" else [1] if row[6] == "None" else [2] if row[7] == "None" else [0,1] if row[8] == "None" else [0,2] if row[9] == "None" else [1,2] if row[10] == "None" else [0,1,2]
-       
-        # retrieve and uncompress the molecule from the Configs table
-        self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (ID,))
-        molecule = pickle.loads(bytes.fromhex(self.cursor.fetchone()[1]))
+        # retrieve the method, basis, and cp for this model
+        method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?", (model_id,)).fetchone()
 
-        return Calculation(molecule, method, basis, cp, tag, fragments, None)
+        # Reconstruct the molecule from the information in this database
+        molecule = Molecule()
+        
+        # loop over all rows in the Fragments table that correspond to this molecule
+        for fragment_id, charge, spin in self.cursor.execute("SELECT ROWID, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+            fragment = Fragment(charge, spin)
+
+            # loop over all rows in the Atoms table that correspond to this fragment
+            for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+                fragment.add_atom(Atom(symbol, x, y, z))
+
+            molecule.add_fragment(fragment)
+
+        # get the indicies of the fragments to include in this calculation
+        fragment_indicies = energy_index_to_fragment_indicies(energy_index, molecule.get_num_fragments())
+
+        # update the job with its start date and running status
+        self.cursor.execute("UPDATE Jobs SET status=?, start_date=? WHERE ROWID=?", ("running", datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
+        
+        return Calculation(molecule, method, basis, True if cp == 1 else False, tag, True if optimized == 1 else False, fragment_indicies)
 
     def missing_energies(self):
         """
@@ -133,72 +221,135 @@ class Database():
             calculation = self.get_missing_energy()
             
             if calculation is None:
-                break
+                raise StopIteration
 
             yield calculation
         
 
-    def set_energy(self, calculation):
+    def set_energy(self, calculation, energy, log_file):
         """
         Sets the energy in the table of a certain calculation
         """
 
-        # create a string representing the energy to set from the fragments used to calculate this energy
-        entry_string = "E"
-        for index in calculation.fragments:
-            entry_string += str(index)
+        # find the id of the model from the Models table
+        try:
+            model_id = self.cursor.execute("SELECT ROWID FROM Models WHERE method=? AND basis=? AND cp=?", (calculation.method, calculation.basis, calculation.cp)).fetchone()[0]
+        except TypeError:
+            # this error gets raised if this model is not in the Models table
+            raise ValueError("Tried to set an energy that does not exist in the database") from None
 
-        # update the energy value in the corresponding row of the table
-        self.cursor.execute("UPDATE Energies SET {}=? WHERE ID=? AND method=? AND basis=? AND cp=? AND tag=?".format(entry_string), (calculation.energy, calculation.molecule.get_SHA1(), calculation.method, calculation.basis, calculation.cp, calculation.tag))
+        # get the SHA1 hash of this molecule
+        molecule_hash = calculation.molecule.get_SHA1()
 
-# should probably be changed to a generator once we find a way to store the optimized geometry
+        # find the id of the molecule from the Molecules table
+        try:
+            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE hash=?", (molecule_hash,)).fetchone()[0]
+        except TypeError:
+            # this error gets raised if this molecule is not in the Molecules table
+            raise ValueError("Tried to set an energy that does not exist in the database") from None        
+
+        # find the id of the calculation from the Calculations table
+        try:
+            calculation_id = self.cursor.execute("SELECT ROWID FROM Calculations WHERE molecule_id=? AND model_id=? AND tag=? AND optimized=?", (molecule_id, model_id, calculation.tag, calculation.optimized)).fetchone()[0]
+        except TyperError:
+            # this error gets raised if this calculation is not in the Calculations table
+            raise ValueError("Tried to set an energy that does not exist in the database")
+
+        energy_index = fragment_indicies_to_energy_index(calculation.fragments, calculation.molecule.get_num_fragments())
+
+        # update the row in the Energies table corresponding to this energy
+        self.cursor.execute("UPDATE Energies SET energy=? WHERE calculation_id=? AND energy_index=?", (energy, calculation_id, energy_index))
+
+        # get the job corresponding to this energy
+        job_id = self.cursor.execute("SELECT job_id FROM Energies WHERE calculation_id=? AND energy_index=?", (calculation_id, energy_index)).fetchone()[0]
+
+        # update the information about this job
+        self.cursor.execute("UPDATE Jobs SET status=?, log_file=?, end_date=? WHERE ROWID=?", ("completed", log_file, datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
+
     def get_complete_energies(self):
         """
-        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, E02, E12, E012], where N/A energies are left out
+        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...]
 
+        Includes any optimized geometries        
         """
 
-        return self.get_energies("%", "%", "%", "%")
+        yield from self.get_energies("%", "%", "%", "%")
 
     def get_energies(self, method, basis, cp, tag):
         """
-        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, E02, E12, E012] of molecules in the database with the given
+        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] of molecules in the database with the given
         method, basis, cp and tag.
+
+        Includes any optimized geometries.
 
         % can be used as a wildcard to stand in for any method, basis, cp, or tag. 
         """
-        
-        self.cursor.execute("SELECT * FROM Energies WHERE method LIKE '{}' AND basis LIKE '{}' AND cp LIKE '{}' AND tag LIKE '{}' AND NOT (E0='None' OR E1='None' OR E2='None' OR E01='None' OR E02='None' OR E12='None' OR E012='None')".format(method, basis, cp, tag))
-        
-        rows = self.cursor.fetchall()
 
-        molecule_energy_pairs = []
+        # get a list of all calculations that have the appropriate method, basis, and cp
+        calculation_ids = [elements[0] for elements in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=(SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ? AND tag LIKE ?)", (method, basis, cp, tag)).fetchall()]
 
-        for row in rows:
-            # retrieve and uncompress the molecule from the corresponding Configs row
-            self.cursor.execute("SELECT * FROM Configs WHERE ID=?", (row[0],))
-            molecule = pickle.loads(bytes.fromhex(self.cursor.fetchone()[1]))
-            num_frags = molecule.get_num_fragments()
+        for calculation_id in calculation_ids:
             
-            energies = []
+            # get the molecule id corresponding to this calculation
+            molecule_id = self.cursor.execute("SELECT molecule_id FROM Calculations WHERE ROWID=?", (calculation_id,)).fetchone()[0]
 
-            # fill the energies array with the correct values based on the number of fragments in this molecule. Monomers will have just 1 energy, dimers 3, and trimers 7
-            if num_frags == 3:
-                for i in range(5, 12):
-                    energies.append(row[i])
-            elif num_frags == 2:
-                for i in [5, 6, 8]:
-                    energies.append(row[i])
-            elif num_frags == 1:
-                energies.append(row[5])
-            else:
-                raise ValueError("Unsupported Number of fragments {}. Supported values are 1,2, and 3.".format(fragment_count))
+            # Reconstruct the molecule from the information in this database
+            molecule = Molecule()
+            
+            # loop over all rows in the Fragments table that correspond to this molecule
+            for fragment_id, charge, spin in self.cursor.execute("SELECT ROWID, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+                fragment = Fragment(charge, spin)
 
-            # add this [molecule, energies] pair to the list of pairs
-            molecule_energy_pairs.append([molecule, energies])
+                # loop over all rows in the Atoms table that correspond to this fragment
+                for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+                    fragment.add_atom(Atom(symbol, x, y, z))
 
-        return molecule_energy_pairs
+                molecule.add_fragment(fragment)
+            
+            # get the energies corresponding to this calculation
+            energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
+    
+            yield molecule, energies
 
+    def get_complete_optimized_energies(self):
+        """
+        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] for optimized geometries.
+        """
+        yield from self.get_optimized_energies("%", "%", "%", "%")
+
+    def get_optimized_energies(self, method, basis, cp, tag):
+        """
+        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] of molecules in the database with the given
+        method, basis, cp and tag and optimized geometries
+
+        % can be used as a wildcard to stand in for any method, basis, cp, or tag. 
+        """
+
+        # get a list of all calculations that have the appropriate method, basis, and cp
+        calculation_ids = [elements[0] for elements in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=(SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ? AND tag LIKE ? AND optimized=?)", (method, basis, cp, tag, 1)).fetchall()]
+
+        for calculation_id in calculation_ids:
+            
+            # get the molecule id corresponding to this calculation
+            molecule_id = self.cursor.execute("SELECT molecule_id FROM Calculations WHERE ROWID=?", (calculation_id,)).fetchone()[0]
+
+            # Reconstruct the molecule from the information in this database
+            molecule = Molecule()
+            
+            # loop over all rows in the Fragments table that correspond to this molecule
+            for fragment_id, charge, spin in self.cursor.execute("SELECT ROWID, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+                fragment = Fragment(charge, spin)
+
+                # loop over all rows in the Atoms table that correspond to this fragment
+                for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+                    fragment.add_atom(Atom(symbol, x, y, z))
+
+                molecule.add_fragment(fragment)
+            
+            # get the energies corresponding to this calculation
+            energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
+    
+            yield molecule, energies
 
     def get_comparison_energies(self, method1, method2, basis1, basis2, cp1, cp2, energy):
         """
@@ -243,11 +394,44 @@ class Calculation():
     """
     Contains all the information the user needs to be able to make a calculation
     """
-    def __init__(self, molecule, method, basis, cp, tag, fragments, energy):
+    def __init__(self, molecule, method, basis, cp, tag, optimized, fragments):
         self.molecule = molecule
         self.method = method
         self.basis = basis
         self.cp = cp
         self.tag = tag
+        self.optimized = optimized
         self.fragments = fragments
-        self.energy = energy
+
+def number_of_energies(number_of_fragments):
+    """
+    Returns the number of nmer energies that a molecule with number_of_fragments fragments will have
+    1 -> 1
+    2 -> 3
+    3 -> 7
+    4 -> 15
+
+    Equal to the size of the power set of a set of size number_of_fragments minus the empty set
+    """
+
+    return 2 ** number_of_fragments - 1
+
+# THESE TWO METHODS COULD PROBABLY BE BETTER, BUT THEY WORK
+
+def energy_index_to_fragment_indicies(energy_index, number_of_fragments):
+    """
+    Returns an array of fragment indicies that should be included in a calculation with energy_index index in a molecule with number_of_fragments fragments
+    """
+
+    combinations = [inner for outer in (itertools.combinations(range(number_of_fragments), combination_size) for combination_size in range(1, number_of_fragments + 1)) for inner in outer]
+
+    return combinations[energy_index]
+
+def fragment_indicies_to_energy_index(fragment_indicies, number_of_fragments):
+    """
+    Returns the energy index corresponding to an energy using fragments fragment_indicies and number_of_fragments fragments
+    """
+
+    combinations = [inner for outer in (itertools.combinations(range(number_of_fragments), combination_size) for combination_size in range(1, number_of_fragments + 1)) for inner in outer]
+
+    return combinations.index(fragment_indicies)

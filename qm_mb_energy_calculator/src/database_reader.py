@@ -25,7 +25,7 @@ def generate_fitting_input(settings, database_name, output_path):
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
     # get list of all [molecule, energies] pairs calculated in the database where energies is a list: [E0, E1, E2, E01, E12, E02, E012] with N/A energies missing
-    molecule_energy_pairs = database.get_complete_energies()
+    molecule_energy_pairs = list(database.get_complete_energies())
 
     # if there are no calculated energies, error and exit
     if len(molecule_energy_pairs) == 0:
@@ -37,7 +37,7 @@ def generate_fitting_input(settings, database_name, output_path):
     
     # find the optimized geometry energy from the database
     try:
-        opt_energy = database.get_energies("%", "%", "%", "opt")[0][1][0]
+        opt_energy = list(database.get_complete_optimized_energies())[0][1][0]
     except IndexError:
         raise ValueError("No optimized geometry in database. Terminating training set generation") from None
 

@@ -27,6 +27,24 @@ class Atom(object):
         return self.name
 
     '''
+    Get the x of this atom
+    '''
+    def get_x(self):
+        return self.x
+
+    '''
+    Get the y of this atom
+    '''
+    def get_y(self):
+        return self.y
+
+    '''
+    Get the z of this atom
+    '''
+    def get_z(self):
+        return self.z
+
+    '''
     Returns a string representing the information in this atom in the xyz file
     format
     '''

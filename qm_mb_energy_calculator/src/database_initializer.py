@@ -47,7 +47,7 @@ def initialize_database(settings, database_name, directory):
     # Read values from the config file
     method = config["energy_calculator"]["method"]
     basis = config["energy_calculator"]["basis"]
-    cp = config["energy_calculator"]["cp"]
+    cp = config["energy_calculator"].getboolean("cp")
     tag = config["molecule"]["tag"]
 
     # loop thru all files in directory
@@ -64,12 +64,12 @@ def initialize_database(settings, database_name, directory):
             # for each molecule in the file
             for molecule in molecules:
                 # add this molecule to the database
-                database.add_molecule(molecule, method, basis, cp, "opt")
+                database.add_calculation(molecule, method, basis, cp, tag, True)
         else: 
             # for each molecule in the file
             for molecule in molecules:
                 # add this molecule to the database
-                database.add_molecule(molecule, method, basis, cp, tag)
+                database.add_calculation(molecule, method, basis, cp, tag, False)
 
     database.save()
     database.close()

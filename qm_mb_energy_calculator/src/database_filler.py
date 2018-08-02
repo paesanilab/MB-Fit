@@ -27,10 +27,8 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
 
     print("Filling database {}".format(database_name))
 
-    # parse settings.ini file
+    # parse settings file
     config = configparser.SafeConfigParser(allow_no_value=False)
-
-    # See if a config file already exists; if not, generate one
     config.read(settings)
     
     for calculation in database.missing_energies():
@@ -51,4 +49,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Incorrect number of arguments");
         print("Usage: python database_filler.py <settings_file> <database_name> <directory>")
+        exit(1)
     fill_database(sys.argv[1], sys.argv[2], sys.argv[3])

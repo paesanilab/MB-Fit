@@ -100,6 +100,25 @@ def generate_poly(settings, input_file, order, output_path):
         poly_log.write("\n")
 
         # read variables from input file
+
+        variables = list(parse_variables(in_poly))
+
+        # write variable count to log file
+        poly_log.write("<> variables ({}) <>\n".format(len(variables))) 
+        poly_log.write("\n")
+
+        # write each variable to log file
+        for index, variable in zip(range(len(variables)), variables):
+            poly_log.write("{:>2} : {:>3}({:>1}) <===> {:>3}({:>1}) : {}\n".format(index, variable.atom1_name, variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment, variable.category))
+        poly_log.write("\n")
+
+        # generate the monomials
+
+        for degree in range(1, order + 1):
+            poly_log.write("<> {} degree <>\n".format(degree))
+            poly_log.write("\n")
+            monomials = list(generate_monomials(list(0 for x in range(len(variables))), degree, 0))
+            poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
         
         
 
@@ -111,6 +130,16 @@ def parse_fragments(input_file):
         line = input_file.readline()
 
     return fragments
+
+def parse_variables(input_file):
+    for line in input_file.readlines():
+        yield Variable(line)
+        
+class Variable(object):
+    def __init__(self, line):
+        line = line[line.index("[") + 1:line.index("]")]
+        self.atom1_name, self.atom1_fragment, self.atom2_name, self.atom2_fragment, self.category = line.replace("'", "").replace(" ", "").split(",")
+    
 
 def make_permutations(existing_permutation, fragment, index):
     # 2nd letter of fragment is next atom count
@@ -138,9 +167,19 @@ def combine_permutations(existing_permutation, fragments, fragment_permutations)
         if fragments[i] == fragments[0]:
             for permutation in fragment_permutations[i]:
                 yield from combine_permutations(existing_permutation + permutation, fragments[1:i] + [fragments[0]] + fragments[i + 1:], fragment_permutations[1:i] + [fragments[0]] + fragments[i + 1:])
-   
+
+def generate_monomials(existing_powers, degree, min_index):
+    if degree == 0:
+        yield existing_powers
+        raise StopIteration
+
+    for i in range(min_index, len(existing_powers)):
+        new_powers = existing_powers[:]
+        new_powers[i] += 1
+        yield from generate_monomials(new_powers, degree - 1, i)
+
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Usage: python generate_poly.py settings.ini input_file order output_path")
         sys.exit(1)
-    generate_poly(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    generate_poly(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4])

@@ -128,6 +128,20 @@ class Fragment(object):
         for atom in self.get_atoms():
             string += atom.to_ghost_xyz() + "\n"
         return string
+    
+    '''
+    Initializes this fragment from a string, the returns itself
+    '''
+    def read_xyz(self, string):
+        # split the string into an array of lines
+        lines = string.splitlines(True)
+
+        for line in lines:
+            # construct each atom from the info in this line
+            symbol, x, y, z = line.split()
+            self.add_atom(Atom(symbol, float(x), float(y), float(z)))
+
+        return self
 
 class Molecule(object):
     """
@@ -272,7 +286,18 @@ class Molecule(object):
         return sha1(hash_string.encode()).hexdigest()
 
     '''
-    Initializes this molecule from a string
+    Initializes this molecule from a string, the returns itself
     '''
-    def from_string(self, string):
-        pass
+    def read_xyz(self, string, atoms_per_fragment, charges, spin_multiplicities):
+        if not len(atoms_per_fragment) == len(charges) == len(spin_multiplicities):
+            raise ValueError("Length of atoms_per_fragment, chrages, and spins lists must be the same")
+
+        # split the string into an array of lines
+        lines = string.splitlines(True)
+
+        for atom_count, charge, spin_multiplicity in zip(atoms_per_fragment, charges, spin_multiplicities):
+            # construct each fragment from its charge, spin multiplicity and its line's from the string
+            self.add_fragment(Fragment(charge, spin_multiplicity).read_xyz("".join(lines[:atom_count])))
+            lines = lines[atom_count:]
+
+        return self

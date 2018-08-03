@@ -37,7 +37,7 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
         energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, calculation.cp, config)
 
         # update the energy in the database
-        database.set_energy(calculation, energy, "some/log/path")
+        database.set_energy(calculation.job_id, energy, "some/log/path")
 
     # commit changes to database
     database.save()

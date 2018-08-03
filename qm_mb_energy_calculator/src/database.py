@@ -211,7 +211,7 @@ class Database():
         # update the job with its start date and running status
         self.cursor.execute("UPDATE Jobs SET status=?, start_date=? WHERE ROWID=?", ("running", datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
         
-        return Calculation(molecule, method, basis, True if cp == 1 else False, tag, True if optimized == 1 else False, fragment_indicies)
+        return Calculation(molecule, method, basis, True if cp == 1 else False, fragment_indicies, job_id)
 
     def missing_energies(self):
         """
@@ -226,42 +226,13 @@ class Database():
             yield calculation
         
 
-    def set_energy(self, calculation, energy, log_file):
+    def set_energy(self, job_id, energy, log_file):
         """
         Sets the energy in the table of a certain calculation
         """
 
-        # find the id of the model from the Models table
-        try:
-            model_id = self.cursor.execute("SELECT ROWID FROM Models WHERE method=? AND basis=? AND cp=?", (calculation.method, calculation.basis, calculation.cp)).fetchone()[0]
-        except TypeError:
-            # this error gets raised if this model is not in the Models table
-            raise ValueError("Tried to set an energy that does not exist in the database") from None
-
-        # get the SHA1 hash of this molecule
-        molecule_hash = calculation.molecule.get_SHA1()
-
-        # find the id of the molecule from the Molecules table
-        try:
-            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE hash=?", (molecule_hash,)).fetchone()[0]
-        except TypeError:
-            # this error gets raised if this molecule is not in the Molecules table
-            raise ValueError("Tried to set an energy that does not exist in the database") from None        
-
-        # find the id of the calculation from the Calculations table
-        try:
-            calculation_id = self.cursor.execute("SELECT ROWID FROM Calculations WHERE molecule_id=? AND model_id=? AND tag=? AND optimized=?", (molecule_id, model_id, calculation.tag, calculation.optimized)).fetchone()[0]
-        except TyperError:
-            # this error gets raised if this calculation is not in the Calculations table
-            raise ValueError("Tried to set an energy that does not exist in the database")
-
-        energy_index = fragment_indicies_to_energy_index(calculation.fragments, calculation.molecule.get_num_fragments())
-
         # update the row in the Energies table corresponding to this energy
-        self.cursor.execute("UPDATE Energies SET energy=? WHERE calculation_id=? AND energy_index=?", (energy, calculation_id, energy_index))
-
-        # get the job corresponding to this energy
-        job_id = self.cursor.execute("SELECT job_id FROM Energies WHERE calculation_id=? AND energy_index=?", (calculation_id, energy_index)).fetchone()[0]
+        self.cursor.execute("UPDATE Energies SET energy=? WHERE job_id=?", (energy, job_id))
 
         # update the information about this job
         self.cursor.execute("UPDATE Jobs SET status=?, log_file=?, end_date=? WHERE ROWID=?", ("completed", log_file, datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
@@ -394,14 +365,13 @@ class Calculation():
     """
     Contains all the information the user needs to be able to make a calculation
     """
-    def __init__(self, molecule, method, basis, cp, tag, optimized, fragments):
+    def __init__(self, molecule, method, basis, cp, fragments, job_id):
         self.molecule = molecule
         self.method = method
         self.basis = basis
         self.cp = cp
-        self.tag = tag
-        self.optimized = optimized
         self.fragments = fragments
+        self.job_id = job_id
 
 def number_of_energies(number_of_fragments):
     """

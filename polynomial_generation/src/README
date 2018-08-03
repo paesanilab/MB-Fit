@@ -40,6 +40,7 @@ Notes on assumptions of the code
 - Permutations are only allowed between:
   - Fragements which are equivalent in composition
   - Equivalent atoms within fragments. Note, this condition is not strictly necessary (i.e., could allow permutations between any equivalent atom, regardless of fragment membership), but is what was used for HBB2-pol/MB-pol
+- n-body filtering is enabled by default (no option to switch off at present): Any monomial for an n-mer must contain variables on n molecules.
 
 How to use the code : 
 --------------------------------

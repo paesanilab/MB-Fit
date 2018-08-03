@@ -19,6 +19,7 @@ language: cpp
 script:
     # Build ndiff tool
     - cd $TRAVIS_BUILD_DIR/tools/ndiff-2.00; ./configure; make
+    - PATH=$TRAVIS_BUILD_DIR/tools/ndiff-2.00:$PATH
 
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
@@ -33,10 +34,13 @@ script:
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
 
     # QM MB energy calculator (uses psi4)
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomers; source activate psi4env; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimer; source activate psi4env; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimers; source activate psi4env; bash run_test.sh
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh        
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/pythonTests; python executeTests.py
 
     # training set generation
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/src; make
@@ -45,3 +49,4 @@ script:
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_pf6.sh
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_minimum.sh
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_saddle.sh
+    - cd $TRAVIS_BUILD_DIR/configuration_generator/test; bash run_test.sh

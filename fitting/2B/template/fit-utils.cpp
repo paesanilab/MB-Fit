@@ -13,15 +13,15 @@ void setup_weights(const std::vector<tset::dimer>& ts,
     E_min = 1.0e+10;
 
     for (size_t n = 0; n < ts.size(); ++n) {
-        const double energy =
-            (use_mb_energy ? ts[n].mb_total_energy() : ts[n].energy_total);
+        const double energy = ts[n].energy_total;
+//            (use_mb_energy ? ts[n].mb_total_energy() : ts[n].energy_total);
         if (energy < E_min)
             E_min = energy;
     }
 
     for (size_t n = 0; n < ts.size(); ++n) {
-        const double energy =
-            (use_mb_energy ? ts[n].mb_total_energy() : ts[n].energy_total);
+        const double energy = ts[n].energy_total;
+//            (use_mb_energy ? ts[n].mb_total_energy() : ts[n].energy_total);
         weights[n] = std::pow(E_range/(energy - E_min + E_range), 2);
     }
 

@@ -74,8 +74,8 @@ class TestFragment(unittest.TestCase):
     
         fragment.add_atom(atom1)
         
-        self.assertEqual(fragment.get_atoms()[0], atom0)
-        self.assertEqual(fragment.get_atoms()[1], atom1)
+        self.assertEqual(fragment.get_atoms()[0], atom1)
+        self.assertEqual(fragment.get_atoms()[1], atom0)
         # get_atom() should return list of length 2 after 2 atoms added to fragment
         self.assertEqual(len(fragment.get_atoms()), 2)
 
@@ -158,59 +158,14 @@ class TestFragment(unittest.TestCase):
         fragment.add_atom(atom1)
 
         # to_xyz() should return string of 2 atoms after 2nd atom added
-        self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n" + atom1.to_xyz() + "\n")
+        self.assertEqual(fragment.to_xyz(), atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n")
     
         atom2 = Atom("Xe", 10.234235, -0.00000234, 2.353523)
 
         fragment.add_atom(atom2)
 
         # to_xyz() should return string of 3 atoms after only 3rd atom added
-        self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom2.to_xyz() + "\n")
-
-    """
-    Test the to_standard_xyz()
-    """
-    def test_to_standard_xyz(self):
-        fragment = Fragment(2, 1);
-
-        # to_standard_xyz() should return empty string when no atoms are added to fragment
-        self.assertEqual(fragment.to_standard_xyz(), "");
-        
-        atom0 = Atom("H", 0, 0, 0)
-
-        fragment.add_atom(atom0)
-
-        # to_standard_xyz() should return string of first atom after only 1 atom added
-        self.assertEqual(fragment.to_standard_xyz(), atom0.to_xyz() + "\n")
-        
-        atom1 = Atom("Cl", 5, 7, -3)
-
-        fragment.add_atom(atom1)
-
-        # to_standard_xyz() should return string of 2 atoms in ALPHABETIC ORDER
-        self.assertEqual(fragment.to_standard_xyz(), atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n")
-    
-        atom2 = Atom("Xe", 10.234235, -0.00000234, 2.353523)
-
-        fragment.add_atom(atom2)
-
-        # to_xyz() should return string of 3 atoms in ALPHABETIC ORDER
-        self.assertEqual(fragment.to_standard_xyz(), atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n" + atom2.to_xyz() + "\n")
-
-        atom3 = Atom("F", 0.0000000000000234, 23423, 0)
-
-        fragment.add_atom(atom3)
-
-        # to_xyz() should return string of 3 atoms in ALPHABETIC ORDER
-        self.assertEqual(fragment.to_standard_xyz(), atom1.to_xyz() + "\n" + atom3.to_xyz() + "\n" + atom0.to_xyz() + "\n" + atom2.to_xyz() + "\n")
-        
-        atom4 = Atom("Cl", 0.0000000000000234, 23423, 0)
-
-        fragment.add_atom(atom4)
-
-        # to_xyz() should return string of 3 atoms in ALPHABETIC ORDER
-        self.assertEqual(fragment.to_standard_xyz(), atom4.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom3.to_xyz() + "\n" + atom0.to_xyz() + "\n" + atom2.to_xyz() + "\n")
-       
+        self.assertEqual(fragment.to_xyz(), atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n" + atom2.to_xyz() + "\n")
 
 """
 Test cases for molecule class
@@ -402,40 +357,6 @@ class TestMolecule(unittest.TestCase):
     """
     Tests the to_xyz() function of the Molecule class
     """
-    def test_to_xyz(self):
-        molecule = Molecule()
-
-        fragment0 = Fragment(0, 1)
-        fragment0.add_atom(Atom("H", 5, 3, 0.00343))
-        fragment0.add_atom(Atom("Cl", 2, 0, -13))
-        fragment0.add_atom(Atom("He", 6, 2, 0.343))
-
-        molecule.add_fragment(fragment0)
-
-        fragment1 = Fragment(0, 1)
-        fragment1.add_atom(Atom("Ar", 0.23430523424, -34, -234.5235))
-
-        molecule.add_fragment(fragment1)
-
-        fragment2 = Fragment(2, 2)
-        fragment2.add_atom(Atom("Xe", 0, 0, 0))
-        fragment2.add_atom(Atom("Br", 62, 5, 0.001))
-
-        molecule.add_fragment(fragment2)
-
-        self.assertEqual(molecule.to_xyz([]), "")
-        self.assertEqual(molecule.to_xyz(), fragment0.to_xyz() + fragment1.to_xyz() + fragment2.to_xyz()[:-1])
-        self.assertEqual(molecule.to_xyz([0]), fragment0.to_xyz()[:-1])
-        self.assertEqual(molecule.to_xyz([1]), fragment1.to_xyz()[:-1])
-        self.assertEqual(molecule.to_xyz([2]), fragment2.to_xyz()[:-1])
-        self.assertEqual(molecule.to_xyz([0, 1]), fragment0.to_xyz() + fragment1.to_xyz()[:-1])
-        self.assertEqual(molecule.to_xyz([0, 2]), fragment0.to_xyz() + fragment2.to_xyz()[:-1])
-        self.assertEqual(molecule.to_xyz([0, 1, 2]), fragment0.to_xyz() + fragment1.to_xyz() + fragment2.to_xyz()[:-1])
-        
-
-    """
-    Tests the to_standard_xyz() function of the Molecule class
-    """
     def test_to_standard_xyz(self):
         molecule = Molecule()
 
@@ -446,21 +367,21 @@ class TestMolecule(unittest.TestCase):
 
         molecule.add_fragment(fragment0)
 
-        self.assertEqual(molecule.to_standard_xyz(), fragment0.to_standard_xyz()[:-1])
+        self.assertEqual(molecule.to_xyz(), fragment0.to_xyz()[:-1])
 
         fragment1 = Fragment(-2, 1)
         fragment1.add_atom(Atom("Ar", 0.23430523424, -34, -234.5235))
 
         molecule.add_fragment(fragment1)
         
-        self.assertEqual(molecule.to_standard_xyz(), fragment1.to_standard_xyz() + fragment0.to_standard_xyz()[:-1])
+        self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment0.to_xyz()[:-1])
 
         fragment2 = Fragment(0, 2)
         fragment2.add_atom(Atom("Xe", 0, 0, 0))
         fragment2.add_atom(Atom("Br", 62, 5, 0.001))
 
         molecule.add_fragment(fragment2)
-        self.assertEqual(molecule.to_standard_xyz(), fragment1.to_standard_xyz() + fragment2.to_standard_xyz() + fragment0.to_standard_xyz()[:-1])
+        self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment2.to_xyz() + fragment0.to_xyz()[:-1])
 
 atomSuite = unittest.TestLoader().loadTestsFromTestCase(TestAtom)
 fragmentSuite = unittest.TestLoader().loadTestsFromTestCase(TestFragment)

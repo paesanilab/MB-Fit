@@ -190,10 +190,10 @@ class Molecule(object):
     '''
     def get_charge(self, fragments = None):
         if fragments == None:
-            fragments = range(len(self.fragments))
+            fragments = range(len(self.get_fragments()))
         charge = 0
         for index in fragments:
-            charge += self.fragments[index].get_charge()
+            charge += self.get_fragments()[index].get_charge()
         return charge
 
     '''
@@ -202,24 +202,24 @@ class Molecule(object):
     '''
     def get_spin_multiplicity(self, fragments = None):
         if fragments == None:
-            fragments = range(len(self.fragments))
+            fragments = range(len(self.get_fragments()))
         spin_multiplicity = 1
         for index in fragments:
-            spin_multiplicity += self.fragments[index].get_spin_multiplicity() - 1
+            spin_multiplicity += self.get_fragments()[index].get_spin_multiplicity() - 1
         return spin_multiplicity
 
     '''
     Gets the number of Fragments in this Molecule
     '''
     def get_num_fragments(self):
-        return len(self.fragments)
+        return len(self.get_fragments())
 
     '''
     Gets the number of Atoms in this Molecule
     '''
     def get_num_atoms(self):
         atoms = 0
-        for fragment in self.fragments:
+        for fragment in self.get_fragments():
             atoms += fragment.get_num_atoms()
         return atoms
     

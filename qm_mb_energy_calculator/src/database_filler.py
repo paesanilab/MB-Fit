@@ -33,11 +33,13 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
     
     for calculation in database.missing_energies():
 
-        # calculate the missing energy
-        energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, calculation.cp, config)
-
-        # update the energy in the database
-        database.set_energy(calculation.job_id, energy, "some/log/path")
+        try:
+            # calculate the missing energy
+            energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, calculation.cp, config)
+            # update the energy in the database
+            database.set_energy(calculation.job_id, energy, "some/log/path")
+        except RuntimeError:
+            database.set_failed(calculation.job_id, "failed", "some/log/path")
 
     # commit changes to database
     database.save()

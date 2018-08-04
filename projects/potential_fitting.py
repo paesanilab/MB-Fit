@@ -3,6 +3,7 @@
 import sys
 import os
 import configparser
+import random
 
 def potential_fit(project_directory, start_location = 0):
     """
@@ -213,9 +214,9 @@ def generate_normal_modes(settings, geo, normal_modes):
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
 
-def generate_configurations(settings, geo, normal_modes, dim_null, configurations):
+def generate_1b_configurations(settings, geo, normal_modes, dim_null, configurations):
     """
-    Generates configurations for a given molecule from a set of normal modes
+    Generates 1b configurations for a given monomer from a set of normal modes
 
     Args:
         settings    - the file containing all relevent settings information
@@ -239,6 +240,38 @@ def generate_configurations(settings, geo, normal_modes, dim_null, configuration
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
+def generate_2b_configurations(settings, geo1, geo2, configs_per_distance, min_distance, configurations, flex = False, seed = random.randint(-1000000, 1000000)):
+    """
+    Generates 2b configurations for a given dimer
+
+    Args:
+        settings    - the file containing all relevent settings information
+        geo1        - the first optimized geometry
+        geo2        - the second optimized geometry
+        configs_per_distance - number of configurations per distance
+        min_distance - min distance between any 2 molecules from each monomer
+        configurations - file to write configurations
+        flex        - True will generate flex rather than rigid configurations. Default is False
+        seed        - seed to generate random configs, the same seed will yeild the same configurations. Defualt is a random seed
+
+    Returns:
+        None
+    """
+
+    config = configparser.ConfigParser(allow_no_value=False)
+    config.read(settings)
+
+    original_dir = os.getcwd()
+
+    if not os.path.isdir(configurations):
+        os.mkdir(configurations)
+
+    os.chdir(configurations)
+
+    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_rigid " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
+
+    os.chdir(original_dir)
+
 
 def init_database(settings, database_name, config_files):
     """
@@ -256,7 +289,6 @@ def init_database(settings, database_name, config_files):
 
     # imports have to be here because python is bad
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
-    print(sys.path)
     import database_initializer
 
     if os.path.dirname(database_name) == "":
@@ -288,7 +320,7 @@ def fill_database(settings, database_name):
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
-def generate_training_set(settings, database_name, training_set, method = "%", basis = "%", cp = "%"):
+def generate_training_set(settings, database_name, training_set, method = "%", basis = "%", cp = "%", tag = "%"):
     """
     Generates a training set from the energies inside a database.
 
@@ -304,6 +336,7 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
         method      - only use energies calcualted by this method
         basis       - only use energies calculated in this basis
         cp          - only use energies calculated with the same cp
+        tag         - only use energies marked with this tag
 
     Returns:
         None
@@ -318,7 +351,7 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    training_set_generator.generate_training_set(settings, database_name, training_set, method, basis, cp)
+    training_set_generator.generate_training_set(settings, database_name, training_set, method, basis, cp, tag)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
     

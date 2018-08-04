@@ -141,7 +141,7 @@ def generate_input_poly(settings, poly_input):
                         poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2] + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-" + combined_letters + "']\n")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python generate_input_poly.py settings.ini")
+    if len(sys.argv) != 3:
+        print("Usage: python generate_input_poly.py <settings> <poly.in>")
         sys.exit(1)
-    generate_input_poly(sys.argv[1])
+    generate_input_poly(sys.argv[1], sys.argv[2])

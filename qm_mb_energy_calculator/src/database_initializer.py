@@ -13,11 +13,13 @@ def initialize_database(settings, database_name, directory):
     """
     Initializes a new database or adds energies to be calculated to an existing one.
 
-    settings is the .ini file used to initialize the database
-    
-    database_name is the name of the file to save the database in
+    Args:
+        settings - the .ini file used to initialize the database
+        database_name - the name of the file to save the database in
+        directory - the directory of the config.xyz files to add to the database
 
-    directory is the directory of the config.xyz files to add to the database
+    Returns:
+        None
     """
 
     # add .db to database name if it doesn't already end in .db 
@@ -29,8 +31,8 @@ def initialize_database(settings, database_name, directory):
     if not os.path.isdir(directory):
         raise ValueError("{} is not a directory. \n Terminating database initialization.".format(directory))
     
+    # Create the database
     database = Database(database_name)
-    
     database.create()
     
     print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
@@ -38,7 +40,7 @@ def initialize_database(settings, database_name, directory):
     filenames = get_filenames(directory)
 
     # parse settings.ini file
-    config = configparser.SafeConfigParser(allow_no_value=False)
+    config = configparser.ConfigParser(allow_no_value=False)
 
     # See if a config file already exists; if not, generate one
     config.read(settings)
@@ -58,8 +60,8 @@ def initialize_database(settings, database_name, directory):
 
         # open the file
         xyz_file = open(filename, "r")
-        # get list of all molecules in file
 
+        # get list of all molecules in file
         molecules = xyz_to_molecules(xyz_file, config)
         
         # if this file contains omptimized geometries, tell the database so
@@ -79,6 +81,7 @@ def initialize_database(settings, database_name, directory):
                 # add this molecule to the database, optimized flag set to false
                 database.add_calculation(molecule, method, basis, cp, tag, False)
 
+    # save and close the database
     database.save()
     database.close()
     
@@ -88,6 +91,12 @@ def initialize_database(settings, database_name, directory):
 def get_filenames(directory):
     """
     gets list of all filenames in a directory
+
+    Args:
+        directory - directory to get filenames from
+
+    Returns:
+        list of all filenames in that directory, and subdirectories
     """
     filenames = []
     for root, dirs, files in os.walk(directory):

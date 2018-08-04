@@ -1,12 +1,9 @@
-import sys
-import os
-
+import sys, os, math
 # this is messy, I hope there is a better way to do this!
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import sqlite3
-import pickle
-from database import Database
 import constants
+from database import Database
 
 def generate_fitting_input(settings, database_name, output_path):
     """
@@ -37,7 +34,7 @@ def generate_fitting_input(settings, database_name, output_path):
     
     # find the optimized geometry energy from the database
     try:
-        opt_energies = list(database.get_complete_optimized_energies())[0]
+        opt_energies = list(database.get_complete_optimized_energies())[0][1]
     except IndexError:
         raise ValueError("No optimized geometry in database. Terminating training set generation") from None
 
@@ -52,25 +49,24 @@ def generate_fitting_input(settings, database_name, output_path):
 
         # write the number of atoms to the output file
         output.write(str(molecule.get_num_atoms()) + "\n")
-        
-	    # if 1 body
-	    if num_bodies == 1:
 
+        # if 1 body
+        if num_bodies == 1:
             # monomer interaction energy
-            output.write(str((float(energy[0]) - float(opt_energy[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
         # if 2 bodies
         elif num_bodies == 2:
 
             # dimer interaction energy
-            output.write(str((float(energy[2]) - float(opt_energy[2])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energies[2]) - float(opt_energies[2])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
             # dimer binding energy
-            output.write(str((float(energy[2] - energy[0] - energy[1]) - float(opt_energy[2] - opt_energy[0] - opt_energy[1])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energies[2] - energies[0] - energies[1]) - float(opt_energies[2] - opt_energies[0] - opt_energies[1])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
             # one body energies
-            output.write(str((float(energy[0]) - float(opt_energy[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
-            output.write(str((float(energy[1]) - float(opt_energy[1])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energies[1]) - float(opt_energies[1])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
 	
         output.write("\n")

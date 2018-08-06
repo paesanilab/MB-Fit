@@ -42,16 +42,16 @@ nat2 = 3
 
 # Find the number of sites
 #nsites1 = 4
-nsites1 = 4
+nsites1 = 3
 nsites2 = 3
 
 # Is one of the molecules water? 0 = none, 1 = mon1; 2=mon2
 #is_w = 1
-is_w = 1
+is_w = 0
 # Obtain the lists with the excluded pairs
 #excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
-excl12_a = [[0,1],[0,2],[0,3]]
-excl13_a = [[1,2],[1,3],[2,3]]
+excl12_a = [[0,1],[0,2]]
+excl13_a = [[1,2]]
 excl14_a = []
 
 excl12_b = [[0,1],[0,2]]
@@ -72,7 +72,7 @@ k_max = '10.0'
 
 # Obtain C6 from user in the same order as the given pairs AA, AB ...:
 # ALL pairs are required (intra and inter)
-C6 = ['225.5857','208.0754','130.8452','94.19873']
+C6 = ['225.5857','208.0754','94.19873']
 
 # Define Energy Range for the fitting
 E_range = '30.0'

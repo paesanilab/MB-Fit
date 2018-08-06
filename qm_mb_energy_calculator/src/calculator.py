@@ -219,7 +219,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
 
     # perform system call to run qchem
     # want to save log stuff rather than put in /dev/null?
-    if os.system("qchem " +  log_file_in + " " + log_file_out + " >> /dev/null") != 0:
+    if os.system("qchem " +  log_file_in + " " + log_file_out + " -nt " + config["qchem"]["num_threads"] + " >> /dev/null") != 0:
         raise ValueError("There was a qchem error. It is possible that qchem is not available on this machine")
     
     # find the energy inside the qchem file output

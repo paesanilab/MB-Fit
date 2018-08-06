@@ -16,7 +16,7 @@ settings file: a file ending in .ini containing all the settings needed to initi
 
 database name: the name of the file to store the database in. ".db" will be added to the end if the name does not already end in ".db".
 
-config files directory: the path to a directory containing any number of files ending in ".xyz". All configurations in all files ending in ".xyz" are initialized into the database, files not ending in ".xyz" are ignored. If you wish to generate a training set from this database, there should be a ".opt.xyz" suffixed file in this directory containing the optimized geometry
+config files directory: the path to a directory containing any number of files ending in ".xyz". All configurations in all files ending in ".xyz" are initialized into the database, files not ending in ".xyz" are ignored. If you wish to generate a training set from this database, there should be a ".opt.xyz" suffixed file in this directory containing the optimized geometry. Can be just a single .xzy file.
 
 ## Filling a database:
 A database is filled with database_filler.py:

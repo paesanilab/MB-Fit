@@ -19,7 +19,6 @@ def generate_input_poly(settings, poly_input):
     # file will be automatically closed after block by with open as ... syntax
     with open(poly_input, "w") as poly_in_file:
         # split along _ to seperate fragments
-        number_of_fragments = len(molecule.split('_'))
 
         # get list of fragments
         fragments = molecule.split('_')
@@ -69,7 +68,7 @@ def generate_input_poly(settings, poly_input):
                     # loop thru as many atoms as there are of this type in this fragment
                     for j in range(int(types[i + 1])):
                         
-                        # check if this atom is not a virtual sight
+                        # check if this atom is not a virtual site
                         if not types[i] in virtual_sites:
 
                             # add it to the fragment's set with a number in format A_1_a

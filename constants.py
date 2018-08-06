@@ -2,7 +2,9 @@ avogadro = 6.02214129E+23    # NIST 2010
 au_to_ev = 27.21138505       # NIST 2010
 au_to_joule = 4.35974434E-18 # NIST 2010
 cal_to_joule = 4.184
-ang_to_bohr = 1/1.88973        # GOOGLE
+bohr = 0.52917721067e-10 # meter, 2014 CODATA
+bohr_to_ang = bohr * 1.0e10
+ang_to_bohr = 1/bohr_to_ang
 # derived                                                                      
 au_to_kcal = au_to_joule * avogadro * 1E-03 / cal_to_joule
 ev_to_kcal = au_to_kcal / au_to_ev

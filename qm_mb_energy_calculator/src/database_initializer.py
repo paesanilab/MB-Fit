@@ -27,17 +27,13 @@ def initialize_database(settings, database_name, directory):
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
 
-    # make sure that the config_files directory is actually a directory
-    if not os.path.isdir(directory):
-        raise ValueError("{} is not a directory. \n Terminating database initialization.".format(directory))
-    
     # Create the database
     database = Database(database_name)
     database.create()
     
     print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
-    # get a list of all the files in the directory
-    filenames = get_filenames(directory)
+    # get a list of all the files in the directory, or just the filename if directory is just a single file.
+    filenames = get_filenames(directory) if os.path.isdir(directory) else [directory]
 
     # parse settings.ini file
     config = configparser.ConfigParser(allow_no_value=False)

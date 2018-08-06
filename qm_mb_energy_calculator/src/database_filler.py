@@ -7,7 +7,7 @@ import sys
 from database import Database
 import calculator
 
-def fill_database(settings, database_name, directory):
+def fill_database(settings, database_name, directory = "unused"): # argument is unused, but I haven't removed yet because it will break a lot of code
     """
     Walks through a database and calculates all missing energies
     
@@ -27,25 +27,19 @@ def fill_database(settings, database_name, directory):
 
     print("Filling database {}".format(database_name))
 
-    # parse settings.ini file
+    # parse settings file
     config = configparser.SafeConfigParser(allow_no_value=False)
-
-    # See if a config file already exists; if not, generate one
     config.read(settings)
+    
+    for calculation in database.missing_energies():
 
-    while True:
-        # get a calculation to perform from the database
-        calculation = database.get_missing_energy()
-
-        # if there are no calculations left to perform, exit the loop
-        if calculation is None:
-            break
-        
-        # calculate the missing energy
-        calculation.energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, True if calculation.cp == "True" else False, config)
-
-        # update the energy in the database
-        database.set_energy(calculation)
+        try:
+            # calculate the missing energy
+            energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, calculation.cp, config)
+            # update the energy in the database
+            database.set_energy(calculation.job_id, energy, "some/log/path")
+        except RuntimeError:
+            database.set_failed(calculation.job_id, "failed", "some/log/path")
 
     # commit changes to database
     database.save()
@@ -57,4 +51,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Incorrect number of arguments");
         print("Usage: python database_filler.py <settings_file> <database_name> <directory>")
+        exit(1)
     fill_database(sys.argv[1], sys.argv[2], sys.argv[3])

@@ -1,10 +1,9 @@
-import sys
-import os
+import sys, os, math
+# this is messy, I hope there is a better way to do this!
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import sqlite3
-import pickle
-from database import Database
 import constants
+from database import Database
 
 def generate_fitting_input(settings, database_name, output_path):
     """
@@ -23,7 +22,7 @@ def generate_fitting_input(settings, database_name, output_path):
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
     # get list of all [molecule, energies] pairs calculated in the database where energies is a list: [E0, E1, E2, E01, E12, E02, E012] with N/A energies missing
-    molecule_energy_pairs = database.get_complete_energies()
+    molecule_energy_pairs = list(database.get_complete_energies())
 
     # if there are no calculated energies, error and exit
     if len(molecule_energy_pairs) == 0:
@@ -33,10 +32,13 @@ def generate_fitting_input(settings, database_name, output_path):
     
     # temporary code only works for 1b
     
-    # find the lowest energy. In future, lowest energy should be energy of optimized geometry, but for now, it is assumed the database contains the optimized geometry (or something close enough)
-    min_energy = molecule_energy_pairs[0][1][0]
-    for molecule_energy_pair in molecule_energy_pairs:
-        min_energy = min_energy if min_energy < molecule_energy_pair[1][0] else molecule_energy_pair[1][0]
+    # find the optimized geometry energy from the database
+    try:
+        opt_energies = list(database.get_complete_optimized_energies())[0][1]
+    except IndexError:
+        raise ValueError("No optimized geometry in database. Terminating training set generation") from None
+
+    num_bodies = math.log(len(opt_energies) + 1, 2)
 
     # open output file for writing
     output = open(output_path, "w")
@@ -47,11 +49,26 @@ def generate_fitting_input(settings, database_name, output_path):
 
         # write the number of atoms to the output file
         output.write(str(molecule.get_num_atoms()) + "\n")
-        
-        # write the energies to the output file
-        for energy in energies:
-            output.write(str((float(energy) - float(min_energy)) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
 
+        # if 1 body
+        if num_bodies == 1:
+            # monomer interaction energy
+            output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+
+        # if 2 bodies
+        elif num_bodies == 2:
+
+            # dimer interaction energy
+            output.write(str((float(energies[2]) - float(opt_energies[2])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+
+            # dimer binding energy
+            output.write(str((float(energies[2] - energies[0] - energies[1]) - float(opt_energies[2] - opt_energies[0] - opt_energies[1])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+
+            # one body energies
+            output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            output.write(str((float(energies[1]) - float(opt_energies[1])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+
+	
         output.write("\n")
 
         # write the molecule's atoms' coordinates to the xyz file

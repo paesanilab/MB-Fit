@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-#define USE_MKL
+//#define USE_MKL
 
 #ifdef USE_MKL
 #  include <mkl_lapack.h>

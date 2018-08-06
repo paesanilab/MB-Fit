@@ -14,6 +14,7 @@ except ImportError:
     print("Psi4 Not available")
     has_psi4 = False
 
+# this is commented because we are not making TensorMol a priority
 '''
 try:
     from TensorMol import *
@@ -51,18 +52,13 @@ def calculate_energy(molecule, fragment_indicies, model, cp, config):
     code = config["energy_calculator"]["code"]
     
     if code == "psi4":
-        # write output to a log file
-        log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" +  str(fragment_indicies) + ".out"
-        if not os.path.exists(os.path.dirname(log_file)):
-            os.makedirs(os.path.dirname(log_file))
-        psi4.core.set_output_file(log_file, False)
         return calc_psi4_energy(molecule, fragment_indicies, model, cp, config)
     
     elif code == "TensorMol":
         return TensorMol_convert_str(molecule, fragment_indicies, config)
   
     elif code == "qchem":
-        return calc_qchem_energy(molecule, fragment_indicies, config)
+        return calc_qchem_energy(molecule, fragment_indicies, model, cp, config)
     else:
         raise ValueError("{} is not a valid code library".format(code))
 
@@ -91,6 +87,19 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     int
         Calculated Energy.
     """
+    
+    if not has_psi4:
+        raise ImportError("psi4 is not avaible to perform energy calculation")
+
+    # file to write logs from psi4 calculation
+    log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
+    
+    # create file's directory if it does not already exist
+    if not os.path.exists(os.path.dirname(log_file)):
+        os.makedirs(os.path.dirname(log_file))
+    
+    # set the log file
+    psi4.core.set_output_file(log_file, False)
 
     # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
     psi4_string = molecule.to_xyz(fragment_indicies, cp) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin_multiplicity(fragment_indicies))
@@ -145,7 +154,7 @@ def calc_TensorMol_energy(atoms, coords, config):
 """
 Calculates energy using qchem
 """
-def calc_qchem_energy(molecule, fragment_indicies, config):
+def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
     """
     Uses q-chem library to compute energy of a molecule
 
@@ -182,7 +191,7 @@ def calc_qchem_energy(molecule, fragment_indicies, config):
 
     # atoms in the molecule
     # might need to add whitespace before each line?
-    qchem_input += molecule.to_xyz(fragment_indicies)
+    qchem_input += molecule.to_xyz(fragment_indicies, cp) + "\n"
 
     qchem_input += "$end\n"
 
@@ -190,19 +199,37 @@ def calc_qchem_energy(molecule, fragment_indicies, config):
     qchem_input += "$rem\n"
 
     qchem_input += "jobtype " + "sp" + "\n"
-    qchem_input += "method " + config["Qchem"]["method"] + "\n"
-    qchem_input += "basis " + config["Qchem"]["basis"] + "\n"
+    qchem_input += "method " + model.split('/')[0] + "\n"
+    qchem_input += "basis " + model.split('/')[1] + "\n"
 
     qchem_input += "$end"
  
-    call(["mkdir", "qchem"]);
+    # file to write qchem input in
+    log_file_in = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".in"
     
-    f = open("qchem/qchem_in",'w');
+    # make sure directory exists prior to writing to file
+    if not os.path.exists(os.path.dirname(log_file_in)):
+        os.makedirs(os.path.dirname(log_file_in))
+    f = open(log_file_in, "w")
     f.write(qchem_input)
-    f.close();    
+    f.close()
     
-    # call(["qchem", "qchem/qchem_in", "qchem/qchem_out", "> /dev/null"]);
-    return 0
+    # file to write qchem output in
+    log_file_out = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
+
+    # perform system call to run qchem
+    # want to save log stuff rather than put in /dev/null?
+    if os.system("qchem " +  log_file_in + " " + log_file_out + " -nt " + config["qchem"]["num_threads"] + " >> /dev/null") != 0:
+        raise ValueError("There was a qchem error. It is possible that qchem is not available on this machine")
+    
+    # find the energy inside the qchem file output
+    # the with open as syntax automatically closes the file
+    with open(log_file_out) as qchem_out:
+        for line in qchem_out:
+            if line.find("Total energy in the final basis set = ") != -1:
+                return float(line[line.find("Total energy in the final basis set = ") + 39:])
+
+    raise ValueError("Qchem failed to output an energy or this program failed to find the outputted energy")
 
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):
@@ -235,3 +262,12 @@ def En(m, x_, manager):
     energy = Etotal[0]
     return energy
 
+def fragments_to_energy_key(fragments):
+    """
+    Generate a simple string from an array of fragments. [1,2,3] -> E123, [0] -> E0
+    For use in naming of log files
+    """
+    key = "E"
+    for fragment in fragments:
+        key += str(fragment)
+    return key

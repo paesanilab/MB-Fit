@@ -27,6 +27,24 @@ class Atom(object):
         return self.name
 
     '''
+    Get the x of this atom
+    '''
+    def get_x(self):
+        return self.x
+
+    '''
+    Get the y of this atom
+    '''
+    def get_y(self):
+        return self.y
+
+    '''
+    Get the z of this atom
+    '''
+    def get_z(self):
+        return self.z
+
+    '''
     Returns a string representing the information in this atom in the xyz file
     format
     '''
@@ -65,11 +83,10 @@ class Fragment(object):
         self.atoms.append(atom)
 
     '''
-    Gets a list of the atoms in this Fragment
+    Gets a list of the atoms in this Fragment, sorted in standard order
     '''
     def get_atoms(self):
-        return self.atoms[:] # copies a list in python
-
+        return sorted(self.atoms, key=lambda atom: atom.to_xyz())
 
     '''
     Get the total charge of this fragment.
@@ -91,48 +108,40 @@ class Fragment(object):
  
     '''
     Returns a string representing the information in this fragment in the xyz
-    file format.
+    file format in standard order
     '''
     def to_xyz(self):
         """ 
         Builds a string used for an output.
         """
         string = ""
-        for atom in self.atoms:
+        for atom in self.get_atoms():
             string += atom.to_xyz() + "\n"
         return string
 
     '''
     Returns a string represeting the information in this fragment in the xyz
-    file format specifying the atoms in this fragment as ghost atoms
+    file format specifying the atoms in this fragment as ghost atoms in standard order
     '''
     def to_ghost_xyz(self):
         string = ""
-        for atom in self.atoms:
+        for atom in self.get_atoms():
             string += atom.to_ghost_xyz() + "\n"
         return string
-
+    
     '''
-    Returns a string representing the information in this fragment in the xyz
-    file format in STANDARD ORDER
-
-    STANDARD ORDER is currently defined as lexigraphical order based on the
-    atoms' to_xyz() string representaiton. Should probably be changed!
+    Initializes this fragment from a string, the returns itself
     '''
-    def to_standard_xyz(self):
-        # Get list of atom strings
-        atom_strings = []
-        for atom in self.atoms:
-            atom_strings.append(atom.to_xyz())
-        
-        # Order list of atom strings
-        atom_strings.sort()
+    def read_xyz(self, string):
+        # split the string into an array of lines
+        lines = string.splitlines(True)
 
-        # build string to output
-        string = ""
-        for atom_string in atom_strings:
-            string += atom_string + "\n"
-        return string
+        for line in lines:
+            # construct each atom from the info in this line
+            symbol, x, y, z = line.split()
+            self.add_atom(Atom(symbol, float(x), float(y), float(z)))
+
+        return self
 
 class Molecule(object):
     """
@@ -162,17 +171,17 @@ class Molecule(object):
         self.fragments.append(fragment)
 
     '''
-    Gets a list of all the fragments in this molecule
+    Gets a list of all the fragments in this molecule in standard order
     '''
     def get_fragments(self):
-        return self.fragments[:] # this copies a list in python
+        return sorted(self.fragments, key=lambda fragment: fragment.to_xyz())
 
     '''
-    Gets a list of all the atoms in this molecule
+    Gets a list of all the atoms in this molecule in standard order
     '''
     def get_atoms(self):
         atoms = []
-        for fragment in self.fragments:
+        for fragment in self.get_fragments():
             atoms += fragment.get_atoms()
         return atoms
 
@@ -181,10 +190,10 @@ class Molecule(object):
     '''
     def get_charge(self, fragments = None):
         if fragments == None:
-            fragments = range(len(self.fragments))
+            fragments = range(len(self.get_fragments()))
         charge = 0
         for index in fragments:
-            charge += self.fragments[index].get_charge()
+            charge += self.get_fragments()[index].get_charge()
         return charge
 
     '''
@@ -193,62 +202,43 @@ class Molecule(object):
     '''
     def get_spin_multiplicity(self, fragments = None):
         if fragments == None:
-            fragments = range(len(self.fragments))
+            fragments = range(len(self.get_fragments()))
         spin_multiplicity = 1
         for index in fragments:
-            spin_multiplicity += self.fragments[index].get_spin_multiplicity() - 1
+            spin_multiplicity += self.get_fragments()[index].get_spin_multiplicity() - 1
         return spin_multiplicity
 
     '''
     Gets the number of Fragments in this Molecule
     '''
     def get_num_fragments(self):
-        return len(self.fragments)
+        return len(self.get_fragments())
 
     '''
     Gets the number of Atoms in this Molecule
     '''
     def get_num_atoms(self):
         atoms = 0
-        for fragment in self.fragments:
+        for fragment in self.get_fragments():
             atoms += fragment.get_num_atoms()
         return atoms
     
 
     '''
-    Returns a string representing the fragments of this Molecule specified by
-    the indicies in the fragments parameter in the xyz file format.
+    Returns a string representing the fragments of this Molecule in standard order
+
+    Fragments should be specified by STANDARD ORDER
     '''
     def to_xyz(self, fragments = None, cp = False):
         # by default, use all fragments
         if fragments == None:
-            fragments = range(len(self.fragments))
+            fragments = range(self.get_num_fragments())
         string = ""
-        for index in range(len(self.fragments)):
+        for index in range(len(self.get_fragments())):
             if index in fragments:
-                string += self.fragments[index].to_xyz()
+                string += self.get_fragments()[index].to_xyz()
             elif cp:
-                string += self.fragments[index].to_ghost_xyz() 
-        return string[:-1] # removes last character of string (extra newline)
-
-    '''
-    Returns a string representing the fragments of this Molecule in the xyz
-    file format in STANDARD ORDER.
-
-    STANDARD ORDER is currently defined as the lexigraphical order by the
-    to_standard_xyz() string representation of each fragment
-    '''
-    def to_standard_xyz(self):
-        # get list of fragment strings
-        fragment_strings = []
-        for fragment in self.fragments:
-            fragment_strings.append(fragment.to_standard_xyz())
-        # sort the list of fragment strings
-        fragment_strings.sort()
-        # build string for return
-        string = ""
-        for fragment_string in fragment_strings:
-           string += fragment_string
+                string += self.get_fragments()[index].to_ghost_xyz() 
         return string[:-1] # removes last character of string (extra newline)
 
     '''
@@ -292,5 +282,22 @@ class Molecule(object):
     '''
     def get_SHA1(self):
         
-        hash_string = self.to_standard_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
+        hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
+
+    '''
+    Initializes this molecule from a string, the returns itself
+    '''
+    def read_xyz(self, string, atoms_per_fragment, charges, spin_multiplicities):
+        if not len(atoms_per_fragment) == len(charges) == len(spin_multiplicities):
+            raise ValueError("Length of atoms_per_fragment, chrages, and spins lists must be the same")
+
+        # split the string into an array of lines
+        lines = string.splitlines(True)
+
+        for atom_count, charge, spin_multiplicity in zip(atoms_per_fragment, charges, spin_multiplicities):
+            # construct each fragment from its charge, spin multiplicity and its line's from the string
+            self.add_fragment(Fragment(charge, spin_multiplicity).read_xyz("".join(lines[:atom_count])))
+            lines = lines[atom_count:]
+
+        return self

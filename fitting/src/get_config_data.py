@@ -5,7 +5,7 @@ import constants
 import configparser
 from collections import OrderedDict
 
-qchem_template = os.path.dirname(__file__) + "/qchem_template"
+qchem_template = "." + os.path.dirname(__file__) + "/qchem_template"
 
 free_polarizabilities = {
     "H":    0.66582,

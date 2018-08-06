@@ -83,7 +83,7 @@ class Database():
         # create the Molecules table
         self.cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS Molecules(hash TEXT)
+            CREATE TABLE IF NOT EXISTS Molecules(name TEXT, hash TEXT)
             """
         )
 
@@ -122,7 +122,7 @@ class Database():
             """
         )
 
-    def add_calculation(self, molecule, method, basis, cp, tag, optimized):
+    def add_calculation(self, molecule, molecule_name, method, basis, cp, tag, optimized):
         """
         Add a calculation to the database.
 
@@ -156,10 +156,10 @@ class Database():
         molecule_hash = molecule.get_SHA1()
 
         # check if this molecule is not already in Molecules table
-        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Molecules WHERE hash=?)", (molecule_hash,)).fetchone()[0]:
+        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Molecules WHERE name=? AND hash=?)", (molecule_name, molecule_hash)).fetchone()[0]:
 
             # create entry in Molecules table
-            self.cursor.execute("INSERT INTO Molecules (hash) VALUES (?)", (molecule_hash,))
+            self.cursor.execute("INSERT INTO Molecules (name, hash) VALUES (?, ?)", (molecule_name, molecule_hash))
         
             # get id of this molecule
             molecule_id = self.cursor.lastrowid
@@ -178,7 +178,7 @@ class Database():
         else:
             
             # get id of this molecule
-            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE hash=?", (molecule_hash,)).fetchone()[0]
+            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=? AND hash=?", (molecule_name, molecule_hash)).fetchone()[0]
 
         # check if the calculation is not already in the Calculations table
 
@@ -306,7 +306,7 @@ class Database():
 
         self.cursor.execute("UPDATE Jobs SET status=?, log_file=? WHERE ROWID=?", (status, log_path, job_id))
 
-    def get_complete_energies(self):
+    def get_complete_energies(self, molecule_name):
         """
         Returns a generator of pairs of [molecule, energies] where energies is an array of the form [E0, ...]
 
@@ -319,9 +319,9 @@ class Database():
             a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database
         """
 
-        yield from self.get_energies("%", "%", "%", "%")
+        yield from self.get_energies(molecule_name, "%", "%", "%", "%")
 
-    def get_energies(self, method, basis, cp, tag):
+    def get_energies(self, molecule_name, method, basis, cp, tag):
         """
         Returns a generator of pairs of [molecule, energies] where energies is an array of the form [E0, ...] of molecules in the database with the given
         method, basis, cp and tag.
@@ -339,10 +339,19 @@ class Database():
         Returns:
             a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database using the given model and tag
         """
+        
+        # get a list of all molecules with the given name
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
+
+        # get the id of the model corresponding to the given method, basis, and cp
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
 
         # get a list of all calculations that have the appropriate method, basis, and cp
-        calculation_ids = [elements[0] for elements in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=(SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ? AND tag LIKE ?)", (method, basis, cp, tag)).fetchall()]
-
+        calculation_ids = []
+        for molecule_id in molecule_ids:
+            for model_id in model_ids:
+                calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id, tag)).fetchall()]
+        
         for calculation_id in calculation_ids:
             
             # get the molecule id corresponding to this calculation
@@ -375,7 +384,7 @@ class Database():
             
             yield molecule, energies
 
-    def get_complete_optimized_energies(self):
+    def get_complete_optimized_energies(self, molecule_name):
         """
         Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] for optimized geometries.
 
@@ -385,9 +394,9 @@ class Database():
         Returns:
             a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database of optimized geometries
         """
-        yield from self.get_optimized_energies("%", "%", "%", "%")
+        yield from self.get_optimized_energies(molecule_name, "%", "%", "%", "%")
 
-    def get_optimized_energies(self, method, basis, cp, tag):
+    def get_optimized_energies(self, molecule_name, method, basis, cp, tag):
         """
         Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] of molecules in the database with the given
         method, basis, cp and tag and optimized geometries
@@ -404,9 +413,18 @@ class Database():
             a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database using the given model and tag of optimized geometries
         """
 
-        # get a list of all calculations that have the appropriate method, basis, and cp
-        calculation_ids = [elements[0] for elements in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=(SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ? AND tag LIKE ? AND optimized=?)", (method, basis, cp, tag, 1)).fetchall()]
+        # get a list of all molecules with the given name
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
 
+        # get the id of the model corresponding to the given method, basis, and cp
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
+
+        # get a list of all calculations that have the appropriate method, basis, and cp
+        calculation_ids = []
+        for molecule_id in molecule_ids:
+            for model_id in model_ids:
+                calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+        
         for calculation_id in calculation_ids:
             
             # get the molecule id corresponding to this calculation

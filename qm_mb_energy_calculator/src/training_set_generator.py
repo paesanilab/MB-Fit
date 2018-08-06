@@ -5,7 +5,7 @@ import sqlite3
 import constants
 from database import Database
 
-def generate_training_set(settings, database_name, output_path, method, basis, cp, tag):
+def generate_1b_training_set(settings, database_name, output_path, molecule_name, method, basis, cp, tag):
     """
     Creates a training set file from the calculated energies in a database
     
@@ -22,7 +22,7 @@ def generate_training_set(settings, database_name, output_path, method, basis, c
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
     # get list of all [molecule, energies] pairs calculated in the database where energies is a list: [E0, E1, E2, E01, E12, E02, E012] with N/A energies missing
-    molecule_energy_pairs = list(database.get_energies(method, basis, cp, tag))
+    molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
     # if there are no calculated energies, error and exit
     if len(molecule_energy_pairs) == 0:
@@ -34,7 +34,7 @@ def generate_training_set(settings, database_name, output_path, method, basis, c
     
     # find the optimized geometry energy from the database
     try:
-        opt_energies = list(database.get_optimized_energies(method, basis, cp, tag))[0][1]
+        opt_energies = list(database.get_optimized_energies(molecule_name, method, basis, cp, tag))[0][1]
     except IndexError:
         raise ValueError("No optimized geometry in database. Terminating training set generation") from None
 
@@ -78,8 +78,8 @@ def generate_training_set(settings, database_name, output_path, method, basis, c
     database.close()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print("Incorrect number of arguments");
-        print("Usage: python database_reader.py <settings_file> <database_name> <output_path>")
+        print("Usage: python database_reader.py <settings_file> <database_name> <output_path> <molecule_name>")
         sys.exit(1)   
-    generate_training_set(sys.argv[1], sys.argv[2], sys.argv[3], "%", "%", "%", "%")
+    generate_1b_training_set(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], "%", "%", "%", "%")

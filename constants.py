@@ -3,12 +3,12 @@ au_to_ev = 27.21138505       # NIST 2010
 au_to_joule = 4.35974434E-18 # NIST 2010
 cal_to_joule = 4.184
 bohr = 0.52917721067e-10 # meter, 2014 CODATA
-bohr_to_ang = bohr * 1.0e10
-ang_to_bohr = 1/bohr_to_ang
+bohr_to_ang = bohr * 1.0e10 # 0.52 ang / 1 bohr
+ang_to_bohr = 1/bohr_to_ang # 1.82 bohr / 1 ang
 # derived                                                                      
 au_to_kcal = au_to_joule * avogadro * 1E-03 / cal_to_joule
 ev_to_kcal = au_to_kcal / au_to_ev
-au_per_bohr6_to_kcal_per_ang6 = au_to_kcal * ang_to_bohr ** 6
+au_per_bohr6_to_kcal_per_ang6 = au_to_kcal * (bohr_to_ang ** 6) # I guess this is right?
 
 # atomic symbols ordered from lowest atomic number to highest
 atomic_symbols = [

@@ -24,7 +24,8 @@ def write_optimized_geo(molecule, energy, optimized_geometry_fn):
                 z = filter_neg_zero(opt_formatter.format(coordinates[2]), 6)
                 
                 opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
-                
+
+
 def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_fn):
     normal_out = ""
     

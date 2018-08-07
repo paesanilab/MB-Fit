@@ -30,14 +30,15 @@ filenames, log_name = config_loader.process_files(config)
   
 qcalc.init(config, log_name)
 
-with open(config['files']['input_geometry'], 'r') as input_file:
+with open(config['files']['input_geometry'], 'r') as input_file: 
     molecule = Molecule(input_file.read())
 
 # Step 1
-if config['config_generator'].getboolean('optimize'):
-    molecule, energy = qcalc.optimize(molecule, config)
-    
+if config['config_generator'].getboolean('optimize'):  
+    molecule, energy = qcalc.optimize(molecule, filenames, config)
+        
     output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
+
 else:
     print("Optimized geometry already provided, skipping optimization.\n")
     
@@ -48,10 +49,13 @@ else:
 
 # Step 2
 if 'input_normal_modes' not in config['files']:
-    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, config)
-    dim_null = 3 * molecule.num_atoms - len(normal_modes)
+    
+    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, filenames, config)
+    num_atoms = molecule.num_atoms
+    dim_null = 3 * num_atoms - len(normal_modes)    
     
     output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
+
 else:
     print("Normal modes already provided, skipping frequency calculation.\n")
     
@@ -62,9 +66,9 @@ else:
     
     with open(config['files']['input_normal_modes'], 'r') as input_file:
         contents = input_file.read()
-            
+        num_atoms = molecule.num_atoms
         dim_null = 3 * molecule.num_atoms - contents.count('normal mode')
 
 # Step 3
-gcn_runner.generate(config, dim_null, molecule.num_atoms, filenames)
+gcn_runner.generate(config, dim_null, num_atoms, filenames)
 

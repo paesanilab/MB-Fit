@@ -15,11 +15,11 @@ def load():
 
     # Config Default Values
     config.read_dict({
-        'files':            {'log_path': 'outputs/',
-                             'optimize': 'true'},
+        'files':            {'log_path': 'outputs'},
         'molecule':         {'charges': '0',
                              'spins': '1'},
-        'config_generator': {'random': 'P',
+        'config_generator': {'optimize': 'true',
+                             'random': 'P',
                              'geometric': 'false',
                              'linear': 'true', 
                              'code': 'psi4'},
@@ -52,11 +52,12 @@ def process_files(config):
 
     filenames = {
         "input_geometry": input_geo_fn,
-        "optimized_geometry": output_id + "_optimized.xyz",
+        "optimized_geometry": log_name + "_optimized.xyz",
         "normal_modes": log_name + "_normalmodes.dat",
         "gcn_input": log_name + "_gcn.inp",
         "gcn_output": log_name + "_gcn.out",
         "norm_config": log_name + "_configurations.xyz",
+        "log_name": log_name
     }
 
     if "optimized_geometry" in config["files"]:

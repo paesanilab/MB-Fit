@@ -9,7 +9,7 @@ def generate_poly(settings, input_file, order, output_path):
     config.read(settings)
 
     # open output files for polynomials, will automatically be closed by with open as syntax
-    with open(output_path + "/vars.cpp", "w") as out_vars, open(output_path + "/poly-direct.cpp", "w") as out_cpp, open(output_path + "/poly-nogrd.maple", "w") as out_maple_nogrd, open(output_path + "/poly-grd.maple", "w") as out_maple_grd, open(output_path + "/poly.log", "w") as poly_log, open(input_file, "r") as in_poly:
+    with open(output_path + "/poly.log", "w") as poly_log, open(input_file, "r") as in_poly:
         
         # read the add_molecule definitions to get a list of the fragments
         fragments = parse_fragments(in_poly)
@@ -42,21 +42,26 @@ def generate_poly(settings, input_file, order, output_path):
 
             # loop thru all the atomic symbols in the fragment (skipping the numbers)
             for symbol in fragment[::2]:
+
                 # loop once for each atom of this type as signified by the number immediately following the atomic symbol
                 for k in range(0, int(fragment[fragment.index(symbol) + 1])):
+
                     # check if there are multiple atoms of this type in this fragment
                     if int(fragment[fragment.index(symbol) + 1]) > 1:
+
                         # add to atom_names in form Aa1
                         atom_names.append(symbol + chr(fragname) + str(k + 1))
+
                     else:
+
                         # add to atom_names in form Aa
                         atom_names.append(symbol + chr(fragname))
-                    
                     # increment number of atoms
                     number_of_atoms += 1
 
             # add index of first atom in this fragment to index_each_fragment
             index_each_fragment.append(sum(number_per_fragment))
+
             # add number of atoms in this fragment to number_per)fragment
             number_per_fragment.append(number_of_atoms)
             
@@ -107,6 +112,10 @@ def generate_poly(settings, input_file, order, output_path):
         poly_log.write("<> variables ({}) <>\n".format(len(variables))) 
         poly_log.write("\n")
 
+        # make the .cpp vars file
+        with open(output_path + "/vars.cpp", "w") as vars_file:
+            write_variable_file(vars_file, variables);
+
         # write each variable to log file
         for index, variable in zip(range(len(variables)), variables):
             poly_log.write("{:>2} : {:>3}({:>1}) <===> {:>3}({:>1}) : {}\n".format(index, variable.atom1_name, variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment, variable.category))
@@ -114,13 +123,64 @@ def generate_poly(settings, input_file, order, output_path):
 
         # generate the monomials
 
+        total_terms = 0
+
+        # this list will be filled so that the first item is all the 1st degree monomials, second item is all the 2nd degree monomials, etc
+        total_monomials = []
+
+        # loop thru every degree in this polynomial
         for degree in range(1, order + 1):
+
+            # header for this degree
             poly_log.write("<> {} degree <>\n".format(degree))
             poly_log.write("\n")
+
+            # get all the monomials of the current degree
             monomials = list(generate_monomials(len(variables), degree))
+
+            # log number of possible monomials
             poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
-        
-        
+
+            # filter out redundant monomials (that are a permutation of eachother)
+            accepted_monomials = list(eliminate_redundant_monomials(monomials, variables))
+
+            # filter out monomials that are purely intramolecular
+            accepted_monomials = list(eliminate_intramolecular_monomials(accepted_monomials, variables))
+
+            # log number of accpeted terms
+            poly_log.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
+
+            poly_log.write("\n")
+
+            # update the total number of terms
+            total_terms += len(accepted_monomials)
+
+            # add the monomials of the current degree to the list of all monomials
+            total_monomials.append(accepted_monomials)
+
+        # log the total number of terms
+        poly_log.write("Total number of terms: {}\n".format(total_terms))
+
+        # write the header file
+        with open(output_path + "/poly-model.h", "w") as header_file:
+            write_header_file(header_file, total_terms, len(variables))
+
+        # open the three files we will now write to
+        with open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple", "w") as grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file:
+            # write the opening for the cpp file
+            write_cpp_opening(cpp_file, total_terms, len(variables))
+
+            # keeps track of what index in a list of all monomials the current monomial would occupy
+            monomial_index = 0
+
+            # loop thru every degree in this polynomial
+            for degree in range(1, order + 1):
+                for monomial in total_monomials[degree]:
+                    write_cpp_monomial(cpp_file, monomial_index, monomial)
+                    write_grd_monomial(cpp_file, monomial_index, monomial)
+                    write_nogrd_monomial(cpp_file, monomial_index, monomial)
+                    monomial_index++
+
 def parse_fragments(input_file):
     """
     Reads the add_molecule statements from the input file
@@ -239,6 +299,95 @@ def generate_monomials(number_of_vars, degree):
 
             # yield from the list created by all zeros before the first non-zero term, then the first non-zero term, then each result of the recursive call on all terms after the first non-zero term with degree equal to degree minus the degree of the first non-zero term
             yield from ([0 for i in range(v)] + [d] + monomial for monomial in generate_monomials(number_of_vars - v - 1, degree - d))
+
+def eliminate_redundant_monomials(monomials, variables):
+    for monomial in monomials:
+        redundant = False
+        for other_monomial in monomials[:monomials.index(monomial)]:
+            if are_same_monomial(monomial, other_monomial, variables):
+                redundant = True
+                break
+        if redundant:
+            continue
+        yield monomial
+     
+def are_same_monomial(monomial1, monomial2, variables):
+    monomial1_terms = []
+    for index, degree in enumerate(monomial1):
+        monomial1_terms.append([variables[index].category, degree])
+
+    monomial2_terms = []
+    for index, degree in enumerate(monomial2):
+        monomial2_terms.append([variables[index].category, degree])
+
+    if sorted(monomial1_terms) == sorted(monomial2_terms):
+        return True
+    return False
+
+def eliminate_intramolecular_monomials(monomials, variables):
+    for monomial in monomials:
+        if not is_intramolecular(monomial, variables):
+            yield monomial
+
+def is_intramolecular(monomial, variables):
+    for index, degree in enumerate(monomial):
+        if degree > 0 and not variables[index].category[:7] == "x-intra":
+            return False
+    return True
+
+def write_variable_file(variable_file, variables):
+    # variable header comment
+    variable_file.write("\n// <-> variables <->\n\n")
+    
+    # loop thru each variable
+    for index, variable in enumerate(variables):
+        
+        # write the variable to vars.cpp
+        variable_file.write("    x[{}] = @VAR@-|{}|({}{}{}{};\n".format(index, variable.category, variable.atom1_name, variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment))
+
+def write_header_file(header_file, total_terms, number_of_variables):
+    header_file.write("""#ifndef POLY_MODEL_H
+#define POLY_MODEL_H
+
+namespace mb_system {{
+
+struct poly_model {{
+    static const unsigned n_vars = {1};
+    static const unsigned size = {0};
+
+    static double eval(const double a[{0}],
+                       const double x[{1}]);
+
+    static double eval(const double a[{0}],
+                       const double x[{1}],
+                             double g[{1}]);
+
+    static double eval_direct(const double a[{0}],
+                              const double x[{1}]);
+
+public:
+    unsigned report_nvars(){{ return n_vars; }};
+    unsigned report_size(){{ return size; }};
+}};
+
+}} // namespace mb_system
+
+#endif // POLY_MODEL_H""".format(total_terms, number_of_variables))
+
+def write_cpp_opening(cpp_file, total_terms, number_of_variables):
+    cpp_file.write("""#include "poly-model.h"
+
+namespace mb_system {{
+
+double poly_model::eval_direct(const double a[{0}], const double x[{1}])
+{{
+    double p[{0}];
+""".format(total_terms, number_of_variables))
+
+def write_cpp_monomial(cpp_file, index, monomial):
+    
+
+        
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

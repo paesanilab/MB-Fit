@@ -6,7 +6,16 @@ import numpy as np
 from molecule import Molecule
         
 #Creates and writes an input file in the format for QChem
-def write_qchem_input(file_name, charge, multiplicity, molecule, jobtype, method, basis, ecp):
+def write_qchem_input(file_name, config, molecule, jobtype):
+
+    charge = config['molecule']['charges']        #AWG only works for monomer
+    multiplicity = config['molecule']['spins']    #AWG -"-
+    method = config['config_generator']['method']
+    basis = config['config_generator']['basis']
+    try:
+        ecp = config['config_generator']['ecp']
+    except:
+        ecp = None
 
     with open(file_name, 'w') as f:
         #$molecule section        
@@ -21,15 +30,19 @@ def write_qchem_input(file_name, charge, multiplicity, molecule, jobtype, method
         f.write("jobtype " + jobtype + "\n")
         f.write("method " + method + "\n")
         f.write("basis " + basis + "\n")
-        f.write("ecp " + ecp + "\n")
+        if ecp:
+            f.write("ecp " + ecp + "\n")
         f.write("$end\n")
         f.close()
 
-#Uses the method defined above to create a QChem input file, then runs QChem, parses the file to look for the optimized geometry using keywords, and returns the energy as well as a list containing the lines of the optimized geometry in the output file
+# 1 Create a QChem input file
+# 2 run QChem,
+# 3 parse the file to look for the optimized geometry using keywords
+# 4 return the energy and a list containing the lines of the optimized geometry
 def optimize(molecule, filenames, config):
     #Write the inputfile and call QChem    
-    write_qchem_input(filenames['qchem_opt_input'], config['molecule']['charges'], config['molecule']['spins'], molecule, 'opt', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
-    print("Optimizing geometry...")    
+    write_qchem_input(filenames['qchem_opt_input'], config, molecule, 'opt')
+    print("Optimizing geometry...") 
     subprocess.run("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']), shell = True)
     
     found = False
@@ -54,7 +67,7 @@ def read_qchem_mol(qchem_mol, num_atoms, au_conversion = 1.0):
     return Molecule(molecule, au_conversion = 1.0)
 
 def frequencies(optimized_molecule, filenames, config):
-    write_qchem_input(filenames['qchem_freq_input'], config['molecule']['charges'], config['molecule']['spins'], optimized_molecule, 'freq', config['config_generator']['method'], config['config_generator']['basis'], config['config_generator']['ecp'])
+    write_qchem_input(filenames['qchem_freq_input'], config, optimized_molecule, 'freq')
     print("Determining normal modes and running frequency analysis...")    
     subprocess.run("qchem %s %s" % (filenames['qchem_freq_input'], filenames['qchem_freq_output']), shell = True)
     found = False

@@ -9,28 +9,28 @@ The driver script can be run from the command line with a single positional inpu
 **Configuration file format:**
 ```
 [files]
-input_geometry_path =   h2o.xyz     | the .xyz file containing the starting geometry
+input_geometry =        h2o.xyz     | the .xyz file containing the starting geometry
 
 name =                  h2o         | the name used in the output files
-# OPTIONAL: default value = the input_geometry_path filename up until the first underscore, not including .xyz
+# OPTIONAL: default value = the unoptimized_geometry filename up until the first underscore, not including .xyz
 
-output_path =           outputs/    | the path to output all produced files
-# OPTIONAL: default value = outputs/
-
-optimize =              true        | wether or not to optimize the geometry.
-# OPTIONAL: default value = true
+log_path =              outputs     | the directory to output all produced files
+# OPTIONAL: default value = outputs
 
 input_normal_modes = h2o_normal.dat | the path to the normal modes (in gcn format) to use for calculations. if provided, frequency calculation will be skipped
 # OPTIONAL: default value = None (as in do the frequency calculation)
 
 [molecule]
-charge =                0           | the charge of the molecule
+charges =                0          | the charge of the molecule
 # OPTIONAL: default value = 0
 
-multiplicity =          1           | the spin multiplicity of the molecule
+spins =                  1          | the spin multiplicity of the molecule
 # OPTIONAL: default value = 1
 
 [config_generator]
+optimize =              true        | whether or not to optimize the geometry.
+# OPTIONAL: default value = true
+
 random =                P           | whether a Q(uasirandom) or P(suedorandom) sequence is to be used
 # OPTIONAL: default value = P
 
@@ -42,14 +42,17 @@ geometric =             false       | whether or not a geometric progression is 
 linear =                true        | whether or not a linear progression is to be used for temperature T and A
 # OPTIONAL: default value = true
 
-[model]
-method =                blyp        | the calculation model method to use
-basis =	                cc-pvdz     | the calculation model basis to use
-
-[program]
 code =                  psi4        | which quantum chemistry code to use for the calculations
 # OPTIONAL: default value = psi4
 
+method =                blyp        | the calculation model method to use
+
+basis =	                def2-svp    | the calculation model basis to use
+
+ecp =                   def2-ecp    | the effective core potential to use, if necessary
+#OPTIONAL: default value = None
+
+[program]
 memory =                1GB         | the amount of memory to allocate to the selected code
 # OPTIONAL: default value = 1GB
 

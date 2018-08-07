@@ -201,6 +201,10 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
     qchem_input += "jobtype " + "sp" + "\n"
     qchem_input += "method " + model.split('/')[0] + "\n"
     qchem_input += "basis " + model.split('/')[1] + "\n"
+    try:
+        qchem_input += "ecp " + config["energy_calculator"]["ecp"] + "\n"
+    except:
+        pass
 
     qchem_input += "$end"
  

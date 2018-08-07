@@ -57,10 +57,7 @@ def process_files(config):
         "gcn_input": log_name + "_gcn.inp",
         "gcn_output": log_name + "_gcn.out",
         "norm_config": log_name + "_configurations.xyz",
-        "qchem_opt_input": log_name + "_qchem_optimization.inp",
-        "qchem_freq_input": log_name + "_qchem_frequencies.inp",
-        "qchem_opt_output": log_name + "_qchem_optimization.out",
-        "qchem_freq_output": log_name + "_qchem_frequencies.out"
+        "log_name": log_name
     }
 
     if "optimized_geometry" in config["files"]:

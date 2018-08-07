@@ -6,7 +6,7 @@ import numpy as np
 from molecule import Molecule
         
 #Creates and writes an input file in the format for QChem
-def write_qchem_input(file_name, config, molecule, jobtype):
+def write_qchem_input(fn, config, molecule, jobtype):
 
     charge = config['molecule']['charges']        #AWG only works for monomer
     multiplicity = config['molecule']['spins']    #AWG -"-
@@ -17,7 +17,7 @@ def write_qchem_input(file_name, config, molecule, jobtype):
     except:
         ecp = None
 
-    with open(file_name, 'w') as f:
+    with open(fn, 'w') as f:
         #$molecule section        
         f.write("$molecule\n")
         f.write("{} {}\n".format(charge, multiplicity))
@@ -41,14 +41,16 @@ def write_qchem_input(file_name, config, molecule, jobtype):
 # 4 return the energy and a list containing the lines of the optimized geometry
 def optimize(molecule, filenames, config):
     #Write the inputfile and call QChem    
-    write_qchem_input(filenames['qchem_opt_input'], config, molecule, 'opt')
+    fninp = filenames["log_name"] + "_opt.inp"
+    fnout = filenames["log_name"] + "_opt.out"
+    write_qchem_input(fninp, config, molecule, 'opt')
     print("Optimizing geometry...") 
-    subprocess.run("qchem %s %s" % (filenames['qchem_opt_input'], filenames['qchem_opt_output']), shell = True)
+    subprocess.run("qchem %s %s" % (fninp, fnout), shell = True)
     
     found = False
     #found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
     qchem_mol = []
-    with open(filenames['qchem_opt_output'], "r") as outfile:
+    with open(fnout, "r") as outfile:
         for line in outfile:
             if found:
                 if "ATOM" in line:
@@ -67,14 +69,16 @@ def read_qchem_mol(qchem_mol, num_atoms, au_conversion = 1.0):
     return Molecule(molecule, au_conversion = 1.0)
 
 def frequencies(optimized_molecule, filenames, config):
-    write_qchem_input(filenames['qchem_freq_input'], config, optimized_molecule, 'freq')
+    fninp = filenames["log_name"] + "_freq.inp"
+    fnout = filenames["log_name"] + "_freq.out"
+    write_qchem_input(fninp, config, optimized_molecule, 'freq')
     print("Determining normal modes and running frequency analysis...")    
-    subprocess.run("qchem %s %s" % (filenames['qchem_freq_input'], filenames['qchem_freq_output']), shell = True)
+    subprocess.run("qchem %s %s" % (fninp, fnout), shell = True)
     found = False
     modes_of_each_atom = []
     #modes_of_each_atom is a list that contains the mode of each atom line by line; it is not in the desired output format and is an intermediate step into getting the desired format
     normal_modes = []
-    with open(filenames['qchem_freq_output'], "r") as outfile:
+    with open(fnout, "r") as outfile:
         for line in outfile:
             if found:
                 if "Mode:" in line:

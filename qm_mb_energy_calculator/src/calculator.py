@@ -4,7 +4,7 @@ energy of a set of atoms (a fragment)
 """
 import numpy
 import os
-from subprocess import call
+import subprocess
 
 has_psi4 = True
 
@@ -223,9 +223,15 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
 
     # perform system call to run qchem
     # want to save log stuff rather than put in /dev/null?
-    if os.system("qchem " +  log_file_in + " " + log_file_out + " -nt " + config["qchem"]["num_threads"] + " >> /dev/null") != 0:
-        raise ValueError("There was a qchem error. It is possible that qchem is not available on this machine")
-    
+    try:
+        num_threads = config.getint("qchem", "num_threads")
+    except:
+        num_threads = 1
+    syscall = "qchem -nt {:d} {} {}".format(num_threads, log_file_in, log_file_out)
+    subprocess.run(syscall, 
+                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, 
+                   shell=True, check=True)
+
     # find the energy inside the qchem file output
     # the with open as syntax automatically closes the file
     with open(log_file_out) as qchem_out:

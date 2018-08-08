@@ -30,6 +30,9 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
     # parse settings file
     config = configparser.SafeConfigParser(allow_no_value=False)
     config.read(settings)
+    # set defaults
+    config['DEFAULT'] = {}
+    config['DEFAULT']['num_threads'] = '1'
     
     for calculation in database.missing_energies():
 
@@ -41,8 +44,10 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
         except RuntimeError:
             database.set_failed(calculation.job_id, "failed", "some/log/path")
 
-    # commit changes to database
-    database.save()
+        # commit changes to database
+        database.save()
+
+    #close database
     database.close()
 
     print("Filling of database {} successful".format(database_name))

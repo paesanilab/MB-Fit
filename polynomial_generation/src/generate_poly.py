@@ -50,7 +50,7 @@ def generate_poly(settings, input_file, order, output_path):
                     if int(fragment[fragment.index(symbol) + 1]) > 1:
 
                         # add to atom_names in form Aa1
-                        atom_names.append(symbol + chr(fragname) + str(k + 1))
+                        atom_names.append(symbol + str(k + 1) + chr(fragname))
 
                     else:
 
@@ -142,7 +142,7 @@ def generate_poly(settings, input_file, order, output_path):
             poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
             # filter out redundant monomials (that are a permutation of eachother)
-            accepted_monomials = list(eliminate_redundant_monomials(monomials, variables))
+            accepted_monomials = list(eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_names))
 
             # filter out monomials that are purely intramolecular
             accepted_monomials = list(eliminate_intramolecular_monomials(accepted_monomials, variables))
@@ -164,7 +164,7 @@ def generate_poly(settings, input_file, order, output_path):
         # write the header file
         with open(output_path + "/poly-model.h", "w") as header_file:
             write_header_file(header_file, total_terms, len(variables))
-
+"""
         # open the three files we will now write to
         with open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple", "w") as grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file:
             # write the opening for the cpp file
@@ -179,7 +179,8 @@ def generate_poly(settings, input_file, order, output_path):
                     write_cpp_monomial(cpp_file, monomial_index, monomial)
                     write_grd_monomial(cpp_file, monomial_index, monomial)
                     write_nogrd_monomial(cpp_file, monomial_index, monomial)
-                    monomial_index++
+                    monomial_index += 1
+"""
 
 def parse_fragments(input_file):
     """
@@ -300,18 +301,60 @@ def generate_monomials(number_of_vars, degree):
             # yield from the list created by all zeros before the first non-zero term, then the first non-zero term, then each result of the recursive call on all terms after the first non-zero term with degree equal to degree minus the degree of the first non-zero term
             yield from ([0 for i in range(v)] + [d] + monomial for monomial in generate_monomials(number_of_vars - v - 1, degree - d))
 
-def eliminate_redundant_monomials(monomials, variables):
-    for monomial in monomials:
-        redundant = False
-        for other_monomial in monomials[:monomials.index(monomial)]:
-            if are_same_monomial(monomial, other_monomial, variables):
-                redundant = True
-                break
-        if redundant:
-            continue
-        yield monomial
-     
-def are_same_monomial(monomial1, monomial2, variables):
+def eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_names):
+    accepted_monomials = monomials[:]
+    index = 0
+    while(True):
+        try:
+            monomial = accepted_monomials[index]
+        except IndexError:
+            break
+        permutated_monomials = permute_monomial(monomial, variables, atom_permutations, atom_names)
+        for permutated_monomial in permutated_monomials:
+            try:
+                accepted_monomials.remove(permutated_monomial)
+            except ValueError:
+                pass
+
+        accepted_monomials.insert(0, monomial)
+        index += 1
+
+    yield from (x for x in accepted_monomials)
+    
+def permute_monomial(monomial1, variables, atom_permutations, atom_names):
+    for atom_permutation in atom_permutations:
+
+        monomial1_permutation = [0 for i in monomial1]
+
+        for index, degree, variable in zip(range(len(monomial1)), monomial1, variables):
+
+            #if degree == 0:
+            #    continue
+
+            atom1 = variable.atom1_name + variable.atom1_fragment
+            atom2 = variable.atom2_name + variable.atom2_fragment
+
+            new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
+            new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
+
+            new_index = -1
+            for new_variable_index, new_variable in enumerate(variables):
+                
+                if new_atom1 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom2 == new_variable.atom2_name + new_variable.atom2_fragment:
+                    new_index = new_variable_index
+                    break
+                if new_atom2 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom1 == new_variable.atom2_name + new_variable.atom2_fragment:
+                    new_index = new_variable_index
+                    break
+
+            if new_index == -1:
+                print("Something went wrong :(")
+
+            monomial1_permutation[index] = monomial1[new_index]
+
+        yield monomial1_permutation
+            
+"""
     monomial1_terms = []
     for index, degree in enumerate(monomial1):
         monomial1_terms.append([variables[index].category, degree])
@@ -323,7 +366,7 @@ def are_same_monomial(monomial1, monomial2, variables):
     if sorted(monomial1_terms) == sorted(monomial2_terms):
         return True
     return False
-
+"""
 def eliminate_intramolecular_monomials(monomials, variables):
     for monomial in monomials:
         if not is_intramolecular(monomial, variables):
@@ -385,7 +428,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
 """.format(total_terms, number_of_variables))
 
 def write_cpp_monomial(cpp_file, index, monomial):
-    
+    pass
 
         
 

@@ -33,8 +33,13 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
     # set defaults
     config['DEFAULT'] = {}
     config['DEFAULT']['num_threads'] = '1'
+
+    counter = 0
     
     for calculation in database.missing_energies():
+
+        counter += 1
+        print_progress(counter)
 
         try:
             # calculate the missing energy
@@ -50,7 +55,13 @@ def fill_database(settings, database_name, directory = "unused"): # argument is 
     #close database
     database.close()
 
-    print("Filling of database {} successful".format(database_name))
+    print("\nFilling of database {} successful".format(database_name))
+
+def print_progress(counter):
+    s = "{:6d}".format(counter)
+    if counter % 10 == 0:
+       s += "\n" 
+    print(s, end="", flush=True)
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

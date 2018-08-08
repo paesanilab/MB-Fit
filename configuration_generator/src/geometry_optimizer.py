@@ -13,7 +13,7 @@ def optimize_geometry(settings, unopt_path, opt_path):
     with open(unopt_path, "r") as unopt_file:
         unopt_molecule = molecule.Molecule(unopt_file.read())
 
-    opt_molecule, energy = qcalc.optimize(unopt_molecule, config)
+    opt_molecule, energy = qcalc.optimize(unopt_molecule, "notUSED", config)
 
     output_writer.write_optimized_geo(opt_molecule, energy, opt_path)
 

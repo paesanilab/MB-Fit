@@ -66,7 +66,8 @@ class Fragment(object):
     '''
     Initialize a new Fragment with an empty atoms list
     '''
-    def __init__(self, charge, spin_multiplicity):
+    def __init__(self, name, charge, spin_multiplicity):
+        self.name = name
         # Array of atoms in this molecule
         self.atoms = []
         # charge of this fragment
@@ -75,6 +76,12 @@ class Fragment(object):
         if spin_multiplicity < 1:
             raise ValueError("Fragment cannot have spin_multiplicity multiplicity {}. Must be greater than or equal to 1.".format(spin_multiplicity))
         self.spin_multiplicity = spin_multiplicity
+
+    '''
+    Gets the name of this fragment
+    '''
+    def get_name(self):
+        return self.name
 
     '''
     Add an Atom to this Fragment.
@@ -165,6 +172,12 @@ class Molecule(object):
         #TODO: consider other attributes required by this class
 
     '''
+    gets the name of this molecule
+    '''
+    def get_name(self):
+        return "-".join([fragment.get_name() for fragment in self.get_fragments()])
+
+    '''
     Add a Fragment to this Molecule.
     '''
     def add_fragment(self, fragment):
@@ -174,7 +187,7 @@ class Molecule(object):
     Gets a list of all the fragments in this molecule in standard order
     '''
     def get_fragments(self):
-        return sorted(self.fragments, key=lambda fragment: fragment.to_xyz())
+        return sorted(self.fragments, key=lambda fragment: fragment.get_name() + " " + fragment.to_xyz())
 
     '''
     Gets a list of all the atoms in this molecule in standard order

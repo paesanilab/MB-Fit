@@ -70,7 +70,7 @@ def generate_1b_training_set(settings, database_name, output_path, molecule_name
     database.close()
 
 
-def generate_2b_training_set(settings, database_name, output_path, molecule_name, monomer_1_name, monomer_2_name, method, basis, cp, tag):
+def generate_2b_training_set(settings, database_name, output_path, monomer_1_name, monomer_2_name, method, basis, cp, tag):
     """"
     Creates a training set file from the calculated energies in a database.
 
@@ -78,8 +78,7 @@ def generate_2b_training_set(settings, database_name, output_path, molecule_name
         settings    - .ini file with all relevent settings information
         database_name - filepath to database file
         output_path - path to file to write training set to
-        molecule_name - the name of the molecule to generate a training set for
-        monomer_1_name - the name of the first monomer in the dimer NOTHING WORKS!
+        monomer_1_name - the name of the first monomer in the dimer
         monomer_2_name - the name of the second monomer in the dimer
         method      - use energies calculated with this method. Use % for any method
         basis       - use energies calculated with this basis. Use % for any basis
@@ -101,7 +100,7 @@ def generate_2b_training_set(settings, database_name, output_path, molecule_name
     print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
     # get list of all [molecule, energies] pairs calculated in the database
-    molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
+    molecule_energy_pairs = list(database.get_energies("-".join(sorted([monomer_1_name, monomer_2_name])), method, basis, cp, tag))
 
     # if there are no calculated energies, error and exit
     if len(molecule_energy_pairs) == 0:
@@ -126,14 +125,14 @@ def generate_2b_training_set(settings, database_name, output_path, molecule_name
         # write the number of atoms to the output file
         output.write(str(molecule.get_num_atoms()) + "\n")
 
-        interaction_energy = (energies[2] - energies[1] - energies[1]) * constants.au_to_kcal # covert Hartrees to kcal/mol
-        monomer1_energy_formation = (energies[0] - monomer_1_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
-        monomer2_energy_formation = (energies[1] - monomer_2_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+        interaction_energy = (energies[2] - energies[1] - energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+        monomer1_energy_deformation = (energies[0] - monomer_1_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+        monomer2_energy_deformation = (energies[1] - monomer_2_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
 
-        binding_energy = interaction_energy - monomer1_energy_formation - monomer2_energy_formation
+        binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
         # monomer interaction energy
-        output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_formation, monomer2_energy_formation))
+        output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation))
 	
         output.write("\n")
 
@@ -146,6 +145,6 @@ def generate_2b_training_set(settings, database_name, output_path, molecule_name
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Incorrect number of arguments");
-        print("Usage: python database_reader.py <settings_file> <database_name> <output_path> <molecule_name>")
+        print("Usage: python training_set_generator.py <settings_file> <database_name> <output_path> <molecule_name>")
         sys.exit(1)   
     generate_1b_training_set(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], "%", "%", "%", "%")

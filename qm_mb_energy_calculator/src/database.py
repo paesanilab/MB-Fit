@@ -90,7 +90,7 @@ class Database():
         # create the Fragments table
         self.cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, charge INT, spin INT)
+            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, name TEXT, charge INT, spin INT)
             """
         )
 
@@ -122,7 +122,7 @@ class Database():
             """
         )
 
-    def add_calculation(self, molecule, molecule_name, method, basis, cp, tag, optimized):
+    def add_calculation(self, molecule, method, basis, cp, tag, optimized):
         """
         Add a calculation to the database.
 
@@ -156,17 +156,17 @@ class Database():
         molecule_hash = molecule.get_SHA1()
 
         # check if this molecule is not already in Molecules table
-        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Molecules WHERE name=? AND hash=?)", (molecule_name, molecule_hash)).fetchone()[0]:
+        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Molecules WHERE name=? AND hash=?)", (molecule.get_name(), molecule_hash)).fetchone()[0]:
 
             # create entry in Molecules table
-            self.cursor.execute("INSERT INTO Molecules (name, hash) VALUES (?, ?)", (molecule_name, molecule_hash))
+            self.cursor.execute("INSERT INTO Molecules (name, hash) VALUES (?, ?)", (molecule.get_name(), molecule_hash))
         
             # get id of this molecule
             molecule_id = self.cursor.lastrowid
 
             # insert molecule's fragments into the table
             for fragment in molecule.get_fragments():
-                self.cursor.execute("INSERT INTO Fragments (molecule_id, charge, spin) VALUES (?, ?, ?)", (molecule_id, fragment.get_charge(), fragment.get_spin_multiplicity()))
+                self.cursor.execute("INSERT INTO Fragments (molecule_id, name, charge, spin) VALUES (?, ?, ?, ?)", (molecule_id, fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
                 
                 # get id of this fragment
                 fragment_id = self.cursor.lastrowid
@@ -178,7 +178,7 @@ class Database():
         else:
             
             # get id of this molecule
-            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=? AND hash=?", (molecule_name, molecule_hash)).fetchone()[0]
+            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=? AND hash=?", (molecule.get_name(), molecule_hash)).fetchone()[0]
 
         # check if the calculation is not already in the Calculations table
 
@@ -234,8 +234,8 @@ class Database():
         molecule = Molecule()
         
         # loop over all rows in the Fragments table that correspond to this molecule
-        for fragment_id, charge, spin in self.cursor.execute("SELECT ROWID, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-            fragment = Fragment(charge, spin)
+        for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+            fragment = Fragment(name, charge, spin)
 
             # loop over all rows in the Atoms table that correspond to this fragment
             for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
@@ -373,8 +373,8 @@ class Database():
             molecule = Molecule()
             
             # loop over all rows in the Fragments table that correspond to this molecule
-            for fragment_id, charge, spin in self.cursor.execute("SELECT ROWID, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-                fragment = Fragment(charge, spin)
+            for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+                fragment = Fragment(name, charge, spin)
 
                 # loop over all rows in the Atoms table that correspond to this fragment
                 for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
@@ -434,8 +434,8 @@ class Database():
             molecule = Molecule()
             
             # loop over all rows in the Fragments table that correspond to this molecule
-            for fragment_id, charge, spin in self.cursor.execute("SELECT ROWID, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-                fragment = Fragment(charge, spin)
+            for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+                fragment = Fragment(name, charge, spin)
 
                 # loop over all rows in the Atoms table that correspond to this fragment
                 for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():

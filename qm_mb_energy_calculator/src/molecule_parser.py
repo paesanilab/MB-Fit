@@ -31,6 +31,7 @@ def xyz_to_molecules(f, config):
     atoms_per_fragment = [int(atom_count) for atom_count in config["molecule"]["fragments"].split(",")]
     charge_per_fragment = [int(charge) for charge in config["molecule"]["charges"].split(",")]
     spin_per_fragment = [int(spin) for spin in config["molecule"]["spins"].split(",")]
+    names_per_fragment = config["molecule"]["names"].split(",")
 
     # define the list of molecules
     molecules = []
@@ -66,10 +67,10 @@ def xyz_to_molecules(f, config):
         molecule.spins = spin_per_fragment
 
         # start reading atom lines
-        for atom_count, charge, spin in zip(atoms_per_fragment, charge_per_fragment, spin_per_fragment):
+        for atom_count, name, charge, spin in zip(atoms_per_fragment, names_per_fragment, charge_per_fragment, spin_per_fragment):
 
             # init Fragment object
-            fragment = Fragment(charge, spin)
+            fragment = Fragment(name, charge, spin)
 
             for i in range(0, atom_count):
                 # read a line

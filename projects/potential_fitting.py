@@ -320,7 +320,7 @@ def fill_database(settings, database_name):
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
-def generate_training_set(settings, database_name, training_set, method = "%", basis = "%", cp = "%", tag = "%"):
+def generate_1b_training_set(settings, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
     Generates a training set from the energies inside a database.
 
@@ -333,6 +333,7 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
         settings    - the file containing all relevent settings information
         database_name - the file in which the database is stored
         training_set - the file to write the training set to
+        molecule_name - the name of the moelcule to generate a training set for
         method      - only use energies calcualted by this method
         basis       - only use energies calculated in this basis
         cp          - only use energies calculated with the same cp
@@ -351,10 +352,49 @@ def generate_training_set(settings, database_name, training_set, method = "%", b
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    training_set_generator.generate_training_set(settings, database_name, training_set, method, basis, cp, tag)
+    training_set_generator.generate_1b_training_set(settings, database_name, training_set, molecule_name, method, basis, cp, tag)
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
+ 
+def generate_2b_training_set(settings, database_name, training_set, monomer1_name, monomer2_name, method = "%", basis = "%", cp = "%", tag = "%"):
+    """
+    Generates a training set from the energies inside a database.
+
+    Specific method, bnasis, and cp may be specified to only use energies calculated
+    with a specific model.
+
+    '%' can be used to stand in as a wild card, meaning any method/basis/cp is ok
+
+    Args:
+        settings    - the file containing all relevent settings information
+        database_name - the file in which the database is stored
+        training_set - the file to write the training set to
+        monomer1_name - name of first monomer in the dimer
+        monomer2_name - name of the second monomer in the dimer
+        method      - only use energies calcualted by this method
+        basis       - only use energies calculated in this basis
+        cp          - only use energies calculated with the same cp
+        tag         - only use energies marked with this tag
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
+    import training_set_generator
+
+    if os.path.dirname(training_set) == "":
+        training_set = "./" + training_set
+    if not os.path.isdir(os.path.dirname(training_set)):
+        os.mkdir(os.path.dirname(training_set))
+
+    training_set_generator.generate_2b_training_set(settings, database_name, training_set, monomer1_name, monomer2_name, method, basis, cp, tag)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
     
+
+
 def generate_poly_input(settings, poly_in_path):
     """
     Generates an input file for the polynomial generation script

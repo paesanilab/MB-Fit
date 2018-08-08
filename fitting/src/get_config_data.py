@@ -5,7 +5,7 @@ import constants
 import configparser
 from collections import OrderedDict
 
-qchem_template = "." + os.path.dirname(__file__) + "/qchem_template"
+qchem_template = "/qchem_template"
 
 free_polarizabilities = {
     "H":    0.66582,
@@ -54,7 +54,7 @@ def make_config(settings, molecule_in, geo_path, config_path):
         qchem_in.write("$end\n")
 
         # read the qchem template and append it to the qchem in
-        with open(qchem_template, "r") as template:
+        with open(os.path.dirname(os.path.abspath(__file__)) + "/" + qchem_template, "r") as template:
             for line in template:
                 qchem_in.write(line)
 
@@ -69,7 +69,11 @@ def make_config(settings, molecule_in, geo_path, config_path):
         # read lines until we read the line before where the volumes are specified
         while True:
             try:
-                qchem_out.readline().index("Atom  vol   volFree")
+                line = qchem_out.readline()
+                if line == "":
+                    print("Something went wrong with qchem")
+                    exit(1)
+                line.index("Atom  vol   volFree")
                 break
             except ValueError:
                 pass
@@ -260,8 +264,8 @@ def make_config(settings, molecule_in, geo_path, config_path):
     configwriter.set("fitting", "d_min", str(0.0))
     configwriter.set("fitting", "d_max", str(7.0))
 
-    configwriter.set("fitting", "C6", str(c6_constants[len(fragments)]))
-    configwriter.set("fitting", "d6", str([0 for x in c6_constants[len(fragments)]]))
+    configwriter.set("fitting", "C6", str(c6_constants))
+    configwriter.set("fitting", "d6", str([[0 for x in c6] for c6 in c6_constants]))
 
     configwriter.set("fitting", "var", "exp")
     configwriter.set("fitting", "energy_range", str(50.0))

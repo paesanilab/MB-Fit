@@ -251,9 +251,9 @@ def make_config(settings, molecule_in, geo_path, config_path):
     configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
-    configwriter.set("fitting", "excluded_pairs_12", "[TODO: User must fill this in]")
-    configwriter.set("fitting", "excluded_pairs_13", "[TODO: User must fill this in]")
-    configwriter.set("fitting", "excluded_pairs_14", "[TODO: User must fill this in]")
+    configwriter.set("fitting", "excluded_pairs_l2", "[TODO: User must fill this in]")
+    configwriter.set("fitting", "excluded_pairs_l3", "[TODO: User must fill this in]")
+    configwriter.set("fitting", "excluded_pairs_l4", "[TODO: User must fill this in]")
 
     configwriter.set("fitting", "charges", str(charges))
     configwriter.set("fitting", "polarizabilities", str(effective_polarizabilities))

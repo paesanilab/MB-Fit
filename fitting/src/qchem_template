@@ -1,9 +1,8 @@
 $rem
 jobtype         sp
-!method          wb97m-v
-!basis           aug-cc-pvtz
-method          blyp
-basis           sto-3g
+method          wb97m-v
+basis           aug-cc-pvtz
+!basis           sto-3g
 purecart        1111
 xc_grid         000099000590
 nl_grid         1

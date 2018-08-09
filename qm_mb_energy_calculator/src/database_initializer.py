@@ -43,12 +43,17 @@ def initialize_database(settings, database_name, directory):
 
     # See if a config file already exists; if not, generate one
     config.read(settings)
-    
+
     # Read values from the config file
     method = config["energy_calculator"]["method"]
     basis = config["energy_calculator"]["basis"]
     cp = config["energy_calculator"]["cp"]
     tag = config["molecule"]["tag"]
+
+    # check spin and set energy calculation method to UHF (defaulted to HF)   
+    if not config['molecule']['spins'] == 1:
+        method = "UHF"
+        print ("changed method to " + method)
 
     # loop thru all files in directory
     for filename in filenames:

@@ -1,0 +1,42 @@
+water = """
+0 1
+ O      -6.738646395e-02  -1.491617397e+00  -1.095035971e-10
+ H       8.141855337e-01  -1.866159045e+00  -2.044214632e-10
+ H       7.436878209e-02  -5.443285903e-01   4.259078718e-11
+"""
+
+
+
+elif "nthreads = " in line:
+        nthreads = line_parts[2]
+    
+    elif "initial_molecule_file_name = " in line:
+        initial_molecule_file_name = line_parts[2]
+
+    elif "method = " in line:
+        method = line_parts[2]
+
+    elif "basis = " in line:
+        basis = line_parts[2]
+
+    elif "psi4_output_file_name = " in line:
+        psi4_output_file_name = line_parts[2]
+
+close config.txt
+
+model = "{}/{}".format(method,basis)
+
+#get molecule string
+initial_molecule_file = open("initial_molecule_file_name","r")
+for line in initial_molecule_file:
+    str_mol_rep += line
+
+if have_psi4:
+    #Set psi4 settings
+    psi4.core.set_output_file(psi4_output_file_name, False)
+    psi4.set_memory("1GB")
+
+    #Open Files
+    out_file_dat = open("normal_modes.dat","w")
+    in_file = open(psi4_output_file_name,"r")
+    out_file_xyz = open("molecule.xyz","w")

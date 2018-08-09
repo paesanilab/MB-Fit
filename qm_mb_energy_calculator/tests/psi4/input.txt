@@ -1,7 +1,0 @@
-'../qm_mb_energy_calculator/tests/psi4/molecule.xyz'       | optimized geometry corresponding to normal mode analysis
-'../qm_mb_energy_calculator/tests/psi4/normal_modes.dat'   | input normal modes
-9 6                  | dim; dimnull
-Q 4096               | 'P' pseudorandom, 'Q' quasirandom; nconfigs
-'TS.xyz'             | output one-body configurations
-.false. .true.       | geometric, linear
-.false.              | verbose output

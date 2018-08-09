@@ -22,6 +22,8 @@ A3.in for O3, A1B2.in of CO2, A2B4.in for N2O4, or A1B1C1.in of SCN-
 but more configs -> better fit.) Should be on the high end of 2000 for even a mediocre fit,
 but keep it smaller for tests.
 
+*** For open-shell molecules, you will need to change 'spins' to your molecule's spin multiplicity and 'method' to 'UHF' in settings.ini inside projects/<your project directory> and inside /potential_fitting/qm_mb_energy_calculator/src/settings.ini***
+
 Activate your psi4dev conda enviornment
 
 1) move into the configuration_generator/norm_distribution/src and run "make"

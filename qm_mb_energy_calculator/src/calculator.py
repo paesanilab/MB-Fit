@@ -52,6 +52,16 @@ def calculate_energy(molecule, fragment_indicies, model, cp, config):
     code = config["energy_calculator"]["code"]
     
     if code == "psi4":
+        # write output to a log file
+        log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" +  str(fragment_indicies) + ".out"
+        if not os.path.exists(os.path.dirname(log_file)):
+            os.makedirs(os.path.dirname(log_file))
+        psi4.core.set_output_file(log_file, False)
+
+        # check spin and set energy calculation method (defaulted to HF)
+        if not config['molecule']['spins'] == 1:
+            psi4.set_options({'reference': 'uhf'})
+
         return calc_psi4_energy(molecule, fragment_indicies, model, cp, config)
     
     elif code == "TensorMol":
@@ -112,6 +122,17 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
 
     # Set the amount of memory to use based on configuration
     psi4.set_memory(config["psi4"]["memory"])
+
+    # Check spin and set energy calculation method (defaulted to HF) 
+    # model is hardcoded because energy method does not accept 'UHF'
+    # options changed so iterations will converge 
+    if not config['molecule']['spins'] == 1:
+        psi4.set_options({'reference': 'uhf'})
+        psi4.set_options({'basis_guess': 'TRUE'})
+        psi4.set_options({'soscf': 'TRUE'})
+        psi4.set_options({'soscf_max_iter': '35'})
+        psi4.set_options({'damping_percentage': '30.0'})
+        model = "scf" + "/" + "STO-3G"
 
     # Perform library call to calculate energy of molecule
     return psi4.energy(model, molecule=psi4_mol)

@@ -131,6 +131,7 @@ def generate_poly(settings, input_file, order, output_path):
         # loop thru every degree in this polynomial
         for degree in range(1, order + 1):
 
+            print("one")
             # header for this degree
             poly_log.write("<> {} degree <>\n".format(degree))
             poly_log.write("\n")
@@ -141,9 +142,11 @@ def generate_poly(settings, input_file, order, output_path):
             # log number of possible monomials
             poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
+            print("two")
             # filter out redundant monomials (that are a permutation of eachother)
             accepted_monomials = list(eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_names))
 
+            print("three")
             # filter out monomials that are purely intramolecular
             accepted_monomials = list(eliminate_intramolecular_monomials(accepted_monomials, variables))
 
@@ -316,10 +319,10 @@ def eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_
             monomial = accepted_monomials[index]
         except IndexError:
             break
-        permutated_monomials = permute_monomial(monomial, variables, atom_permutations, atom_names)
+        permutated_monomials = set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)])
         for permutated_monomial in permutated_monomials:
             try:
-                accepted_monomials.remove(permutated_monomial)
+                accepted_monomials.remove(list(permutated_monomial))
             except ValueError:
                 pass
 

@@ -159,12 +159,12 @@ def generate_poly(settings, input_file, order, output_path):
             total_monomials.append(accepted_monomials)
 
         # log the total number of terms
-        poly_log.write("Total number of terms: {}\n".format(total_terms))
+        poly_log.write(" Total number of terms: {}\n".format(total_terms))
 
         # write the header file
         with open(output_path + "/poly-model.h", "w") as header_file:
             write_header_file(header_file, total_terms, len(variables))
-"""
+
         # open the three files we will now write to
         with open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple", "w") as grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file:
             # write the opening for the cpp file
@@ -175,12 +175,19 @@ def generate_poly(settings, input_file, order, output_path):
 
             # loop thru every degree in this polynomial
             for degree in range(1, order + 1):
-                for monomial in total_monomials[degree]:
-                    write_cpp_monomial(cpp_file, monomial_index, monomial)
-                    write_grd_monomial(cpp_file, monomial_index, monomial)
-                    write_nogrd_monomial(cpp_file, monomial_index, monomial)
+                for monomial in total_monomials[degree - 1]:
+                    write_cpp_monomial(cpp_file, monomial_index, monomial, variables, atom_permutations, atom_names)
+                    write_grd_monomial(grd_file, monomial_index, monomial, variables, atom_permutations, atom_names)
+                    write_nogrd_monomial(nogrd_file, monomial_index, monomial, variables, atom_permutations, atom_names)
                     monomial_index += 1
-"""
+
+                cpp_file.write("\n")
+                grd_file.write("\n")
+
+            write_cpp_closing(cpp_file, total_terms)
+            write_grd_closing(grd_file, total_terms, len(variables))
+            write_nogrd_closing(nogrd_file, total_terms, len(variables))
+
 
 def parse_fragments(input_file):
     """
@@ -427,10 +434,172 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
     double p[{0}];
 """.format(total_terms, number_of_variables))
 
-def write_cpp_monomial(cpp_file, index, monomial):
-    pass
+def write_cpp_monomial(cpp_file, index, monomial, variables, atom_permutations, atom_names):
+    cpp_file.write("    p[{}] = ".format(index))
 
+    first_term = True
+    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)]):
+
+        if not first_term:
+            cpp_file.write(" + ")
+
+        first_term = False;
+
+        first_factor = True
         
+        for variable_index, degree in enumerate(permutation):
+
+            if degree == 0:
+                continue
+
+            for term in range(degree):
+
+                if not first_factor:
+                    cpp_file.write("*")
+
+                first_factor = False
+
+                cpp_file.write("x[{}]".format(variable_index))
+
+    cpp_file.write(";\n")                
+
+def write_grd_monomial(grd_file, index, monomial, variables, atom_permutations, atom_names):
+    grd_file.write("    p[{}] := ".format(index))
+
+    first_term = True
+    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)]):
+
+        if not first_term:
+            grd_file.write("+")
+
+        first_term = False;
+
+        first_factor = True
+        
+        for variable_index, degree in enumerate(permutation):
+
+            if degree == 0:
+                continue
+
+            for term in range(degree):
+
+                if not first_factor:
+                    grd_file.write("*")
+
+                first_factor = False
+
+                grd_file.write("x{}".format(str(variable_index + 1).rjust(2, "0")))
+
+    grd_file.write(":\n")                
+
+def write_nogrd_monomial(nogrd_file, index, monomial, variables, atom_permutations, atom_names):
+    nogrd_file.write("    p[{}] := ".format(index))
+
+    first_term = True
+    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)]):
+
+        if not first_term:
+            nogrd_file.write("+")
+
+        first_term = False;
+
+        first_factor = True
+        
+        for variable_index, degree in enumerate(permutation):
+
+            if degree == 0:
+                continue
+
+            for term in range(degree):
+
+                if not first_factor:
+                    nogrd_file.write("*")
+
+                first_factor = False
+
+                nogrd_file.write("x{}".format(str(variable_index + 1).rjust(2, "0")))
+
+    nogrd_file.write(":\n")                
+
+def write_cpp_closing(cpp_file, total_terms):
+    cpp_file.write("""    double energy(0);
+    for(int i = 0; i < {}; ++i)
+        energy += p[i]*a[i];
+
+    return energy;
+
+}}
+}} // namespace mb_system""".format(total_terms))
+
+def write_grd_closing(grd_file, total_terms, number_of_variables):
+    arg_str = "["
+
+    for index in range(number_of_variables):
+        arg_str += "x" + str(index + 1).rjust(2, "0")
+        if index != number_of_variables - 1:
+            arg_str += ","
+            if (index + 1) % 10 == 0:
+                arg_str += "\n         "
+            else:
+                arg_str += " "
+    
+    arg_str += "]"
+    grd_file.write("""
+energy := 0;
+for k from 1 by 1 to {} do
+    energy := energy + a[k]*p[k]:
+od:
+
+args := {}:
+
+energy := convert(energy, 'horner', args):
+
+energy_proc := codegen[makeproc](energy, parameters = args):
+codegen[cost](energy_proc);
+
+xxx := codegen[GRADIENT](energy_proc, args, function_value = true):
+codegen[cost](xxx);
+xxx := codegen[optimize](xxx):
+codegen[cost](xxx);
+
+xxx := codegen[packargs](xxx, args, x):
+xxx := codegen[optimize](xxx):
+
+codegen[C](xxx, optimized, filename="poly-grd.c"):""".format(total_terms, arg_str))
+
+def write_nogrd_closing(nogrd_file, total_terms, number_of_variables):
+    arg_str = "["
+
+    for index in range(number_of_variables):
+        arg_str += "x" + str(index + 1).rjust(2, "0")
+        if index != number_of_variables - 1:
+            arg_str += ","
+            if (index + 1) % 10 == 0:
+                arg_str += "\n         "
+            else:
+                arg_str += " "
+    
+    arg_str += "]"
+    nogrd_file.write("""
+energy := 0;
+for k from 1 by 1 to {} do
+    energy := energy + a[k]*p[k]:
+od:
+
+args := {}:
+
+energy := convert(energy, 'horner', args):
+
+energy_proc := codegen[makeproc](energy, parameters = args):
+codegen[cost](energy_proc);
+
+xxx := codegen[optimize](energy_proc):
+codegen[cost](xxx);
+
+xxx := codegen[packargs](xxx, args, x):
+xxx := codegen[optimize](xxx):
+
+codegen[C](xxx, optimized, filename="poly-nogrd.c"):""".format(total_terms, arg_str))
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

@@ -609,9 +609,9 @@ def fit_1b_training_set(settings, fit_code, training_set, fit_directory, fitted_
     os.system("mv correlation.dat " + fit_directory + "/")
     os.system("mv fit-1b.nc " + fitted_code)
 
-def fit_2b_training_set(settings, fit_code, training_set, fit_directory):
+def fit_2b_ttm_training_set(settings, fit_code, training_set, fit_directory):
     """
-    Fits the fit code to a given training set
+    Fits the ttm fit code to a given training set
 
     Args:
         settings    - the file containing all relevent settings information
@@ -626,8 +626,25 @@ def fit_2b_training_set(settings, fit_code, training_set, fit_directory):
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
 
-    os.system(fit_code + " " + training_set + " > " + fit_directory + "/fit.log")
+    attempts = 1;
+    os.system(fit_code + " " + training_set + " > " + fit_directory + "/best_fit.log")
+    while(attempts < 10):
+        os.system(fit_code + " " + training_set + " > " + fit_directory + "/fit.log")
+        
+        with open(fit_directory + "/fit.log", "r") as fit_log, open(fit_directory + "/best_fit.log", "r") as best_fit_log:
+            log_lines = fit_log.readlines()
+            best_log_lines = best_fit_log.readlines()
 
+        rmds = float(log_lines[-4].split()[2])
+        best_rmds = float(best_log_lines[-4].split()[2])
+
+        if rmds < best_rmds:
+            os.system("mv " + fit_directory + "/fit.log " + fit_directory + "/best_fit.log")
+            
+
+        attempts += 1
+
+    os.system("rm " + fit_directory + "/fit.log")
     os.system("mv individual_terms.dat " + fit_directory + "/")
     os.system("mv ttm-params.txt " + fit_directory + "/")
     os.system("mv correlation.dat " + fit_directory + "/")

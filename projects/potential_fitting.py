@@ -140,6 +140,7 @@ def generate_fitting(project_directory, config):
 import sys
 import os
 import configparser
+import subprocess
 
 def create_dirs(settings):
     """
@@ -552,7 +553,7 @@ def generate_2b_ttm_fit_code(settings, config, molecule_in, fit_directory):
 
     os.chdir(fit_directory) 
     
-    import subprocess
+    subprocess.call("cp " + os.path.dirname(os.path.abspath(__file__)) + "/../fitting/2B/template/* .", shell=True)
     subprocess.call("python " + os.path.dirname(os.path.abspath(__file__)) + "/../fitting/2B/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings, original_dir + "/" + config, molecule_in), shell=True)
 
     os.chdir(original_dir)   
@@ -577,7 +578,7 @@ def compile_fit_code(settings, fit_directory):
     os.system("make")
     os.chdir(original_dir)
 
-def fit_training_set(settings, fit_code, training_set, fit_directory, fitted_code):
+def fit_1b_training_set(settings, fit_code, training_set, fit_directory, fitted_code):
     """
     Fits the fit code to a given training set
 
@@ -607,6 +608,29 @@ def fit_training_set(settings, fit_code, training_set, fit_directory, fitted_cod
     os.system("mv fit-1b-initial.cdl " + fit_directory + "/")
     os.system("mv correlation.dat " + fit_directory + "/")
     os.system("mv fit-1b.nc " + fitted_code)
+
+def fit_2b_training_set(settings, fit_code, training_set, fit_directory):
+    """
+    Fits the fit code to a given training set
+
+    Args:
+        settings    - the file containing all relevent settings information
+        fit_code    - the code to fit
+        training_set - the training set to fit the code to
+        fit_directory - the directory where the fit log and other files created by the fit go
+
+    Returns:
+        None
+    """
+
+    if not os.path.isdir(fit_directory):
+        os.mkdir(fit_directory)
+
+    os.system(fit_code + " " + training_set + " > " + fit_directory + "/fit.log")
+
+    os.system("mv individual_terms.dat " + fit_directory + "/")
+    os.system("mv ttm-params.txt " + fit_directory + "/")
+    os.system("mv correlation.dat " + fit_directory + "/")
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

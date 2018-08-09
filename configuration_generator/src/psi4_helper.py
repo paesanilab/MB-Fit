@@ -22,10 +22,6 @@ def init(config, log_name):
     psi4.set_num_threads(int(config['psi4']['num_threads']))
 
 def optimize(molecule, config):
-    # check spin and set energy calculation method (defaulted to HF)
-    if not config['molecule']['spins'] == 1:
-        psi4.set_options({'reference': 'uhf'})
-
     print("Optimizing geometry...")
 
     e = psi4.optimize(config['config_generator']['method'] + '/' + config['config_generator']['basis'], molecule=molecule)

@@ -35,12 +35,6 @@ def potential_fit(project_directory, start_location = 0):
         if not os.path.isdir(config['files']['training_set']):
             os.mkdir(config['files']['training_set'])
 
-    # check spin and set energy calculation method (defaulted to HF)
-    
-    if not config['molecule']['spins'] == 1:
-        config.set('energy_calculator', 'method', 'UHF')
-        print ("changed method to " + config['energy_calculator']['method'])
-
     # Step 1: generate configurations
 
     if start_location <= 1:

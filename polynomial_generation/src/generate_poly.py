@@ -131,7 +131,6 @@ def generate_poly(settings, input_file, order, output_path):
         # loop thru every degree in this polynomial
         for degree in range(1, order + 1):
 
-            print("one")
             # header for this degree
             poly_log.write("<> {} degree <>\n".format(degree))
             poly_log.write("\n")
@@ -142,13 +141,11 @@ def generate_poly(settings, input_file, order, output_path):
             # log number of possible monomials
             poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
-            print("two")
-            # filter out redundant monomials (that are a permutation of eachother)
-            accepted_monomials = list(eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_names))
-
-            print("three")
             # filter out monomials that are purely intramolecular
-            accepted_monomials = list(eliminate_intramolecular_monomials(accepted_monomials, variables))
+            accepted_monomials = list(eliminate_intramolecular_monomials(monomials, variables))
+
+            # filter out redundant monomials (that are a permutation of eachother)
+            accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variables, atom_permutations, atom_names))
 
             # log number of accpeted terms
             poly_log.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
@@ -338,8 +335,8 @@ def permute_monomial(monomial1, variables, atom_permutations, atom_names):
 
         for index, degree, variable in zip(range(len(monomial1)), monomial1, variables):
 
-            #if degree == 0:
-            #    continue
+            if degree == 0:
+                continue
 
             atom1 = variable.atom1_name + variable.atom1_fragment
             atom2 = variable.atom2_name + variable.atom2_fragment
@@ -360,7 +357,7 @@ def permute_monomial(monomial1, variables, atom_permutations, atom_names):
             if new_index == -1:
                 print("Something went wrong :(")
 
-            monomial1_permutation[index] = monomial1[new_index]
+            monomial1_permutation[new_index] = monomial1[index]
 
         yield monomial1_permutation
             

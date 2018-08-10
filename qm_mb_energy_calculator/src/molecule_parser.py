@@ -1,6 +1,9 @@
-from molecule import Atom, Fragment, Molecule
+import os, sys
 import configparser
-import os
+from molecule import Atom, Fragment, Molecule
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+from exceptions import XYZFormatError, InconsistentValueError
 
 '''
 Generates a list of Molecule objects from xyz files in the given directory
@@ -10,45 +13,27 @@ def xyz_to_molecules(f, config):
     # Keep in mind that you're passing in a file from initializer, not a
     # directory!
 
-    # number of atoms in each fragment
-    atoms_per_fragment = []
-    # charge of each fragment
-    charge_per_fragment = []
-    # spin of each fragment
-    spin_per_fragment = []
-
-    # Don't try to find the settings.ini, we should now REQUIRE it instead
-    '''
-    if "settings.ini" in dir_contents:
-        # create config object
-        config = configparser.SafeConfigParser(allow_no_value=False)
-
-        # read the conflig file into the configuration
-        config.read(directory + "/settings.ini")
-    '''
-        
     # the for loop just changes the string array to an int array
     atoms_per_fragment = [int(atom_count) for atom_count in config["molecule"]["fragments"].split(",")]
     charge_per_fragment = [int(charge) for charge in config["molecule"]["charges"].split(",")]
     spin_per_fragment = [int(spin) for spin in config["molecule"]["spins"].split(",")]
-    names_per_fragment = config["molecule"]["names"].split(",")
+    name_per_fragment = config["molecule"]["names"].split(",")
+
+    if not len(atoms_per_fragment) == len(charge_per_fragment):
+        raise InconsistentValueError("fragments", "charges", config["molecule"]["fragments"], config["molecule"]["charges"], "lists must be same length")
+    if not len(atoms_per_fragment) == len(spin_per_fragment):
+        raise InconsistentValueError("fragments", "spins", config["molecule"]["fragments"], config["molecule"]["spins"], "lists must be same length")
+    if not len(atoms_per_fragment) == len(name_per_fragment):
+        raise InconsistentValueError("fragments", "names", config["molecule"]["fragments"], config["molecule"]["names"], "lists must be same length")
 
     # define the list of molecules
     molecules = []
 
-    # Duplicate file openings
-    '''
-    # loop thru all files in directory
-    for file_name in dir_contents:
-        # check if file_name is an xyz file
-        if file_name[-4:] == ".xyz":
-            # parse the xyz file
-            xyz = open(directory + "/" + file_name, "r")
-    '''
     while True:
 
         # read first line of file, should be num of atoms
-        atom_num_line = readline(f)
+        atom_num_line = f.readline()
+
         # check for end of input
         if atom_num_line == "":
             break
@@ -56,29 +41,31 @@ def xyz_to_molecules(f, config):
         # check for consistance between number of atoms in xyz file
         # and number of atoms in fragments array
         if int(atom_num_line) != sum(atoms_per_fragment):
-            raise ValueError("Atom count specified in xyz file does not match count in ini file")
+            raise InconsistentValueError("total atoms in xyz file", "fragments", atom_num_line, config["molecule"]["fragments"], "fragments list must sum to total atoms from xyz file")
+
         # read and discard the comment line
-        readline(f, True)
+        f.readline()
 
         # init Molecule object
         molecule = Molecule()
-        molecule.natoms = atoms_per_fragment
-        molecule.charges = charge_per_fragment
-        molecule.spins = spin_per_fragment
 
         # start reading atom lines
-        for atom_count, name, charge, spin in zip(atoms_per_fragment, names_per_fragment, charge_per_fragment, spin_per_fragment):
+        for atom_count, name, charge, spin in zip(atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_per_fragment):
 
             # init Fragment object
             fragment = Fragment(name, charge, spin)
 
             for i in range(0, atom_count):
                 # read a line
-                atom_line = readline(f, True)
+                atom_line = f.readline()
+                if atom_line == "":
+                    raise XYZFormatError("end of file reached while parsing", "expected additional atom line")
                 
                 # extract atom info from line
-                symbol, x, y, z = atom_line.split()
-
+                try:
+                    symbol, x, y, z = atom_line.split()
+                except ValueError:
+                    raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
                 # add atom to fragment
                 fragment.add_atom(Atom(symbol, float(x), float(y), float(z)))
             
@@ -89,18 +76,3 @@ def xyz_to_molecules(f, config):
         molecules.append(molecule)
 
     return molecules
-
-def readline(xyz, error = False):
-    value = xyz.readline()
-    if value == "":
-        if error:
-            raise ValueError("Parsing ended in middle of molecule")
-    return value
-
-'''
-molecules = xyz_to_molecules("config_files")
-for molecule in molecules:
-    # why is there an extra newline?
-    print("MOLECULE: \n")
-    print(molecule.to_xyz([0, 1, 2]))
-'''

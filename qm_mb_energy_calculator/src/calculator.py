@@ -2,11 +2,13 @@
 A module for the different models for calculating the 
 energy of a set of atoms (a fragment)
 """
+import os, sys, subprocess
 import numpy
-import os, sys
-import subprocess
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+
 from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
+
 from psi4.driver.qcdb.exceptions import QcdbException
 from configparser import NoSectionError, NoOptionError
 

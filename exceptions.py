@@ -59,8 +59,20 @@ class InvalidInputError(PotentialFittingError):
 class XYZFormatError(InvalidInputError):
     """Raised when an XYZ file has invalid formatting"""
 
-    def __init__(self, path, message):
-        super().__init__("Invalid xyz file formatting in file {}: {}".format(path, message))
+    def __init__(self, message, fix):
+        super().__init__("Invalid xyz formatting on or near line: {}. Line format should be {}".format(path, message, fix))
+
+class InvalidValueError(InvalidInputError):
+    """Raised when a value a user inputs has an invalid value"""
+
+    def __init__(self, prop, value, fix):
+        super().__init__("Property {} has invalid value {}; value must be {}".format(prop, value, fix))
+
+class InconsistentValueError(InvalidInputError):
+    """Raised when input from multiple sources is inconsistent"""
+
+    def __init__(self, property1, property2, value1, value2, fix):
+        super().__init__("Properties {} with value {} and {} with value {} are inconsistent: {}".format(property1, property2, value1, value2, fix))
 
 class NoSuchLibraryError(InvalidInputError):
     """Raised when the user requests a library that is not built in to our code"""
@@ -85,6 +97,12 @@ class ConfigMissingPropertyError(ConfigError):
 
     def __init__(self, section, prop):
         super().__init__("You must define property {} in section {}".format(prop, section))
+
+class ConfigPropertyWrongFormatError(ConfigError):
+    """Raised when a property in a settings file is in an improper format"""
+
+    def __init__(self, section, prop, data, form):
+        super().__init__("property {} in section {} is in invalid form: {}; correct form is: {}".format(prop, section, data, form))
 
 class StopLoop(Exception):
     """Used as a type of break statement for nested loops"""

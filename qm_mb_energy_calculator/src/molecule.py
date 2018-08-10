@@ -1,4 +1,9 @@
+import sys
+
 from hashlib import sha1
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+from exceptions import XYZFormatError, InvalidValueError, InconsistentValueError
 
 class Atom(object):
     """
@@ -74,7 +79,7 @@ class Fragment(object):
         self.charge = charge
         # spin_multiplicity multiplicity of this fragment
         if spin_multiplicity < 1:
-            raise ValueError("Fragment cannot have spin_multiplicity multiplicity {}. Must be greater than or equal to 1.".format(spin_multiplicity))
+            raise InvalidValueError("spin multiplicity", spin_multiplicity, "1 or greater")
         self.spin_multiplicity = spin_multiplicity
 
     '''
@@ -145,7 +150,10 @@ class Fragment(object):
 
         for line in lines:
             # construct each atom from the info in this line
-            symbol, x, y, z = line.split()
+            try:
+                symbol, x, y, z = line.split()
+            except ValueError:
+                raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
             self.add_atom(Atom(symbol, float(x), float(y), float(z)))
 
         return self
@@ -165,11 +173,8 @@ class Molecule(object):
         self.energies = {}
         # list of nmer_energies for this molecule, filled by get_nmer_energies
         self.nmer_energies = []
+
         self.mb_energies = []
-        self.natoms = []
-        self.charges = []
-        self.spin_multiplicitys = []
-        #TODO: consider other attributes required by this class
 
     '''
     gets the name of this molecule
@@ -301,12 +306,19 @@ class Molecule(object):
     '''
     Initializes this molecule from a string, the returns itself
     '''
-    def read_xyz(self, string, atoms_per_fragment, charges, spin_multiplicities):
-        if not len(atoms_per_fragment) == len(charges) == len(spin_multiplicities):
-            raise ValueError("Length of atoms_per_fragment, chrages, and spins lists must be the same")
+    def read_xyz(self, string, names, atoms_per_fragment, charges, spin_multiplicities):
+        if not len(atoms_per_fragment) == len(charges):
+            raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charges, "lists must be same length")
+        if not len(atoms_per_fragment) == len(spin_multiplicities):
+            raise InconsistentValueError("atoms per fragment", "spin multiplicities per fragment", atoms_per_fragment, spin_multiplicities, "lists must be same length")
+        if not len(atoms_per_fragment) == len(names):
+            raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
 
         # split the string into an array of lines
         lines = string.splitlines(True)
+
+        if len(lines) != sum(atoms_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "number of atoms in input xyz", atoms_per_fragment, len(lines), "number of atoms in input xyz should equal the sum of the terms of atoms per fragment")
 
         for atom_count, charge, spin_multiplicity in zip(atoms_per_fragment, charges, spin_multiplicities):
             # construct each fragment from its charge, spin multiplicity and its line's from the string

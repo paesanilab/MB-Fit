@@ -5,6 +5,8 @@ import sys, itertools, datetime
 import sqlite3
 from molecule import Atom, Fragment, Molecule
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+
 class Database():
     """
     Database class. Allows one to access a database and perform operations on it.

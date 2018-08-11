@@ -1,9 +1,7 @@
-import sqlite3
-import os
+import os, sys
+
+import sqlite3, configparser
 from molecule_parser import xyz_to_molecules
-import pickle
-import configparser
-import sys
 from database import Database
 
 """

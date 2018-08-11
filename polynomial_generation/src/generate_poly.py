@@ -95,6 +95,7 @@ def generate_poly(settings, input_file, order, output_path):
 
         atom_permutations = list(combine_permutations(fragments, fragment_permutations))
 
+
         # write permutation count to log file
         poly_log.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
         poly_log.write("\n")
@@ -111,6 +112,9 @@ def generate_poly(settings, input_file, order, output_path):
         # write variable count to log file
         poly_log.write("<> variables ({}) <>\n".format(len(variables))) 
         poly_log.write("\n")
+
+        # generate the variable permutations
+        variable_permutations = list(make_variable_permutations(variables, atom_permutations, atom_names))
 
         # make the .cpp vars file
         with open(output_path + "/vars.cpp", "w") as vars_file:
@@ -143,9 +147,8 @@ def generate_poly(settings, input_file, order, output_path):
 
             # filter out monomials that are purely intramolecular
             accepted_monomials = list(eliminate_intramolecular_monomials(monomials, variables))
-
             # filter out redundant monomials (that are a permutation of eachother)
-            accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variables, atom_permutations, atom_names))
+            accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
 
             # log number of accpeted terms
             poly_log.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
@@ -176,9 +179,9 @@ def generate_poly(settings, input_file, order, output_path):
             # loop thru every degree in this polynomial
             for degree in range(1, order + 1):
                 for monomial in total_monomials[degree - 1]:
-                    write_cpp_monomial(cpp_file, monomial_index, monomial, variables, atom_permutations, atom_names)
-                    write_grd_monomial(grd_file, monomial_index, monomial, variables, atom_permutations, atom_names)
-                    write_nogrd_monomial(nogrd_file, monomial_index, monomial, variables, atom_permutations, atom_names)
+                    write_cpp_monomial(cpp_file, monomial_index, monomial, variable_permutations)
+                    write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
+                    write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
                     monomial_index += 1
 
                 cpp_file.write("\n")
@@ -282,6 +285,34 @@ def combine_permutations(fragments, fragment_permutations):
                 # yield from that fragment's permutation concatinated with the permuations of the rest of the molecule with the current fragment (0) swapped into the position of the fragment it is the same as.
                 yield from (permutation + perm for perm in combine_permutations(fragments[1:i] + [fragments[0]] + fragments[i + 1:], fragment_permutations[1:i] + [fragment_permutations[0]] + fragment_permutations[i + 1:]))
 
+def make_variable_permutations(variables, atom_permutations, atom_names):
+    for atom_permutation in atom_permutations:
+        variable_permutation = []
+        for variable in variables:
+            atom1 = variable.atom1_name + variable.atom1_fragment
+            atom2 = variable.atom2_name + variable.atom2_fragment
+
+            new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
+            new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
+
+            new_index = -1
+            for new_variable_index, new_variable in enumerate(variables):
+                
+                if new_atom1 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom2 == new_variable.atom2_name + new_variable.atom2_fragment:
+                    new_index = new_variable_index
+                    break
+                if new_atom2 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom1 == new_variable.atom2_name + new_variable.atom2_fragment:
+                    new_index = new_variable_index
+                    break
+
+            if new_index == -1:
+                print("Something went wrong :(")
+            variable_permutation.append(new_index)
+
+        yield variable_permutation
+
+            
+
 def generate_monomials(number_of_vars, degree):
     """
     Given a number of variables and a degree, generates all possible monomials of that degree.
@@ -308,7 +339,35 @@ def generate_monomials(number_of_vars, degree):
             # yield from the list created by all zeros before the first non-zero term, then the first non-zero term, then each result of the recursive call on all terms after the first non-zero term with degree equal to degree minus the degree of the first non-zero term
             yield from ([0 for i in range(v)] + [d] + monomial for monomial in generate_monomials(number_of_vars - v - 1, degree - d))
 
-def eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_names):
+def gen_mon_new(num_vars, permutations, degree):
+
+    if num_vars == 1:
+        yield [degree]
+        return
+
+    ban_degree_indicies = []
+    for permutation in permutations:
+        for index, val in enumerate(permutation):
+            if val == 0 and index > 0:
+                ban_degree_indicies.append(index - 1)
+    
+
+    newPermutations = [[x - 1 for x in permutation[1:]] for permutation in permutations]    
+
+    for deg in range(degree + 1):
+        all_mons = list(gen_mon_new(num_vars - 1, newPermutations, degree - deg))
+        accepted_mons = [mon for mon in all_mons if not hasBannedDegree(mon, ban_degree_indicies, deg - 1)]
+        #yield from ([deg] + monomial for monomial in gen_mon(num_vars - 1, newPermutations, degree - deg) if not hasBannedDegree(monomial, ban_degree_indicies, deg))
+        yield from ([deg] + mon for mon in accepted_mons)
+
+def hasBannedDegree(monomial, bannedDegrees, degree):
+    for bannedDegree in bannedDegrees:
+        if monomial[bannedDegree] <= degree:    
+            return True
+    return False
+
+
+def eliminate_redundant_monomials(monomials, variable_permutations):
     accepted_monomials = monomials[:]
     index = 0
     while(True):
@@ -316,7 +375,7 @@ def eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_
             monomial = accepted_monomials[index]
         except IndexError:
             break
-        permutated_monomials = set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)])
+        permutated_monomials = set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)])
         for permutated_monomial in permutated_monomials:
             try:
                 accepted_monomials.remove(list(permutated_monomial))
@@ -328,35 +387,17 @@ def eliminate_redundant_monomials(monomials, variables, atom_permutations, atom_
 
     yield from (x for x in accepted_monomials)
     
-def permute_monomial(monomial1, variables, atom_permutations, atom_names):
-    for atom_permutation in atom_permutations:
+def permute_monomial(monomial1, variable_permutations):
+    for variable_permutation in variable_permutations:
 
         monomial1_permutation = [0 for i in monomial1]
 
-        for index, degree, variable in zip(range(len(monomial1)), monomial1, variables):
+        for index, degree in zip(range(len(monomial1)), monomial1):
 
             if degree == 0:
                 continue
-
-            atom1 = variable.atom1_name + variable.atom1_fragment
-            atom2 = variable.atom2_name + variable.atom2_fragment
-
-            new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
-            new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
-
-            new_index = -1
-            for new_variable_index, new_variable in enumerate(variables):
-                
-                if new_atom1 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom2 == new_variable.atom2_name + new_variable.atom2_fragment:
-                    new_index = new_variable_index
-                    break
-                if new_atom2 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom1 == new_variable.atom2_name + new_variable.atom2_fragment:
-                    new_index = new_variable_index
-                    break
-
-            if new_index == -1:
-                print("Something went wrong :(")
-
+            
+            new_index = variable_permutation.index(index)
             monomial1_permutation[new_index] = monomial1[index]
 
         yield monomial1_permutation
@@ -434,11 +475,11 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
     double p[{0}];
 """.format(total_terms, number_of_variables))
 
-def write_cpp_monomial(cpp_file, index, monomial, variables, atom_permutations, atom_names):
+def write_cpp_monomial(cpp_file, index, monomial, variable_permutations):
     cpp_file.write("    p[{}] = ".format(index))
 
     first_term = True
-    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)]):
+    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
 
         if not first_term:
             cpp_file.write(" + ")
@@ -463,11 +504,11 @@ def write_cpp_monomial(cpp_file, index, monomial, variables, atom_permutations, 
 
     cpp_file.write(";\n")                
 
-def write_grd_monomial(grd_file, index, monomial, variables, atom_permutations, atom_names):
+def write_grd_monomial(grd_file, index, monomial, variable_permutations):
     grd_file.write("    p[{}] := ".format(index))
 
     first_term = True
-    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)]):
+    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
 
         if not first_term:
             grd_file.write("+")
@@ -492,11 +533,11 @@ def write_grd_monomial(grd_file, index, monomial, variables, atom_permutations, 
 
     grd_file.write(":\n")                
 
-def write_nogrd_monomial(nogrd_file, index, monomial, variables, atom_permutations, atom_names):
+def write_nogrd_monomial(nogrd_file, index, monomial, variable_permutations):
     nogrd_file.write("    p[{}] := ".format(index))
 
     first_term = True
-    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variables, atom_permutations, atom_names)]):
+    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
 
         if not first_term:
             nogrd_file.write("+")

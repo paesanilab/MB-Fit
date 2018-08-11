@@ -269,7 +269,10 @@ def generate_2b_configurations(settings, geo1, geo2, configs_per_distance, min_d
 
     os.chdir(configurations)
 
-    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_rigid " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
+    if flex:
+        os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_flex " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
+    else:
+        os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_rigid " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
 
     os.chdir(original_dir)
 

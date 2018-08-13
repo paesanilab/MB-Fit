@@ -300,6 +300,10 @@ class Database():
         Returns:
             None
         """
+        
+        if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0] != "running":
+            print("This job is not set to running, but tried to have its energy set. Most likely, this job was dispatched a long time ago, and the database has since given up on ever getting a response. Energy will be placed into the database anyways, this could create an issue as the currently running job may later update this energy.") # Unsure how to handle this? Throw Error? Allow energy into database or not?
+
 
         # update the row in the Energies table corresponding to this energy
         self.cursor.execute("UPDATE Energies SET energy=? WHERE job_id=?", (energy, job_id))
@@ -465,6 +469,14 @@ class Database():
             energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
     
             yield molecule, energies
+
+    def clean(self):
+        """
+        Goes thru all jobs in the database, and sets any that are "running" to "pending". Should only be used when you are prepared to give up on any currently running jobs
+        """
+
+        self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "running"))
+        pass
 
 class Calculation():
     """

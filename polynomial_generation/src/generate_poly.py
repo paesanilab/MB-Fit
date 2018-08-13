@@ -39,6 +39,13 @@ def generate_poly(settings_file, input_file, order, output_path):
         # loop over each fragment
         for fragment in fragments:
 
+            # first check the formatting on this fragment
+            if fragment[0].isdigit():
+                raise InvalidValueError("fragment", fragment, "formatted such that the first character of every fragment is a letter")
+            for i in range(1, len(fragment), 2):
+                if not fragment[i].isdigit():
+                    raise InvalidValueError("fragment", fragment, "formatted such that every letter is followed by a single-digit number, even if that number is 1")
+            
             # counter to count how many atoms are in this fragment
             number_of_atoms = 0
 

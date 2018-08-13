@@ -1,18 +1,20 @@
-import sys
-import configparser
+import sys, os
 import itertools
 
-def generate_poly(settings, input_file, order, output_path):
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+import settings_reader
+from exceptions import ParsingError, InvalidValueError
+
+def generate_poly(settings_file, input_file, order, output_path):
     
-    # create configparser
-    config = configparser.SafeConfigParser(allow_no_value=False)
-    config.read(settings)
+    # read the settings file
+    settings = settings_reader.SettingsReader(settings_file)
 
     # open output files for polynomials, will automatically be closed by with open as syntax
-    with open(output_path + "/poly.log", "w") as poly_log, open(input_file, "r") as in_poly:
+    with open(output_path + "/poly.log", "w") as poly_log:
         
-        # read the add_molecule definitions to get a list of the fragments
-        fragments = parse_fragments(in_poly)
+        # parse declaired fragments and variables from the input-file
+        fragments, variables = parse_input(input_file)
 
         # write number of fragments to log
         poly_log.write("<> fragments({}) <>\n".format(len(fragments)))
@@ -23,7 +25,7 @@ def generate_poly(settings, input_file, order, output_path):
             poly_log.write(fragment + "\n")
         poly_log.write("\n")
 
-        # Parse the molecule names to determine and name the atoms in the system
+        # Parse the fragment names to name the atoms in the system
 
         # holds list of all atoms
         atom_names = []
@@ -68,11 +70,8 @@ def generate_poly(settings, input_file, order, output_path):
             # increment fragname ('a' -> 'b', etc)
             fragname += 1
 
-        # calculate total number of atoms in all fragments
-        num_atoms = len(atom_names)
-
         # write number of atoms to log
-        poly_log.write("<> atoms ({}) <>\n".format(num_atoms))
+        poly_log.write("<> atoms ({}) <>\n".format(len(atom_names)))
         poly_log.write("\n")
 
         # write each atom to log
@@ -95,7 +94,6 @@ def generate_poly(settings, input_file, order, output_path):
 
         atom_permutations = list(combine_permutations(fragments, fragment_permutations))
 
-
         # write permutation count to log file
         poly_log.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
         poly_log.write("\n")
@@ -104,10 +102,6 @@ def generate_poly(settings, input_file, order, output_path):
         for permutation in atom_permutations:
             poly_log.write(":".join(str(x) for x in permutation) + "\n")
         poly_log.write("\n")
-
-        # read variables from input file
-
-        variables = list(parse_variables(in_poly))
 
         # write variable count to log file
         poly_log.write("<> variables ({}) <>\n".format(len(variables))) 
@@ -145,8 +139,15 @@ def generate_poly(settings, input_file, order, output_path):
             # log number of possible monomials
             poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
-            # filter out monomials that are purely intramolecular
-            accepted_monomials = list(eliminate_intramolecular_monomials(monomials, variables))
+            if settings.get("poly_generation", "accepted_terms") == "all":
+                accepted_monomials = monomials
+            elif settings.get("poly_generation", "accepted_terms") == "partly-inter":
+                accepted_monomials = list(eliminate_purely_intramolecular_monomials(monomials, variables))
+            elif settings.get("poly_generation", "accepted_terms") == "inter":
+                accepted_monomials = list(eliminate_partly_intramolecular_monomials(monomials, variables))
+            else:
+                raise InvalidValueError("[poly_generation][accepted_terms]", settings.get("poly_generation", "accepted_terms"), "one of 'all', 'partly-inter', or 'inter'")
+
             # filter out redundant monomials (that are a permutation of eachother)
             accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
 
@@ -192,36 +193,37 @@ def generate_poly(settings, input_file, order, output_path):
             write_nogrd_closing(nogrd_file, total_terms, len(variables))
 
 
-def parse_fragments(input_file):
+def parse_input(input_path):
     """
-    Reads the add_molecule statements from the input file
+    Reads the add_molecule, and add_fragments statements from the input file
     """
 
     fragments = []
+    variables = []
 
-    # get a line from the input file
-    line = input_file.readline()
+    with open(input_path, "r") as input_file:
 
-    # continue reading lines as long as they begin with add_m
-    while line[:5] == "add_m":
-        
-        # parse the fragment from the line
-        fragments.append(line[line.index("['") + 2:line.index("']")])
+        # loop thru all lines in the input file
+        for line in input_file:
 
-        # get a new line from the input file
-        line = input_file.readline()
+            # check if this line is an add_molecule statement
+            if line[:12] == "add_molecule":
 
-    return fragments
+                # parse line into a fragment
+                fragments.append(line[line.index("['") + 2:line.index("']")])
 
-def parse_variables(input_file):
-    """
-    Reads the add variable statements from the input file
-    """
+            # check if this line is an add_variable statement
+            elif line[:12] == "add_variable":
 
-    # loop thru all the rest of the lines in the input file, constructing variable objects
-    for line in input_file.readlines():
-        yield Variable(line)
-        
+                # parse line into a variable
+                variables.append(Variable(line))
+
+            # if line is neither a add_molecule statement, add_variable statement, or a blank line, it is invalid
+            elif line != "\n":
+                raise ParsingError(input_path, "Unrecongnized line format: '{}'".format(line))
+
+    return fragments, variables
+
 class Variable(object):
     """
     Holds all information relevent to a single variable
@@ -286,18 +288,31 @@ def combine_permutations(fragments, fragment_permutations):
                 yield from (permutation + perm for perm in combine_permutations(fragments[1:i] + [fragments[0]] + fragments[i + 1:], fragment_permutations[1:i] + [fragment_permutations[0]] + fragment_permutations[i + 1:]))
 
 def make_variable_permutations(variables, atom_permutations, atom_names):
+    """
+    Constructs the variable permutations from the atom permutations
+    """
+
+    # there will be 1 variable permutation for every atom permutation
     for atom_permutation in atom_permutations:
+
+        # initialize the new variable permutation
         variable_permutation = []
+
+        # each variable permutation has length = len(variables) where each value is a value of a variable which should be switched with this index to create this permutation
         for variable in variables:
+
+            # get the variable's atoms
             atom1 = variable.atom1_name + variable.atom1_fragment
             atom2 = variable.atom2_name + variable.atom2_fragment
 
+            # get the permutated variable's atoms
             new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
             new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
 
+            # find the index of this variable in the list of variables
             new_index = -1
             for new_variable_index, new_variable in enumerate(variables):
-                
+                # if both new atoms match the atoms for a variable, then that is the permutated variable
                 if new_atom1 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom2 == new_variable.atom2_name + new_variable.atom2_fragment:
                     new_index = new_variable_index
                     break
@@ -305,8 +320,11 @@ def make_variable_permutations(variables, atom_permutations, atom_names):
                     new_index = new_variable_index
                     break
 
+            # a variable should always be found, if one is not found new_index being -1 signifies a problem
             if new_index == -1:
                 print("Something went wrong :(")
+
+            # append the index of the permutated variable to variable permutation
             variable_permutation.append(new_index)
 
         yield variable_permutation
@@ -338,34 +356,6 @@ def generate_monomials(number_of_vars, degree):
 
             # yield from the list created by all zeros before the first non-zero term, then the first non-zero term, then each result of the recursive call on all terms after the first non-zero term with degree equal to degree minus the degree of the first non-zero term
             yield from ([0 for i in range(v)] + [d] + monomial for monomial in generate_monomials(number_of_vars - v - 1, degree - d))
-
-def gen_mon_new(num_vars, permutations, degree):
-
-    if num_vars == 1:
-        yield [degree]
-        return
-
-    ban_degree_indicies = []
-    for permutation in permutations:
-        for index, val in enumerate(permutation):
-            if val == 0 and index > 0:
-                ban_degree_indicies.append(index - 1)
-    
-
-    newPermutations = [[x - 1 for x in permutation[1:]] for permutation in permutations]    
-
-    for deg in range(degree + 1):
-        all_mons = list(gen_mon_new(num_vars - 1, newPermutations, degree - deg))
-        accepted_mons = [mon for mon in all_mons if not hasBannedDegree(mon, ban_degree_indicies, deg - 1)]
-        #yield from ([deg] + monomial for monomial in gen_mon(num_vars - 1, newPermutations, degree - deg) if not hasBannedDegree(monomial, ban_degree_indicies, deg))
-        yield from ([deg] + mon for mon in accepted_mons)
-
-def hasBannedDegree(monomial, bannedDegrees, degree):
-    for bannedDegree in bannedDegrees:
-        if monomial[bannedDegree] <= degree:    
-            return True
-    return False
-
 
 def eliminate_redundant_monomials(monomials, variable_permutations):
     accepted_monomials = monomials[:]
@@ -402,29 +392,27 @@ def permute_monomial(monomial1, variable_permutations):
 
         yield monomial1_permutation
             
-"""
-    monomial1_terms = []
-    for index, degree in enumerate(monomial1):
-        monomial1_terms.append([variables[index].category, degree])
-
-    monomial2_terms = []
-    for index, degree in enumerate(monomial2):
-        monomial2_terms.append([variables[index].category, degree])
-
-    if sorted(monomial1_terms) == sorted(monomial2_terms):
-        return True
-    return False
-"""
-def eliminate_intramolecular_monomials(monomials, variables):
+def eliminate_purely_intramolecular_monomials(monomials, variables):
     for monomial in monomials:
-        if not is_intramolecular(monomial, variables):
+        if not is_purely_intramolecular(monomial, variables):
             yield monomial
 
-def is_intramolecular(monomial, variables):
+def eliminate_partly_intramolecular_monomials(monomials, variables):
+    for monomial in monomials:
+        if not is_partly_intramolecular(monomial, variables):
+            yield monomial
+
+def is_purely_intramolecular(monomial, variables):
     for index, degree in enumerate(monomial):
         if degree > 0 and not variables[index].category[:7] == "x-intra":
             return False
     return True
+
+def is_partly_intramolecular(monomial, variables):
+    for index, degree in enumerate(monomial):
+        if degree > 0 and variables[index].category[:7] == "x-intra":
+            return True
+    return False
 
 def write_variable_file(variable_file, variables):
     # variable header comment

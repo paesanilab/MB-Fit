@@ -143,7 +143,7 @@ def generate_poly(settings_file, input_file, order, output_path):
                 accepted_monomials = monomials
             elif settings.get("poly_generation", "accepted_terms") == "partly-inter":
                 accepted_monomials = list(eliminate_purely_intramolecular_monomials(monomials, variables))
-            elif settings.get("poly_generation", "accepted_terms") == "inter":
+            elif settings.get("poly_generation", "accepted_terms") == "purely-inter":
                 accepted_monomials = list(eliminate_partly_intramolecular_monomials(monomials, variables))
             else:
                 raise InvalidValueError("[poly_generation][accepted_terms]", settings.get("poly_generation", "accepted_terms"), "one of 'all', 'partly-inter', or 'inter'")

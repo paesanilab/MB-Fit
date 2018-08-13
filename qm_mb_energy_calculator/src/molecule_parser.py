@@ -1,5 +1,4 @@
 import os, sys
-import configparser
 from molecule import Atom, Fragment, Molecule
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
@@ -8,23 +7,23 @@ from exceptions import XYZFormatError, InconsistentValueError
 '''
 Generates a list of Molecule objects from xyz files in the given directory
 '''
-def xyz_to_molecules(f, config):
+def xyz_to_molecules(f, settings):
 
     # Keep in mind that you're passing in a file from initializer, not a
     # directory!
 
     # the for loop just changes the string array to an int array
-    atoms_per_fragment = [int(atom_count) for atom_count in config["molecule"]["fragments"].split(",")]
-    charge_per_fragment = [int(charge) for charge in config["molecule"]["charges"].split(",")]
-    spin_per_fragment = [int(spin) for spin in config["molecule"]["spins"].split(",")]
-    name_per_fragment = config["molecule"]["names"].split(",")
+    atoms_per_fragment = [int(atom_count) for atom_count in settings.get("molecule", "fragments").split(",")]
+    charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
+    spin_per_fragment = [int(spin) for spin in settings.get("molecule", "spins").split(",")]
+    name_per_fragment = settings.get("molecule", "names").split(",")
 
     if not len(atoms_per_fragment) == len(charge_per_fragment):
-        raise InconsistentValueError("fragments", "charges", config["molecule"]["fragments"], config["molecule"]["charges"], "lists must be same length")
+        raise InconsistentValueError("fragments", "charges", settings.get("molecule", "fragments"), settings.get("molecule", "charges"), "lists must be same length")
     if not len(atoms_per_fragment) == len(spin_per_fragment):
-        raise InconsistentValueError("fragments", "spins", config["molecule"]["fragments"], config["molecule"]["spins"], "lists must be same length")
+        raise InconsistentValueError("fragments", "spins", settings.get("molecule", "fragments"), settings.get("molecule", "spins"), "lists must be same length")
     if not len(atoms_per_fragment) == len(name_per_fragment):
-        raise InconsistentValueError("fragments", "names", config["molecule"]["fragments"], config["molecule"]["names"], "lists must be same length")
+        raise InconsistentValueError("fragments", "names", settings.get("molecule", "fragments"), settings.get("molecule", "names"), "lists must be same length")
 
     # define the list of molecules
     molecules = []
@@ -41,7 +40,7 @@ def xyz_to_molecules(f, config):
         # check for consistance between number of atoms in xyz file
         # and number of atoms in fragments array
         if int(atom_num_line) != sum(atoms_per_fragment):
-            raise InconsistentValueError("total atoms in xyz file", "fragments", atom_num_line, config["molecule"]["fragments"], "fragments list must sum to total atoms from xyz file")
+            raise InconsistentValueError("total atoms in xyz file", "fragments", atom_num_line, settings.get("molecule", "fragments"), "fragments list must sum to total atoms from xyz file")
 
         # read and discard the comment line
         f.readline()

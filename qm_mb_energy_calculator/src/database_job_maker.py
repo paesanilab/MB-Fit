@@ -1,12 +1,13 @@
-import sys
-import configparser
+import os, sys
 from database import Database
-def make_all_jobs(settings, database_name, job_dir):
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
+def make_all_jobs(settings_file, database_name, job_dir):
     """
     Makes all the jobs that still need to be performed in this database
 
     Args:
-        settings - .ini file with relevent settings
+        settings_file - .ini file with relevent settings
         database_name - file path to where the database is stored
         job_dir - directory to place the jobs in
 
@@ -20,21 +21,17 @@ def make_all_jobs(settings, database_name, job_dir):
 
     # open the database
     database = Database(database_name)
+    with Database(database_name) as database:
 
-    for calculation in database.missing_energies():
-        write_job(settings, calculation, job_dir)
+        for calculation in database.missing_energies():
+            write_job(settings, calculation, job_dir)
 
-    # commit changes to database
-    database.save()
-    # close the database
-    database.close()
-
-def make_job(settings, database_name, job_dir):   
+def make_job(settings_file, database_name, job_dir):   
     """
     Makes a single job that still needs to be performed in this database
 
     Args:
-        settings - .ini file with relevent settings
+        settings_file - .ini file with relevent settings
         database_name - file path to where the database is stored
         job_dir - directory to place the job in
 
@@ -47,23 +44,18 @@ def make_job(settings, database_name, job_dir):
         database_name += ".db"
 
     # open the database
-    database = Database(database_name)
+    with Database(database_name) as database:
 
-    write_job(settings, database.get_missing_energy(), job_dir)
+        write_job(settings, database.get_missing_energy(), job_dir)
 
-    # commit changes to database
-    database.save()
-    # close the database
-    database.close()
-
-def write_job(settings, calculation, job_dir):
+def write_job(settings_file, calculation, job_dir):
     """
     Makes a job from a specific Calculation
 
     file will be located at job_dir/job_<id>.py
     
     Args:
-        settings - .ini file with relevent settings
+        settings_file - .ini file with relevent settings
         calculation - the Calculation object (see database.py) with the information needed to make a job
         job_dir - directory to place the job in
 
@@ -72,19 +64,18 @@ def write_job(settings, calculation, job_dir):
     
     """
     # parse settings file
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    settings = settings_reader.SettingsReader(settings_file)
 
     with open(job_dir + "/job_{}.py".format(calculation.job_id), "w") as job_file, open("job_template.py", "r") as job_template:
         job_string = "".join(job_template.readlines())
-        
+
         job_file.write(job_string.format(**{
             "job_id":       calculation.job_id,
             "molecule":     calculation.molecule.to_xyz(calculation.fragments, calculation.cp).replace("\n", "\\n"),
             "method":       calculation.method,
             "basis":        calculation.basis,
-            "num_threads":  config["psi4"]["num_threads"],
-            "memory":       config["psi4"]["memory"],
+            "num_threads":  settings.get("psi4", "num_threads"),
+            "memory":       settings.get("psi4", "memory"),
             "format":       "{}"
         }))
 

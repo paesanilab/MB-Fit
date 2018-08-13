@@ -1,16 +1,17 @@
 import sys, os, math
-# this is messy, I hope there is a better way to do this!
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import sqlite3
-import constants
 from database import Database
 
-def generate_1b_training_set(settings, database_name, output_path, molecule_name, method, basis, cp, tag):
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+import constants
+from exceptions import NoEnergiesError, NoOptimizedEnergyError
+
+def generate_1b_training_set(settings_file, database_name, output_path, molecule_name, method, basis, cp, tag):
     """
     Creates a training set file from the calculated energies in a database.
 
     Args:
-        settings    - .ini file with all relevent settings information
+        settings_file    - .ini file with all relevent settings information
         database_name - filepath to database file
         output_path - path to file to write training set to
         molecule_name - the name of the molecule to generate a training set for
@@ -29,46 +30,41 @@ def generate_1b_training_set(settings, database_name, output_path, molecule_name
         database_name += ".db"
     
     # open the database
-    database = Database(database_name)
+    with Database(database_name) as database:
 
-    print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
+        print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
-    # get list of all [molecule, energies] pairs calculated in the database
-    molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
+        # get list of all [molecule, energies] pairs calculated in the database
+        molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
-    # if there are no calculated energies, error and exit
-    if len(molecule_energy_pairs) == 0:
-        print("No completed energy entries to generate a training set.")
-        database.close()
-        exit(1)
-    
-    # find the optimized geometry energy from the database
-    try:
-        opt_energies = list(database.get_optimized_energies(molecule_name, method, basis, cp, tag))[0][1]
-    except IndexError:
-        raise ValueError("No optimized geometry in database. Terminating training set generation.") from None
+        # if there are no calculated energies, error and exit
+        if len(molecule_energy_pairs) == 0:
+            raise NoEnergiesError(database_name, molecule_name, method, basis, cp, tag)
+        
+        # find the optimized geometry energy from the database
+        try:
+            opt_energies = list(database.get_optimized_energies(molecule_name, method, basis, cp, tag))[0][1]
+        except IndexError:
+            raise NoOptimizedEnergyError(database_name, molecule_name, method, basis, cp, tag) from None
 
-    # open output file for writing
-    output = open(output_path, "w")
+        # open output file for writing
+        with open(output_path, "w") as output:
 
-    # loop thru each molecule, energy pair
-    for molecule_energy_pair in molecule_energy_pairs:
-        molecule = molecule_energy_pair[0]
-        energies = molecule_energy_pair[1]
+            # loop thru each molecule, energy pair
+            for molecule_energy_pair in molecule_energy_pairs:
+                molecule = molecule_energy_pair[0]
+                energies = molecule_energy_pair[1]
 
-        # write the number of atoms to the output file
-        output.write(str(molecule.get_num_atoms()) + "\n")
+                # write the number of atoms to the output file
+                output.write(str(molecule.get_num_atoms()) + "\n")
 
-        # monomer interaction energy
-        output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
-	
-        output.write("\n")
+                # monomer interaction energy
+                output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+            
+                output.write("\n")
 
-        # write the molecule's atoms' coordinates to the xyz file
-        output.write(molecule.to_xyz() + "\n")
-
-    database.close()
-
+                # write the molecule's atoms' coordinates to the xyz file
+                output.write(molecule.to_xyz() + "\n")
 
 def generate_2b_training_set(settings, database_name, output_path, monomer_1_name, monomer_2_name, method, basis, cp, tag):
     """"
@@ -95,52 +91,53 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
         database_name += ".db"
     
     # open the database
-    database = Database(database_name)
+    with Database(database_name) as database:
 
-    print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
+        print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
 
-    # get list of all [molecule, energies] pairs calculated in the database
-    molecule_energy_pairs = list(database.get_energies("-".join(sorted([monomer_1_name, monomer_2_name])), method, basis, cp, tag))
+        # construct name of molecule from name of monomers
+        molecule_name = "-".join(sorted([monomer_1_name, monomer_2_name]))
+        # get list of all [molecule, energies] pairs calculated in the database
+        molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
-    # if there are no calculated energies, error and exit
-    if len(molecule_energy_pairs) == 0:
-        print("No completed energy entries to generate a training set.")
-        database.close()
-        exit(1)
-    
-    # find the optimized geometry energy of the two monomers from the database
-    try:
-        monomer_1_opt_energies = list(database.get_optimized_energies(monomer_1_name, method, basis, cp, tag))[0][1]
-        monomer_2_opt_energies = list(database.get_optimized_energies(monomer_2_name, method, basis, cp, tag))[0][1]
-    except IndexError:
-        raise ValueError("No optimized geometry in database. Terminating training set generation") from None
+        # if there are no calculated energies, error and exit
+        if len(molecule_energy_pairs) == 0:
+            raise NoEnergiesError(database_name, molecule_name, method, basis, cp, tag)
+        
+        # find the optimized geometry energy of the two monomers from the database
+        try:
+            monomer_1_opt_energies = list(database.get_optimized_energies(monomer_1_name, method, basis, cp, tag))[0][1]
+        except IndexError:
+            raise NoOptimizedEnergyError(database_name, monomer_1_name, method, basis, cp, tag)
 
-    # open output file for writing
-    output = open(output_path, "w")
+        try:
+            monomer_2_opt_energies = list(database.get_optimized_energies(monomer_2_name, method, basis, cp, tag))[0][1]
+        except IndexError:
+            raise NoOptimizedEnergyError(database_name, monomer_2_name, method, basis, cp, tag)
 
-    for molecule_energy_pair in molecule_energy_pairs:
-        molecule = molecule_energy_pair[0]
-        energies = molecule_energy_pair[1]
+        # open output file for writing
+        with open(output_patu, "w") as output:
 
-        # write the number of atoms to the output file
-        output.write(str(molecule.get_num_atoms()) + "\n")
+            for molecule_energy_pair in molecule_energy_pairs:
+                molecule = molecule_energy_pair[0]
+                energies = molecule_energy_pair[1]
 
-        interaction_energy = (energies[2] - energies[1] - energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
-        monomer1_energy_deformation = (energies[0] - monomer_1_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
-        monomer2_energy_deformation = (energies[1] - monomer_2_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+                # write the number of atoms to the output file
+                output.write(str(molecule.get_num_atoms()) + "\n")
 
-        binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
+                interaction_energy = (energies[2] - energies[1] - energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+                monomer1_energy_deformation = (energies[0] - monomer_1_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+                monomer2_energy_deformation = (energies[1] - monomer_2_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
 
-        # monomer interaction energy
-        output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation))
-	
-        output.write("\n")
+                binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
-        # write the molecule's atoms' coordinates to the xyz file
-        output.write(molecule.to_xyz() + "\n")
+                # monomer interaction energy
+                output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation))
+            
+                output.write("\n")
 
-    database.close()
-
+                # write the molecule's atoms' coordinates to the xyz file
+                output.write(molecule.to_xyz() + "\n")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

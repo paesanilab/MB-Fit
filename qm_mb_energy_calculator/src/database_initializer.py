@@ -1,20 +1,26 @@
 import os, sys
 
-import sqlite3, configparser
+import sqlite3
 from molecule_parser import xyz_to_molecules
 from database import Database
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+
+import settings_reader
+
+from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError
 
 """
 initializes a database from the config files in a directory
 """
-def initialize_database(settings, database_name, directory):
+def initialize_database(settings_file, database_name, directory):
     """
     Initializes a new database or adds energies to be calculated to an existing one.
 
     Args:
         settings - the .ini file used to initialize the database
         database_name - the name of the file to save the database in
-        directory - the directory of the config.xyz files to add to the database
+        directory - the directory of the config.xyz files to add to the database or a single .xyz file
 
     Returns:
         None
@@ -25,61 +31,64 @@ def initialize_database(settings, database_name, directory):
         print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
         database_name += ".db"
 
-    # Create the database
-    database = Database(database_name)
-    database.create()
-    
-    print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
-    # get a list of all the files in the directory, or just the filename if directory is just a single file.
-    filenames = get_filenames(directory) if os.path.isdir(directory) else [directory]
-
-    # parse settings.ini file
-    config = configparser.ConfigParser(allow_no_value=False)
-
-    # See if a config file already exists; if not, generate one
-    config.read(settings)
-    
-    # Read values from the config file
-    method = config["energy_calculator"]["method"]
-    basis = config["energy_calculator"]["basis"]
-    cp = config["energy_calculator"].getboolean("cp")
-    tag = config["molecule"]["tag"]
-
-    # loop thru all files in directory
-    for filename in filenames:
-
-        # if the filename does not end in .xyz, then skip it
-        if filename[-4:] != ".xyz":
-            continue
-
-        # open the file
-        xyz_file = open(filename, "r")
-
-        # get list of all molecules in file
-        molecules = xyz_to_molecules(xyz_file, config)
+    with Database(database_name) as database:
         
-        # if this file contains omptimized geometries, tell the database so
-        if filename[-8:] == ".opt.xyz":
-
-            # for each molecule in the file
-            for molecule in molecules:
-
-                # add this molecule to the database, optimized flag set to true
-                database.add_calculation(molecule, method, basis, cp, tag, True)
-
-        else: 
-
-            # for each molecule in the file
-            for molecule in molecules:
-
-                # add this molecule to the database, optimized flag set to false
-                database.add_calculation(molecule, method, basis, cp, tag, False)
-
-    # save and close the database
-    database.save()
-    database.close()
+        # Create the database by initializing all tables
+        database.create()
     
-    print("Initializing of database {} successful".format(database_name))
+        print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
+        # get a list of all the files in the directory, or just the filename if directory is just a single file.
+        filenames = get_filenames(directory) if os.path.isdir(directory) else [directory] if directory[:-4] == ".xyz" else []
+
+        if len(filenames) == 0:
+            raise InvalidValueError("directory", directory, "a directory with 1 or more .xyz files, or a single .xyz file.")
+
+        # parse settings.ini file
+        settings = settings_reader.SettingsReader(settings_file)
+
+        # Read values from the settings file
+        method = settings.get("energy_calculator", "method")
+
+        basis = settings.get("energy_calculator", "basis")
+
+        cp = settings.getboolean("energy_calculator", "cp")
+
+        tag = settings.get("molecule", "tag")
+
+        # loop thru all files in directory
+        for filename in filenames:
+
+            # if the filename does not end in .xyz, then skip it
+            if filename[-4:] != ".xyz":
+                continue
+
+            # open the file
+            xyz_file = open(filename, "r")
+
+            # get list of all molecules in file
+            try:
+                molecules = xyz_to_molecules(xyz_file, settings)
+            except (XYZFormatError, InconsistentValueError) as e:
+                raise ParsingError(filename, str(e)) from None
+            
+            # if this file contains omptimized geometries, tell the database so
+            if filename[-8:] == ".opt.xyz":
+
+                # for each molecule in the file
+                for molecule in molecules:
+
+                    # add this molecule to the database, optimized flag set to true
+                    database.add_calculation(molecule, method, basis, cp, tag, True)
+
+            else: 
+
+                # for each molecule in the file
+                for molecule in molecules:
+
+                    # add this molecule to the database, optimized flag set to false
+                    database.add_calculation(molecule, method, basis, cp, tag, False)
+
+        print("Initializing of database {} successful".format(database_name))
 
 
 def get_filenames(directory):

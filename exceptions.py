@@ -46,6 +46,18 @@ class InconsistentDatabaseError(DatabaseError):
     def __init__(self, database, message):
         super().__init__(database, "Inconsistent information in database: {}".format(message))
 
+class NoEnergiesError(DatabaseError):
+    """Raised when a user performs an operation that requires calculated energies when no energies are calculated"""
+
+    def __init__(self, database, molecule_name, method, basis, cp, tag):
+        super().__init__(database, "Unable to find calculated energies for molecule {} with the model {}/{} with cp={} and tag={}".format(molecule_name, method, basis, cp, tag))
+
+class NoOptimizedEnergyError(DatabaseError):
+    """Raised when a user performs an operation that requires an optimized energy when one does not exist"""
+
+    def __init__(self, database, method, basis, cp, tag):
+        super().__init__(database, "Unable to find calculated optimized energy for molecule {} with the model {}/{} with cp={} and tag={}".format(molecule_name, method, basis, cp, tag))
+
 """
 --------------------------- InputException
 """
@@ -61,6 +73,12 @@ class XYZFormatError(InvalidInputError):
 
     def __init__(self, message, fix):
         super().__init__("Invalid xyz formatting on or near line: {}. Line format should be {}".format(path, message, fix))
+
+class ParsingError(PotentialFittingError):
+    """Exception for problems reading a file"""
+
+    def __init__(self, f, message):
+        super().__init__("A problem occured while parsing file {}: {}".format(f, message))
 
 class InvalidValueError(InvalidInputError):
     """Raised when a value a user inputs has an invalid value"""
@@ -83,20 +101,20 @@ class NoSuchLibraryError(InvalidInputError):
 class ConfigError(InvalidInputError):
     """Basic exception for all Config Errors"""
 
-    def __init__(self, message):
-        super().__init__("Error in settings file: {}".format(message))
+    def __init__(self, file, message):
+        super().__init__("Error in settings file {}: {}".format(message))
 
 class ConfigMissingSectionError(ConfigError):
     """Raised when a required section is missing from a settings file"""
 
-    def __init__(self, section, prop):
-        super().__init__("You must define section {} with property {}".format(section, prop))
+    def __init__(self, file, section, prop):
+        super().__init__(file, "You must define section {} with property {}".format(section, prop))
 
 class ConfigMissingPropertyError(ConfigError):
     """Raised when a required property is missing from a settings file"""
 
-    def __init__(self, section, prop):
-        super().__init__("You must define property {} in section {}".format(prop, section))
+    def __init__(self, file, section, prop):
+        super().__init__(file, "You must define property {} in section {}".format(prop, section))
 
 class ConfigPropertyWrongFormatError(ConfigError):
     """Raised when a property in a settings file is in an improper format"""

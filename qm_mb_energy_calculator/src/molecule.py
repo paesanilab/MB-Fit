@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 from hashlib import sha1
 

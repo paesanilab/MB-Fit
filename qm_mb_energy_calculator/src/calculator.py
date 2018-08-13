@@ -7,10 +7,12 @@ import numpy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
+import settings_reader
+
 from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
 
 from psi4.driver.qcdb.exceptions import QcdbException
-from configparser import NoSectionError, NoOptionError
+
 
 has_psi4 = True
 
@@ -29,7 +31,7 @@ except ImportError:
     pass
 '''
 
-def calculate_energy(molecule, fragment_indicies, model, cp, config):
+def calculate_energy(molecule, fragment_indicies, model, cp, settings):
     """
     Computes energy of the given fragments of a molecule.
 
@@ -54,27 +56,22 @@ def calculate_energy(molecule, fragment_indicies, model, cp, config):
         Calculated Energy.
     """
 
-    try:
         # check which library to use to calculate the energy
-        code = config.get("energy_calculator", "code")
-    except NoSectionError:
-        raise ConfigMissingSectionError("energy_calculator", "code")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("energy_calculator", "code")
+    code = settings.get("energy_calculator", "code")
     
     if code == "psi4":
-        return calc_psi4_energy(molecule, fragment_indicies, model, cp, config)
+        return calc_psi4_energy(molecule, fragment_indicies, model, cp, settings)
     
     elif code == "TensorMol":
-        return TensorMol_convert_str(molecule, fragment_indicies, config)
+        return TensorMol_convert_str(molecule, fragment_indicies, settings)
   
     elif code == "qchem":
-        return calc_qchem_energy(molecule, fragment_indicies, model, cp, config)
+        return calc_qchem_energy(molecule, fragment_indicies, model, cp, settings)
     else:
         raise NoSuchLibraryError(code)
 
 
-def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
+def calc_psi4_energy(molecule, fragment_indicies, model, cp, settings):
     """
     Uses psi4 library to compute energy of a molecule
 
@@ -102,13 +99,8 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     if not has_psi4:
         raise LibraryNotAvailableError("psi4")
 
-    try:
-        # file to write logs from psi4 calculation
-        log_file = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
-    except NoSectionError:
-        raise ConfigMissingSectionError("files", "log_path")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("files", "log_path")
+    # file to write logs from psi4 calculation
+    log_file = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
     
     # create file's directory if it does not already exist
     if not os.path.exists(os.path.dirname(log_file)):
@@ -126,21 +118,11 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     except RuntimeError as e:
         raise LibraryCallError("psi4", "geometry", str(e))
 
-    try:
-        # Set the number of threads to use to compute based on configuration
-        psi4.set_num_threads(config["psi4"].getint("num_threads"))
-    except NoSectionError:
-        raise ConfigMissingSectionError("psi4", "num_threads")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("psi4", "num_threads")
+    # Set the number of threads to use to compute based on settings
+    psi4.set_num_threads(settings.getint("psi4", "num_threads"))
 
-    try:
-        # Set the amount of memory to use based on configuration
-        psi4.set_memory(config["psi4"]["memory"])
-    except NoSectionError:
-        raise ConfigMissingSectionError("psi4", "memory")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("psi4", "memory")
+    # Set the amount of memory to use based on settings
+    psi4.set_memory(settings.get("psi4", "memory"))
     
     try:
         # Perform library call to calculate energy of molecule
@@ -148,7 +130,7 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, config):
     except QcdbException as e:
         raise LibraryCallError("psi4", "energy", str(e))
 
-def TensorMol_convert_str(molecule, fragment_indicies, config):
+def TensorMol_convert_str(molecule, fragment_indicies, settings):
     """
     Prepares input data 
     """
@@ -160,7 +142,7 @@ def TensorMol_convert_str(molecule, fragment_indicies, config):
         atoms = numpy.append(atoms, sym_to_num(xyz_list[i*4]))
         coords = numpy.append(coords, xyz_list[i*4+1:(i+1)*4])
     coords = coords.reshape(atoms.size, 3)
-    return calc_TensorMol_energy(atoms, coords, config)
+    return calc_TensorMol_energy(atoms, coords, settings)
 
 
 # should be improved to work with all atoms
@@ -173,7 +155,7 @@ def sym_to_num(symbol):
     elif symbol == "H":
         return 1
 
-def calc_TensorMol_energy(atoms, coords, config):
+def calc_TensorMol_energy(atoms, coords, settings):
     """
     Sets up calculation for TensorMol
     """
@@ -186,7 +168,7 @@ def calc_TensorMol_energy(atoms, coords, config):
 """
 Calculates energy using qchem
 """
-def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
+def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     """
     Uses q-chem library to compute energy of a molecule
 
@@ -237,20 +219,13 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
     qchem_input += "jobtype " + "sp" + "\n"
     qchem_input += "method " + model.split('/')[0] + "\n"
     qchem_input += "basis " + model.split('/')[1] + "\n"
-    try:
-        qchem_input += "ecp " + config["energy_calculator"]["ecp"] + "\n"
-    except:
-        pass
+
+    qchem_input += "ecp " + settings.get("energy_calculator", "ecp") + "\n"
 
     qchem_input += "$end"
 
-    try: 
-        # file to write qchem input in
-        log_file_in = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".in"
-    except NoSectionError:
-        raise ConfigMissingSectionError("files", "log_path")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("files", "log_path")
+    # file to write qchem input in
+    log_file_in = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".in"
     
     # make sure directory exists prior to writing to file
     if not os.path.exists(os.path.dirname(log_file_in)):
@@ -259,21 +234,11 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, config):
     f.write(qchem_input)
     f.close()
     
-    try:
-        # file to write qchem output in
-        log_file_out = config["files"]["log_path"] + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
-    except NoSectionError:
-        raise ConfigMissingSectionError("files", "log_path")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("files", "log_path")
+    # file to write qchem output in
+    log_file_out = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
 
     # get number of threads
-    try:
-        num_threads == config["qchem"]["num_threads"]
-    except NoSectionError:
-        raise ConfigMissingSectionError("qchem", "num_threads")
-    except NoOptionError:
-        raise ConfigMissingPropertyError("qchem", "num_threads")
+    num_threads == settings.get("qchem", "num_threads")
     
 
     # perform system call to run qchem

@@ -1,9 +1,13 @@
 """
 Contains the Database class, used to read and write to a database
 """
-import sys, itertools, datetime
+import sys, os 
+import itertools, datetime
 import sqlite3
 from molecule import Atom, Fragment, Molecule
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+from exceptions import InconsistentDatabaseError, InvalidValueError
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
@@ -34,7 +38,19 @@ class Database():
             self.cursor.execute("PRAGMA table_info('schema_version')");
         except:
             self.close()
-            raise ValueError("{} exists but is not a valid database file. \n Terminating database initialization.".format(database_name)) from None
+            raise InconsistentDatabaseError(file_name, "File exists but is not a valid database file.") from None
+    
+
+    # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use with ... as ... syntax on it
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.save()
+        self.close()
+        
+        # returning false lets the context manager know that no exceptions were handled in the __exit__() method
+        return False
 
     def save(self):
         """
@@ -304,7 +320,7 @@ class Database():
             None
         """
         if status not in ["pending", "running", "completed", "failed"]:
-            raise ValueError("{} is not a valid status".format(status))
+            raise InvalidValueError("status", status, "job status must be one of 'pending', 'running', 'completed', or 'failed'")
 
         self.cursor.execute("UPDATE Jobs SET status=?, log_file=? WHERE ROWID=?", (status, log_path, job_id))
 
@@ -449,47 +465,6 @@ class Database():
             energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
     
             yield molecule, energies
-
-    def get_comparison_energies(self, method1, method2, basis1, basis2, cp1, cp2, energy):
-        """
-        Allows the user to search the database for two different sets of data corresponding to each set of method/basis/cp and
-        Return an array of pairs of energies of the same molecule calculated in each way
-
-        Something I made a while ago, does work with new database, but its not very useful so I will probably delete this later :)
-        """
-         
-        # get rows pertaining to category 1
-        self.cursor.execute("SELECT ID FROM Energies WHERE method=? AND basis=? AND cp=?", (method1, basis1, cp1))
-        category1_IDs = self.cursor.fetchall()
-        self.cursor.execute("SELECT {} FROM Energies WHERE method=? AND basis=? AND cp=?".format(energy), (method1, basis1, cp1))
-        category1_energies = self.cursor.fetchall()
-
-        # get rows pertaining to category 2
-        self.cursor.execute("SELECT ID FROM Energies WHERE method=? AND basis=? AND cp=?", (method2, basis2, cp2))
-        category2_IDs = self.cursor.fetchall()
-        self.cursor.execute("SELECT {} FROM Energies WHERE method=? AND basis=? AND cp=?".format(energy), (method2, basis2, cp2))
-        category2_energies = self.cursor.fetchall()
-
-        # make list of all ids
-        IDs = category1_IDs.copy()
-        for ID in category2_IDs:
-            if ID not in category1_IDs:
-                IDs.append(ID)
-        
-        energy_pairs = []
-       
-        # fill energy pairs with pairs of energies corresponding to the same molecule in each category
-        for ID in IDs:
-            try:
-                category1_energy = category1_energies[category1_IDs.index(ID)][0]
-                category2_energy = category2_energies[category2_IDs.index(ID)][0]
-            
-                energy_pairs.append([category1_energy, category2_energy])
-            except ValueError:
-                pass
-
-        return energy_pairs;
-
 
 class Calculation():
     """

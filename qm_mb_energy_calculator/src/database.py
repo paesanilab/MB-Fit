@@ -320,7 +320,7 @@ class Database():
             None
         """
         if status not in ["pending", "running", "completed", "failed"]:
-            raise InvalidValueError("status", status, "job status must be one of 'pending', 'running', 'completed', or 'failed'")
+            raise InvalidValueError("status", status, "one of 'pending', 'running', 'completed', or 'failed'")
 
         self.cursor.execute("UPDATE Jobs SET status=?, log_file=? WHERE ROWID=?", (status, log_path, job_id))
 

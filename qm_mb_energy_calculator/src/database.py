@@ -328,7 +328,7 @@ class Database():
 
         self.cursor.execute("UPDATE Jobs SET status=?, log_file=? WHERE ROWID=?", (status, log_path, job_id))
 
-    def get_complete_energies(self, molecule_name):
+    def get_complete_energies(self, molecule_name, optimized = False):
         """
         Returns a generator of pairs of [molecule, energies] where energies is an array of the form [E0, ...]
 
@@ -341,9 +341,9 @@ class Database():
             a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database
         """
 
-        yield from self.get_energies(molecule_name, "%", "%", "%", "%")
+        yield from self.get_energies(molecule_name, "%", "%", "%", "%", optimized)
 
-    def get_energies(self, molecule_name, method, basis, cp, tag):
+    def get_energies(self, molecule_name, method, basis, cp, tag, optimized = False):
         """
         Returns a generator of pairs of [molecule, energies] where energies is an array of the form [E0, ...] of molecules in the database with the given
         method, basis, cp and tag.
@@ -357,6 +357,7 @@ class Database():
             basis   - retrieve only energies computed with this basis
             cp      - retrieve only energies computed with this coutnerpoise correction
             tag     - retrieve only energies with this tag
+            optimized - if True, then only retrieve those energies that use an optimized geometry
 
         Returns:
             a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database using the given model and tag
@@ -370,10 +371,22 @@ class Database():
 
         # get a list of all calculations that have the appropriate method, basis, and cp
         calculation_ids = []
+
+        # loop over all the selected molecules
         for molecule_id in molecule_ids:
+
+            # loop over all selected models
             for model_id in model_ids:
-                calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id, tag)).fetchall()]
+
+                # if optimized is true, get only those calculations which are marked as optimized in the database
+                if optimized:
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+
+                # otherwise, get all energies (even those marked as optimized)
+                else:
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id, tag)).fetchall()]
         
+        # loop over all the selected calculations
         for calculation_id in calculation_ids:
             
             # get the molecule id corresponding to this calculation
@@ -385,9 +398,11 @@ class Database():
                 if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0] != "completed":
                     is_complete = False
                     break
+
             # else statement is only ran if inner for loop
             if not is_complete:
                 continue
+
             # get the energies corresponding to this calculation
             energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
 
@@ -404,70 +419,6 @@ class Database():
 
                 molecule.add_fragment(fragment)
             
-            yield molecule, energies
-
-    def get_complete_optimized_energies(self, molecule_name):
-        """
-        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] for optimized geometries.
-
-        Args:
-            None
-
-        Returns:
-            a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database of optimized geometries
-        """
-        yield from self.get_optimized_energies(molecule_name, "%", "%", "%", "%")
-
-    def get_optimized_energies(self, molecule_name, method, basis, cp, tag):
-        """
-        Returns a list of pairs of [molecule, energies] where energies is an array of the form [E0, ...] of molecules in the database with the given
-        method, basis, cp and tag and optimized geometries
-
-        % can be used as a wildcard to stand in for any method, basis, cp, or tag. 
-
-        Args:
-            method  - retrieve only energies computed with this method
-            basis   - retrieve only energies computed with this basis
-            cp      - retrieve only energies computed with this coutnerpoise correction
-            tag     - retrieve only energies with this tag
-
-        Returns:
-            a generator of [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database using the given model and tag of optimized geometries
-        """
-
-        # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
-
-        # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
-
-        # get a list of all calculations that have the appropriate method, basis, and cp
-        calculation_ids = []
-        for molecule_id in molecule_ids:
-            for model_id in model_ids:
-                calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
-        
-        for calculation_id in calculation_ids:
-            
-            # get the molecule id corresponding to this calculation
-            molecule_id = self.cursor.execute("SELECT molecule_id FROM Calculations WHERE ROWID=?", (calculation_id,)).fetchone()[0]
-
-            # Reconstruct the molecule from the information in this database
-            molecule = Molecule()
-            
-            # loop over all rows in the Fragments table that correspond to this molecule
-            for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-                fragment = Fragment(name, charge, spin)
-
-                # loop over all rows in the Atoms table that correspond to this fragment
-                for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
-                    fragment.add_atom(Atom(symbol, x, y, z))
-
-                molecule.add_fragment(fragment)
-            
-            # get the energies corresponding to this calculation
-            energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
-    
             yield molecule, energies
 
     def count_calculations(self, molecule_name, method, basis, cp, tag, optimized = False):
@@ -633,7 +584,6 @@ class Database():
                     failed += 1
 
         return pending, running, completed, failed
-        
 
     def clean(self):
         """

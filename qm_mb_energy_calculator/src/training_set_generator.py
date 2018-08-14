@@ -43,7 +43,7 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
         
         # find the optimized geometry energy from the database
         try:
-            opt_energies = list(database.get_optimized_energies(molecule_name, method, basis, cp, tag))[0][1]
+            opt_energies = list(database.get_energies(molecule_name, method, basis, cp, tag, True))[0][1]
         except IndexError:
             raise NoOptimizedEnergyError(database_name, molecule_name, method, basis, cp, tag) from None
 
@@ -59,6 +59,8 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
                 # monomer interaction energy
+                print(opt_energies)
+                print(energies)
                 output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
             
                 output.write("\n")
@@ -106,17 +108,17 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
         
         # find the optimized geometry energy of the two monomers from the database
         try:
-            monomer_1_opt_energies = list(database.get_optimized_energies(monomer_1_name, method, basis, cp, tag))[0][1]
+            monomer_1_opt_energy = list(database.get_energies(monomer_1_name, method, basis, cp, tag, True))[0][1][0]
         except IndexError:
             raise NoOptimizedEnergyError(database_name, monomer_1_name, method, basis, cp, tag)
 
         try:
-            monomer_2_opt_energies = list(database.get_optimized_energies(monomer_2_name, method, basis, cp, tag))[0][1]
+            monomer_2_opt_energy = list(database.get_energies(monomer_2_name, method, basis, cp, tag, True))[0][1][0]
         except IndexError:
             raise NoOptimizedEnergyError(database_name, monomer_2_name, method, basis, cp, tag)
 
         # open output file for writing
-        with open(output_patu, "w") as output:
+        with open(output_path, "w") as output:
 
             for molecule_energy_pair in molecule_energy_pairs:
                 molecule = molecule_energy_pair[0]
@@ -125,9 +127,22 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
                 # write the number of atoms to the output file
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
+                # calculate the interaction energy of the dimer as E01 - E0 - E1 all computed in the dimer basis set if cp is set to true (otherwise in their own basis set)
                 interaction_energy = (energies[2] - energies[1] - energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
-                monomer1_energy_deformation = (energies[0] - monomer_1_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
-                monomer2_energy_deformation = (energies[1] - monomer_2_opt_energies[0]) * constants.au_to_kcal # covert Hartrees to kcal/mol
+
+                # if there are more energies than for a non-cp enabled calculation, we know that this is a cp enabled calculation
+                if len(energies) > 3:
+
+                    # if cp is enabled for this calculation, then computed the monomer deformation energies as deformed energy - optimized energy (in the monomer basis set)
+                    monomer1_energy_deformation = (energies[3] - monomer_1_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
+                    monomer2_energy_deformation = (energies[4] - monomer_2_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
+
+                # otherwise it is a non-cp enabled calculation
+                else:
+
+                    # if cp is not enabled for this calculation, then computed the monomer deformation energies as deformed energy - optimized energy (in the monomer basis set)
+                    monomer1_energy_deformation = (energies[0] - monomer_1_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
+                    monomer2_energy_deformation = (energies[1] - monomer_2_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
 
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 

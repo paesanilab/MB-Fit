@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 import settings_reader
 
-from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError, InvalidValueError
+from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError, InvalidValueError, XYZFormatError
 
 """
 initializes a database from the config files in a directory

@@ -55,7 +55,7 @@ class NoEnergiesError(DatabaseError):
 class NoOptimizedEnergyError(DatabaseError):
     """Raised when a user performs an operation that requires an optimized energy when one does not exist"""
 
-    def __init__(self, database, method, basis, cp, tag):
+    def __init__(self, database, molecule_name, method, basis, cp, tag):
         super().__init__(database, "Unable to find calculated optimized energy for molecule '{}' with the model '{}/{}' with cp={} and tag='{}'".format(molecule_name, method, basis, cp, tag))
 
 """

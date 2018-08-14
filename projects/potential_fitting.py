@@ -301,6 +301,7 @@ def generate_polynomials(settings, poly_in_path, order, poly_directory):
         None
     """
 
+    this_file_path = os.path.dirname(os.path.abspath(__file__))
     config = configparser.ConfigParser(allow_no_value=False)
     config.read(settings)
 
@@ -311,7 +312,7 @@ def generate_polynomials(settings, poly_in_path, order, poly_directory):
 
     os.chdir(poly_directory)
 
-    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + str(order) + " " + original_dir + "/" + poly_in_path + " > poly.log")
+    os.system(this_file_path + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + str(order) + " " + original_dir + "/" + poly_in_path + " > poly.log")
 
     os.chdir(original_dir)
 
@@ -324,21 +325,23 @@ def execute_maple(settings, poly_directory):
         poly_directory - the directory with all the polynomial files
     """
 
+    this_file_path = os.path.dirname(os.path.abspath(__file__))
+
     original_dir = os.getcwd()
 
     os.chdir(poly_directory)
 
     # clear any old files, because for some reason maple appends to existing files instead of clobbering
-    os.system("rm poly-grd.c")
-    os.system("rm poly-nogrd.c")
-    os.system("rm poly-grd.cpp")
-    os.system("rm poly-nogrd.cpp")
+    os.system("rm poly-grd.c 2> /dev/null")
+    os.system("rm poly-nogrd.c 2> /dev/null")
+    os.system("rm poly-grd.cpp 2> /dev/null")
+    os.system("rm poly-nogrd.cpp 2> /dev/null")
 
     os.system("maple poly-grd.maple")
     os.system("maple poly-nogrd.maple")
 
-    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
-    os.system(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src/clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
+    os.system(this_file_path + "/../polynomial_generation/src/clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
+    os.system(this_file_path + "/../polynomial_generation/src/clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
 
     os.chdir(original_dir)
 
@@ -408,6 +411,8 @@ def generate_2b_ttm_fit_code(settings, config, molecule_in, fit_directory):
         None
     """
 
+    this_file_path = os.path.dirname(os.path.abspath(__file__))
+
     original_dir = os.getcwd()
 
     if not os.path.isdir(fit_directory):
@@ -415,8 +420,8 @@ def generate_2b_ttm_fit_code(settings, config, molecule_in, fit_directory):
 
     os.chdir(fit_directory) 
     
-    subprocess.call("cp " + os.path.dirname(os.path.abspath(__file__)) + "/../fitting/2B/template/* .", shell=True)
-    subprocess.call("python " + os.path.dirname(os.path.abspath(__file__)) + "/../fitting/2B/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings, original_dir + "/" + config, molecule_in), shell=True)
+    subprocess.call("cp " + this_file_path + "/../fitting/2B/template/* .", shell=True)
+    subprocess.call("python " + this_file_path + "/../fitting/2B/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings, original_dir + "/" + config, molecule_in), shell=True)
 
     os.chdir(original_dir)   
 

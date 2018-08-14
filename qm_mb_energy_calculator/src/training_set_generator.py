@@ -59,8 +59,6 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
                 # monomer interaction energy
-                print(opt_energies)
-                print(energies)
                 output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
             
                 output.write("\n")

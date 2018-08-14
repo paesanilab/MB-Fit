@@ -6,9 +6,6 @@ The workflow is broken down into 4 stages, each of which has a unique script
 Many of the scripts require a settings file. A settings file contains additional information that is required by the script but not passed in via arguments. By convention, settings files should end in ".ini". The required fields for a settings file to get the below scripts to work is as such:
 
 ```
-[files]
-log_path = \some\path\where\logs\should\go
-
 [molcule]
 fragments = 1,2,3 # comma delimerated list of how many atoms are in each fragment
 charges = 0,-1,0 # comma delimerated list of the charges of each fragment

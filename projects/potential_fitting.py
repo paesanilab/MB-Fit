@@ -179,7 +179,7 @@ def fill_database(settings, database_name):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
     import database_filler
 
-    database_filler.fill_database(settings, database_name, "unused")
+    database_filler.fill_database(settings, database_name)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 

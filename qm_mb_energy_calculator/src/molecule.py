@@ -7,71 +7,122 @@ from exceptions import XYZFormatError, InvalidValueError, InconsistentValueError
 
 class Atom(object):
     """
-    A class for an atom in a fragment, stores it's charge, number of unpaired
-    electrons, and coordinates
+    Stores name, x, y, and z of a single atom
     """
 
-    '''
-    Initialize a new atom from the given information
-    '''
     def __init__(self, name, x, y, z):
-        # Single letter symbol corresponding to periodic table abbrehviation.
-        # For example: H, O, N, Cl, He
+        """
+        Creates a new atom
+
+        Args:
+            name    - the atomic symbol of this atom ('H', 'He', etc)
+            x       - the x position of this atom in angstroms
+            y       - the y position of this atom in angstroms
+            z       - the z position of this atom in angstroms
+
+        Returns:
+            A new Atom
+        """
+
         self.name = name
-        # x position in angstroms
         self.x = x
-        # y position in angstroms
         self.y = y
-        # z position in angstoms
         self.z = z
 
-    '''
-    Get the name of this symbol as its periodic table abbreviation
-    '''
     def get_name(self):
+        """
+        Gets the name of this atom
+        
+        Args:
+            None
+
+        Returns:
+            The atomic symbol of this atom ('H', 'He', etc)
+        """
+
         return self.name
 
-    '''
-    Get the x of this atom
-    '''
     def get_x(self):
+        """
+        Gets the x position of this atom
+
+        Args:
+            None
+
+        Returns:
+            The x position of this atom in angstroms
+        """
+
         return self.x
 
-    '''
-    Get the y of this atom
-    '''
     def get_y(self):
+        """
+        Gets the y position of this atom
+
+        Args:
+            None
+
+        Returns:
+            The y position of this atom in angstroms
+        """
+
         return self.y
 
-    '''
-    Get the z of this atom
-    '''
     def get_z(self):
+        """
+        Gets the z position of this atom
+
+        Args:
+            None
+
+        Returns:
+            The z position of this atom in angstroms
+        """
+
         return self.z
 
-    '''
-    Returns a string representing the information in this atom in the xyz file
-    format
-    '''
     def to_xyz(self):
+        """
+        Gets the string representation of this atom in the xyz file format
+
+        Args:
+            None
+
+        Returns:
+            String containing this atom's atomic symbol and coordinates in the xyz format
+        """
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
-    '''
-    Returns a string representing the information in this atom in the xyz file
-    format, specifying this atom as a ghost atom
-    '''
     def to_ghost_xyz(self):
+        """
+        Gets the string representation of this atom in the xyz file format as a ghost atom
+
+        Args:
+            None
+
+        Returns:
+            String containing this atom's atomic symbol and coordinates in the xyz ghost atom format
+        """
         return "@{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
 class Fragment(object):
     """
-    A class for a fragment of a Molecule. Contains atoms
+    Stores name, charge, spin multiplicity, and atoms of a fragment
     """
     
-    '''
-    Initialize a new Fragment with an empty atoms list
-    '''
     def __init__(self, name, charge, spin_multiplicity):
+        """
+        Creates a new Fragment
+
+        Args:
+            name - the name of this fragment ('H2O', 'CO2', etc)
+            charge - the charge of this fragment
+            spin_multiplicity - the spin mulitplicity of this fragment, should be greater than or equal to 1
+
+        Returns:
+            A new Fragment
+        """
+
         self.name = name
         # Array of atoms in this molecule
         self.atoms = []
@@ -82,69 +133,133 @@ class Fragment(object):
             raise InvalidValueError("spin multiplicity", spin_multiplicity, "1 or greater")
         self.spin_multiplicity = spin_multiplicity
 
-    '''
-    Gets the name of this fragment
-    '''
     def get_name(self):
+        """
+        Gets the name of this fragment
+
+        Args:
+            None
+
+        Returns:
+            The name of this fragment
+        """
+
         return self.name
 
-    '''
-    Add an Atom to this Fragment.
-    '''
     def add_atom(self, atom):
+        """
+        Adds an atom to this fragment
+
+        Args:
+            atom    - the atom to add
+
+        Returns:
+            None
+        """
+
         self.atoms.append(atom)
 
-    '''
-    Gets a list of the atoms in this Fragment, sorted in standard order
-    '''
     def get_atoms(self):
+        """
+        Gets a list of the atoms in this fragment, sorted in standard order (alphabetically by xyz representation
+
+        Args:
+            None
+
+        Returns:
+            A list of the atoms in this fragment, sorted in standard order
+        """
+
         return sorted(self.atoms, key=lambda atom: atom.to_xyz())
 
-    '''
-    Get the total charge of this fragment.
-    '''
     def get_charge(self):
+        """
+        Gets the charge of this fragment
+
+        Args:
+            None
+
+        Returns:
+            The charge of this fragment
+        """
+
         return self.charge
 
-    '''
-    Get the spin_multiplicity multiplicity of this fragment
-    '''
     def get_spin_multiplicity(self):
+        """
+        Gets the spin multiplicity of this fragment
+
+        Args:
+            None
+
+        Returns:
+            The spin multiplicity of this fragment
+        """
+
         return self.spin_multiplicity
 
-    '''
-    Gets the number of atoms in this fragment
-    '''
     def get_num_atoms(self):
+        """
+        Gets the number of atoms in this fragment
+
+        Args:
+            None
+
+        Returns:
+            The number of atoms in this fragment
+        """
+
         return len(self.atoms)
  
-    '''
-    Returns a string representing the information in this fragment in the xyz
-    file format in standard order
-    '''
     def to_xyz(self):
         """ 
-        Builds a string used for an output.
+        Gets the string representation of this fragment in the xyz file format
+
+        Args:
+            None
+
+        Returns:
+            String containing the atomic symbols and coordinates of each atom in this fragment in standard order
         """
+
         string = ""
+
+        # add each atom to the string
         for atom in self.get_atoms():
             string += atom.to_xyz() + "\n"
+
         return string
 
-    '''
-    Returns a string represeting the information in this fragment in the xyz
-    file format specifying the atoms in this fragment as ghost atoms in standard order
-    '''
     def to_ghost_xyz(self):
+        """ 
+        Gets the string representation of this fragment in the xyz file format as a ghost fragment
+
+        Args:
+            None
+
+        Returns:
+            string containing the atomic symbols and coordinates of each atom in this fragment in standard order as ghost atoms
+        """
+
         string = ""
+
+        # add each atom to the string
         for atom in self.get_atoms():
             string += atom.to_ghost_xyz() + "\n"
+
         return string
     
-    '''
-    Initializes this fragment from a string, the returns itself
-    '''
     def read_xyz(self, string):
+        """
+        Reads a string of atoms specified in the xyz file format into this fragment
+
+        Args:
+            string  - the xyz string containing 1 or more atoms
+
+        Returns:
+            This Fragment
+        """
+
         # split the string into an array of lines
         lines = string.splitlines(True)
 
@@ -160,13 +275,20 @@ class Fragment(object):
 
 class Molecule(object):
     """
-    A Molecule holds an array of fragments.
+    Stores the fragments of a Molecule
     """
 
-    '''
-    Construct a new Molecule.
-    '''
     def __init__(self):
+        """
+        Creates a new Molecule
+
+        Args:
+            None
+
+        Returns:
+            A new Molecule
+        """
+
         # list of fragments in this molecule
         self.fragments = []
         # list of energies for this molecule, filled in by get_nmer_energies
@@ -176,37 +298,74 @@ class Molecule(object):
 
         self.mb_energies = []
 
-    '''
-    gets the name of this molecule
-    '''
     def get_name(self):
+        """
+        Gets the name of this molecule, consists of the names of the fragments in standard order connected by a dash '-'
+
+        Args:
+            None
+
+        Returns:
+            The name of this molecule
+        """
+
         return "-".join([fragment.get_name() for fragment in self.get_fragments()])
 
-    '''
-    Add a Fragment to this Molecule.
-    '''
     def add_fragment(self, fragment):
+        """
+        Adds a fragment to this molecule
+
+        Args:
+            fragment    - the fragment to add
+
+        Returns:
+            None
+        """
+
         self.fragments.append(fragment)
 
-    '''
-    Gets a list of all the fragments in this molecule in standard order
-    '''
     def get_fragments(self):
+        """
+        Gets a list of the fragments in this molecule in standard order
+
+        Args:
+            None
+
+        Returns:
+            List of fragments in this molecule in standard order
+        """
+
         return sorted(self.fragments, key=lambda fragment: fragment.get_name() + " " + fragment.to_xyz())
 
-    '''
-    Gets a list of all the atoms in this molecule in standard order
-    '''
     def get_atoms(self):
+        """
+        Gets a list of the atoms in this molecule in standard order
+
+        fragments are first sorted into standard order, and then atoms within those fragments are put in their standard order.
+
+        Args:
+            None
+
+        Returns:
+            List of atoms in this molecule in standard order
+        """
+
         atoms = []
         for fragment in self.get_fragments():
             atoms += fragment.get_atoms()
         return atoms
 
-    '''
-    Get total charge of this Molecule by summing charges of Fragments.
-    '''
     def get_charge(self, fragments = None):
+        """
+        Gets the charge of this molecule by summing the charges of its fragments
+
+        Args:
+            fragments   - list of fragment indicies; if specified, only get the charge of these fragments, default is to include all fragments
+
+        Returns:
+            Sum charge of all or some of the fragments of this molecule
+        """
+
         if fragments == None:
             fragments = range(len(self.get_fragments()))
         charge = 0
@@ -214,11 +373,17 @@ class Molecule(object):
             charge += self.get_fragments()[index].get_charge()
         return charge
 
-    '''
-    Get total spin_multiplicity multiplicity of this Molecule by summing spin_multiplicity
-    of Fragments.
-    '''
     def get_spin_multiplicity(self, fragments = None):
+        """
+        Gets the spin multiplicity of this molecule by summing the spin multiplicities of its fragments
+
+        Args:
+            fragments   - list of fragment indicies; if specified, only get the spin multiplicity of these fragments, default is to include all fragments
+
+        Returns:
+            Sum spin multiplicity of all or some of the fragments of this molecule
+        """
+
         if fragments == None:
             fragments = range(len(self.get_fragments()))
         spin_multiplicity = 1
@@ -226,37 +391,60 @@ class Molecule(object):
             spin_multiplicity += self.get_fragments()[index].get_spin_multiplicity() - 1
         return spin_multiplicity
 
-    '''
-    Gets the number of Fragments in this Molecule
-    '''
     def get_num_fragments(self):
+        """
+        Gets the number of fragments in this molecule
+
+        Args:
+            None
+
+        Returns:
+            Number of fragments in this molecule
+        """
+
         return len(self.get_fragments())
 
-    '''
-    Gets the number of Atoms in this Molecule
-    '''
     def get_num_atoms(self):
+        """
+        Gets the number of atoms in this molecule
+
+        Args:
+            None
+
+        Returns:
+            Number of atoms in this molecule
+        """
+
         atoms = 0
         for fragment in self.get_fragments():
             atoms += fragment.get_num_atoms()
         return atoms
     
 
-    '''
-    Returns a string representing the fragments of this Molecule in standard order
-
-    Fragments should be specified by STANDARD ORDER
-    '''
     def to_xyz(self, fragments = None, cp = False):
+        """
+        Gets a string representation of the fragments in this molecule in the xyz file format
+
+        Args:
+            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments
+            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments
+
+        Returns:
+            String representation of the fragments in this molecule in the xyz format
+        """
+
         # by default, use all fragments
         if fragments == None:
             fragments = range(self.get_num_fragments())
+
         string = ""
+
         for index in range(len(self.get_fragments())):
             if index in fragments:
                 string += self.get_fragments()[index].to_xyz()
             elif cp:
                 string += self.get_fragments()[index].to_ghost_xyz() 
+
         return string[:-1] # removes last character of string (extra newline)
 
     '''
@@ -293,20 +481,37 @@ class Molecule(object):
         self.nmer_energies = []
         self.mb_energies = []
 
-    '''
-    Generates a SHA1 hash based on our molecule.
-    We are using symbols, coordinates, and charges.
-    Spin multiplicity to be added later.
-    '''
     def get_SHA1(self):
-        
+        """
+        Generates the SHA1 hash of this molecule. Uses atoms, spin multiplicity and charge. Can be used to uniquely identify this molecule.
+
+        Sorts fragments and atoms into standard order first, so the same molecule specified differently will have the same hash
+
+        Args:
+            None
+
+        Returns:
+            SHA1 hash of this molecule
+        """
+
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
-    '''
-    Initializes this molecule from a string, the returns itself
-    '''
     def read_xyz(self, string, names, atoms_per_fragment, charges, spin_multiplicities):
+        """
+        Fills this molecule with information from an xyz string
+
+        Args:
+            string  - the xyz string containing the symbols and coordinates of each atom
+            names   - list of the names of each fragment
+            atoms_per_fragment - list of the number of atoms in each fragment
+            charges - list of the charges of each fragment
+            spin_multiplicites - list of the spin multiplicities of each fragment
+
+        Returns:
+            This Molecule
+        """
+
         if not len(atoms_per_fragment) == len(charges):
             raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charges, "lists must be same length")
         if not len(atoms_per_fragment) == len(spin_multiplicities):
@@ -320,9 +525,9 @@ class Molecule(object):
         if len(lines) != sum(atoms_per_fragment):
             raise InconsistentValueError("atoms per fragment", "number of atoms in input xyz", atoms_per_fragment, len(lines), "number of atoms in input xyz should equal the sum of the terms of atoms per fragment")
 
-        for atom_count, charge, spin_multiplicity in zip(atoms_per_fragment, charges, spin_multiplicities):
+        for name, atom_count, charge, spin_multiplicity in zip(name, atoms_per_fragment, charges, spin_multiplicities):
             # construct each fragment from its charge, spin multiplicity and its line's from the string
-            self.add_fragment(Fragment(charge, spin_multiplicity).read_xyz("".join(lines[:atom_count])))
+            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz("".join(lines[:atom_count])))
             lines = lines[atom_count:]
 
         return self

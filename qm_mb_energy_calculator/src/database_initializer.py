@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
 import settings_reader
 
-from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError
+from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError, InvalidValueError
 
 """
 initializes a database from the config files in a directory
@@ -38,7 +38,7 @@ def initialize_database(settings_file, database_name, directory):
     
         print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
         # get a list of all the files in the directory, or just the filename if directory is just a single file.
-        filenames = get_filenames(directory) if os.path.isdir(directory) else [directory] if directory[:-4] == ".xyz" else []
+        filenames = get_filenames(directory) if os.path.isdir(directory) else [directory] if directory[-4:] == ".xyz" else []
 
         if len(filenames) == 0:
             raise InvalidValueError("directory", directory, "a directory with 1 or more .xyz files, or a single .xyz file.")

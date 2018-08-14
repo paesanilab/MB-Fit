@@ -209,7 +209,7 @@ class Database():
             calculation_id = self.cursor.lastrowid
 
             # add rows to the Energies table
-            for energy_index in range(number_of_energies(molecule.get_num_fragments())):
+            for energy_index in range(number_of_energies(molecule.get_num_fragments(), cp)):
                 # create a job for this energy
                 self.cursor.execute("INSERT INTO Jobs (status) VALUES (?)", ("pending",))
 
@@ -262,12 +262,12 @@ class Database():
             molecule.add_fragment(fragment)
 
         # get the indicies of the fragments to include in this calculation
-        fragment_indicies = energy_index_to_fragment_indicies(energy_index, molecule.get_num_fragments())
+        fragment_indicies = energy_index_to_fragment_indicies(energy_index, molecule.get_num_fragments(), True if cp == 1 else False)
 
         # update the job with its start date and running status
         self.cursor.execute("UPDATE Jobs SET status=?, start_date=? WHERE ROWID=?", ("running", datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
         
-        return Calculation(molecule, method, basis, True if cp == 1 else False, fragment_indicies, job_id)
+        return Calculation(molecule, method, basis, True if cp == 1 and energy_index < number_of_energies(molecule.get_num_fragments(), False) else False, fragment_indicies, job_id)
 
     def missing_energies(self):
         """
@@ -470,6 +470,171 @@ class Database():
     
             yield molecule, energies
 
+    def count_calculations(self, molecule_name, method, basis, cp, tag, optimized = False):
+        """
+        Counts the number of calculations in the database with the given molecule, model, and tag
+
+        % can be used as a wildcard to stand in for any method, basis, cp, or tag. 
+
+        Args:
+            molecule_name    - count only calculations with this moleucle
+            method      - the model's method
+            basis       - the model's basis
+            cp          - the model's cp
+            tag         - count only calculations with this cp
+            optimized   - if True, then only count calculations for optimized geometries
+
+        Returns:
+            the number of calculations in the database as a 4 item tuple: [pending calculations, partly calculations, completed calculations, failed calculations]
+        """
+
+        # get a list of all molecules with the given name
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
+
+        # get the id of the model corresponding to the given method, basis, and cp
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
+
+        # get a list of all calculations that have the appropriate method, basis, and cp
+        calculation_ids = []
+
+        # loop over all selected molecules
+        for molecule_id in molecule_ids:
+
+            # loop over all selected models
+            for model_id in model_ids:
+
+                # if optimized is True, only get calculations that use optimized geometries
+                if optimized:
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+
+                # if optimized is False, get all calculations (even those with optimized geometries)
+                else:
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id, tag)).fetchall()]
+
+        # count the number of calculations with each status
+        pending = 0
+        partly = 0
+        completed = 0
+        failed = 0
+
+        # loop over each selected calculation
+        for calculation_id in calculation_ids:
+
+            # get a list of all the jobs for that calculation
+            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]
+
+            # count the number of jobs with each status
+            num_pending = 0
+            num_running = 0
+            num_completed = 0
+            num_failed = 0
+
+            # loop over all the jobs for this calculation
+            for job_id in job_ids:
+
+                # get the status of this job
+                status = self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0]
+
+                # increment the corresponding counter variable
+                if status == "pending":
+                    num_pending += 1
+                elif status == "running":
+                    num_running += 1
+                elif status == "completed":
+                    num_completed += 1
+                elif status == "failed":
+                    num_failed += 1
+
+            # if any jobs from this calculation failed, the calculation is considered to have failed
+            if num_failed > 0:
+                failed += 1
+
+            # if no jobs failed, are pending, or are running, then the calculation is complete
+            elif num_pending == 0 and num_running == 0:
+                completed += 1
+
+            # if no jobs failed, are running, or are completed, then the calculation is pending
+            elif num_running == 0 and num_completed == 0:
+                pending += 1
+
+            # otherwise the calculation is considered partly done
+            else:
+                partly += 1
+
+        return pending, partly, completed, failed
+
+    def count_energies(self, molecule_name, method, basis, cp, tag, optimized = False):
+        """
+        Counts the number of energies in the database with the given molcule, model, and tag
+
+        % can be used as a wildcard to stand in for any method, basis, cp, or tag. 
+
+        Args:
+            molecule_name    - count only energies with this moleucle
+            method      - the model's method
+            basis       - the model's basis
+            cp          - the model's cp
+            tag         - count only energies with this cp
+            optimized   - if True, then only count energies for optimized geometries
+
+        Returns:
+            the number of energies in the database as a 4 item tuple: [pending, running, completed, failed]
+        """
+
+        # get a list of all molecules with the given name
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
+
+        # get the id of the model corresponding to the given method, basis, and cp
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
+
+        # get a list of all calculations that have the appropriate method, basis, and cp
+        calculation_ids = []
+
+        # loop over all selected molecules
+        for molecule_id in molecule_ids:
+
+            # loop over all selected models
+            for model_id in model_ids:
+
+                # if optimized is True, only get calculations that use optimized geometries
+                if optimized:
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+
+                # if optimized is False, get all calculations (even those with optimized geometries)
+                else:
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id, tag)).fetchall()]
+
+        # count the number of energies with each status
+        pending = 0
+        running = 0
+        completed = 0
+        failed = 0
+
+        # loop over all selected calculations
+        for calculation_id in calculation_ids:
+
+            # get a list of all the jobs for this calculation
+            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]
+
+            # loop over all the jobs for this calculation
+            for job_id in job_ids:
+
+                # get the status of this job
+                status = self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0]
+
+                # increment the corresponding counter variable
+                if status == "pending":
+                    pending += 1
+                elif status == "running":
+                    running += 1
+                elif status == "completed":
+                    completed += 1
+                elif status == "failed":
+                    failed += 1
+
+        return pending, running, completed, failed
+        
+
     def clean(self):
         """
         Goes thru all jobs in the database, and sets any that are "running" to "pending". Should only be used when you are prepared to give up on any currently running jobs
@@ -501,7 +666,7 @@ class Calculation():
         self.fragments = fragments
         self.job_id = job_id
 
-def number_of_energies(number_of_fragments):
+def number_of_energies(number_of_fragments, cp):
     """
     Returns the number of nmer energies that a molecule with number_of_fragments fragments will have
     1 -> 1
@@ -511,49 +676,39 @@ def number_of_energies(number_of_fragments):
 
     Equal to the size of the power set of a set of size number_of_fragments minus the empty set
 
+    cp corrected models will cause 1 extra energy for each monomer in the molecule
+
     Args:
         number_of_fragments - the number of fragments in a molecule
+        cp                  - if cp is enabled, then 1 energy will be added for each monomer for the non-cp corrected versions of the monomer energies used to computed the deformation energies
 
     Returns:
         the number of energies a molecule with the given number of fragments will have
     """
 
-    return 2 ** number_of_fragments - 1
+    return 2 ** number_of_fragments - 1  + (number_of_fragments if cp and number_of_fragments > 1 else 0)
 
 # THESE TWO METHODS COULD PROBABLY BE BETTER, BUT THEY WORK
 
-def energy_index_to_fragment_indicies(energy_index, number_of_fragments):
+def energy_index_to_fragment_indicies(energy_index, number_of_fragments, cp):
     """
     Returns an array of fragment indicies that should be included in a calculation with energy_index index in a molecule with number_of_fragments fragments
-
-    Inverse of fragment_indicies_to_energy.
 
     Args:
         energy_index - index of this energy
         number_of_fragments - number of fragments in the molecule that this energy belongs to
+        cp - if cp-correction is on. If true then there is one additional energy per monomer, for the non-cp enabled calculations.
 
     Returns:
         array of the indicies of the fragments included in this energy
     """
 
+    if energy_index < 0 or energy_index >= number_of_energies(number_of_fragments, cp):
+        raise ValueError("energy_index", energy_index, "in range [0, {}) for {} fragments with cp={}".format(number_of_energies(number_of_fragments, cp), number_of_fragments, cp))
+
     combinations = [inner for outer in (itertools.combinations(range(number_of_fragments), combination_size) for combination_size in range(1, number_of_fragments + 1)) for inner in outer]
+
+    if energy_index >= len(combinations) and cp and number_of_fragments > 1:
+        return combinations[energy_index - len(combinations)]
 
     return combinations[energy_index]
-
-def fragment_indicies_to_energy_index(fragment_indicies, number_of_fragments):
-    """
-    Returns the energy index corresponding to an energy using fragments fragment_indicies and number_of_fragments fragments
-
-    Inverse of energy_index_to_fragment_indicies
-
-    Args:
-        fragment_indicies - array of the indicies of the fragments included in this calculation
-        number_of_fragments - number of fragments in the molecule that this energy belongs to
-
-    Returns:
-        index of this energy
-    """
-
-    combinations = [inner for outer in (itertools.combinations(range(number_of_fragments), combination_size) for combination_size in range(1, number_of_fragments + 1)) for inner in outer]
-
-    return combinations.index(fragment_indicies)

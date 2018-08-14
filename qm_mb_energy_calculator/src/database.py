@@ -221,7 +221,7 @@ class Database():
 
     def get_missing_energy(self):
         """
-        Returns a single Calculation object, which contains the info a user needs to calculate an energy missing in the table.
+        Returns a single Job object, which contains the info a user needs to calculate an energy missing in the table.
 
         The user should calculate the energy, then call either set_energy() or set_failed()
 
@@ -229,7 +229,7 @@ class Database():
             None
 
         Returns:
-            A Calculation object describing the calculation to be performed
+            A Job object describing the calculation to be performed
         """
 
         # retrieve a pending job from the Jobs table
@@ -267,17 +267,17 @@ class Database():
         # update the job with its start date and running status
         self.cursor.execute("UPDATE Jobs SET status=?, start_date=? WHERE ROWID=?", ("running", datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
         
-        return Calculation(molecule, method, basis, True if cp == 1 and energy_index < number_of_energies(molecule.get_num_fragments(), False) else False, fragment_indicies, job_id)
+        return Job(molecule, method, basis, True if cp == 1 and energy_index < number_of_energies(molecule.get_num_fragments(), False) else False, fragment_indicies, job_id)
 
     def missing_energies(self):
         """
-        A generator to generate Calculations for all the missing energies
+        A generator to generate Jobs for all the missing energies
 
         Args:
             None
 
         Returns:
-            A generator which generates Calculation objects until one has been generated for every pending job in the database
+            A generator which generates Job objects until one has been generated for every pending job in the database
         """
         while True:
             calculation = self.get_missing_energy()
@@ -293,7 +293,7 @@ class Database():
         Sets the energy in the table of a certain calculation
 
         Args:
-            job_id  - the id of the job associated with this energy, included in the Calculation object retrieved by get_missing_energy()
+            job_id  - the id of the job associated with this energy, included in the Job object retrieved by get_missing_energy()
             energy  - the calculated energy
             log_file - path to the log file for the job
 
@@ -316,7 +316,7 @@ class Database():
         Sets the status of a job to a specific status
 
         Args:
-            job_id  - the id of the job to set the status of, included in the Calculation object retrieved by get_missing_energy()
+            job_id  - the id of the job to set the status of, included in the Job object retrieved by get_missing_energy()
             status  - the new status of this job. Valid statuses are pending, running, completed, failed
             log_file - path to the log file for the job
 
@@ -593,13 +593,13 @@ class Database():
         self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "running"))
         pass
 
-class Calculation():
+class Job(object):
     """
     Contains all the information the user needs to be able to make a calculation
     """
     def __init__(self, molecule, method, basis, cp, fragments, job_id):
         """
-        Creates a new Calculation with the given arguments
+        Creates a new Job with the given arguments
 
         Args:
             molecule - this calculation's molecule
@@ -615,6 +615,18 @@ class Calculation():
         self.cp = cp
         self.fragments = fragments
         self.job_id = job_id
+
+class Calculation(object):
+    """
+    Contains all the information pertaining to a single calculation
+    """
+    def __init__(self, molecule, method, basis, cp, tag, energies):
+        self.molecule = molecule
+        self.method = method
+        self.basis = basis
+        self.cp = cp
+        self.tag = tag
+        self.energies = energies
 
 def number_of_energies(number_of_fragments, cp):
     """

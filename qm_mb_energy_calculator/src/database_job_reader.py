@@ -44,6 +44,6 @@ def read_job(database_name, job_path, job_log_path):
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Incorrect number of arguments");
-        print("Usage: python database_job_reader.py <database_name> <job_path> <job_log_path>")
+        print("Usage: python database_job_reader.py <database_name> <job_out_path> <job_log_path>")
         exit(1)
     read_job(sys.argv[1], sys.argv[2], sys.argv[3])

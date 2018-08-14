@@ -10,8 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import settings_reader
 import constants
 
-from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError,
-ConfigMissingPropertyError
+from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
 
 from psi4.driver.qcdb.exceptions import QcdbException
 

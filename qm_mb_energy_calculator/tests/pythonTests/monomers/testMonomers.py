@@ -18,7 +18,7 @@ class TestMonomers(unittest.TestCase):
             if os.system("python ../../../src/database_initializer.py " + settings+ " " + database + " " + directory) >> 8 != 0:
                 self.fail()
 
-            if os.system("python ../../../src/database_filler.py " + settings + " " + database + " " + directory) >> 8 != 0:
+            if os.system("python ../../../src/database_filler.py " + settings + " " + database) >> 8 != 0:
                 self.fail()
 
             if os.system("python ../../../src/training_set_generator.py " + settings + " " + database + " " + training_set + " " + test) >> 8 != 0:

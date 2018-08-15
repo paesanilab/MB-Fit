@@ -54,7 +54,7 @@ def generate_normal_modes(settings, geo, normal_modes):
         normal_modes - file to write normal modes
 
     Returns:
-        None
+        dim_null of normal modes
 
     Other Effects:
         Writes DIM NULL to console
@@ -69,9 +69,11 @@ def generate_normal_modes(settings, geo, normal_modes):
     if not os.path.isdir(os.path.dirname(normal_modes)):
         os.mkdir(os.path.dirname(normal_modes))
 
-    normal_modes_generator.generate_normal_modes(settings, geo, normal_modes)
+    dim_null = normal_modes_generator.generate_normal_modes(settings, geo, normal_modes)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
+
+    return dim_null
 
 
 def generate_1b_configurations(settings, geo, normal_modes, dim_null, configurations):

@@ -421,7 +421,7 @@ class Database():
             
             yield molecule, energies
 
-    def count_calculations(self, molecule_name, method, basis, cp, tag, optimized = False):
+    def count_calculations(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tag = "%", optimized = False):
         """
         Counts the number of calculations in the database with the given molecule, model, and tag
 
@@ -440,7 +440,7 @@ class Database():
         """
 
         # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
 
         # get the id of the model corresponding to the given method, basis, and cp
         model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
@@ -514,7 +514,7 @@ class Database():
 
         return pending, partly, completed, failed
 
-    def count_energies(self, molecule_name, method, basis, cp, tag, optimized = False):
+    def count_energies(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tag = "%", optimized = False):
         """
         Counts the number of energies in the database with the given molcule, model, and tag
 
@@ -533,7 +533,7 @@ class Database():
         """
 
         # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
 
         # get the id of the model corresponding to the given method, basis, and cp
         model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
@@ -585,13 +585,74 @@ class Database():
 
         return pending, running, completed, failed
 
+    def what_models(self, molecule_name = "%", tag = "%", optimized = False):
+        """
+        Given a molecule name, yields information about the models that exist for that molecule and how many calculations are associated with each of them
+
+        Args:
+            molecule_name - the name of the molecule to get information about
+            tag         - only look at calculations with this tag, '%' serves as a wild-card
+            optimized   - if True, only consider calculations which are marked as optimized. Default is False
+
+        Returns:
+            A generator object which yields tuples of the form (method, basis, cp, (pending, partly, completed, failed))
+        """
+
+        # get a list of all the molecules in the database with the given name
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
+
+        model_ids = []
+        for molecule_id in molecule_ids:
+            model_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT model_id FROM Calculations WHERE molecule_id=? AND tag LIKE ? AND optimized=?", (molecule_id, tag, optimized)).fetchall()]
+
+        model_ids = set(model_ids)
+
+        for model_id in model_ids:
+            method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?", (model_id,)).fetchone()
+            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tag, optimized)
+
+            yield method, basis, True if cp == 1 else False, calculation_count
+
+    def what_molecules(self, method = "%", basis = "%", cp = "%", tag = "%", optimized = False):
+        """
+        Given a model, yields information about the molecules that exist for that model and how many calculations are associated with each of them
+
+        Args:
+            method  - the model's method
+            basis   - the model's basis
+            cp      - the model's cp
+            tag     - only consier calculations with this tag
+            optimized - if True, only consider calculations marked as optimized geometries
+
+        Returns:
+            A generator object which yields tuples of the form (molecule_name, (pending, partly, completed, failed))
+        """
+        try:
+            model_id = self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchone()[0]
+        except TypeError:
+            return
+
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT molecule_id FROM Calculations WHERE model_id=? AND tag LIKE ? AND optimized=?", (model_id, tag, optimized)).fetchall()]
+
+        molecule_names = []
+
+        for molecule_id in molecule_ids:
+            molecule_names.append(self.cursor.execute("SELECT name FROM Molecules WHERE ROWID=?", (molecule_id,)).fetchone()[0])
+
+        molecule_names = set(molecule_names)
+
+        for molecule_name in molecule_names:
+            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tag, optimized)
+
+            yield molecule_name, calculation_count
+            
+
     def clean(self):
         """
         Goes thru all jobs in the database, and sets any that are "running" to "pending". Should only be used when you are prepared to give up on any currently running jobs
         """
 
         self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "running"))
-        pass
 
 class Job(object):
     """

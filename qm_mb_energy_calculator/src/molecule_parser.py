@@ -22,7 +22,7 @@ def xyz_to_molecules(file_path, settings):
 
         while True:
             molecule = Molecule().read_xyz(xyz_file, name_per_fragment, atoms_per_fragment, charge_per_fragment, spin_per_fragment)
-            if molecule is None:
+            if molecule is None: # need some way of knowing if the file is exhuasted, is raising an error inside .read_xyz() better?
                 break
             molecules.append(molecule)
         

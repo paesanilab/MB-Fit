@@ -797,6 +797,8 @@ class Molecule(object):
         """
         Reads a single xyz configuration from an open file into this molecule
 
+        If the molecule already has some fragments, new fragments will be added in addition to any existing fragments
+
         Args:
             file  - the xyz file containing the atom coordinates
             names   - list of the names of each fragment
@@ -805,14 +807,14 @@ class Molecule(object):
             spin_multiplicites - list of the spin multiplicities of each fragment
 
         Returns:
-            This Molecule
+            This Molecule. Will be UNCHANGED if an empty file (or a file with all of its lines already read) is passed
         """
 
         first_line = file.readline()
 
         # check for end of file
         if first_line == "":
-            return
+            return # molecule will be unchanged if file is exhausted - not the best solution, should throw error?
 
         num_atoms = int(first_line)
 

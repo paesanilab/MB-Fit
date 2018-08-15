@@ -4,6 +4,7 @@ from hashlib import sha1
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 from exceptions import XYZFormatError, InvalidValueError, InconsistentValueError
+import constants
 
 class Atom(object):
     """
@@ -41,6 +42,32 @@ class Atom(object):
         """
 
         return self.name
+
+    def get_number(self):
+        """
+        Gets the atomic number of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic number of this atom
+        """
+
+        return constants.symbol_to_number(self.name)
+
+    def get_mass(self):
+        """
+        Gets the atomic mass of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic mass of this atom in g/mol
+        """
+
+        return constants.symbol_to_weight(self.name)
 
     def get_x(self):
         """
@@ -80,6 +107,23 @@ class Atom(object):
         """
 
         return self.z
+
+    def translate(self, x, y, z):
+        """
+        Translates this atom by the given coordinates
+
+        Args:
+            x   - amount to translate along x axis
+            y   - amount to translate along y axis
+            z   - amount to translate along z axis
+
+        Returns:
+            None
+        """
+
+        self.x += x
+        self.y += y
+        self.z += z
 
     def to_xyz(self):
         """
@@ -210,6 +254,22 @@ class Fragment(object):
         """
 
         return len(self.atoms)
+
+    def translate(self, x, y, z):
+        """
+        Translates all the atoms in this fragment by the given coordinates
+
+        Args:
+            x   - amount to translate along x axis
+            y   - amount to translate along y axis
+            z   - amount to translate along z axis
+
+        Returns:
+            None
+        """
+
+        for atom in self.get_atoms():
+            atom.translate(x, y, z)
  
     def to_xyz(self):
         """ 
@@ -419,7 +479,52 @@ class Molecule(object):
         for fragment in self.get_fragments():
             atoms += fragment.get_num_atoms()
         return atoms
+
+    def translate(self, x, y, z):
+        """
+        Translates all the atoms in this molecule by the given coordinates
+
+        Args:
+            x   - amount to translate along x axis
+            y   - amount to translate along y axis
+            z   - amount to translate along z axis
     
+        Returns:
+            None
+        """
+
+        for fragment in self.get_fragments():
+            fragment.translate(x, y, z)
+
+    def move_to_center_of_mass(self):
+        """
+        Moves the molecule it its center of mass
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        total_x = 0
+        total_y = 0
+        total_z = 0
+        total_mass
+
+        for atom in self.get_atoms():
+            total_x += atom.get_x() * atom.get_mass()
+            total_y += atom.get_y() * atom.get_mass()
+            total_z += atom.get_z() * atom.get_mass()
+
+            total_mass += atom.get_mass()
+
+        center_x = total_x / total_mass
+        center_y = total_y / total_mass
+        center_z = total_z / total_mass
+
+        self.translate(-center_x, -center_y, -center_z)
+            
 
     def to_xyz(self, fragments = None, cp = False):
         """

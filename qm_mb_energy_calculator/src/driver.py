@@ -47,12 +47,11 @@ if settings.getboolean("MBdecomp", "cluster_analysis"):
 RUN CALCULATIONS ON THE USER'S INPUT
 """
 
-with open(input_path, "r") as input_xyz:
-    # parse array of molecules from input xyz file
-    try:
-        molecules = xyz_to_molecules(input_xyz, settings)
-    except (XYZFormatError, InconsistentValueError) as e:
-        raise ParsingError(input_path, str(e)) from None
+# parse array of molecules from input xyz file
+try:
+    molecules = xyz_to_molecules(input_path, settings)
+except (XYZFormatError, InconsistentValueError) as e:
+    raise ParsingError(input_path, str(e)) from None
 
 with open(tr_set, "w") as training_set_file:
     # for each molecule from the input xyz file...

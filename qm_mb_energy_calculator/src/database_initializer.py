@@ -74,6 +74,9 @@ def initialize_database(settings_file, database_name, directory):
                 # for each molecule in the file
                 for molecule in molecules:
 
+                    molecule.move_to_center_of_mass()
+                    molecule.rotate_on_principal_axes()
+
                     # add this molecule to the database, optimized flag set to true
                     database.add_calculation(molecule, method, basis, cp, tag, True)
 
@@ -81,6 +84,9 @@ def initialize_database(settings_file, database_name, directory):
 
                 # for each molecule in the file
                 for molecule in molecules:
+
+                    molecule.move_to_center_of_mass()
+                    molecule.rotate_on_principal_axes()
 
                     # add this molecule to the database, optimized flag set to false
                     database.add_calculation(molecule, method, basis, cp, tag, False)

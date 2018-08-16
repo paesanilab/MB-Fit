@@ -793,7 +793,7 @@ class Molecule(object):
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
-    def read_xyz(self, file, atoms_per_fragment, charges, spin_multiplicities):
+    def read_xyz(self, file, names, atoms_per_fragment, charges, spin_multiplicities):
         """
         Reads a single xyz configuration from an open file into this molecule
 

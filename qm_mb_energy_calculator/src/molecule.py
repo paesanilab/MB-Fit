@@ -182,6 +182,46 @@ class Atom(object):
         self.y += y
         self.z += z
 
+    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+        """
+        Rotates this atom around a point
+
+        Args:
+            x_radians - the number of radians to rotate around the x axis
+            y_radians - the number of radians to rotate around the y axis
+            z_radians - the number of radians to rotate around the z axis
+            x_origin - x position of point to rotate around, default is 0
+            y_origin - y position of point to rotate around, default is 0
+            z_origin - z position of point to rotate around, default is 0
+
+        Returns:
+            None
+        """
+
+        # first construct the matrix of rotation
+        rotation_matrix = [[0, 0, 0] for i in range(3)]
+
+        rotation_matrix[0][0] = 1 * math.cos(y_radians) * math.cos(z_radians)
+        rotation_matrix[0][1] = - math.sin(z_radians)
+        rotation_matrix[0][2] = math.sin(y_radians)
+
+        rotation_matrix[1][0] = math.sin(z_radians)
+        rotation_matrix[1][1] = 1 * math.cos(x_radians) * math.cos(z_radians)
+        rotation_matrix[1][2] = - math.sin(x_radians)
+
+        rotation_matrix[2][0] = - math.sin(y_radians)
+        rotation_matrix[2][1] = math.sin(x_radians)
+        rotation_matrix[2][2] = 1 * math.cos(x_radians) * math.cos(y_radians)
+
+        print(rotation_matrix)
+
+        # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
+        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * rotation_matrix).getA1()
+
+        # update the xyz position of this atom, adding back the origin coordinates
+        self.set_xyz(x + x_origin, y + y_origin, z + z_origin)
+        
+
     def to_xyz(self):
         """
         Gets the string representation of this atom in the xyz file format
@@ -340,6 +380,25 @@ class Fragment(object):
 
         for atom in self.get_atoms():
             atom.translate(x, y, z)
+
+    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+        """
+        Rotates this fragment around a point
+
+        Args:
+            x_radians - the number of radians to rotate around the x axis
+            y_radians - the number of radians to rotate around the y axis
+            z_radians - the number of radians to rotate around the z axis
+            x_origin - x position of point to rotate around, default is 0
+            y_origin - y position of point to rotate around, default is 0
+            z_origin - z position of point to rotate around, default is 0
+
+        Returns:
+            None
+        """
+
+        for atom in self.get_atoms():
+            atom.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
 
     def to_xyz(self):
         """ 
@@ -575,6 +634,25 @@ class Molecule(object):
 
         for fragment in self.get_fragments():
             fragment.translate(x, y, z)
+
+    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+        """
+        Rotates this molecule around a point
+
+        Args:
+            x_radians - the number of radians to rotate around the x axis
+            y_radians - the number of radians to rotate around the y axis
+            z_radians - the number of radians to rotate around the z axis
+            x_origin - x position of point to rotate around, default is 0
+            y_origin - y position of point to rotate around, default is 0
+            z_origin - z position of point to rotate around, default is 0
+
+        Returns:
+            None
+        """
+
+        for fragment in self.get_fragments():
+            fragment.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
 
     def move_to_center_of_mass(self):
         """

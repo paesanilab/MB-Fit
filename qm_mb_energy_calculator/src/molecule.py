@@ -892,7 +892,7 @@ class Molecule(object):
 
         # check for end of file
         if first_line == "":
-            return # molecule will be unchanged if file is exhausted - not the best solution, should throw error?
+            raise StopIteration
 
         num_atoms = int(first_line)
 

@@ -51,7 +51,9 @@ def optimize(molecule, filenames, config):
         nt = int(config["qchem"]["num_threads"])
     except:
         nt = 1
-    subprocess.run("qchem -nt %d %s %s" % (nt, fninp, fnout), shell = True)
+    subprocess.run("qchem -nt %d %s %s" % (nt, fninp, fnout), 
+                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                   shell=True, check=True)
     
     found = False
     #found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
@@ -85,7 +87,9 @@ def frequencies(optimized_molecule, filenames, config):
         nt = int(config["qchem"]["num_threads"])
     except:
         nt = 1
-    subprocess.run("qchem -nt %d %s %s" % (nt, fninp, fnout), shell = True)
+    subprocess.run("qchem -nt %d %s %s" % (nt, fninp, fnout), 
+                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                   shell=True, check=True)
 
     found = False
     modes_of_each_atom = []

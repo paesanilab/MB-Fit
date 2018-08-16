@@ -14,7 +14,6 @@ from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibrary
 
 from psi4.driver.qcdb.exceptions import QcdbException
 
-
 has_psi4 = True
 
 try:
@@ -207,16 +206,16 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     log_file_out = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
 
     # get number of threads
-    num_threads == settings.get("qchem", "num_threads")
-    
+    num_threads = settings.get("qchem", "num_threads")
 
     # perform system call to run qchem
-    # want to save log stuff rather than put in /dev/null?
-    if subprocess.call("qchem " +  log_file_in + " " + log_file_out + " -nt " + num_threads + " >> /dev/null", shell=True) != 0:
+    syscall = "qchem -nt {:d} {} {}".format(num_threads, log_file_in, log_file_out)
+    if subprocess.run(syscall, 
+            stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, 
+            shell=True, check=True).returncode != 0:
         raise LibraryCallError("qchem", "energy calculation", "process returned non-zero exit code")
-    
+
     # find the energy inside the qchem file output
-    # the with open as syntax automatically closes the file
     with open(log_file_out) as qchem_out:
         for line in qchem_out:
             if line.find("Total energy in the final basis set = ") != -1:

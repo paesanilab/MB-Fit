@@ -1,29 +1,31 @@
 import sys, os, subprocess
-import random, configparser
+import random
 
-def create_dirs(settings):
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../")
+
+import settings_reader
+
+def create_dirs(settings_path):
     """
     Creates the log directory
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path   - the file containing all relevent settings information
 
     Returns:
         None
     """
+    settings = settings_reader.SettingsReader(settings_path)
 
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    if not os.path.isdir(settings.get("files", "log_path")):
+        os.mkdir(settings.get("files", "log_path"))
 
-    if not os.path.isdir(config['files']['log_path']):
-        os.mkdir(config['files']['log_path'])
-
-def optimize_geometry(settings, unopt_geo, opt_geo):
+def optimize_geometry(settings_path, unopt_geo, opt_geo):
     """
     Optimizes the geometry of the given molecule
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         unopt_geo   - file to read the unoptimized geoemtry
         opt_geo     - file to write the optimized geometry
 
@@ -31,7 +33,7 @@ def optimize_geometry(settings, unopt_geo, opt_geo):
         None
     """
 
-    # imports have to be here because python is bad
+    # imports have to be here because we do not yet have a functional python project structure
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
     import geometry_optimizer
    
@@ -40,16 +42,16 @@ def optimize_geometry(settings, unopt_geo, opt_geo):
     if not os.path.isdir(os.path.dirname(opt_geo)):
         os.mkdir(os.path.dirname(opt_geo))
 
-    geometry_optimizer.optimize_geometry(settings, unopt_geo, opt_geo)
+    geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
-def generate_normal_modes(settings, geo, normal_modes):
+def generate_normal_modes(settings_path, geo, normal_modes):
     """
     Generates the normal modes for the given molecule
 
     Args:
-        settigns    - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         geo         - file to read optimized geometry
         normal_modes - file to write normal modes
 
@@ -69,19 +71,19 @@ def generate_normal_modes(settings, geo, normal_modes):
     if not os.path.isdir(os.path.dirname(normal_modes)):
         os.mkdir(os.path.dirname(normal_modes))
 
-    dim_null = normal_modes_generator.generate_normal_modes(settings, geo, normal_modes)
+    dim_null = normal_modes_generator.generate_normal_modes(settings_path, geo, normal_modes)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
     return dim_null
 
 
-def generate_1b_configurations(settings, geo, normal_modes, dim_null, configurations):
+def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, configurations):
     """
     Generates 1b configurations for a given monomer from a set of normal modes
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         geo         - file to read optimized geometry
         normal_modes - file to read normal modes
         dim_null    - the DIM NULL of this molecule, see generate_normal_modes()
@@ -98,16 +100,16 @@ def generate_1b_configurations(settings, geo, normal_modes, dim_null, configurat
     if not os.path.isdir(configurations):
         os.mkdir(configurations)
 
-    configuration_generator.generate_configurations(settings, geo, normal_modes, dim_null, configurations)
+    configuration_generator.generate_configurations(settings_path, geo, normal_modes, dim_null, configurations)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
-def generate_2b_configurations(settings, geo1, geo2, configs_per_distance, min_distance, configurations, flex = False, seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1, geo2, configs_per_distance, min_distance, configurations, flex = False, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         geo1        - the first optimized geometry
         geo2        - the second optimized geometry
         configs_per_distance - number of configurations per distance
@@ -119,9 +121,6 @@ def generate_2b_configurations(settings, geo1, geo2, configs_per_distance, min_d
     Returns:
         None
     """
-
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
 
     original_dir = os.getcwd()
 
@@ -138,13 +137,13 @@ def generate_2b_configurations(settings, geo1, geo2, configs_per_distance, min_d
     os.chdir(original_dir)
 
 
-def init_database(settings, database_name, config_files):
+def init_database(settings_path, database_name, config_files):
     """
     Creates a database from the given config files. Can be called on a new file
     to create a new database, or an existing database to add more energies to be calculated
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         database_name - file to make this database in
         config_files - directory with .xyz and optimized geometry .opt.xyz inside
 
@@ -161,16 +160,16 @@ def init_database(settings, database_name, config_files):
     if not os.path.isdir(os.path.dirname(database_name)):
         os.mkdir(os.path.dirname(database_name))
 
-    database_initializer.initialize_database(settings, database_name, config_files)
+    database_initializer.initialize_database(settings_path, database_name, config_files)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
-def fill_database(settings, database_name):
+def fill_database(settings_path, database_name):
     """
     Fills a given database with calculated energies, MAY TAKE A WHILE
     
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         database_name - the file in which the database is stored
 
     Returns:
@@ -181,11 +180,11 @@ def fill_database(settings, database_name):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
     import database_filler
 
-    database_filler.fill_database(settings, database_name)
+    database_filler.fill_database(settings_path, database_name)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
-def generate_1b_training_set(settings, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%"):
+def generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
     Generates a training set from the energies inside a database.
 
@@ -195,7 +194,7 @@ def generate_1b_training_set(settings, database_name, training_set, molecule_nam
     '%' can be used to stand in as a wild card, meaning any method/basis/cp is ok
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         database_name - the file in which the database is stored
         training_set - the file to write the training set to
         molecule_name - the name of the moelcule to generate a training set for
@@ -217,11 +216,11 @@ def generate_1b_training_set(settings, database_name, training_set, molecule_nam
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    training_set_generator.generate_1b_training_set(settings, database_name, training_set, molecule_name, method, basis, cp, tag)
+    training_set_generator.generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method, basis, cp, tag)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
  
-def generate_2b_training_set(settings, database_name, training_set, monomer1_name, monomer2_name, method = "%", basis = "%", cp = "%", tag = "%"):
+def generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
     Generates a training set from the energies inside a database.
 
@@ -231,7 +230,7 @@ def generate_2b_training_set(settings, database_name, training_set, monomer1_nam
     '%' can be used to stand in as a wild card, meaning any method/basis/cp is ok
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         database_name - the file in which the database is stored
         training_set - the file to write the training set to
         monomer1_name - name of first monomer in the dimer
@@ -254,18 +253,18 @@ def generate_2b_training_set(settings, database_name, training_set, monomer1_nam
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    training_set_generator.generate_2b_training_set(settings, database_name, training_set, monomer1_name, monomer2_name, method, basis, cp, tag)
+    training_set_generator.generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method, basis, cp, tag)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
     
 
 
-def generate_poly_input(settings, poly_in_path):
+def generate_poly_input(settings_path, poly_in_path):
     """
     Generates an input file for the polynomial generation script
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         poly_in_path - the file to write the polynomial generation input
                      name of file should be in format A1B2.in, it is ok to have
                      extra directories prior to file name (thisplace/thatplace/A3.in)
@@ -284,17 +283,17 @@ def generate_poly_input(settings, poly_in_path):
     if not os.path.isdir(os.path.dirname(poly_in_path)):
         os.mkdir(os.path.dirname(poly_in_path))
 
-    generate_input_poly.generate_input_poly(settings, poly_in_path)
+    generate_input_poly.generate_input_poly(settings_path, poly_in_path)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src") 
 
 
-def generate_polynomials(settings, poly_in_path, order, poly_directory):
+def generate_polynomials(settings_path, poly_in_path, order, poly_directory):
     """
     Generates the maple and cpp polynomial codes
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         poly_in_path - the file to read polynomial input from
         order - the order of the polynomial to generate
         poly_directory - the directory to place the polynomial files in
@@ -304,8 +303,6 @@ def generate_polynomials(settings, poly_in_path, order, poly_directory):
     """
 
     this_file_path = os.path.dirname(os.path.abspath(__file__))
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
 
     original_dir = os.getcwd()
 
@@ -318,12 +315,12 @@ def generate_polynomials(settings, poly_in_path, order, poly_directory):
 
     os.chdir(original_dir)
 
-def execute_maple(settings, poly_directory):
+def execute_maple(settings_path, poly_directory):
     """
     Runs maple on the polynomial files to turn them into actual cpp files
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         poly_directory - the directory with all the polynomial files
     """
 
@@ -347,7 +344,7 @@ def execute_maple(settings, poly_directory):
 
     os.chdir(original_dir)
 
-def generate_fit_config(settings, molecule_in, opt_geometry, config_path):
+def generate_fit_config(settings_path, molecule_in, opt_geometry, config_path):
     """
     Generates the fit config for the optimized geometry
 
@@ -355,7 +352,7 @@ def generate_fit_config(settings, molecule_in, opt_geometry, config_path):
     40 angstroms
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         molecule_in     - string of fromat "A1B2"
         opt_geometry - the optimized geometry of this molecule
         config_path - the file to write the config file
@@ -369,16 +366,16 @@ def generate_fit_config(settings, molecule_in, opt_geometry, config_path):
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    get_config_data.make_config(settings, molecule_in, opt_geometry, config_path)
+    get_config_data.make_config(settings_path, molecule_in, opt_geometry, config_path)
     
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
 
-def generate_1b_fit_code(settings, config, poly_in_path, poly_path, fit_directory):
+def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_directory):
     """
     Generates the fit code based on the polynomials for a monomer
 
     Args:
-        settings - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         config    - monomer config file
         poly_in_path - the A3B2.in type file
         poly_path   - directory where polynomial files are
@@ -395,16 +392,16 @@ def generate_1b_fit_code(settings, config, poly_in_path, poly_path, fit_director
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
     
-    prepare_1b_fitting_code.prepare_1b_fitting_code(settings, poly_in_path, poly_path, fit_directory)
+    prepare_1b_fitting_code.prepare_1b_fitting_code(settings_path, poly_in_path, poly_path, fit_directory)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
 
-def generate_2b_ttm_fit_code(settings, config, molecule_in, fit_directory):
+def generate_2b_ttm_fit_code(settings_path, config, molecule_in, fit_directory):
     """
     Generates the fit TTM fit code for a dimer
 
     Args:
-        settings - the file containing all relevent settings information
+        settings_path - the file containing all relevent settings information
         config    - config file generated by generate_fit_config (requires manual editing)
         poly_in_path - the A3B2.in name for this dimer
         fit_directory - directory to generate fit code in
@@ -423,17 +420,17 @@ def generate_2b_ttm_fit_code(settings, config, molecule_in, fit_directory):
     os.chdir(fit_directory) 
     
     subprocess.call("cp " + this_file_path + "/../fitting/2B/template/* .", shell=True)
-    subprocess.call("python " + this_file_path + "/../fitting/2B/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings, original_dir + "/" + config, molecule_in), shell=True)
+    subprocess.call("python " + this_file_path + "/../fitting/2B/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings_path, original_dir + "/" + config, molecule_in), shell=True)
 
     os.chdir(original_dir)   
 
 
-def compile_fit_code(settings, fit_directory):
+def compile_fit_code(settings_path, fit_directory):
     """
     Compiles the fit code in the given directory
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         fit_directory - the directory with the fit code
 
     Returns:
@@ -447,12 +444,12 @@ def compile_fit_code(settings, fit_directory):
     os.system("make")
     os.chdir(original_dir)
 
-def fit_1b_training_set(settings, fit_code, training_set, fit_directory, fitted_code):
+def fit_1b_training_set(settings_path, fit_code, training_set, fit_directory, fitted_code):
     """
     Fits the fit code to a given training set
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         fit_code    - the code to fit
         training_set - the training set to fit the code to
         fit_directory - the directory where the .cdl and .dat files will end up
@@ -478,12 +475,12 @@ def fit_1b_training_set(settings, fit_code, training_set, fit_directory, fitted_
     os.system("mv correlation.dat " + fit_directory + "/")
     os.system("mv fit-1b.nc " + fitted_code)
 
-def fit_2b_ttm_training_set(settings, fit_code, training_set, fit_directory):
+def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory):
     """
     Fits the ttm fit code to a given training set
 
     Args:
-        settings    - the file containing all relevent settings information
+        settings_path    - the file containing all relevent settings information
         fit_code    - the code to fit
         training_set - the training set to fit the code to
         fit_directory - the directory where the fit log and other files created by the fit go

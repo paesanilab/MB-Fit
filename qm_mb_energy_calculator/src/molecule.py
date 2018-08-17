@@ -199,22 +199,28 @@ class Atom(object):
         """
 
         # first construct the matrix of rotation
-        rotation_matrix = [[0, 0, 0] for i in range(3)]
+        rotation_x_matrix = numpy.matrix([
+            [1,                         0,                      0                       ],
+            [0,                         math.cos(x_radians),    - math.sin(x_radians)   ], 
+            [0,                         math.sin(x_radians),    math.cos(x_radians)     ]
+                                        ])
 
-        rotation_matrix[0][0] = 1 * math.cos(y_radians) * math.cos(z_radians)
-        rotation_matrix[0][1] = - math.sin(z_radians)
-        rotation_matrix[0][2] = math.sin(y_radians)
+        rotation_y_matrix = numpy.matrix([
+            [math.cos(y_radians),       0,                      math.sin(y_radians)     ],
+            [0,                         1,                      0                       ], 
+            [- math.sin(y_radians),     0,                      math.cos(y_radians)     ]
+                                        ])
 
-        rotation_matrix[1][0] = math.sin(z_radians)
-        rotation_matrix[1][1] = 1 * math.cos(x_radians) * math.cos(z_radians)
-        rotation_matrix[1][2] = - math.sin(x_radians)
+        rotation_z_matrix = numpy.matrix([
+            [math.cos(z_radians),       - math.sin(z_radians),  0                       ],
+            [math.sin(z_radians),       math.cos(z_radians),    0                       ], 
+            [0,                         0,                      1                       ]
+                                        ])
 
-        rotation_matrix[2][0] = - math.sin(y_radians)
-        rotation_matrix[2][1] = math.sin(x_radians)
-        rotation_matrix[2][2] = 1 * math.cos(x_radians) * math.cos(y_radians)
+        rotation_matrix = rotation_x_matrix * rotation_y_matrix * rotation_z_matrix
 
         # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
-        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * rotation_matrix).getA1()
+        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * numpy.matrix(rotation_matrix)).getA1()
 
         # update the xyz position of this atom, adding back the origin coordinates
         self.set_xyz(x + x_origin, y + y_origin, z + z_origin)

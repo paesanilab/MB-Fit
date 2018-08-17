@@ -213,8 +213,6 @@ class Atom(object):
         rotation_matrix[2][1] = math.sin(x_radians)
         rotation_matrix[2][2] = 1 * math.cos(x_radians) * math.cos(y_radians)
 
-        print(rotation_matrix)
-
         # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
         x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * rotation_matrix).getA1()
 

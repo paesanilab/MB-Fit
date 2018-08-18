@@ -23,6 +23,9 @@ class SettingsReader(object):
 
         # save the filepath so that we can include it in error messages
         self.file = file
+    
+    def set(self, section, prop, value):
+        self.configparser.set(section, prop, value)
 
     def get(self, section, prop):
         """

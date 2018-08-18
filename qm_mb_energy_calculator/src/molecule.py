@@ -907,7 +907,7 @@ class Molecule(object):
         if not len(atoms_per_fragment) == len(names):
             raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
 
-        if num_atoms != sum(atoms_per_fragment):
+        if atoms_per_fragment != None and num_atoms != sum(atoms_per_fragment):
             raise InconsistentValueError("total atoms in xyz file", "fragments", num_atoms, atoms_per_fragment, "fragments list must sum to total atoms from input xyz file")
 
         # throw away the comment line

@@ -62,20 +62,20 @@ def initialize_database(settings_file, database_name, directory):
             if filename[-4:] != ".xyz":
                 continue
 
-            # open the file
-            xyz_file = open(filename, "r")
-
             # get list of all molecules in file
             try:
-                molecules = xyz_to_molecules(xyz_file, settings)
+                molecules = xyz_to_molecules(filename, settings)
             except (XYZFormatError, InconsistentValueError) as e:
-                raise ParsingError(filename, str(e)) from None
+                raise ParsingError(filename, str(e)) from e
             
             # if this file contains omptimized geometries, tell the database so
             if filename[-8:] == ".opt.xyz":
 
                 # for each molecule in the file
                 for molecule in molecules:
+
+                    molecule.move_to_center_of_mass()
+                    molecule.rotate_on_principal_axes()
 
                     # add this molecule to the database, optimized flag set to true
                     database.add_calculation(molecule, method, basis, cp, tag, True)
@@ -84,6 +84,9 @@ def initialize_database(settings_file, database_name, directory):
 
                 # for each molecule in the file
                 for molecule in molecules:
+
+                    molecule.move_to_center_of_mass()
+                    molecule.rotate_on_principal_axes()
 
                     # add this molecule to the database, optimized flag set to false
                     database.add_calculation(molecule, method, basis, cp, tag, False)

@@ -1,3 +1,5 @@
+from exceptions import InvalidValueError
+
 avogadro = 6.02214129E+23    # NIST 2010
 au_to_ev = 27.21138505       # NIST 2010
 au_to_joule = 4.35974434E-18 # NIST 2010
@@ -18,6 +20,13 @@ atomic_symbols = [
     "K",    "Ca",   "Sc",   "Ti",   "V",    "Cr",   "Mn",   "Fe",   "Co",   "Ni",   "Cu",   "Zn",   "Ga",   "Ge",   "As",   "Se",   "Br",   "Kr",
 ]
 
+atomic_masses = [
+    1.008,                                                                                                                                  4.0026,
+    6.94,   9.0122,                                                                                 10.81,  12.011, 14.007, 15.999, 18.998, 20.180,
+    22.990, 24.305,                                                                                 26.982, 28.085, 30.974, 32.06,  35.45,  39.948,
+    39.098, 40.078, 44.956, 47.867, 50.942, 51.996, 54.938, 55.845, 58.933, 58.693, 63.546, 65.38,  69.723, 72.630, 74.922, 78.971, 79.904, 83.798,
+]
+
 def symbol_to_number(symbol):
     """
     Converts an atomic symbol to an atomic number
@@ -29,7 +38,7 @@ def symbol_to_number(symbol):
     try:
         return atomic_symbols.index(symbol) + 1
     except ValueError:
-        raise ValueError("{} is not a recognized atomic symbol".format(symbol))
+        raise InvalidValueError("atomic symbol", symbol, "a valid 1 or 2 letter atomic symbol") from None
 
 def number_to_symbol(number):
     try:
@@ -37,4 +46,8 @@ def number_to_symbol(number):
             raise ValueError("{} is not a recognized atomic number".format(number))
         return atomic_symbols[number - 1]
     except IndexError:
-        raise ValueError("{} is not a recognized atomic number".format(number))
+        raise InvalidValueError("atomic number", number, "less than {}".format(len(atomic_symbols))) from None
+
+def symbol_to_mass(symbol):
+
+    return atomic_masses[symbol_to_number(symbol) - 1]

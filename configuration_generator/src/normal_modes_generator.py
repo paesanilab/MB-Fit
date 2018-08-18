@@ -19,3 +19,4 @@ def generate_normal_modes(settings, geo_path, normal_modes_file):
     
     output_writer.write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_file)
     print("DIM NULL: " + str(dim_null))
+    return dim_null

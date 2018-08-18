@@ -1,9 +1,11 @@
 import sys, os
+import numpy, math
 
 from hashlib import sha1
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 from exceptions import XYZFormatError, InvalidValueError, InconsistentValueError
+import constants
 
 class Atom(object):
     """
@@ -41,6 +43,32 @@ class Atom(object):
         """
 
         return self.name
+
+    def get_number(self):
+        """
+        Gets the atomic number of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic number of this atom
+        """
+
+        return constants.symbol_to_number(self.name)
+
+    def get_mass(self):
+        """
+        Gets the atomic mass of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic mass of this atom in g/mol
+        """
+
+        return constants.symbol_to_mass(self.name)
 
     def get_x(self):
         """
@@ -81,6 +109,123 @@ class Atom(object):
 
         return self.z
 
+    def set_x(self, x):
+        """
+        Sets the x position of this atom
+
+        Args:
+            x   - the new x position
+
+        Returns:
+            None
+        """
+
+        self.x = x
+
+    def set_y(self, y):
+        """
+        Sets the y position of this atom
+
+        Args:
+            y   - the new y position
+
+        Returns:
+            None
+        """
+
+        self.y = y
+
+    def set_z(self, z):
+        """
+        Sets the z position of this atom
+
+        Args:
+            z   - the new z position
+
+        Returns:
+            None
+        """
+
+        self.z = z
+
+    def set_xyz(self, x, y, z):
+        """
+        Sets the x, y, and z positions of this atom
+
+        Args:
+            x   - the new x position
+            y   - the new y position
+            z   - the new z position
+
+        Returns:
+            None
+        """
+
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def translate(self, x, y, z):
+        """
+        Translates this atom by the given coordinates
+
+        Args:
+            x   - amount to translate along x axis
+            y   - amount to translate along y axis
+            z   - amount to translate along z axis
+
+        Returns:
+            None
+        """
+
+        self.x += x
+        self.y += y
+        self.z += z
+
+    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+        """
+        Rotates this atom around a point
+
+        Args:
+            x_radians - the number of radians to rotate around the x axis
+            y_radians - the number of radians to rotate around the y axis
+            z_radians - the number of radians to rotate around the z axis
+            x_origin - x position of point to rotate around, default is 0
+            y_origin - y position of point to rotate around, default is 0
+            z_origin - z position of point to rotate around, default is 0
+
+        Returns:
+            None
+        """
+
+        # first construct the matrix of rotation
+        rotation_x_matrix = numpy.matrix([
+            [1,                         0,                      0                       ],
+            [0,                         math.cos(x_radians),    - math.sin(x_radians)   ], 
+            [0,                         math.sin(x_radians),    math.cos(x_radians)     ]
+                                        ])
+
+        rotation_y_matrix = numpy.matrix([
+            [math.cos(y_radians),       0,                      math.sin(y_radians)     ],
+            [0,                         1,                      0                       ], 
+            [- math.sin(y_radians),     0,                      math.cos(y_radians)     ]
+                                        ])
+
+        rotation_z_matrix = numpy.matrix([
+            [math.cos(z_radians),       - math.sin(z_radians),  0                       ],
+            [math.sin(z_radians),       math.cos(z_radians),    0                       ], 
+            [0,                         0,                      1                       ]
+                                        ])
+
+        rotation_matrix = rotation_x_matrix * rotation_y_matrix * rotation_z_matrix
+
+        # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
+        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * numpy.matrix(rotation_matrix)).getA1()
+
+        # update the xyz position of this atom, adding back the origin coordinates
+        self.set_xyz(x + x_origin, y + y_origin, z + z_origin)
+        
+
     def to_xyz(self):
         """
         Gets the string representation of this atom in the xyz file format
@@ -92,6 +237,19 @@ class Atom(object):
             String containing this atom's atomic symbol and coordinates in the xyz format
         """
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
+    def distance(self, atom):
+        """
+        Finds the distance between another atom and this one
+
+        Args:
+            atom    - the atom to compare to this one
+
+        Returns:
+            distance between them, in Angstroms
+        """
+        # compute distance in 3d coordinate plane
+        return math.sqrt((self.get_x() - atom.get_x()) ** 2 + (self.get_y() - atom.get_y()) ** 2 + (self.get_z() - atom.get_z()) ** 2)
 
     def to_ghost_xyz(self):
         """
@@ -210,7 +368,42 @@ class Fragment(object):
         """
 
         return len(self.atoms)
- 
+
+    def translate(self, x, y, z):
+        """
+        Translates all the atoms in this fragment by the given coordinates
+
+        Args:
+            x   - amount to translate along x axis
+            y   - amount to translate along y axis
+            z   - amount to translate along z axis
+
+        Returns:
+            None
+        """
+
+        for atom in self.get_atoms():
+            atom.translate(x, y, z)
+
+    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+        """
+        Rotates this fragment around a point
+
+        Args:
+            x_radians - the number of radians to rotate around the x axis
+            y_radians - the number of radians to rotate around the y axis
+            z_radians - the number of radians to rotate around the z axis
+            x_origin - x position of point to rotate around, default is 0
+            y_origin - y position of point to rotate around, default is 0
+            z_origin - z position of point to rotate around, default is 0
+
+        Returns:
+            None
+        """
+
+        for atom in self.get_atoms():
+            atom.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+
     def to_xyz(self):
         """ 
         Gets the string representation of this fragment in the xyz file format
@@ -249,26 +442,36 @@ class Fragment(object):
 
         return string
     
-    def read_xyz(self, string):
+    def read_xyz(self, file, num_atoms):
         """
-        Reads a string of atoms specified in the xyz file format into this fragment
+        Reads a number of lines from an open file into this fragment
 
         Args:
-            string  - the xyz string containing 1 or more atoms
+            file  - the file to read lines from
+            num_atoms - the number of lines (and atoms) to read from the xyz file
 
         Returns:
             This Fragment
         """
 
-        # split the string into an array of lines
-        lines = string.splitlines(True)
+        # loop once for each atom expected to be read
+        for i in range(num_atoms):
 
-        for line in lines:
-            # construct each atom from the info in this line
+            # get the line corresponding to this atom
+            line = file.readline()
+
+            # if we have reached EOF, raise an error because we expected at least 1 more atom
+            if line == "":
+                raise XYZFormatError("end of file reached while parsing", "expected additional atom line")
+
             try:
+                # construct each atom from the info in the line
                 symbol, x, y, z = line.split()
+
             except ValueError:
+                # if we cannot parse the line, raise an error                
                 raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
+
             self.add_atom(Atom(symbol, float(x), float(y), float(z)))
 
         return self
@@ -419,7 +622,182 @@ class Molecule(object):
         for fragment in self.get_fragments():
             atoms += fragment.get_num_atoms()
         return atoms
+
+    def translate(self, x, y, z):
+        """
+        Translates all the atoms in this molecule by the given coordinates
+
+        Args:
+            x   - amount to translate along x axis
+            y   - amount to translate along y axis
+            z   - amount to translate along z axis
     
+        Returns:
+            None
+        """
+
+        for fragment in self.get_fragments():
+            fragment.translate(x, y, z)
+
+    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+        """
+        Rotates this molecule around a point
+
+        Args:
+            x_radians - the number of radians to rotate around the x axis
+            y_radians - the number of radians to rotate around the y axis
+            z_radians - the number of radians to rotate around the z axis
+            x_origin - x position of point to rotate around, default is 0
+            y_origin - y position of point to rotate around, default is 0
+            z_origin - z position of point to rotate around, default is 0
+
+        Returns:
+            None
+        """
+
+        for fragment in self.get_fragments():
+            fragment.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+
+    def move_to_center_of_mass(self):
+        """
+        Moves the molecule it its center of mass
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        # keep track of the total weighted mass along each axis
+        total_x = 0
+        total_y = 0
+        total_z = 0
+
+        # keeps track of the total mass
+        total_mass = 0
+
+        # loop thru every atom in the molecule, adding its contribution to each coordinate mass
+        for atom in self.get_atoms():
+            total_x += atom.get_x() * atom.get_mass()
+            total_y += atom.get_y() * atom.get_mass()
+            total_z += atom.get_z() * atom.get_mass()
+
+            total_mass += atom.get_mass()
+
+        # calculate the center of mass my dividing the total weighted mass by the total mass
+        center_x = total_x / total_mass
+        center_y = total_y / total_mass
+        center_z = total_z / total_mass
+
+        # translate this molecule to the center of mass
+        self.translate(-center_x, -center_y, -center_z)
+
+    def rotate_on_principal_axes(self):
+        """
+        Rotates a molecule on to its principle axis
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        # first we calculate the moment of inertia tensor
+        # [ Ixx Ixy Ixz ]
+        # [ Iyx Iyy Iyz ]
+        # [ Izx Izy Izz ]
+        I = [[0, 0, 0] for i in range(3)]
+
+        # loop over every atom and add their contributions to the moment of inertia tensor
+        for atom in self.get_atoms():
+            # Ixx
+            I[0][0] += (atom.get_y() ** 2 + atom.get_z() ** 2) * atom.get_mass()
+            # Ixy
+            I[1][0] += - (atom.get_x() * atom.get_y()) * atom.get_mass()
+            # Ixz
+            I[2][0] += - (atom.get_x() * atom.get_z()) * atom.get_mass()
+
+            # Iyx
+            I[0][1] += - (atom.get_y() * atom.get_x()) * atom.get_mass()
+            # Iyy
+            I[1][1] += (atom.get_x() ** 2 + atom.get_z() ** 2) * atom.get_mass()
+            # Iyz
+            I[2][1] += - (atom.get_y() * atom.get_z()) * atom.get_mass()
+
+            # Izx
+            I[0][2] += - (atom.get_z() * atom.get_x()) * atom.get_mass()
+            # Izy
+            I[1][2] += - (atom.get_z() * atom.get_y()) * atom.get_mass()
+            # Izz
+            I[2][2] += (atom.get_x() ** 2 + atom.get_y() ** 2) * atom.get_mass()
+
+        # get numpy matrix from the matrix of principle moments
+        inertia_tensor = numpy.matrix(I)
+
+        # get the moments and principle axis as eigen values and eigen vectors
+        (moments, principle_axes) = numpy.linalg.eig(inertia_tensor)
+
+        # reorder the principle axes from largest eigen value to smallest
+        idx = moments.argsort()[::-1]
+        moments = moments[idx]
+        principle_axes = principle_axes[:,idx]
+
+        # update the position of each atom
+        for atom in self.get_atoms():
+            x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
+            atom.set_xyz(x, y, z)
+
+    def rmsd(self, other_molecule):
+        """
+        Computes the RMSD distance between the atoms in two molecules
+
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised
+
+        Args:
+            other_molecule - the molecule to compare this one to
+
+        Returns:
+            The square-root of the mean squared distance between the atoms in this molecule and the other
+        """
+
+        # fist make sure these molecules have the same number of atoms
+        if self.get_num_atoms() != other_molecule.get_num_atoms():
+            raise InconsistentValueError("number of atoms in self", "number of atoms in other", self.get_num_atoms(), other_molecule.get_num_atoms(), "number of atoms in each molecule must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+        squared_distance = 0
+
+        # loop thru every pair of atoms in the two molecules
+        for this_atom, other_atom in zip(self.get_atoms(), other_molecule.get_atoms()):
+
+            # check to make sure that these atoms are the same type
+            if this_atom.get_name() != other_atom.get_name():
+                raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+            # add this atom pair's contribution to the squared distance
+            squared_distance += this_atom.distance(other_atom) ** 2
+
+        # compute rmsd as sqrt of mean squared distance
+        return math.sqrt(squared_distance / self.get_num_atoms())
+
+    def compare(self, other_molecule, cutoff_rmsd = 0.1):
+        """
+        Compares two molecules to see if they are similar to eachother bellow a cutoff rmsd
+
+        Args:
+            other_molecule - the molecule to compare this one to
+            cutoff_rmsd - the rmsd level at which False will be returned, defailt is 0.1
+
+        Returns:
+            True if the rmsd between this molecule and the other is less than cutoff_rmsd, otherwise False
+            Always returns False if the two molecules do not have the same fragments and atoms
+        """
+
+        try:
+            return self.rmsd(other_molecule) < cutoff_rmsd
+        except InconsistentValueError:
+            return False
 
     def to_xyz(self, fragments = None, cp = False):
         """
@@ -497,20 +875,30 @@ class Molecule(object):
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
-    def read_xyz(self, string, names, atoms_per_fragment, charges, spin_multiplicities):
+    def read_xyz(self, file, names, atoms_per_fragment, charges, spin_multiplicities):
         """
-        Fills this molecule with information from an xyz string
+        Reads a single xyz configuration from an open file into this molecule
+
+        If the molecule already has some fragments, new fragments will be added in addition to any existing fragments
 
         Args:
-            string  - the xyz string containing the symbols and coordinates of each atom
+            file  - the xyz file containing the atom coordinates
             names   - list of the names of each fragment
             atoms_per_fragment - list of the number of atoms in each fragment
             charges - list of the charges of each fragment
             spin_multiplicites - list of the spin multiplicities of each fragment
 
         Returns:
-            This Molecule
+            This Molecule. Will be UNCHANGED if an empty file (or a file with all of its lines already read) is passed
         """
+
+        first_line = file.readline()
+
+        # check for end of file
+        if first_line == "":
+            raise StopIteration
+
+        num_atoms = int(first_line)
 
         if not len(atoms_per_fragment) == len(charges):
             raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charges, "lists must be same length")
@@ -519,15 +907,14 @@ class Molecule(object):
         if not len(atoms_per_fragment) == len(names):
             raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
 
-        # split the string into an array of lines
-        lines = string.splitlines(True)
+        if num_atoms != sum(atoms_per_fragment):
+            raise InconsistentValueError("total atoms in xyz file", "fragments", num_atoms, atoms_per_fragment, "fragments list must sum to total atoms from input xyz file")
 
-        if len(lines) != sum(atoms_per_fragment):
-            raise InconsistentValueError("atoms per fragment", "number of atoms in input xyz", atoms_per_fragment, len(lines), "number of atoms in input xyz should equal the sum of the terms of atoms per fragment")
+        # throw away the comment line
+        file.readline()
 
-        for name, atom_count, charge, spin_multiplicity in zip(name, atoms_per_fragment, charges, spin_multiplicities):
+        for name, atom_count, charge, spin_multiplicity in zip(names, atoms_per_fragment, charges, spin_multiplicities):
             # construct each fragment from its charge, spin multiplicity and its line's from the string
-            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz("".join(lines[:atom_count])))
-            lines = lines[atom_count:]
+            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count))
 
         return self

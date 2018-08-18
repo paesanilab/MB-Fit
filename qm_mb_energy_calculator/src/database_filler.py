@@ -27,11 +27,15 @@ def fill_database(settings_file, database_name):
     with Database(database_name) as database:
 
         print("Filling database {}".format(database_name))
-
         # parse settings file
         settings = settings_reader.SettingsReader(settings_file)
+
+        counter = 0
         
         for calculation in database.missing_energies():
+            
+            counter += 1
+            print_progress(counter)
 
             try:
                 # calculate the missing energy
@@ -44,7 +48,13 @@ def fill_database(settings_file, database_name):
             # save changes to the database
             database.save()
 
-        print("Filling of database {} successful".format(database_name))
+        print("\nFilling of database {} successful".format(database_name))
+
+def print_progress(counter):
+    s = "{:6d}".format(counter)
+    if counter % 10 == 0:
+       s += "\n" 
+    print(s, end="", flush=True)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

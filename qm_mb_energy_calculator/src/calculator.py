@@ -173,7 +173,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     qchem_input += "$molecule\n"
 
     # charge and spin multiplicity
-    qchem_input += "0 1\n"
+    qchem_input += "{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity())
 
     # atoms in the molecule
     # might need to add whitespace before each line?
@@ -188,7 +188,10 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     qchem_input += "method " + model.split('/')[0] + "\n"
     qchem_input += "basis " + model.split('/')[1] + "\n"
 
-    qchem_input += "ecp " + settings.get("energy_calculator", "ecp") + "\n"
+    try:
+        qchem_input += "ecp " + settings.get("qchem", "ecp") + "\n"
+    except:
+        pass
 
     qchem_input += "$end"
 
@@ -206,7 +209,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     log_file_out = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
 
     # get number of threads
-    num_threads = settings.get("qchem", "num_threads")
+    num_threads = settings.getint("qchem", "num_threads")
 
     # perform system call to run qchem
     syscall = "qchem -nt {:d} {} {}".format(num_threads, log_file_in, log_file_out)

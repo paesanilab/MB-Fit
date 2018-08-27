@@ -1,5 +1,5 @@
 import sys, os
-import math
+import math, configparser
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../")
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../qm_mb_energy_calculator/src")
 
@@ -49,7 +49,8 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         # charge and spin line
         qchem_in.write("{} {}\n".format(sum([int(charge) for charge in settings.get("molecule", "charges").split(",")]), 1 + sum([int(spin) - 1 for spin in settings.get("molecule", "spins").split(",")])))
 
-        print(geo_paths)
+        atomic_symbols = []
+
         # if there are 0 geometries specified, raise an error
         if len(geo_paths) == 0:
             raise InvalidValueError("number of geometries", len(geo_paths), "at least 1")
@@ -69,6 +70,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
             qchem_in.write(molecule1.to_xyz())
             qchem_in.write("\n")
 
+            # add molecule1's atoms to the list of atomic_symbols
+            for atom in molecule1.get_atoms():
+                atomic_symbols.append(atom.get_name())
+
             # if there are at least 2 geometries specified
             if len(geo_paths) > 1:
 
@@ -86,6 +91,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 qchem_in.write(molecule2.to_xyz())
                 qchem_in.write("\n")
 
+                # add molecule2's atoms to the list of atomic_symbols
+                for atom in molecule2.get_atoms():
+                    atomic_symbols.append(atom.get_name())
+
                 # if there are at least 3 geometries specified
                 if len(geo_paths) > 2:
 
@@ -102,6 +111,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                     # copy this molecule to the qchem input
                     qchem_in.write(molecule3.to_xyz())
                     qchem_in.write("\n")
+
+                    # add molecule3's atoms to the list of atomic_symbols
+                    for atom in molecule3.get_atoms():
+                        atomic_symbols.append(atom.get_name())
                 
 
         # tells qchem that the molecule has ended

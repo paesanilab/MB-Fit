@@ -3,7 +3,7 @@ import itertools
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import settings_reader
-from exceptions import ParsingError, InvalidValueError
+from exceptions import ParsingError, InvalidValueError, InconsistentValueError
 
 def generate_poly(settings_file, input_file, order, output_path):
     
@@ -15,6 +15,9 @@ def generate_poly(settings_file, input_file, order, output_path):
         
         # parse declaired fragments and variables from the input-file
         fragments, variables = parse_input(input_file)
+
+        if len(fragments) == 1 and not settings.get("poly_generation", "accepted_terms") == "all":
+            raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms", len(fragments), settings.get("poly_generation", "accepted_terms"), "when there is only 1 fragment, there are no intermolecular interactions, so you must use 'all' terms")
 
         # write number of fragments to log
         poly_log.write("<> fragments({}) <>\n".format(len(fragments)))

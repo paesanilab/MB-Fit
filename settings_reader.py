@@ -18,13 +18,14 @@ class SettingsReader(object):
             A new SettingsReader object
         """
 
+        # create a new ConfigParser
         self.configparser = configparser.ConfigParser(allow_no_value=False)
         self.configparser.read(file)
 
         # save the filepath so that we can include it in error messages
         self.file = file
 
-    def get(self, section, prop):
+    def get(self, section, prop, default = None):
         """
         Gets the value of a field as a string.
 
@@ -42,11 +43,17 @@ class SettingsReader(object):
         try:
             return self.configparser.get(section, prop)
         except NoSectionError:
-            raise ConfigMissingSectionError(self.file, section, prop) from None
+            if default is None:
+                raise ConfigMissingSectionError(self.file, section, prop) from None
+            else:
+                return default
         except NoOptionError:
-            raise ConfigMissingPropertyError(self.file, section, prop) from None
+            if default is None:
+                raise ConfigMissingPropertyError(self.file, section, prop) from None
+            else:
+                return default
 
-    def getboolean(self, section, prop):
+    def getboolean(self, section, prop, default = None):
         """
         Gets the value of a field as a boolean.
 
@@ -64,11 +71,17 @@ class SettingsReader(object):
         try:
             return self.configparser.getboolean(section, prop)
         except NoSectionError:
-            raise ConfigMissingSectionError(self.file, section, prop) from None
+            if default is None:
+                raise ConfigMissingSectionError(self.file, section, prop) from None
+            else:
+                return default
         except NoOptionError:
-            raise ConfigMissingPropertyError(self.file, section, prop) from None
+            if default is None:
+                raise ConfigMissingPropertyError(self.file, section, prop) from None
+            else:
+                return default
 
-    def getint(self, section, prop):
+    def getint(self, section, prop, default = None):
         """
         Gets the value of a field as an int.
 
@@ -86,9 +99,15 @@ class SettingsReader(object):
         try:
             return self.configparser.getint(section, prop)
         except NoSectionError:
-            raise ConfigMissingSectionError(self.file, section, prop) from None
+            if default is None:
+                raise ConfigMissingSectionError(self.file, section, prop) from None
+            else:
+                return default
         except NoOptionError:
-            raise ConfigMissingPropertyError(self.file, section, prop) from None
+            if default is None:
+                raise ConfigMissingPropertyError(self.file, section, prop) from None
+            else:
+                return default
 
     def getlist(self, section, prop):
         """

@@ -1,12 +1,16 @@
 import sys, os
+import math
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../")
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../qm_mb_energy_calculator/src")
 
-import constants
-import configparser
+import constants, settings_reader
 from collections import OrderedDict
+from exceptions import InvalidValueError
+import molecule_parser
 
 qchem_template = "/qchem_template"
 
+# table of free polarizabilities for each atom
 free_polarizabilities = {
     "H":    0.66582,
     "B":    3.64084,
@@ -18,15 +22,24 @@ free_polarizabilities = {
     "S":    3.24768
 }
 
-def make_config(settings, molecule_in, geo_path, config_path):
+def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_between = 20):
+    """
+    Generates the config file for the fitcode for the given geometries
 
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    Args:
+        settings_file - the file containint relevent settings information
+        molecule_in - A3B1 formatted string
+        config_path - path to file to write config file to, should end in .ini
+        geo_paths - paths to each geometry to include in the config, should be 1 to 3 of them (inclusive)
+        distance_between - the distance between each geometry, in angstroms
+    """
+
+    settings = settings_reader.SettingsReader(settings_file)
 
     # split the molecule input string into fragments
     fragments = molecule_in.split("_")
 
-    log_directory = config["files"]["log_path"]
+    log_directory = settings.get("files", "log_path")
 
     with open(log_directory + "/qchem.in", "w") as qchem_in:
         
@@ -34,31 +47,70 @@ def make_config(settings, molecule_in, geo_path, config_path):
         qchem_in.write("$molecule\n")
 
         # charge and spin line
-        qchem_in.write("{} {}\n".format(sum([int(charge) for charge in config["molecule"]["charges"].split(",")]), 1 + sum([int(spin) - 1 for spin in config["molecule"]["spins"].split(",")])))
+        qchem_in.write("{} {}\n".format(sum([int(charge) for charge in settings.get("molecule", "charges").split(",")]), 1 + sum([int(spin) - 1 for spin in settings.get("molecule", "spins").split(",")])))
+
+        print(geo_paths)
+        # if there are 0 geometries specified, raise an error
+        if len(geo_paths) == 0:
+            raise InvalidValueError("number of geometries", len(geo_paths), "at least 1")
+
+
+        # if there is at least 1 geometry specified
+        else:
+
+            # read geometry into a molecule object
+            molecule1 = molecule_parser.xyz_to_molecules(geo_paths[0])[0]
+
+            # move molecule1 to its standard orientation
+            molecule1.move_to_center_of_mass()
+            molecule1.rotate_on_principal_axes()
+
+            # copy this molecule to the qchem input
+            qchem_in.write(molecule1.to_xyz())
+            qchem_in.write("\n")
+
+            # if there are at least 2 geometries specified
+            if len(geo_paths) > 1:
+
+                # read geonetry into molecule object
+                molecule2 = molecule_parser.xyz_to_molecules(geo_paths[1])[0]
+
+                # move molecule2 to its standard orientation
+                molecule2.move_to_center_of_mass()
+                molecule2.rotate_on_principal_axes()
+
+                # move this molecule away from the first one by distance_between angstroms
+                molecule2.translate(distance_between, 0, 0)
+
+                # copy this molecule to the qchem input
+                qchem_in.write(molecule2.to_xyz())
+                qchem_in.write("\n")
+
+                # if there are at least 3 geometries specified
+                if len(geo_paths) > 2:
+
+                    # read geometry into a molecule object
+                    molecule3 = molecule_parser.xyz_to_molecules(geo_paths[2])[0]
+
+                    # move molecule3 to its standard orientation
+                    molecule3.move_to_center_of_mass()
+                    molecule3.rotate_on_principal_axes()
+
+                    # move molecule3 so it is equadist from the other two molecules
+                    molecule3.translate(distance_between/2, distance_between * math.sqrt(3) / 2, 0)
+
+                    # copy this molecule to the qchem input
+                    qchem_in.write(molecule3.to_xyz())
+                    qchem_in.write("\n")
+                
 
         # tells qchem that the molecule has ended
-
-        # read the geometry from the input xyz file and write it to the qchem input file
-        with open(geo_path, "r") as geo_file:
-            # skip atom count and comment lines
-            geo_file.readline()
-            geo_file.readline()
-            
-
-            atomic_symbols = []
-            # copy lines over from input geometry to qchem in
-            for line in geo_file.readlines():
-                atomic_symbols.append(line.split()[0])
-                qchem_in.write(line)
-
         qchem_in.write("$end\n")
 
         # read the qchem template and append it to the qchem in
         with open(os.path.dirname(os.path.abspath(__file__)) + "/" + qchem_template, "r") as template:
             for line in template:
                 qchem_in.write(line)
-
-    # the qchem input file should now be generated
 
     # perform qchem system call
     os.system("qchem -nt 4 {} {} > {}".format(log_directory + "/qchem.in", log_directory + "/qchem.out", log_directory + "/qchem.log"))

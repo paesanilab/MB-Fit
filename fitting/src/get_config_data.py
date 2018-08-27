@@ -312,13 +312,14 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.add_section("fitting")
 
     configwriter.set("common", "molecule", molecule_in)
+    configwriter.set("common", "polynomial_order", settings.get("poly_generator", "order"))
 
     configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
-    configwriter.set("fitting", "excluded_pairs_l2", "[TODO: User must fill this in]")
-    configwriter.set("fitting", "excluded_pairs_l3", "[TODO: User must fill this in]")
-    configwriter.set("fitting", "excluded_pairs_l4", "[TODO: User must fill this in]")
+    configwriter.set("fitting", "excluded_pairs_12", "[TODO: User must fill this in]")
+    configwriter.set("fitting", "excluded_pairs_13", "[TODO: User must fill this in]")
+    configwriter.set("fitting", "excluded_pairs_14", "[TODO: User must fill this in]")
 
     configwriter.set("fitting", "charges", str(charges))
     configwriter.set("fitting", "polarizabilities", str(effective_polarizabilities))
@@ -334,7 +335,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     configwriter.set("fitting", "var", "exp")
     configwriter.set("fitting", "energy_range", str(50.0))
-    configwriter.set("fitting", "virtual_site_lables", str(["X", "Y", "Z"]))
+    configwriter.set("fitting", "virtual_site_labels", str(["X", "Y", "Z"]))
 
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)

@@ -80,16 +80,16 @@ nsites2 = nat2
 is_w = 0
 # Obtain the lists with the excluded pairs
 #excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
-excluded_pairs_l2 = parse_array(config["fitting"]["excluded_pairs_l2"])
-excluded_pairs_l3 = parse_array(config["fitting"]["excluded_pairs_l3"])
-excluded_pairs_l4 = parse_array(config["fitting"]["excluded_pairs_l3"])
-excl12_a = excluded_pairs_l2[0]
-excl13_a = excluded_pairs_l3[0]
-excl14_a = excluded_pairs_l4[0]
+excluded_pairs_12 = parse_array(config["fitting"]["excluded_pairs_12"])
+excluded_pairs_13 = parse_array(config["fitting"]["excluded_pairs_13"])
+excluded_pairs_14 = parse_array(config["fitting"]["excluded_pairs_14"])
+excl12_a = excluded_pairs_12[0]
+excl13_a = excluded_pairs_13[0]
+excl14_a = excluded_pairs_14[0]
 
-excl12_b = excluded_pairs_l2[1]
-excl13_b = excluded_pairs_l3[1]
-excl14_b = excluded_pairs_l4[1]
+excl12_b = excluded_pairs_12[1]
+excl13_b = excluded_pairs_13[1]
+excl14_b = excluded_pairs_14[1]
 
 #Obtain charges (in the order of input), pols and polfacs
 charges = parse_array(config["fitting"]["charges"])

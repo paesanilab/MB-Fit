@@ -156,26 +156,33 @@ class SettingsReader(object):
             the value of the given property in the given section a list of the given type
         """
         string = self.get(section, prop)
-        num_open_brackets = 0
-        elements = []
-        element = ""
-        for character in string:
-            if num_open_brackets == 1 and character == ",":
-                elements.append(element)
-                element = ""
-            elif character == "[":
-                if num_open_brackets != 0:
-                    element += "["
-                num_open_brackets += 1
-            elif character == "]":
-                num_open_brackets -= 1
-                if num_open_brackets != 0:
-                    element += "]"
-            else:
-                element += character
 
-        if num_open_brackets == 0:
+        return parse_array(string, type)
+
+def parse_array(string, type):
+    print(string)
+    num_open_brackets = 0
+    elements = []
+    element = ""
+    for character in string:
+        if num_open_brackets == 1 and character == ",":
             elements.append(element)
-        else:
-            print("Something went wrong while parsing a string into a list")
-        return [parse_array(element) if "," in element else type(element) for element in elements]
+            element = ""
+        elif character == "[":
+            if num_open_brackets != 0:
+                element += "["
+            num_open_brackets += 1
+        elif character == "]":
+            num_open_brackets -= 1
+            if num_open_brackets != 0:
+                element += "]"
+        elif not character == " ":
+            element += character
+
+    if num_open_brackets == 0:
+        if element is not "":
+            elements.append(element)
+    else:
+        print("Something went wrong while parsing a string into a list")
+    print(elements)
+    return [parse_array(element, type) if "," in element or "[" in element or "]" in element else type(element) for element in elements]

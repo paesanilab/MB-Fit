@@ -395,7 +395,7 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_dir
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
     
-    prepare_1b_fitting_code.prepare_1b_fitting_code(settings_path, poly_in_path, poly_path, fit_directory)
+    prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, fit_directory)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
 

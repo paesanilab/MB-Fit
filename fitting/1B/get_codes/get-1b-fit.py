@@ -3,7 +3,7 @@
 
 import sys, os
 import json
-sys.path.insert(0, "../../../")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../../")
 import settings_reader
 
 # ### Check proper if input is provided
@@ -52,15 +52,15 @@ nat = config.getint("fitting", "number_of_atoms")
 nsites = config.getint("fitting", "number_of_electrostatic_sites")
 
 # Obtain the lists with the excluded pairs
-excl12 = config.getlist("fitting", "excluded_pairs_12", int)
-excl13 = config.getlist("fitting", "excluded_pairs_13", int)
-excl14 = config.getlist("fitting", "excluded_pairs_14", int)
+excl12 = config.getlist("fitting", "excluded_pairs_12", int)[0]
+excl13 = config.getlist("fitting", "excluded_pairs_13", int)[0]
+excl14 = config.getlist("fitting", "excluded_pairs_14", int)[0]
 
 
 # Obtain charges (in the order of input), pols and polfacs
-chg = config.getlist("fitting", "charges", int)[0]
-pol = config.getlist("fitting", "polarizabilities", int)[0]
-polfac = config.getlist("fitting", "polarizability_fractions", int)[0]
+chg = config.getlist("fitting", "charges", float)[0]
+pol = config.getlist("fitting", "polarizabilities", float)[0]
+polfac = config.getlist("fitting", "polarizability_fractions", float)[0]
 
 # Max and min values of k and d (even if you don't use d)
 k_min = config.getfloat("fitting", "k_min")
@@ -72,8 +72,8 @@ d_max = config.getfloat("fitting", "d_max")
 
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
 # Intermolecular C6!
-C6 = config.getlist("fitting", "C6", int)[1]
-d6 = config.getlist("fitting", "d6", int)[1]
+C6 = config.getlist("fitting", "C6", float)[0]
+d6 = config.getlist("fitting", "d6", float)[0]
 
 # Polynomial degree
 degree = config.getint("common", "polynomial_order")
@@ -93,7 +93,7 @@ var = config.get("fitting", "var")
 E_range = config.getfloat("fitting", "energy_range")
 
 # Define list of variables that are fictitious
-vsites = config.getlist("fitting", "virtual_sites_labels")
+vsites = config.getlist("fitting", "virtual_site_labels")
 
 
 # In[6]:

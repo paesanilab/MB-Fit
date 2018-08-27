@@ -1,12 +1,10 @@
 # coding: utf-8
 # In[1]:
 
-
-import sys
-import os
+import sys, os
 import json
-import configparser
-
+sys.path.insert(0, "../../../")
+import settings_reader
 
 # ### Check proper if input is provided
 # Commented on Notebook but Uncommented on script.py
@@ -41,8 +39,7 @@ else:
 f = open(name, 'r')
 mon1 = f.readline().split('\'')[1]
 
-config = configparser.ConfigParser()
-config.read(config_filename)
+config = settings_reader.SettingsReader(config_filename)
 
 
 # In[5]:
@@ -55,15 +52,15 @@ nat = config.getint("fitting", "number_of_atoms")
 nsites = config.getint("fitting", "number_of_electrostatic_sites")
 
 # Obtain the lists with the excluded pairs
-excl12 = json.loads(config.get("fitting", "excluded_pairs_12"))
-excl13 = json.loads(config.get("fitting", "excluded_pairs_13"))
-excl14 = json.loads(config.get("fitting", "excluded_pairs_14"))
+excl12 = config.getlist("fitting", "excluded_pairs_12", int)
+excl13 = config.getlist("fitting", "excluded_pairs_13", int)
+excl14 = config.getlist("fitting", "excluded_pairs_14", int)
 
 
 # Obtain charges (in the order of input), pols and polfacs
-chg = json.loads(config.get("fitting", "charges"))
-pol = json.loads(config.get("fitting", "polarizabilities"))
-polfac = json.loads(config.get("fitting", "polarizability_fractions"))
+chg = config.getlist("fitting", "charges", int)[0]
+pol = config.getlist("fitting", "polarizabilities", int)[0]
+polfac = config.getlist("fitting", "polarizability_fractions", int)[0]
 
 # Max and min values of k and d (even if you don't use d)
 k_min = config.getfloat("fitting", "k_min")
@@ -75,8 +72,8 @@ d_max = config.getfloat("fitting", "d_max")
 
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
 # Intermolecular C6!
-C6 = json.loads(config.get("fitting", "C6"))
-d6 = json.loads(config.get("fitting", "d6"))
+C6 = config.getlist("fitting", "C6", int)[1]
+d6 = config.getlist("fitting", "d6", int)[1]
 
 # Polynomial degree
 degree = config.getint("common", "polynomial_order")
@@ -96,7 +93,7 @@ var = config.get("fitting", "var")
 E_range = config.getfloat("fitting", "energy_range")
 
 # Define list of variables that are fictitious
-vsites = json.loads(config.get("fitting", "virtual_sites_labels"))
+vsites = config.getlist("fitting", "virtual_sites_labels")
 
 
 # In[6]:

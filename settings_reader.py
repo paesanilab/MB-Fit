@@ -112,9 +112,9 @@ class SettingsReader(object):
             else:
                 return default
 
-    def getlist(self, section, prop):
+    def getfloat(self, section, prop, default = None):
         """
-        Gets the value of a field as a list of strings. This list can be multi-dimensional
+        Gets the value of a field as an float.
 
         Will throw a ConfigMissingSectionError if the section does not exist
         and a ConfigMissingPropertyError if the prop does not exist in the section
@@ -124,7 +124,36 @@ class SettingsReader(object):
             prop    - the property of the section to look for
 
         Return:
-            the value of the given property in the given section a list of strings.
+            the value of the given property in the given section as an float
+        """
+
+        try:
+            return self.configparser.getfloat(section, prop)
+        except NoSectionError:
+            if default is None:
+                raise ConfigMissingSectionError(self.file, section, prop) from None
+            else:
+                return default
+        except NoOptionError:
+            if default is None:
+                raise ConfigMissingPropertyError(self.file, section, prop) from None
+            else:
+                return default
+
+    def getlist(self, section, prop, type = str):
+        """
+        Gets the value of a field as a list of elements of the given type. This list can be multi-dimensional
+
+        Will throw a ConfigMissingSectionError if the section does not exist
+        and a ConfigMissingPropertyError if the prop does not exist in the section
+
+        Args:
+            section - the section of the settings file to look in
+            prop    - the property of the section to look for
+            type    - the type to cast each element of the list to, default is str
+
+        Return:
+            the value of the given property in the given section a list of the given type
         """
         string = self.get(section, prop)
         num_open_brackets = 0
@@ -149,4 +178,4 @@ class SettingsReader(object):
             elements.append(element)
         else:
             print("Something went wrong while parsing a string into a list")
-        return [parse_array(element) if "," in element else element for element in elements]
+        return [parse_array(element) if "," in element else type(element) for element in elements]

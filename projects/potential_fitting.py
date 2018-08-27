@@ -104,7 +104,7 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
-def generate_2b_configurations(settings_path, geo1, geo2, configs_per_distance, min_distance, configurations, flex = False, seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer
 
@@ -112,30 +112,30 @@ def generate_2b_configurations(settings_path, geo1, geo2, configs_per_distance, 
         settings_path - the file containing all relevent settings information
         geo1        - the first optimized geometry
         geo2        - the second optimized geometry
-        configs_per_distance - number of configurations per distance
-        min_distance - min distance between any 2 molecules from each monomer
-        configurations - file to write configurations
-        flex        - True will generate flex rather than rigid configurations. Default is False
-        seed        - seed to generate random configs, the same seed will yeild the same configurations. Defualt is a random seed
+        number_of_configs - target number of configurations to generate, if max_distance is set too low or min_inter_distance is set too high, then less configurations may be generated
+        config_path - path to file in which to generate configurations
+        min_distance - minimum distance between the centers of mass of the two molecules
+        max_distance - the maximum distance between the centers of mass of the two molecules
+        min_inter_distance - the minimum distance of any intermolecular pair of atoms
+        use_grid - if False, configurations are space roughly evenly between min_distance and max_distance. If True, then configurations are placed at intervals along this distance.
+        step_size - if use_grid is True, then this dictates the distance of the spacing interval used to place the centers of masses of the molecules, otherwise, this parameter has no effect.
+        seed - the same seed will generate the same configurations.
 
     Returns:
         None
     """
 
-    original_dir = os.getcwd()
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
+    import configuration_generator_2b
 
-    if not os.path.isdir(configurations):
-        os.mkdir(configurations)
+    if os.path.dirname(config_path) == "":
+        config_path = "./" + config_path
+    if not os.path.isdir(os.path.dirname(config_path)):
+        os.mkdir(os.path.dirname(config_path))
 
-    os.chdir(configurations)
+    configuration_generator_2b.generate_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
 
-    if flex:
-        os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_flex " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
-    else:
-        os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_rigid " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
-
-    os.chdir(original_dir)
-
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
 
 def init_database(settings_path, database_name, config_files):
     """

@@ -1,6 +1,6 @@
 import sys, os
 import math
-from random import Random
+from random import Random, randint
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../qm_mb_energy_calculator/src/")
 
@@ -9,7 +9,7 @@ from molecule_parser import xyz_to_molecules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import settings_reader
 
-def generate_configurations(geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 10, min_inter_distance = 1.2, use_grid = False, step_size = 0.5):
+def generate_configurations(geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file
 
@@ -46,7 +46,7 @@ def generate_configurations(geo1, geo2, number_of_configs, config_path, min_dist
     total_configs = 0
 
     # construct a psuedo-random number generator
-    random = Random()
+    random = Random(seed)
 
     # open the config file to write to
     with open(config_path, "w") as config_file:
@@ -147,7 +147,7 @@ def get_random_angle(random):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python config_generator_2b.py <monomer1xyz> <monomer2xyz> <num configs> <config file>")
+        print("Usage: python configuration_generator_2b.py <monomer1xyz> <monomer2xyz> <num configs> <config file>")
         exit(1)
 
     generate_configurations(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4])

@@ -527,7 +527,7 @@ class Fragment(object):
         excluded_14 -= excluded_12
         excluded_14 -= excluded_13
 
-        return excluded_12, excluded_13, excluded_14
+        return list(excluded_12), list(excluded_13), list(excluded_14)
         
 
     def to_xyz(self):
@@ -924,6 +924,32 @@ class Molecule(object):
             return self.rmsd(other_molecule) < cutoff_rmsd
         except InconsistentValueError:
             return False
+
+    def get_excluded_pairs(self):
+        """
+        Gets the excluded pairs of this molecule
+
+        Args:
+            None
+
+        Returns:
+            a tuple in the format (excluded_12, excluded_13, excluded_14) where each ecluded_1x is a list of lists of each fragments excluded pairs
+        """
+
+        excluded_12 = []
+        excluded_13 = []
+        excluded_14 = []
+
+        for fragment in self.get_fragments():
+            # get the current fragment's lists of excluded pairs
+            frag_exc_12, frag_exc_13, frag_exc_14 = fragment.get_excluded_pairs()
+
+            # add the current fragment's lists of excluded pairs to the master lists
+            excluded_12.append(frag_exc_12)
+            excluded_13.append(frag_exc_13)
+            excluded_14.append(frag_exc_14)
+
+        return excluded_12, excluded_13, excluded_14
 
     def to_xyz(self, fragments = None, cp = False):
         """

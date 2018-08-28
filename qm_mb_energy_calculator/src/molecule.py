@@ -83,6 +83,18 @@ class Atom(object):
 
         return constants.symbol_to_radius(self.name)
 
+    def get_covalent_radius(self):
+        """
+        Gets the covalent radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The covalent radius of this atom
+        """
+
+        return constants.symbol_to_covalent_radius(self.name)
     def get_x(self):
         """
         Gets the x position of this atom
@@ -264,7 +276,7 @@ class Atom(object):
         # compute distance in 3d coordinate plane
         return math.sqrt((self.get_x() - atom.get_x()) ** 2 + (self.get_y() - atom.get_y()) ** 2 + (self.get_z() - atom.get_z()) ** 2)
 
-    def is_bonded(self, atom, bond_sensitivity = 1.5):
+    def is_bonded(self, atom, bond_sensitivity = 1.1):
         """
         Calculates whether this atom is likely to be bonded to another based on their atomic radii and the distance between them.
 
@@ -273,10 +285,10 @@ class Atom(object):
             bond_sensitivity - the bond threshold is considered to be this * the sum of the atomic radii
 
         Returns:
-            True if the distance between the atoms is less than bond_sensitivity * the sum of their radii, otherwise False.
+            True if the distance between the atoms is less than bond_sensitivity * the sum of their covalent radii, otherwise False.
         """
 
-        return self.distance(atom) < bond_sensitivity * (self.get_radius() + atom.get_radius())
+        return self.distance(atom) < bond_sensitivity * (self.get_covalent_radius() + atom.get_covalent_radius())
 
     def to_ghost_xyz(self):
         """

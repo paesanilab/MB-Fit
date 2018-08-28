@@ -264,7 +264,7 @@ class Atom(object):
         # compute distance in 3d coordinate plane
         return math.sqrt((self.get_x() - atom.get_x()) ** 2 + (self.get_y() - atom.get_y()) ** 2 + (self.get_z() - atom.get_z()) ** 2)
 
-    def is_bonded(self, atom, bond_sensitivity = 0.9):
+    def is_bonded(self, atom, bond_sensitivity = 1.5):
         """
         Calculates whether this atom is likely to be bonded to another based on their atomic radii and the distance between them.
 
@@ -430,6 +430,98 @@ class Fragment(object):
 
         for atom in self.get_atoms():
             atom.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+
+    def get_excluded_pairs(self):
+        """
+        Gets the excluded pairs lists for this fragment
+
+        Args:
+            None
+
+        Returns:
+            a tuple consisting of (excluded_12, excluded_13, excluded_14) lists
+        """
+
+        excluded_12 = set()
+        excluded_13 = set()
+        excluded_14 = set()
+
+        atoms = self.get_atoms()
+
+        # construct the simple graph of the connectivity in this fragment used to find the 12 pairs
+        edges1 = []
+
+        for index1, atom1 in enumerate(atoms):
+            for index2, atom2 in enumerate(atoms[index1 + 1:]):
+                if atom1.is_bonded(atom2):
+                    edges1.append([index1, index1 + 1 + index2])
+
+        print("Edges1:", edges1)
+
+        # find the exlcuded 12 pairs from this graph
+        for edge in edges1:
+            excluded_12.add((edge[0], edge[1]))
+
+        print("Excluded 12:", excluded_12)
+
+        # construct the graph used to find the 13 pairs
+        edges2 = []
+
+        for index1, edge1 in enumerate(edges1):
+            for index2, edge2 in enumerate(edges1[index1 + 1:]):
+                if edge1[0] == edge2[0] or edge1[0] == edge2[1] or edge1[1] == edge2[0] or edge1[1] == edge2[1]:
+                    edges2.append([index1, index1 + 1 + index2])
+
+        print("Edges2:", edges2)
+
+        # find the excluded 13 pairs from this graph
+        for edge in edges2:
+            atom1 = list(set(edges1[edge[0]]) - set(edges1[edge[1]]))[0]
+            atom2 = list(set(edges1[edge[1]]) - set(edges1[edge[0]]))[0]
+
+            excluded_13.add((atom1, atom2))
+
+        # filter out terms from excluded_13 that are in excluded_12
+        excluded_13 -= excluded_12
+
+        print("Excluded 13:", excluded_13)
+
+        # construct the graph used to find the 14 pairs
+        edges3 = []
+
+        for index1, edge1 in enumerate(edges2):
+            for index2, edge2 in enumerate(edges2[index1 + 1:]):
+                if edge1[0] == edge2[0] or edge1[0] == edge2[1] or edge1[1] == edge2[0] or edge1[1] == edge2[1]:
+                    edges3.append([index1, index1 + 1 + index2])
+
+        print("Edges3:", edges3)
+
+        # find the excluded 14 pairs from this graph
+        for edge in edges3:
+            pair1 = list(set(edges2[edge[0]]) - set(edges2[edge[1]]))[0]
+            pair2 = list(set(edges2[edge[1]]) - set(edges2[edge[0]]))[0]
+
+            pair1_compliment = list(set(edges2[edge[0]]) - set([pair1]))[0]
+            pair2_compliment = list(set(edges2[edge[1]]) - set([pair2]))[0]
+
+            print(pair1)
+            print(pair2)
+            print(pair1_compliment)
+            print(pair2_compliment)
+
+            atom1 = list(set(edges2[pair1]) - set(edges2[pair1_compliment]))[0]
+            atom2 = list(set(edges2[pair2]) - set(edges2[pair2_compliment]))[0]
+
+            excluded_14.add((atom1, atom2))
+
+        # filter out terms from excluded_14 that are in excluded_13 or excluded_12
+        excluded_14 -= excluded_12
+        excluded_14 -= excluded_13
+
+        print("Excluded 14:", excluded_14)
+
+        return excluded_12, excluded_13, excluded_14
+        
 
     def to_xyz(self):
         """ 

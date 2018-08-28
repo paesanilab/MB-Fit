@@ -85,7 +85,7 @@ def prepare_1b_fitting_code(settings, in_path, poly_path, poly_order, fit_path):
     print("Executing python generator script")
     
     # Execute the python script that generates the 1b fit code    
-    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/get-1b-fit.py " + in_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + settings)
+    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/get-1b-fit.py " + in_path + " " + fit_path + "/poly-direct.cpp " + settings + " " + str(poly_order))
 
     # restore settings
     os.system("mv " + settings + ".tmp " + settings)

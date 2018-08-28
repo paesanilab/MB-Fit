@@ -46,14 +46,15 @@ def parse_array(string):
             num_open_brackets -= 1
             if num_open_brackets != 0:
                 element += "]"
-        else:
+        elif character != " ":
             element += character
 
     if num_open_brackets == 0:
-        elements.append(element)
+        if element != "":
+            elements.append(element)
     else:
         print("Something went wrong while parsing a string into a list")
-    return [parse_array(element) if "," in element else element for element in elements]
+    return [parse_array(element) if "," in element or "[" in element or "]" in element else element for element in elements]
 
 # In[ ]:
 

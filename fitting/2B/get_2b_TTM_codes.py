@@ -4,10 +4,9 @@
 # In[ ]:
 
 
-import sys
-import os
-import configparser
-
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+import settings_reader
 
 # In[ ]:
 
@@ -26,35 +25,8 @@ else:
     config_path = sys.argv[2]
     name = sys.argv[3]
 
-config = configparser.ConfigParser()
-config.read(settings_path)
-config.read(config_path)
-
-def parse_array(string):
-    num_open_brackets = 0
-    elements = []
-    element = ""
-    for character in string:
-        if num_open_brackets == 1 and character == ",":
-            elements.append(element)
-            element = ""
-        elif character == "[":
-            if num_open_brackets != 0:
-                element += "["
-            num_open_brackets += 1
-        elif character == "]":
-            num_open_brackets -= 1
-            if num_open_brackets != 0:
-                element += "]"
-        elif character != " ":
-            element += character
-
-    if num_open_brackets == 0:
-        if element != "":
-            elements.append(element)
-    else:
-        print("Something went wrong while parsing a string into a list")
-    return [parse_array(element) if "," in element or "[" in element or "]" in element else element for element in elements]
+settings = settings_reader.SettingsReader(settings_path)
+config = settings_reader.SettingsReader(config_path)
 
 # In[ ]:
 
@@ -69,7 +41,7 @@ mon2 = name.split('.')[0].split('_')[1]
 # For Andrea:
 # Find a way to find the number of atoms in each monomer
 # Store them in nat1 and nat2
-nat1, nat2 = (int(num_atoms) for num_atoms in config["molecule"]["fragments"].split(","))
+nat1, nat2 = (int(num_atoms) for num_atoms in settings.get("molecule", "fragments").split(","))
 
 # Find the number of sites
 #nsites1 = 4
@@ -81,9 +53,9 @@ nsites2 = nat2
 is_w = 0
 # Obtain the lists with the excluded pairs
 #excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
-excluded_pairs_12 = parse_array(config["fitting"]["excluded_pairs_12"])
-excluded_pairs_13 = parse_array(config["fitting"]["excluded_pairs_13"])
-excluded_pairs_14 = parse_array(config["fitting"]["excluded_pairs_14"])
+excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
+excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
+excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14", int)
 excl12_a = excluded_pairs_12[0]
 excl13_a = excluded_pairs_13[0]
 excl14_a = excluded_pairs_14[0]
@@ -93,9 +65,9 @@ excl13_b = excluded_pairs_13[1]
 excl14_b = excluded_pairs_14[1]
 
 #Obtain charges (in the order of input), pols and polfacs
-charges = parse_array(config["fitting"]["charges"])
-polarizabilities = parse_array(config["fitting"]["polarizabilities"])
-polarizability_fractions = parse_array(config["fitting"]["polarizability_fractions"])
+charges = config.getlist("fitting", "charges", float)
+polarizabilities = config.getlist("fitting", "polarizabilities", float)
+polarizability_fractions = config.getlist("fitting", "polarizability_fractions", float)
 chg_a = charges[0]
 chg_b = charges[1]
 pol_a = polarizabilities[0]
@@ -104,16 +76,16 @@ polfac_a = polarizability_fractions[0]
 polfac_b = polarizability_fractions[1]
 
 #Ask the user for the max value of k and d
-k_min = config["fitting"]["k_min"]
-k_max = config["fitting"]["k_max"]
+k_min = config.getfloat("fitting", "k_min")
+k_max = config.getfloat("fitting", "k_max")
 
 # Obtain C6 from user in the same order as the given pairs AA, AB ...:
 # ALL pairs are required (intra and inter)
-c6_constants = parse_array(config["fitting"]["c6"])
+c6_constants = config.getlist("fitting", "c6", float)
 C6 = c6_constants[len(c6_constants) - 1]
 
 # Define Energy Range for the fitting
-E_range = config["fitting"]["energy_range"]
+E_range = config.getfloat("fitting", "energy_range")
 
 
 # In[ ]:

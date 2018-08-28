@@ -12,14 +12,14 @@ import settings_reader
 # In[2]:
 
 
-if len(sys.argv) != 4:
-    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini>\n ")
+if len(sys.argv) != 5:
+    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini> <polynomail_order>\n ")
     sys.exit()
 else:
     name = sys.argv[1]
     directcpp = sys.argv[2]
     config_filename = sys.argv[3]
-
+    degree = int(sys.argv[4])
 
 # ### Set arguments for testing. 
 # This should be commented in the script.py, but uncommented on the notebook
@@ -75,8 +75,6 @@ d_max = config.getfloat("fitting", "d_max")
 C6 = config.getlist("fitting", "C6", float)[0]
 d6 = config.getlist("fitting", "d6", float)[0]
 
-# Polynomial degree
-degree = config.getint("common", "polynomial_order")
 # Number ov variables
 nvars = config.getint("fitting", "nvars")
 # Find a way to get the size of the polynomial

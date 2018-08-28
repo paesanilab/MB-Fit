@@ -53,9 +53,9 @@ nsites2 = nat2
 is_w = 0
 # Obtain the lists with the excluded pairs
 #excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
-excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
-excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
-excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14", int)
+excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12")
+excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13")
+excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14")
 excl12_a = excluded_pairs_12[0]
 excl13_a = excluded_pairs_13[0]
 excl14_a = excluded_pairs_14[0]
@@ -65,9 +65,9 @@ excl13_b = excluded_pairs_13[1]
 excl14_b = excluded_pairs_14[1]
 
 #Obtain charges (in the order of input), pols and polfacs
-charges = config.getlist("fitting", "charges", float)
-polarizabilities = config.getlist("fitting", "polarizabilities", float)
-polarizability_fractions = config.getlist("fitting", "polarizability_fractions", float)
+charges = config.getlist("fitting", "charges")
+polarizabilities = config.getlist("fitting", "polarizabilities")
+polarizability_fractions = config.getlist("fitting", "polarizability_fractions")
 chg_a = charges[0]
 chg_b = charges[1]
 pol_a = polarizabilities[0]
@@ -76,16 +76,16 @@ polfac_a = polarizability_fractions[0]
 polfac_b = polarizability_fractions[1]
 
 #Ask the user for the max value of k and d
-k_min = config.getfloat("fitting", "k_min")
-k_max = config.getfloat("fitting", "k_max")
+k_min = config.get("fitting", "k_min")
+k_max = config.get("fitting", "k_max")
 
 # Obtain C6 from user in the same order as the given pairs AA, AB ...:
 # ALL pairs are required (intra and inter)
-c6_constants = config.getlist("fitting", "c6", float)
+c6_constants = config.getlist("fitting", "c6")
 C6 = c6_constants[len(c6_constants) - 1]
 
 # Define Energy Range for the fitting
-E_range = config.getfloat("fitting", "energy_range")
+E_range = config.get("fitting", "energy_range")
 
 
 # In[ ]:

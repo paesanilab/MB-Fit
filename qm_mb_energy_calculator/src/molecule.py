@@ -442,6 +442,7 @@ class Fragment(object):
             a tuple consisting of (excluded_12, excluded_13, excluded_14) lists
         """
 
+        # excluded pairs are sets because they should never be duplicate and so we can perform "-" operations on them.
         excluded_12 = set()
         excluded_13 = set()
         excluded_14 = set()
@@ -451,74 +452,80 @@ class Fragment(object):
         # construct the simple graph of the connectivity in this fragment used to find the 12 pairs
         edges1 = []
 
+        # loop thru every pair of atoms
         for index1, atom1 in enumerate(atoms):
             for index2, atom2 in enumerate(atoms[index1 + 1:]):
+
+                # if these atoms are bonded, add an edge between them
                 if atom1.is_bonded(atom2):
                     edges1.append([index1, index1 + 1 + index2])
 
-        print("Edges1:", edges1)
-
         # find the exlcuded 12 pairs from this graph
         for edge in edges1:
-            excluded_12.add((edge[0], edge[1]))
 
-        print("Excluded 12:", excluded_12)
+            # each edge represents a bond, so each bond creates an excluded 12 pair
+            excluded_12.add((edge[0], edge[1]))
 
         # construct the graph used to find the 13 pairs
         edges2 = []
 
+        # loop thru every pair of edges in the first graph
         for index1, edge1 in enumerate(edges1):
             for index2, edge2 in enumerate(edges1[index1 + 1:]):
+
+                # if these edges share at least one atom, add an edge between them in the second graph
                 if edge1[0] == edge2[0] or edge1[0] == edge2[1] or edge1[1] == edge2[0] or edge1[1] == edge2[1]:
                     edges2.append([index1, index1 + 1 + index2])
 
-        print("Edges2:", edges2)
-
         # find the excluded 13 pairs from this graph
         for edge in edges2:
-            atom1 = list(set(edges1[edge[0]]) - set(edges1[edge[1]]))[0]
-            atom2 = list(set(edges1[edge[1]]) - set(edges1[edge[0]]))[0]
 
-            excluded_13.add((atom1, atom2))
+            # the excluded 13 pair is the unique item from each edge in the frist graph connected by the edge in the second graph
+            atom1 = [x for x in edges1[edge[0]] if x not in edges1[edge[1]]][0]
+            atom2 = [x for x in edges1[edge[1]] if x not in edges1[edge[0]]][0]
+
+            # make sure excluded 13 pairs are specified with the smaller indexed atom first
+            if atom1 < atom2:
+                excluded_13.add((atom1, atom2))
+            else:
+                excluded_13.add((atom2, atom1))
 
         # filter out terms from excluded_13 that are in excluded_12
         excluded_13 -= excluded_12
 
-        print("Excluded 13:", excluded_13)
-
         # construct the graph used to find the 14 pairs
         edges3 = []
 
+        # loop thru every pair of edges in the second graph
         for index1, edge1 in enumerate(edges2):
             for index2, edge2 in enumerate(edges2[index1 + 1:]):
+
+                # if these edges share at least one edge from the first, add an edge between them in the third graph
                 if edge1[0] == edge2[0] or edge1[0] == edge2[1] or edge1[1] == edge2[0] or edge1[1] == edge2[1]:
                     edges3.append([index1, index1 + 1 + index2])
 
-        print("Edges3:", edges3)
-
         # find the excluded 14 pairs from this graph
         for edge in edges3:
-            pair1 = list(set(edges2[edge[0]]) - set(edges2[edge[1]]))[0]
-            pair2 = list(set(edges2[edge[1]]) - set(edges2[edge[0]]))[0]
 
-            pair1_compliment = list(set(edges2[edge[0]]) - set([pair1]))[0]
-            pair2_compliment = list(set(edges2[edge[1]]) - set([pair2]))[0]
+            # the excluded 14 pairs are the elements of each edge in the first graph that are not in the other edge in the first graph connected by the same edge in the second graph
+            pair1 = [x for x in edges2[edge[0]] if x not in edges2[edge[1]]][0]
+            pair2 = [x for x in edges2[edge[1]] if x not in edges2[edge[0]]][0]
 
-            print(pair1)
-            print(pair2)
-            print(pair1_compliment)
-            print(pair2_compliment)
+            pair1_compliment = [x for x in edges2[edge[0]] if x != pair1][0]
+            pair2_compliment = [x for x in edges2[edge[1]] if x != pair2][0]
 
-            atom1 = list(set(edges1[pair1]) - set(edges1[pair1_compliment]))[0]
-            atom2 = list(set(edges1[pair2]) - set(edges1[pair2_compliment]))[0]
+            atom1 = [x for x in edges1[pair1] if x not in edges1[pair1_compliment]][0]
+            atom2 = [x for x in edges1[pair2] if x not in edges1[pair2_compliment]][0]
 
-            excluded_14.add((atom1, atom2))
+            # naje syre excluded 14 pairs are specified with the smaller indexed atom first
+            if atom1 < atom2:
+                excluded_14.add((atom1, atom2))
+            else:
+                excluded_14.add((atom2, atom1))
 
         # filter out terms from excluded_14 that are in excluded_13 or excluded_12
         excluded_14 -= excluded_12
         excluded_14 -= excluded_13
-
-        print("Excluded 14:", excluded_14)
 
         return excluded_12, excluded_13, excluded_14
         

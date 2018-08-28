@@ -509,8 +509,8 @@ class Fragment(object):
             print(pair1_compliment)
             print(pair2_compliment)
 
-            atom1 = list(set(edges2[pair1]) - set(edges2[pair1_compliment]))[0]
-            atom2 = list(set(edges2[pair2]) - set(edges2[pair2_compliment]))[0]
+            atom1 = list(set(edges1[pair1]) - set(edges1[pair1_compliment]))[0]
+            atom2 = list(set(edges1[pair2]) - set(edges1[pair2_compliment]))[0]
 
             excluded_14.add((atom1, atom2))
 

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../qm_mb_en
 
 import constants, settings_reader
 from collections import OrderedDict
-from exceptions import InvalidValueError
+from exceptions import InvalidValueError, InconsistentValueError
 import molecule_parser
 
 qchem_template = "/qchem_template"
@@ -38,6 +38,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     # split the molecule input string into fragments
     fragments = molecule_in.split("_")
+
+    if len(geo_paths) != len(fragments):
+        raise InconsistentValueError("number of geometries", "number of fragments", len(geo_paths), len(fragments), "number of geometries must be equal to the number of fragments in the A3B2_A3B2 type input")
 
     log_directory = settings.get("files", "log_path")
 
@@ -126,7 +129,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 qchem_in.write(line)
 
     # perform qchem system call
-    os.system("qchem -nt 4 {} {} > {}".format(log_directory + "/qchem.in", log_directory + "/qchem.out", log_directory + "/qchem.log"))
+    #os.system("qchem -nt 4 {} {} > {}".format(log_directory + "/qchem.in", log_directory + "/qchem.out", log_directory + "/qchem.log"))
 
     # parse the output file
     with open(log_directory + "/qchem.out", "r") as qchem_out:
@@ -157,7 +160,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
                 # if an entry in the effective polarizabilities dictionary does not exist for this atom type, then add a list.
                 if atom_type not in effective_polarizability_dictionary:
-                    effective_polarizabilitiy_dictionary[atom_type] = []
+                    effective_polarizability_dictionary[atom_type] = []
 
                 # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
@@ -312,7 +315,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
                 # if this atom type does not have an entry in the charges dictionary, add one
                 if atom_type not in charges_dictionary:
-                    charges_dictinary[atom_type] = []
+                    charges_dictionary[atom_type] = []
 
                 # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
@@ -375,9 +378,3 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)
-
-if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python get_config_data.py <settings> <A1B2> <optimized geometry> <config_path>")
-        exit(1)
-    make_config(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

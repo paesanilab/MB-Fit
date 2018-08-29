@@ -129,7 +129,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 qchem_in.write(line)
 
     # perform qchem system call
-    #os.system("qchem -nt 4 {} {} > {}".format(log_directory + "/qchem.in", log_directory + "/qchem.out", log_directory + "/qchem.log"))
+    os.system("qchem -nt 4 {} {} > {}".format(log_directory + "/qchem.in", log_directory + "/qchem.out", log_directory + "/qchem.log"))
 
     # parse the output file
     with open(log_directory + "/qchem.out", "r") as qchem_out:
@@ -209,62 +209,90 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
         # read the c6 constants of each pair of atoms
 
+        # keeps track of which fragment atom a is in (ie 0->A3B2C1, 1->D2 for A3B2C1_D2)
         fragment_index_a = 0
+
+        # keeps track of which letter corresponds to atom a (ie 0->A, 1->B, 2->C for A3B2C1)
         atom_index_a = 0
+
+        # keeps track of which atom within a letter corresponds to atom a (ie 0, then 1, then 2 for A3)
         atom_a = 0
 
         while(True):
 
+            # check if atom_a is out of bounds of the number of atoms for the current a atom type
             if atom_a >= int(fragments[fragment_index_a][atom_index_a * 2 + 1]):
+
+                # move to the next atom a type
                 atom_index_a += 1
                 atom_a = 0
 
+                # check if the atom type a is out of bounds for the current fragment a
                 if atom_index_a >= len(fragments[fragment_index_a][::2]):
+
+                    # move to the next fragment a
                     fragment_index_a += 1
                     atom_index_a = 0
 
+                    # check if the current fragment a is out of bounds, in which case all c6 constants have been parsed
                     if fragment_index_a >= len(fragments):
                         break
 
+            # keeps track of which fragment b is in
             fragment_index_b = fragment_index_a
+
+            # keeps track of which letter corresponds to atom b
             atom_index_b = atom_index_a
+
+            # keeps track of which atom within a letter corresponds to atom b, starts 1 atom after atom a so each combination of atom is iterated over once.
             atom_b = atom_a + 1
 
             while(True):
+
+                # check if atom_b is out of bounds of the number of atoms for the current b atom type
                 if atom_b >= int(fragments[fragment_index_b][atom_index_b * 2 + 1]):
+
+                    # move to the next atom b type
                     atom_index_b += 1
                     atom_b = 0
 
+                    # check if the atom type b is out of bounds for the current fragment b
                     if atom_index_b >= len(fragments[fragment_index_b][::2]):
+
+                        # move to the next fragment b
                         fragment_index_b += 1
                         atom_index_b = 0
 
+                        # check if the current fragment b is out of bounds, in which case all c6 constants corresponding to atom a have been parsed
                         if fragment_index_b >= len(fragments):
                             break
 
+                # read a new line from the inpit
                 line = qchem_out.readline()
 
-                pair = [int(index) for index in line.split()[1].replace("(", "").replace(")", "").split(",")]
-
+                # parse the c6 value from the line
                 c6 = float(line.split()[2])
 
                 # convert c6 constant from Haretrees/Bohr^6 to kcal/mol/A^6
                 c6 *= constants.au_per_bohr6_to_kcal_per_ang6
-
+                
+                # get each atomic symbol based on the current fragments and atom type indicies
                 atomic_symbol_a = fragments[fragment_index_a][::2][atom_index_a]
                 atomic_symbol_b = fragments[fragment_index_b][::2][atom_index_b]
-                
+
                 # check if this is an intrafragmental c6 constant
                 if fragment_index_a == fragment_index_b:
-                    if atomic_symbol_a + atomic_symbol_b in c6_constant_lists[fragment_index_a]:
-                        c6_constant_lists[fragment_index_a][atomic_symbol_a + atomic_symbol_b].append(c6)
+                    for fragment_index in range(len(fragments)):
+                        if fragments[fragment_index] == fragments[fragment_index_a]:
+                            if atomic_symbol_a + atomic_symbol_b in c6_constant_lists[fragment_index]:
+                                c6_constant_lists[fragment_index][atomic_symbol_a + atomic_symbol_b].append(c6)
 
-                    elif atomic_symbol_b + atomic_symbol_a in c6_constant_lists[fragment_index_a]:
-                        c6_constant_lists[fragment_index_a][atomic_symbol_b + atomic_symbol_a].append(c6)
+                            elif atomic_symbol_b + atomic_symbol_a in c6_constant_lists[fragment_index]:
+                                c6_constant_lists[fragment_index][atomic_symbol_b + atomic_symbol_a].append(c6)
 
-                    else:
-                        c6_constant_lists[fragment_index_a][atomic_symbol_a + atomic_symbol_b] = []
-                        c6_constant_lists[fragment_index_a][atomic_symbol_a + atomic_symbol_b].append(c6)
+                            else:
+                                c6_constant_lists[fragment_index][atomic_symbol_a + atomic_symbol_b] = []
+                                c6_constant_lists[fragment_index][atomic_symbol_a + atomic_symbol_b].append(c6)
                 # otherwise this is an interfragmental c6 constant
                 else:
                     if atomic_symbol_a + atomic_symbol_b in c6_constant_lists[len(fragments)]:

@@ -143,17 +143,21 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
             except ValueError:
                 pass
 
-        # read the effective and free volumes from the qchem output
-        effective_polarizabilities = []
+        # read the effective and free volumes from the qchem output into a dictionary that maps from the letter to a list of equivelent values (A -> [0.934, 0.935, 0.934])
+        effective_polarizability_dictionary = {}
+
+        # used to keep track of total atoms counted in order to look up atoms in atomic_symbols
         atom_count = 0
 
         # loop thru all the fragments in the molecule
         for fragment in fragments:
 
-            frag_effective_polarizabilities = []
-
             # loop thru each atomic symbol in the fragment (ie A,B,C in A1B3C2)
             for atom_index, atom_type in enumerate(fragment[::2]):
+
+                # if an entry in the effective polarizabilities dictionary does not exist for this atom type, then add a list.
+                if atom_type not in effective_polarizability_dictionary:
+                    effective_polarizabilitiy_dictionary[atom_type] = []
 
                 # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
@@ -166,13 +170,29 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                     # calculate the effective polarizability
                     effective_polarizability = free_polarizability * effective_volume / free_volume
 
-                    frag_effective_polarizabilities.append(effective_polarizability)
+                    # add the effective polarizability to the corresponding list in the dictionary
+                    effective_polarizability_dictionary[atom_type].append(effective_polarizability)
 
                     atom_count += 1
-            
-            effective_polarizabilities.append(frag_effective_polarizabilities)
 
-        # TODO: AVERAGE EQUIVELENT POLARIZABILITIES
+        # now construct a list of lists of effective polarizabilities of each atom sorted by fragment
+        effective_polarizabilities = []
+
+        # loop over all the fragments in the molecule
+        for fragment in fragments:
+
+            frag_effective_polarizabilities = []
+
+            # loop thru each atomic symbol in the fragment (ie, A, B, C in A1B3C2)
+            for atom_index, atom_type in enumerate(fragment[::2]):
+
+                # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
+                for atom in range(0, int(fragment[atom_index * 2 + 1])):
+
+                    # this atom's effective polarizability is the average of all effective polarizabilites for equivelent molecules
+                    frag_effective_polarizabilities.append(sum(effective_polarizability_dictionary[atom_type]) / len(effective_polarizability_dictionary[atom_type]))
+
+            effective_polarizabilities.append(frag_effective_polarizabilities)
         
         # read lines until we read the line before where c6 constants are specified
         while True:
@@ -279,11 +299,32 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
             except ValueError:
                 pass
 
-        # SAVED FOR LATER!    charge = float(qchem_out.readline().split()[2])
+        # read the charges from the qchem output and construct a dictionary of charges sorted by atom type
+        charges_dictionary = {}
 
-        # read the charges from the qchem output
+        # loop thru all the fragments in the molecule
+        for fragment in fragments:
+
+            frag_charges = []
+
+            # loop thru each atomic symbol in the fragment (ie A,B,C in A1B3C2)
+            for atom_index, atom_type in enumerate(fragment[::2]):
+
+                # if this atom type does not have an entry in the charges dictionary, add one
+                if atom_type not in charges_dictionary:
+                    charges_dictinary[atom_type] = []
+
+                # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
+                for atom in range(0, int(fragment[atom_index * 2 + 1])):
+
+                    # parse the charge from the next line of the qchem output
+                    charge = float(qchem_out.readline().split()[2])
+
+                    charges_dictionary[atom_type].append(charge)
+
+        # now construct list of lists of atom's charges sorted by fragment by averaging all equivelent charges
+
         charges = []
-        atom_count = 0
 
         # loop thru all the fragments in the molecule
         for fragment in fragments:
@@ -296,15 +337,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
 
-                    # parse the charge from the next line of the qchem output
-                    charge = float(qchem_out.readline().split()[2])
-                    frag_charges.append(charge)
+                    # calcualte this atom's charge by averaging all equivelent charges
+                    frag_charges.append(sum(charges_dictionary[atom_type]) / len(charges_dictionary[atom_type]))
 
-                    atom_count += 1
-            
             charges.append(frag_charges)
-
-        # TODO: Average charges
 
     # create the config file!
     configwriter = configparser.ConfigParser()

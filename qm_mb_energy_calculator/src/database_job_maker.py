@@ -15,10 +15,6 @@ def make_all_jobs(settings_file, database_name, job_dir):
         None
     """
     
-    # add .db to the database name if it doesn't already end in .db
-    if database_name[-3:] != ".db":
-        database_name += ".db"
-
     # open the database
     database = Database(database_name)
     with Database(database_name) as database:

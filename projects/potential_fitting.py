@@ -287,6 +287,19 @@ def generate_poly_input(settings_path, poly_in_path):
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src") 
 
+def generate_poly_input_from_database(settings_path, database_name, molecule_name, poly_directory):
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
+    from database import Database
+
+    with Database(database_name) as database:
+        symmetry = database.get_symmetry(molecule_name)
+
+        generate_poly_input(settings_path, poly_directory + "/" + symmetry + ".in")
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
+        
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_directory):
     """

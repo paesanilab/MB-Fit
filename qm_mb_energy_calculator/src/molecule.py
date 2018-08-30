@@ -586,6 +586,27 @@ class Molecule(object):
 
         return "-".join([fragment.get_name() for fragment in self.get_fragments()])
 
+    def get_symmetry(self):
+        """
+        Gets the symmetry of this molecule
+
+        Args:
+            None
+
+        Returns:
+            The symmetry of this molecule in A1B2_C1D1E1 form
+        """
+
+        # used to assemble the symmetry string
+        symmetry = self.get_fragments()[0].get_symmetry()
+
+        # add each fragment's symmetry to the string
+        for fragment in self.get_fragments()[1:]:
+
+            symmetry += "_" + fragment.get_symmetry()
+
+        return symmetry
+
     def add_fragment(self, fragment):
         """
         Adds a fragment to this molecule

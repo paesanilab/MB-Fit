@@ -26,6 +26,10 @@ class Database():
         Returns:
             a new Database object
         """
+
+        if file_name[-3:] != ".db":
+            print("Automatically ending '.db' suffix to database name {}.".format(file_name))
+            file_name += ".db"
         
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = sqlite3.connect(file_name)
@@ -249,17 +253,7 @@ class Database():
         method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?", (model_id,)).fetchone()
 
         # Reconstruct the molecule from the information in this database
-        molecule = Molecule()
-        
-        # loop over all rows in the Fragments table that correspond to this molecule
-        for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-            fragment = Fragment(name, charge, spin)
-
-            # loop over all rows in the Atoms table that correspond to this fragment
-            for symbol, symmetry_class, x, y, z in self.cursor.execute("SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
-                fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
-
-            molecule.add_fragment(fragment)
+        molecule = self.get_molecule(molecule_id)
 
         # get the indicies of the fragments to include in this calculation
         fragment_indicies = energy_index_to_fragment_indicies(energy_index, molecule.get_num_fragments(), True if cp == 1 else False)
@@ -407,17 +401,7 @@ class Database():
             energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
 
             # Reconstruct the molecule from the information in this database
-            molecule = Molecule()
-            
-            # loop over all rows in the Fragments table that correspond to this molecule
-            for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-                fragment = Fragment(name, charge, spin)
-
-                # loop over all rows in the Atoms table that correspond to this fragment
-                for symbol, symmetry_class, x, y, z in self.cursor.execute("SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
-                    fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
-
-                molecule.add_fragment(fragment)
+            molecule = self.get_molecule(molecule_id)
             
             yield molecule, energies
 
@@ -646,6 +630,27 @@ class Database():
 
             yield molecule_name, calculation_count
             
+    def get_symmetry(self, molecule_name):
+        molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchone()[0]
+
+        return self.get_molecule(molecule_id).get_symmetry()
+
+    def get_molecule(self, molecule_id):
+        # Reconstruct the molecule from the information in the database
+        molecule = Molecule()
+        
+        # loop over all rows in the Fragments table that correspond to this molecule
+        for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+            fragment = Fragment(name, charge, spin)
+
+            # loop over all rows in the Atoms table that correspond to this fragment
+            for symbol, symmetry_class, x, y, z in self.cursor.execute("SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+                fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
+
+            molecule.add_fragment(fragment)
+
+        return molecule
+    
 
     def clean(self):
         """

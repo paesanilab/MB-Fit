@@ -115,7 +115,7 @@ class Database():
         # create the Atoms table
         self.cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS Atoms(fragment_id INT, symbol TEXT, x REAL, y REAL, z REAL)
+            CREATE TABLE IF NOT EXISTS Atoms(fragment_id INT, symbol TEXT, symmetry_class TEST, x REAL, y REAL, z REAL)
             """
         )
 
@@ -191,7 +191,7 @@ class Database():
 
                 # insert fragment's atoms into the table
                 for atom in fragment.get_atoms():
-                   self.cursor.execute("INSERT INTO Atoms (fragment_id, symbol, x, y, z) VALUES (?, ?, ?, ?, ?)", (fragment_id, atom.get_name(), atom.get_x(), atom.get_y(), atom.get_z())) 
+                   self.cursor.execute("INSERT INTO Atoms (fragment_id, symbol, symmetry_class, x, y, z) VALUES (?, ?, ?, ?, ?, ?)", (fragment_id, atom.get_name(), atom.get_symmetry_class(), atom.get_x(), atom.get_y(), atom.get_z())) 
                     
         else:
             
@@ -256,8 +256,8 @@ class Database():
             fragment = Fragment(name, charge, spin)
 
             # loop over all rows in the Atoms table that correspond to this fragment
-            for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
-                fragment.add_atom(Atom(symbol, x, y, z))
+            for symbol, symmetry_class, x, y, z in self.cursor.execute("SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+                fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
 
             molecule.add_fragment(fragment)
 
@@ -414,8 +414,8 @@ class Database():
                 fragment = Fragment(name, charge, spin)
 
                 # loop over all rows in the Atoms table that correspond to this fragment
-                for symbol, x, y, z in self.cursor.execute("SELECT symbol, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
-                    fragment.add_atom(Atom(symbol, x, y, z))
+                for symbol, symmetry_class, x, y, z in self.cursor.execute("SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+                    fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
 
                 molecule.add_fragment(fragment)
             

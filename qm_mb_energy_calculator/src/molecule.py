@@ -12,7 +12,7 @@ class Atom(object):
     Stores name, x, y, and z of a single atom
     """
 
-    def __init__(self, name, x, y, z):
+    def __init__(self, name, symmetry_class, x, y, z):
         """
         Creates a new atom
 
@@ -27,6 +27,7 @@ class Atom(object):
         """
 
         self.name = name
+        self.symmetry_class = symmetry_class
         self.x = x
         self.y = y
         self.z = z
@@ -43,6 +44,19 @@ class Atom(object):
         """
 
         return self.name
+
+    def get_symmetry_class(self):
+        """
+        Gets the symmetry class of this atom
+
+        Args:
+            None
+
+        Returns:
+            The symmetry class of this atom
+        """
+
+        return self.symmetry_class
 
     def get_number(self):
         """
@@ -315,6 +329,10 @@ class Fragment(object):
             None
         """
 
+        for existing_atom in self.get_atoms():
+            if existing_atom.get_symmetry_class() == atom.get_symmetry_class() and existing_atom.get_name() != atom.get_name():
+                raise InconsistentValueError("symmetry class of {}".format(existing_atom.get_name()), "symmetry class of {}".format(atom.get_name()), existing_atom.get_symmetry_class(), atom.get_symmetry_class(), "atoms with a different atomic symbol in the same fragment cannot have the same symmetry class.")
+
         self.atoms.append(atom)
 
     def get_atoms(self):
@@ -328,7 +346,46 @@ class Fragment(object):
             A list of the atoms in this fragment, sorted in standard order
         """
 
-        return sorted(self.atoms, key=lambda atom: atom.to_xyz())
+        return sorted(self.atoms, key=lambda atom: atom.get_symmetry_class())
+
+    def get_symmetry(self):
+        """
+        Gets the symmetry of this fragment
+
+        Args:
+            None
+
+        Returns:
+            the symmetry of this fragment in A1B2 form
+        """
+
+        # used to build the symmetry string
+        symmetry = ""
+
+        # used to count how many atoms there are of the current symmetry
+        symmetric_atom_count = 1
+
+        for atom in self.get_atoms():
+
+            # if this atom has a different symmetry than the one before it
+            if atom.get_symmetry_class() != symmetry[-1]:
+
+                # record the number of atoms with the previous symmetry
+                symmetry += symmetric_atom_count + atom.get_symmetry_class()
+
+                # reset the atom counter
+                symmetric_atom_count = 1
+
+            # if this atom has the same symmetry than the one before it
+            else:
+
+                # record this atom in the atom count
+                symmetric_atom_count += 1
+
+        # record the number of atoms with the last symmetry
+        symmetry += symmetric_atom_count
+
+        return symmetry
 
     def get_charge(self):
         """
@@ -442,7 +499,7 @@ class Fragment(object):
 
         return string
     
-    def read_xyz(self, file, num_atoms):
+    def read_xyz(self, file, num_atoms, symmetry):
         """
         Reads a number of lines from an open file into this fragment
 
@@ -454,8 +511,16 @@ class Fragment(object):
             This Fragment
         """
 
+        symmetry_index = 0
+        symmetry_count = 0
+
+
         # loop once for each atom expected to be read
         for i in range(num_atoms):
+
+            if not symmetry_count < int(symmetry[2 * symmetry_index + 1]):
+                symmetry_index += 1
+                symmetry_count = 0
 
             # get the line corresponding to this atom
             line = file.readline()
@@ -472,7 +537,14 @@ class Fragment(object):
                 # if we cannot parse the line, raise an error                
                 raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
 
-            self.add_atom(Atom(symbol, float(x), float(y), float(z)))
+            try:
+                symmetry_class = symmetry[2 * symmetry_index]
+            except IndexError:
+                raise InconsistentValueError("num atoms in fragment", "symmetry of fragment", num_atoms, symmetry, "sum of numbers in symmetry must equal num atoms in fragment")
+
+            self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
+
+            symmetry_count += 1
 
         return self
 
@@ -524,6 +596,12 @@ class Molecule(object):
         Returns:
             None
         """
+
+        for existing_fragment in self.get_fragments():
+            for atom1 in existing_fragment.get_atoms():
+                for atom2 in fragment.get_atoms():
+                    if atom1.get_symmetry_class() == atom2.get_symmetry_class() and atom1.get_name() != atom2.get_name():
+                        raise InconsistentValueError("symmetry class of {}".format(existing_atom.get_name()), "symmetry class of {}".format(atom.get_name()), existing_atom.get_symmetry_class(), atom.get_symmetry_class(), "atoms with a different atomic symbol in the same molecule (even if different fragments) cannot have the same symmetry class.")
 
         self.fragments.append(fragment)
 
@@ -875,7 +953,7 @@ class Molecule(object):
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
-    def read_xyz(self, file, names, atoms_per_fragment, charges, spin_multiplicities):
+    def read_xyz(self, file, names, atoms_per_fragment, symmetry_per_fragment, charges, spin_multiplicities):
         """
         Reads a single xyz configuration from an open file into this molecule
 
@@ -900,6 +978,8 @@ class Molecule(object):
 
         num_atoms = int(first_line)
 
+        if not len(atoms_per_fragment) == len(symmetry_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "symmetry per fragment", atoms_per_fragment, symmetry_per_fragment, "lists must be same length")
         if not len(atoms_per_fragment) == len(charges):
             raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charges, "lists must be same length")
         if not len(atoms_per_fragment) == len(spin_multiplicities):
@@ -913,8 +993,8 @@ class Molecule(object):
         # throw away the comment line
         file.readline()
 
-        for name, atom_count, charge, spin_multiplicity in zip(names, atoms_per_fragment, charges, spin_multiplicities):
+        for name, atom_count, symmetry, charge, spin_multiplicity in zip(names, atoms_per_fragment, symmetry_per_fragment, charges, spin_multiplicities):
             # construct each fragment from its charge, spin multiplicity and its line's from the string
-            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count))
+            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count, symmetry))
 
         return self

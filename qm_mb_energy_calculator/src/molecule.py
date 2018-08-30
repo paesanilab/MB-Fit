@@ -58,6 +58,19 @@ class Atom(object):
 
         return self.symmetry_class
 
+    def set_symmetry_class(self, symmetry_class):
+        """
+        Changes the symmetry class of this atom
+
+        Args:
+            symmetry_class - the new symmetry class of this atom
+
+        Returns:
+            None
+        """
+
+        self.symmetry_class = symmetry_class
+
     def get_number(self):
         """
         Gets the atomic number of this atom
@@ -618,6 +631,7 @@ class Molecule(object):
             None
         """
 
+        # make sure the symmetry class of the atoms in this fragment doesn't violate the 1 symmetry class -> 1 atom type rule
         for existing_fragment in self.get_fragments():
             for atom1 in existing_fragment.get_atoms():
                 for atom2 in fragment.get_atoms():
@@ -625,6 +639,19 @@ class Molecule(object):
                         raise InconsistentValueError("symmetry class of {}".format(existing_atom.get_name()), "symmetry class of {}".format(atom.get_name()), existing_atom.get_symmetry_class(), atom.get_symmetry_class(), "atoms with a different atomic symbol in the same molecule (even if different fragments) cannot have the same symmetry class.")
 
         self.fragments.append(fragment)
+
+        # adjust the symmetry class of atoms to be in the right order
+        next_symmetry = 65
+        new_symmetries = {}
+        for fragment in self.get_fragments():
+            for atom in fragment.get_atoms():
+                if atom.get_symmetry_class() not in new_symmetries:
+                    new_symmetries[atom.get_symmetry_class()] = chr(next_symmetry)
+                    next_symmetry += 1
+
+        for fragment in self.get_fragments():
+            for atom in fragment.get_atoms():
+                atom.set_symmetry_class(new_symmetries[atom.get_symmetry_class()])
 
     def get_fragments(self):
         """
@@ -637,7 +664,7 @@ class Molecule(object):
             List of fragments in this molecule in standard order
         """
 
-        return sorted(self.fragments, key=lambda fragment: fragment.get_symmetry())
+        return sorted(self.fragments, key=lambda fragment: fragment.get_name())
 
     def get_atoms(self):
         """

@@ -360,18 +360,18 @@ class Fragment(object):
         """
 
         # used to build the symmetry string
-        symmetry = ""
+        symmetry = self.get_atoms()[0].get_symmetry_class()
 
         # used to count how many atoms there are of the current symmetry
         symmetric_atom_count = 1
 
-        for atom in self.get_atoms():
+        for atom in self.get_atoms()[1:]:
 
             # if this atom has a different symmetry than the one before it
             if atom.get_symmetry_class() != symmetry[-1]:
 
                 # record the number of atoms with the previous symmetry
-                symmetry += symmetric_atom_count + atom.get_symmetry_class()
+                symmetry += str(symmetric_atom_count) + atom.get_symmetry_class()
 
                 # reset the atom counter
                 symmetric_atom_count = 1
@@ -383,7 +383,7 @@ class Fragment(object):
                 symmetric_atom_count += 1
 
         # record the number of atoms with the last symmetry
-        symmetry += symmetric_atom_count
+        symmetry += str(symmetric_atom_count)
 
         return symmetry
 
@@ -616,7 +616,7 @@ class Molecule(object):
             List of fragments in this molecule in standard order
         """
 
-        return sorted(self.fragments, key=lambda fragment: fragment.get_name() + " " + fragment.to_xyz())
+        return sorted(self.fragments, key=lambda fragment: fragment.get_symmetry())
 
     def get_atoms(self):
         """

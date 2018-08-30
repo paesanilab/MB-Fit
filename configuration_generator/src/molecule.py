@@ -1,4 +1,4 @@
-# molecule.py
+t# molecule.py
 #
 # definition for the Molecule class that holds data for molecules in nmcgen
 

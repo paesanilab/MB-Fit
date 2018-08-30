@@ -21,15 +21,6 @@ def init(config, log_name):
     psi4.set_memory(config['psi4']['memory'])
     psi4.set_num_threads(int(config['psi4']['num_threads']))
 
-def optimize(molecule, config):
-    print("Optimizing geometry...")
-
-    e = psi4.optimize(config['config_generator']['method'] + '/' + config['config_generator']['basis'], molecule=molecule)
-    
-    print("")
-    
-    return molecule, e
-    
 def frequencies(molecule, config):
     print("Determining normal modes and running frequency analysis...")
     

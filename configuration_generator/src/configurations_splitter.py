@@ -10,6 +10,8 @@ def splitConfigurations(settings_file, configurations_path, training_set_path, t
     Splits a set of configurations into a training set and a test set using furthest
     point sampling by some measure defined by the given molecular_descriptor
 
+    All the molecules will be moved to their center of mass and rotated on their principal axes in the process
+
     Args:
         settings_file - path to .ini file containing relevent settings information
         configurations_path - file path to the xyz file with configurations to be divided into a training and test set
@@ -25,6 +27,11 @@ def splitConfigurations(settings_file, configurations_path, training_set_path, t
 
     # parse the configurations into a list of [id, molecule]
     molecules = list(enumerate(molecule_parser.xyz_to_molecules(configurations_path, settings_reader.SettingsReader(settings_file))))
+
+    # move all molecules to their center of mass and rotate them on their principal axes
+    for index, molecule in molecules:
+        molecule.move_to_center_of_mass()
+        molecule.rotate_on_principal_axes()
 
     # construct a matrix where the item at index [i, k] is the difference between the ith molecule and the kth molecule
     # it starts empty, and will be filled in
@@ -46,14 +53,14 @@ def splitConfigurations(settings_file, configurations_path, training_set_path, t
         minimum_difference_to_train_set = []
 
         # loop over each [id, molecule] pair still in molecules
-        for index_molecule_pair in molecules:
+        for index, molecule in molecules:
 
             # if the difference between this molecule and the first molecule in the training_set has not been calculated, calculate it.
-            if difference_matrix[index_molecule_pair[0] - 1][0] is None:
-                difference_matrix[index_molecule_pair[0] - 1][0] = molecular_descriptor.difference(index_molecule_pair[1], training_set[0][1])
+            if difference_matrix[index - 1][0] is None:
+                difference_matrix[index - 1][0] = molecular_descriptor.difference(molecule, training_set[0][1])
 
             # initialize this molecule's entry in minimum_difference_to_train_set to the difference between this molecule and the first molecule in the training_set
-            minimum_difference_to_train_set.append(difference_matrix[index_molecule_pair[0] - 1][0])
+            minimum_difference_to_train_set.append(difference_matrix[index - 1][0])
 
         # loop over each [id, molecule] pair still in molecules
         for molecule_index, index_molecule_pair in enumerate(molecules):

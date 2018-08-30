@@ -753,7 +753,9 @@ class Molecule(object):
         """
         Computes the RMSD distance between the atoms in two molecules
 
-        molecules must have the same fragments and atoms or an InconsistentValueError will be raised
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised,
+
+        generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
 
         Args:
             other_molecule - the molecule to compare this one to

@@ -511,56 +511,50 @@ class Fragment(object):
             string += atom.to_ghost_xyz() + "\n"
 
         return string
-    
-    def read_xyz(self, file, num_atoms, symmetry):
-        """
-        Reads a number of lines from an open file into this fragment
 
+    def read_xyz(self, string, symmetry):
+        """
+        Reads the given string into this Fragment with the given symmetry
+        
         Args:
-            file  - the file to read lines from
-            num_atoms - the number of lines (and atoms) to read from the xyz file
+            string - the xyz file format string, just the lines with the atom information, no atom count / comment line
+            symmetry - the symmetry of this Fragment
 
         Returns:
-            This Fragment
+            self
         """
 
-        symmetry_index = 0
-        symmetry_count = 0
+        # used to keep track of the index of the current atom symmetry class in the symmetry string
+        class_index = 0
+        # used to keep track of how many atoms of the current atom symmetry class have been made
+        class_counter = 0
 
+        for line in string.splitlines():
 
-        # loop once for each atom expected to be read
-        for i in range(num_atoms):
-
-            if not symmetry_count < int(symmetry[2 * symmetry_index + 1]):
-                symmetry_index += 1
-                symmetry_count = 0
-
-            # get the line corresponding to this atom
-            line = file.readline()
-
-            # if we have reached EOF, raise an error because we expected at least 1 more atom
-            if line == "":
-                raise XYZFormatError("end of file reached while parsing", "expected additional atom line")
+            # if we have made as many atoms of the current symmetry class as indicated by the symmetry string, move on to the next symmetry class
+            if class_counter >= int(symmetry[class_index + 1]):
+                class_index += 2
+                class_counter = 0
 
             try:
-                # construct each atom from the info in the line
+                # read one line of the input string into an atom
                 symbol, x, y, z = line.split()
-
             except ValueError:
                 # if we cannot parse the line, raise an error                
                 raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
 
             try:
-                symmetry_class = symmetry[2 * symmetry_index]
+                symmetry_class = symmetry[class_index]
             except IndexError:
                 raise InconsistentValueError("num atoms in fragment", "symmetry of fragment", num_atoms, symmetry, "sum of numbers in symmetry must equal num atoms in fragment")
 
             self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
 
-            symmetry_count += 1
+            # update the number of atoms with the current symmetry class that have been read from the input
+            class_counter += 1
 
         return self
-
+        
 class Molecule(object):
     """
     Stores the fragments of a Molecule
@@ -1001,48 +995,192 @@ class Molecule(object):
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
-    def read_xyz(self, file, names, atoms_per_fragment, symmetry_per_fragment, charges, spin_multiplicities):
+    def read_fragment_from_xyz(self, string, name, charge, spin_multiplicity, symmetry):
         """
-        Reads a single xyz configuration from an open file into this molecule
-
-        If the molecule already has some fragments, new fragments will be added in addition to any existing fragments
+        Reads a single fragment from the given string and adds it to this molecule
 
         Args:
-            file  - the xyz file containing the atom coordinates
-            names   - list of the names of each fragment
-            atoms_per_fragment - list of the number of atoms in each fragment
-            charges - list of the charges of each fragment
-            spin_multiplicites - list of the spin multiplicities of each fragment
+            string - the string in the xyz file format, should include just the atom lines, no total atom line or comment line
+            name - the name of this new fragment
+            charge - the charge of this new fragment
+            spin_multiplicity - the spin multiplicity of the new fragment
+            symmetry - the symmetry of the new fragment, specified as a string in form A1B2
 
         Returns:
-            This Molecule. Will be UNCHANGED if an empty file (or a file with all of its lines already read) is passed
+            self
         """
 
-        first_line = file.readline()
+        self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(string, symmetry))
 
-        # check for end of file
-        if first_line == "":
-            raise StopIteration
+        return self
 
-        num_atoms = int(first_line)
+    def read_xyz(self, string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        """
+        Reads fragments from an xyz string into this Molecule
 
+        Args:
+            string - the xyz format string
+            atoms_per_fragment - list containing the number of atoms in each fragment
+            name_per_fragment - list containing the names of each fragment
+            charge_per_fragment - list containing the charges of each fragment
+            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
+            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+
+        Returns:
+            self
+        """
+
+        # Error checking to make sure all lists passed in are the same length
         if not len(atoms_per_fragment) == len(symmetry_per_fragment):
             raise InconsistentValueError("atoms per fragment", "symmetry per fragment", atoms_per_fragment, symmetry_per_fragment, "lists must be same length")
-        if not len(atoms_per_fragment) == len(charges):
-            raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charges, "lists must be same length")
-        if not len(atoms_per_fragment) == len(spin_multiplicities):
-            raise InconsistentValueError("atoms per fragment", "spin multiplicities per fragment", atoms_per_fragment, spin_multiplicities, "lists must be same length")
-        if not len(atoms_per_fragment) == len(names):
+        if not len(atoms_per_fragment) == len(charge_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charge_per_fragment, "lists must be same length")
+        if not len(atoms_per_fragment) == len(spin_multiplicity_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "spin multiplicities per fragment", atoms_per_fragment, spin_multiplicity_per_fragment, "lists must be same length")
+        if not len(atoms_per_fragment) == len(name_per_fragment):
             raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
 
-        if num_atoms != sum(atoms_per_fragment):
-            raise InconsistentValueError("total atoms in xyz file", "fragments", num_atoms, atoms_per_fragment, "fragments list must sum to total atoms from input xyz file")
+        # break the input string apart along \n characters
+        lines = string.splitlines()
 
-        # throw away the comment line
-        file.readline()
+        # read the total number of atoms from the first line of the xyz
+        try:
+            atom_total = int(lines[0])
+        except ValueError:
+            raise XYZFormatError("atom count line '{}' cannot be parsed into an integer".format(lines[0]), "line should contain a single integer")
 
-        for name, atom_count, symmetry, charge, spin_multiplicity in zip(names, atoms_per_fragment, symmetry_per_fragment, charges, spin_multiplicities):
-            # construct each fragment from its charge, spin multiplicity and its line's from the string
-            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count, symmetry))
+        # make sure that the total number of atoms indicated by the xyz file matches the number of atoms indicated per fragment
+        if atom_total != sum(atoms_per_fragment):
+            raise InconsistentValueError("total atoms in xyz string", "fragments", atom_total, atoms_per_fragment, "fragments list must sum to total atoms from input xyz string")
+
+        # remove the atom total and comment lines from the lines list
+        lines = lines[2:]
+
+        # make sure that there are a number of lines equal to the total number of atoms
+        if len(lines) != atom_total:
+            raise InconsistentValueError("total atoms in xyz string", "atom lines in xyz string", atom_total, len(lines), "number of total atoms indicated in xyz string should match number of atom lines")
+
+        # loop over each item in the lists, each iteration containing the information to assemble one fragment
+        for num_atoms, name, charge, spin, symmetry in zip(atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+
+            # read this fragment into this Molecule
+            self.read_fragment_from_xyz("\n".join(lines[:num_atoms]), name, charge, spin, symmetry)
+
+            # remove a number of lines from the lines list equal to the number used in the Fragment that was just read
+            lines = lines[num_atoms:]
+
+        return self
+
+    def read_xyz_file(self, file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        """
+        Reads fragments from an xyz file into this Molecule
+
+        Will attempt to read lines from the given file handle, raising a StopIteration exception if called on an empty file and a
+        
+
+        Args:
+            file - the file to read from
+            atoms_per_fragment - list containing the number of atoms in each fragment
+            name_per_fragment - list containing the names of each fragment
+            charge_per_fragment - list containing the charges of each fragment
+            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
+            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+
+        Returns:
+            self
+        """
+        
+        # build the xyz string
+        string = ""
+
+        # read lines from the file equal to the number needed for one molecule
+        for line_count in range(2 + sum(atoms_per_fragment)):
+
+            line = file.readline()
+
+            # if the line is an empty string, then we have reached end of file mid parse
+            if line == "":
+                if line_count == 0:
+                    raise StopIteration # if the first line is empty, raise StopIteration to indicate that this file is out of molecules to parse
+                raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure the last molecule in the file has a comment line and a number of atoms equal to the amount indicated in the atom count line.")
+
+            string += line
+        
+        self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+
+        return self
+
+    def read_xyz_path(self, path, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        """
+        Reads fragments from an xyz file indicated by a filepath into this Molecule
+
+        Will attempt to read lines from the file at the given file path, raising an exception if it runs out of lines mid-parse
+
+        Args:
+            path - the path to the file to read from
+            atoms_per_fragment - list containing the number of atoms in each fragment
+            name_per_fragment - list containing the names of each fragment
+            charge_per_fragment - list containing the charges of each fragment
+            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
+            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+
+        Returns:
+            self
+        """
+
+        with open(path, "r") as file:
+
+            try:
+                self.read_xyz_file(file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+
+            # if the call to read_xyz_file() raises a StopIteration, it means the file was empty
+            except StopIteration:
+                raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
+
+        return self
+
+    def read_psi4_string(self, string):
+        """
+        Reads the string outputted by a call to psi4.molecule.save_string_xyz() into this molecule as a fragment
+
+        the fragments added will not have name or symmetry saved correctly, because this information is not available
+        from the output of psi4.molecule.save_string_xyz(). As a result certain operations will not work on this molecule, for example
+        do not add this molecule to a database or attempt to generate its polynomial input format in style A1B2
+
+        Should never be called on a molecule that already has fragments, as this will have unexpected results
+
+        Args:
+            output of psi4.molecule.save_string_xyz()
+
+        Returns:
+            self
+        """
+
+        # divide the string along \n characters
+        lines = string.splitlines()
+
+        # read charge and spin from first line of input string, casting each to an int
+        charge, spin_multiplicity = [int(value) for value in lines[0].split()]
+
+        # calculate total atoms in this molecule
+        total_atoms = len(lines) - 1
+
+        # these fields do not matter
+        name = "unnamed"
+
+        # used to build the symmetry string for the fragment
+        symmetry = ""
+
+        # keeps track of which symmetry_class to use for the next atom
+        symmetry_class = 65
+
+        # loop over each atom assigning it a unique symmetry class
+        for atom_index in range(total_atoms):
+
+            symmetry += "{}1".format(chr(symmetry_class))
+
+            symmetry_class += 1
+
+        self.read_fragment_from_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry)
 
         return self

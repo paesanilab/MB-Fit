@@ -42,9 +42,7 @@ def optimize_psi4(molecule, settings):
 
     e = psi4.optimize(settings.get('config_generator', 'method') + '/' + settings.get('config_generator', 'basis'), molecule=psi4_mol)
 
-    # ...............
-
-    return molecule, e
+    return Molecule().read_psi4_string(psi4_mol.save_string_xyz(), "molecule"), e
 
 def frequencies(molecule, filenames, config):
 

@@ -476,6 +476,27 @@ class Fragment(object):
 
         return self
 
+    def read_xyz_string(self, string):
+        """
+        Reads the given string's atoms into this fragment
+
+        Args:
+            string - the xyz file string
+
+        Returns:
+            None
+        """
+
+        for line in string.splitlines():
+            try:
+                symbol, x, y, z = line.split()
+            except ValueError:
+                raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
+
+            self.add_atom(Atom(symbol, float(x), float(y), float(z)))
+
+        return self
+
 class Molecule(object):
     """
     Stores the fragments of a Molecule
@@ -916,5 +937,17 @@ class Molecule(object):
         for name, atom_count, charge, spin_multiplicity in zip(names, atoms_per_fragment, charges, spin_multiplicities):
             # construct each fragment from its charge, spin multiplicity and its line's from the string
             self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count))
+
+        return self
+
+    def read_psi4_string(self, string, name):
+        """
+        Reads an xyz file format with 
+        """
+        lines = string.splitlines();
+
+        charge, spin = lines[0].split()
+
+        self.add_fragment(Fragment(name, float(charge), int(spin)).read_xyz_string("\n".join(lines[1:])))
 
         return self

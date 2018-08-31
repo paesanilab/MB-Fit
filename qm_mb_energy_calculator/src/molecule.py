@@ -546,12 +546,19 @@ class Fragment(object):
             try:
                 symmetry_class = symmetry[class_index]
             except IndexError:
-                raise InconsistentValueError("num atoms in fragment", "symmetry of fragment", num_atoms, symmetry, "sum of numbers in symmetry must equal num atoms in fragment")
+                raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
 
             self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
 
             # update the number of atoms with the current symmetry class that have been read from the input
             class_counter += 1
+
+        try:
+            if class_counter == int(symmetry[class_index + 1]):
+                symmetry[class_index + 2]
+            raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
+        except IndexError:
+            pass
 
         return self
         
@@ -1160,7 +1167,10 @@ class Molecule(object):
         lines = string.splitlines()
 
         # read charge and spin from first line of input string, casting each to an int
-        charge, spin_multiplicity = [int(value) for value in lines[0].split()]
+        try:
+            charge, spin_multiplicity = [int(value) for value in lines[0].split()]
+        except ValueError:
+            raise XYZFormatError(lines[0], "line format should be 'charge spin_multiplicity', make sure you are passing in the output of psi4.molecule.save_string_xyz()")
 
         # calculate total atoms in this molecule
         total_atoms = len(lines) - 1

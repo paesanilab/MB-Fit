@@ -5,7 +5,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../qm_mb_energy_calculator/src")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
-import io
+import io, subprocess
 import molecule_parser
 from molecule import Molecule
 from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
@@ -29,13 +29,10 @@ def optimize(settings, molecule, method, basis):
     
     elif settings.get("config_generator", "code") == 'qchem':
         return optimize_qchem(settings, molecule, method, basis)
-        energy, qchem_mol = qchem_helper.optimize(molecule, filenames, config)
-        molecule = qchem_helper.read_qchem_mol(qchem_mol, molecule.num_atoms)
-        return molecule, energy
 
 def optimize_psi4(settings, molecule, method, basis):
 
-    log_path = settings.get("files", "log_path") + "optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
+    log_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
 
     if not os.path.exists(os.path.dirname(log_path)):
         os.makedirs(os.path.dirname(log_path))
@@ -57,7 +54,7 @@ def optimize_psi4(settings, molecule, method, basis):
 
 def optimize_qchem(settings, molecule, method, basis):
 
-    qchem_input_path = "optimizations/{}/{}/{}.in".format(method, basis, molecule.get_SHA1()[-8:])
+    qchem_input_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.in".format(method, basis, molecule.get_SHA1()[-8:])
 
     if not os.path.exists(os.path.dirname(qchem_input_path)):
         os.makedirs(os.path.dirname(qchem_input_path))
@@ -65,38 +62,40 @@ def optimize_qchem(settings, molecule, method, basis):
     with open(qchem_input_path, "w") as qchem_input_file:
 
         # tells qchem that the molecule starts here
-        f.write("$molecule\n")
+        qchem_input_file.write("$molecule\n")
         # this line contains charge and spin multiplicity
-        f.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
+        qchem_input_file.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
         # write the molecule's xyz format
-        f.write(molecule.to_xyz())
+        qchem_input_file.write(molecule.to_xyz())
         # tells qchem that the molecule ends here
-        f.write("$end\n")
+        qchem_input_file.write("$end\n")
 
-        f.write("\n")
+        qchem_input_file.write("\n")
 
         # tells qchem that configuration starts here
-        f.write("$rem\n")
+        qchem_input_file.write("$rem\n")
         # tells qchem this is an optimization job
-        f.write("jobtype opt\n")
+        qchem_input_file.write("jobtype opt\n")
 
         # tells qchem what method and basis to use
-        f.write("method " + method + "\n")
-        f.write("basis " + basis + "\n")
+        qchem_input_file.write("method " + method + "\n")
+        qchem_input_file.write("basis " + basis + "\n")
 
         try:
-            f.write("ecp " + settings.get("config_generator", "ecp") + "\n")
+            qchem_input_file.write("ecp " + settings.get("config_generator", "ecp") + "\n")
         except (ConfigMissingSectionError, ConfigMissingPropertyError):
             pass
 
         # tells qchem that configuration ends here
-        f.write("$end\n")
-    qchem_output_path = "optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
+        qchem_input_file.write("$end\n")
+    qchem_output_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
 
     if not os.path.exists(os.path.dirname(qchem_output_path)):
         os.makedirs(os.path.dirname(qchem_output_path))
 
-    subprocess.run("qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads"), qchem_input_path, qchem_output_path))  
+    subprocess.run("qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads"), qchem_input_path, qchem_output_path),
+                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                   shell=True, check=True)
 
     found = False
     # found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
@@ -105,10 +104,9 @@ def optimize_qchem(settings, molecule, method, basis):
         for line in qchem_output_file:
             if found:
                 if "ATOM" in line:
-                    for atom_index in range(molecule.num_atoms):
-                        qchem_output_string += outfile.readline()
-                        #Returns a list containing the lines with the optimized geometry coordinates
-                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_mulitplicity(), qchem_output_string)), energy
+                    for atom_index in range(molecule.get_num_atoms()):
+                        qchem_output_string += " ".join(qchem_output_file.readline().split()[1:]) + "\n"
+                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_multiplicity(), qchem_output_string), "molecule"), energy
             elif "Final energy is" in line:
                 energy = float(line.split()[3])
                 found = True

@@ -21,7 +21,7 @@ def optimize_geometry(settings_path, unopt_path, opt_path):
 
     unopt_molecule = molecule_parser.xyz_to_molecules(unopt_path, settings)[0]
 
-    opt_molecule, energy = qcalc.optimize(unopt_molecule, settings)
+    opt_molecule, energy = qcalc.optimize(settings, unopt_molecule, settings.get("config_generator", "method"), settings.get("config_generator", "basis"))
 
     with open(opt_path, "w") as opt_file:
         opt_file.write("{}\n".format(opt_molecule.get_num_atoms()))

@@ -279,9 +279,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 # parse the c6 value from the line
                 c6 = float(line.split()[2])
 
-                # convert c6 constant from Haretrees/Bohr^6 to kcal/mol/A^6
-                c6 *= constants.au_per_bohr6_to_kcal_per_ang6
-                
+                # convert c6 constant from Haretrees*(Bohr^6) to (kcal/mol)*A^6
+                c6 *= constants.au_times_bohr6_to_kcal_times_ang6
+
                 # get each atom type based on the current fragments and atom type indicies
                 atom_type_a = fragments[fragment_index_a][::2][atom_index_a]
                 atom_type_b = fragments[fragment_index_b][::2][atom_index_b]

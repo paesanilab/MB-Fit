@@ -8,7 +8,7 @@ from collections import OrderedDict
 from exceptions import InvalidValueError, InconsistentValueError
 import molecule_parser
 
-qchem_template = "/qchem_template"
+qchem_template = "qchem_template"
 
 # table of free polarizabilities for each atom
 free_polarizabilities = {
@@ -27,7 +27,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     Generates the config file for the fitcode for the given geometries
 
     Args:
-        settings_file - the file containint relevent settings information
+        settings_file - the file containing relevent settings information
         molecule_in - A3B1 formatted string
         config_path - path to file to write config file to, should end in .ini
         geo_paths - paths to each geometry to include in the config, should be 1 to 3 of them (inclusive)
@@ -42,9 +42,8 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     if len(geo_paths) != len(fragments):
         raise InconsistentValueError("number of geometries", "number of fragments", len(geo_paths), len(fragments), "number of geometries must be equal to the number of fragments in the A3B2_A3B2 type input")
 
-    log_directory = settings.get("files", "log_path")
-
-    with open(log_directory + "/qchem.in", "w") as qchem_in:
+    qchem_in_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.in")
+    with open(qchem_in_path, "w") as qchem_in:
         
         # tells qchem that the molecule has started
         qchem_in.write("$molecule\n")
@@ -124,15 +123,21 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         qchem_in.write("$end\n")
 
         # read the qchem template and append it to the qchem in
-        with open(os.path.dirname(os.path.abspath(__file__)) + "/" + qchem_template, "r") as template:
+        qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
+        with open(qchem_template_path, "r") as template:
             for line in template:
                 qchem_in.write(line)
 
+    qchem_out_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.out")
+    qchem_log_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.log")
+
+    num_threads = settings.getint("qchem", "num_threads")
+
     # perform qchem system call
-    os.system("qchem -nt 4 {} {} > {}".format(log_directory + "/qchem.in", log_directory + "/qchem.out", log_directory + "/qchem.log"))
+    os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
 
     # parse the output file
-    with open(log_directory + "/qchem.out", "r") as qchem_out:
+    with open(qchem_out_path, "r") as qchem_out:
         
         # read lines until we read the line before where the volumes are specified
         while True:
@@ -155,14 +160,14 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         # loop thru all the fragments in the molecule
         for fragment in fragments:
 
-            # loop thru each atomic symbol in the fragment (ie A,B,C in A1B3C2)
+            # loop thru each atom type in the fragment (ie A,B,C in A1B3C2)
             for atom_index, atom_type in enumerate(fragment[::2]):
 
                 # if an entry in the effective polarizabilities dictionary does not exist for this atom type, then add a list.
                 if atom_type not in effective_polarizability_dictionary:
                     effective_polarizability_dictionary[atom_type] = []
 
-                # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
+                # loop thru each atom of the corresponding atom type (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
 
                     # parse the volumes from the next line of the qchem output file
@@ -178,7 +183,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
                     atom_count += 1
 
-        # now construct a list of lists of effective polarizabilities of each atom sorted by fragment
+        # now construct a list of lists of effective polarizabilities of each atom sorted by fragment, by averaging all the equivelent polarizabilites
         effective_polarizabilities = []
 
         # loop over all the fragments in the molecule
@@ -186,10 +191,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
             frag_effective_polarizabilities = []
 
-            # loop thru each atomic symbol in the fragment (ie, A, B, C in A1B3C2)
+            # loop thru each atom type in the fragment (ie, A, B, C in A1B3C2)
             for atom_index, atom_type in enumerate(fragment[::2]):
 
-                # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
+                # loop thru each atom of the corresponding atom symbol (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
 
                     # this atom's effective polarizability is the average of all effective polarizabilites for equivelent molecules
@@ -205,9 +210,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
             except ValueError:
                 pass
 
+        # each element of this dictionary stores all the c6 constants for a single fragment, with the last dictionary storing inter-molecular c6 constants
+        # each dictionary is a dictionary of arrays, with the mapping being for example "AB" -> [array of all AB c6] this allows us to average all the AB c6
+        # constants later to get a more accurate c6. Right now, inter-molecular c6 are treated differently, and are averaged seperately from intra-molecular c6
         c6_constant_lists = [OrderedDict() for x in range(len(fragments) + 1)]
-
-        # read the c6 constants of each pair of atoms
 
         # keeps track of which fragment atom a is in (ie 0->A3B2C1, 1->D2 for A3B2C1_D2)
         fragment_index_a = 0
@@ -276,38 +282,45 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 # convert c6 constant from Haretrees/Bohr^6 to kcal/mol/A^6
                 c6 *= constants.au_per_bohr6_to_kcal_per_ang6
                 
-                # get each atomic symbol based on the current fragments and atom type indicies
-                atomic_symbol_a = fragments[fragment_index_a][::2][atom_index_a]
-                atomic_symbol_b = fragments[fragment_index_b][::2][atom_index_b]
+                # get each atom type based on the current fragments and atom type indicies
+                atom_type_a = fragments[fragment_index_a][::2][atom_index_a]
+                atom_type_b = fragments[fragment_index_b][::2][atom_index_b]
 
                 # check if this is an intrafragmental c6 constant
                 if fragment_index_a == fragment_index_b:
+
+                    # loop over all fragments and add this c6 constant to any dictionary of an equivelent fragment
                     for fragment_index in range(len(fragments)):
                         if fragments[fragment_index] == fragments[fragment_index_a]:
-                            if atomic_symbol_a + atomic_symbol_b in c6_constant_lists[fragment_index]:
-                                c6_constant_lists[fragment_index][atomic_symbol_a + atomic_symbol_b].append(c6)
+                            if atom_type_a + atom_type_b in c6_constant_lists[fragment_index]:
+                                c6_constant_lists[fragment_index][atom_type_a + atom_type_b].append(c6)
 
-                            elif atomic_symbol_b + atomic_symbol_a in c6_constant_lists[fragment_index]:
-                                c6_constant_lists[fragment_index][atomic_symbol_b + atomic_symbol_a].append(c6)
+                            elif atom_type_b + atom_type_a in c6_constant_lists[fragment_index]:
+                                c6_constant_lists[fragment_index][atom_type_b + atom_type_a].append(c6)
 
                             else:
-                                c6_constant_lists[fragment_index][atomic_symbol_a + atomic_symbol_b] = []
-                                c6_constant_lists[fragment_index][atomic_symbol_a + atomic_symbol_b].append(c6)
+                                c6_constant_lists[fragment_index][atom_type_a + atom_type_b] = []
+                                c6_constant_lists[fragment_index][atom_type_a + atom_type_b].append(c6)
+
                 # otherwise this is an interfragmental c6 constant
                 else:
-                    if atomic_symbol_a + atomic_symbol_b in c6_constant_lists[len(fragments)]:
-                        c6_constant_lists[len(fragments)][atomic_symbol_a + atomic_symbol_b].append(c6)
 
-                    elif atomic_symbol_b + atomic_symbol_a in c6_constant_lists[len(fragments)]:
-                        c6_constant_lists[len(fragments)][atomic_symbol_b + atomic_symbol_a].append(c6)
+                    # add this c6 constant to the last dictionary (the one for interfragmental c6 constants)
+                    if atom_type_a + atom_type_b in c6_constant_lists[len(fragments)]:
+                        c6_constant_lists[len(fragments)][atom_type_a + atom_type_b].append(c6)
+
+                    elif atom_type_b + atom_type_a in c6_constant_lists[len(fragments)]:
+                        c6_constant_lists[len(fragments)][atom_type_b + atom_type_a].append(c6)
 
                     else:
-                        c6_constant_lists[len(fragments)][atomic_symbol_a + atomic_symbol_b] = []
-                        c6_constant_lists[len(fragments)][atomic_symbol_a + atomic_symbol_b].append(c6)
+                        c6_constant_lists[len(fragments)][atom_type_a + atom_type_b] = []
+                        c6_constant_lists[len(fragments)][atom_type_a + atom_type_b].append(c6)
 
                 atom_b += 1
 
             atom_a += 1
+
+        # now construct the c6 constants 2d array by averagining all equivelent c6 constants,
 
         c6_constants = []
 
@@ -338,14 +351,14 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
             frag_charges = []
 
-            # loop thru each atomic symbol in the fragment (ie A,B,C in A1B3C2)
+            # loop thru each atom type in the fragment (ie A,B,C in A1B3C2)
             for atom_index, atom_type in enumerate(fragment[::2]):
 
                 # if this atom type does not have an entry in the charges dictionary, add one
                 if atom_type not in charges_dictionary:
                     charges_dictionary[atom_type] = []
 
-                # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
+                # loop thru each atom of the corresponding atom type (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
 
                     # parse the charge from the next line of the qchem output
@@ -362,10 +375,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
             frag_charges = []
 
-            # loop thru each atomic symbol in the fragment (ie A,B,C in A1B3C2)
+            # loop thru each atom type in the fragment (ie A,B,C in A1B3C2)
             for atom_index, atom_type in enumerate(fragment[::2]):
 
-                # loop thru each atom of the corresponding atomic symbol (ie 3 times for A3)
+                # loop thru each atom of the corresponding atom type (ie 3 times for A3)
                 for atom in range(0, int(fragment[atom_index * 2 + 1])):
 
                     # calcualte this atom's charge by averaging all equivelent charges

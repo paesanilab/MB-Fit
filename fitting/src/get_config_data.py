@@ -161,7 +161,7 @@ def make_config(settings, molecule_in, geo_path, config_path):
                 c6 = float(line.split()[2])
 
                 # convert c6 constant from Haretrees/Bohr^6 to kcal/mol/A^6
-                c6 *= constants.au_per_bohr6_to_kcal_per_ang6
+                c6 *= constants.au_times_bohr6_to_kcal_times_ang6
 
                 atomic_symbol_a = fragments[fragment_index_a][::2][atom_index_a]
                 atomic_symbol_b = fragments[fragment_index_b][::2][atom_index_b]

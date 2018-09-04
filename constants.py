@@ -15,7 +15,7 @@ Constants derived from basic unit constants
 """                                                                      
 au_to_kcal = au_to_joule * avogadro * 1E-03 / cal_to_joule
 ev_to_kcal = au_to_kcal / au_to_ev
-au_per_bohr6_to_kcal_per_ang6 = au_to_kcal / (bohr_to_ang ** 6) # Converts au/(bohr^6) to kcal/mol/(angstrom^6)
+au_times_bohr6_to_kcal_times_ang6 = au_to_kcal * (bohr_to_ang ** 6) # Converts au*(bohr^6) to (kcal/mol)*(angstrom^6)
 
 # list of atomic symbols listed in order of atomic number, 0th item has atomic number 1, 1st item has atomic number 2, etc.
 atomic_symbols = [

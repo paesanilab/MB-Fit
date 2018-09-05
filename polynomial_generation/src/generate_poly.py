@@ -1,5 +1,6 @@
 import sys, os
 import itertools
+import filters
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import settings_reader
@@ -14,7 +15,7 @@ def generate_poly(settings_file, input_file, order, output_path):
     with open(output_path + "/poly.log", "w") as poly_log:
         
         # parse declaired fragments and variables from the input-file
-        fragments, variables = parse_input(input_file)
+        fragments, variables, monomial_filters = parse_input(input_file)
 
         if len(fragments) == 1 and not settings.get("poly_generation", "accepted_terms") == "all":
             raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms", len(fragments), settings.get("poly_generation", "accepted_terms"), "when there is only 1 fragment, there are no intermolecular interactions, so you must use 'all' terms")
@@ -154,6 +155,7 @@ def generate_poly(settings_file, input_file, order, output_path):
             # log number of possible monomials
             poly_log.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
+            # filter out terms based on the filtering setting in settings.ini
             if settings.get("poly_generation", "accepted_terms") == "all":
                 accepted_monomials = monomials
             elif settings.get("poly_generation", "accepted_terms") == "partly-inter":
@@ -162,6 +164,9 @@ def generate_poly(settings_file, input_file, order, output_path):
                 accepted_monomials = list(eliminate_partly_intramolecular_monomials(monomials, variables))
             else:
                 raise InvalidValueError("[poly_generation][accepted_terms]", settings.get("poly_generation", "accepted_terms"), "one of 'all', 'partly-inter', or 'inter'")
+
+            # filter out monomials from the list based on filters in the poly.in file
+            accepted_monomials = list(filter_monomials(monomials, variables, monomial_filters))
 
             # filter out redundant monomials (that are a permutation of eachother)
             accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
@@ -221,6 +226,7 @@ def parse_input(input_path):
 
     fragments = []
     variables = []
+    monomial_filters = []
 
     with open(input_path, "r") as input_file:
 
@@ -243,18 +249,13 @@ def parse_input(input_path):
 
                 # remove all the extra information before and after the brackets
                 line = line[line.index("[") + 1:line.index("]")]
-                filter_info = line.replace("'", "").replace(" ", "").split(",")
+                monomial_filters.append(filters.DegreeFilter(*line.replace("'", "").replace(" ", "").split(",")))
                 
-                filter_type = filter_info[0]
-
-                if filter_type == "minDegree":
-                    pass
-
             # if line is neither a add_molecule statement, add_variable statement, or a blank line, it is invalid
             elif line != "\n":
                 raise ParsingError(input_path, "Unrecongnized line format: '{}'".format(line))
 
-    return fragments, variables
+    return fragments, variables, monomial_filters
 
 class Variable(object):
     """
@@ -518,6 +519,17 @@ def is_partly_intramolecular(monomial, variables):
         if degree > 0 and variables[index].category[:7] == "x-intra":
             return True
     return False
+
+def filter_monomials(monomials, variables, monomial_filters):
+    for monomial in monomials:
+        keep = True
+        for monomial_filter in monomial_filters:
+            if not monomial_filter.keep(monomial, variables):
+                keep = False
+                break
+
+        if keep:
+            yield monomial
 
 def write_variable_file(variable_file, variables):
     # variable header comment

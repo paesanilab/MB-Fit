@@ -228,16 +228,27 @@ def parse_input(input_path):
         for line in input_file:
 
             # check if this line is an add_molecule statement
-            if line[:12] == "add_molecule":
+            if line.startswith("add_molecule"):
 
                 # parse line into a fragment
                 fragments.append(line[line.index("['") + 2:line.index("']")])
 
             # check if this line is an add_variable statement
-            elif line[:12] == "add_variable":
+            elif line.startswith("add_variable"):
 
                 # parse line into a variable
                 variables.append(Variable(line))
+
+            elif line.startswith("add_filter"):
+
+                # remove all the extra information before and after the brackets
+                line = line[line.index("[") + 1:line.index("]")]
+                filter_info = line.replace("'", "").replace(" ", "").split(",")
+                
+                filter_type = filter_info[0]
+
+                if filter_type == "minDegree":
+                    pass
 
             # if line is neither a add_molecule statement, add_variable statement, or a blank line, it is invalid
             elif line != "\n":
@@ -265,7 +276,6 @@ class Variable(object):
 
         # parse the line into this Variable's fields
         self.atom1_name, self.atom1_fragment, self.atom2_name, self.atom2_fragment, self.category = line.replace("'", "").replace(" ", "").split(",")
-    
 
 def make_permutations(fragment):
     """

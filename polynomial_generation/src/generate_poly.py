@@ -11,11 +11,11 @@ def generate_poly(settings_file, input_file, order, output_path):
     # read the settings file
     settings = settings_reader.SettingsReader(settings_file)
 
+    # parse declaired fragments and variables from the input-file
+    fragments, variables, monomial_filters = parse_input(input_file)
+
     # open output files for polynomials, will automatically be closed by with open as syntax
     with open(output_path + "/poly.log", "w") as poly_log:
-        
-        # parse declaired fragments and variables from the input-file
-        fragments, variables, monomial_filters = parse_input(input_file)
 
         # write number of fragments to log
         poly_log.write("<> fragments({}) <>\n".format(len(fragments)))

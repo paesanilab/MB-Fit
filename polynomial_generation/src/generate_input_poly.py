@@ -1,7 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import settings_reader
-from exceptions import InvalidValueError
+from exceptions import InvalidValueError, InconsistentValueError
 
 def generate_input_poly(settings_file, poly_input):
     """
@@ -139,6 +139,26 @@ def generate_input_poly(settings_file, poly_input):
                         # combine first element of each split atom in alphabetical order to get something like "AA", or "AB"
                         combined_letters = ''.join(sorted(split_atom1[0] + split_atom2[0]))
                         poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2] + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-" + combined_letters + "']\n")
+
+        # newline between variables and filters
+        poly_in_file.write("\n")
+
+        # add filter based on the filtering setting in settings.ini
+        polynomial_filtering = settings.get("poly_generation", "accepted_terms", "all" if len(fragments) == 1 else "purely-inter")
+
+        # make sure the user hasn't chosed intermolecular terms only with a monomer
+        if len(fragments) == 1 and not polynomial_filtering == "all":
+            raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms", len(fragments), polynomial_filtering, "when there is only 1 fragment, there are no intermolecular interactions, so you must use 'all' terms")
+
+        if polynomial_filtering == "purely-inter":
+            # this filter filters out all terms that have any intra-molecular components
+            poly_in_file.write("add_filter['degree', 'x-intra-**', '1+', '*']")
+        elif polynomial_filtering == "partly-inter":
+            # this filter filters out all terms that have no inter-molecular components
+            poly_in_file.write("add_filter['not', 'degree', 'x-**', '1+', '*']")
+
+        elif polynomial_filtering != "all":
+            raise InvalidValueError("[poly_generation][accepted_terms]", polynomial_filtering, "one of 'all', 'partly-inter', or 'purely-inter'")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

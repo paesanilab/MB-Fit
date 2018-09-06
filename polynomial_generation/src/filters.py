@@ -1,3 +1,18 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+from exceptions import InvalidValueError
+
+def parse_filter(*args):
+    """
+    Takes in the arguments as specified in a poly.in file and returns the filter they represent
+    """
+
+    if args[0] == "not":
+        return NotFilter(parse_filter(*args[1:]))
+    if args[0] == "degree":
+        return DegreeFilter(*args[1:])
+    raise InvalidValueError("filter type", args[0], "must be one of 'not', 'degree'")
+
 class Filter(object):
     """
     Abstract Class for all filters to extend
@@ -16,6 +31,29 @@ class Filter(object):
         """
 
         raise NotImplementedError
+
+class NotFilter(Filter):
+    """
+    Inverts another filter, so this filter will filter out any terms that would NOT be filtered out by its given filter
+    """
+
+    def __init__(self, not_filter):
+        self.not_filter = not_filter
+
+    def keep(self, monomial, variables):
+        """
+        Tells whether the given monomial formed by the given variables is filtered out by this filter
+
+        Args:
+            monomial - the monomial to filter, specified as list of degrees of length len(variables)
+            variables - list of variables in this monomial, should be same length as monomial
+
+        Returns:
+            False if this Filter filters out this monomial, True otherwise.
+        """
+
+        return not self.not_filter.keep(monomial, variables)
+
 
 class DegreeFilter(Filter):
     """

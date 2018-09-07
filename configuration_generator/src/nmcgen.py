@@ -30,45 +30,17 @@ filenames, log_name = config_loader.process_files(config)
   
 qcalc.init(config, log_name)
 
-with open(config['files']['input_geometry'], 'r') as input_file: 
-    molecule = Molecule(input_file.read())
+def nmcgen(settings_path, unopt_geo, opt_geo, normal_modes, configs):
+    settings = settings_reader.SettingsReader(settings_path)
+    geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
+    dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo, normal_modes)
+    configuration_generator.generate_configs(settings_path, opt_geo, normal_modes, dim_null, configs)
 
-# Step 1
-if config['config_generator'].getboolean('optimize'):  
-    molecule, energy = qcalc.optimize(molecule, filenames, config)
-        
-    output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
+    normal_modes_generator.generate_normalModes(settings_path, geometry)
 
-else:
-    print("Optimized geometry already provided, skipping optimization.\n")
-    
-    try:
-        shutil.copyfile(filenames['input_geometry'], filenames['optimized_geometry'])
-    except:
-        welp = "it's the same file"
 
-# Step 2
-if 'input_normal_modes' not in config['files']:
-    
-    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, filenames, config)
-    num_atoms = molecule.num_atoms
-    dim_null = 3 * num_atoms - len(normal_modes)    
-    
-    output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
-
-else:
-    print("Normal modes already provided, skipping frequency calculation.\n")
-    
-    try:
-        shutil.copyfile(config['files']['input_normal_modes'], filenames['normal_modes'])
-    except:
-        welp = "it's the same file"
-    
-    with open(config['files']['input_normal_modes'], 'r') as input_file:
-        contents = input_file.read()
-        num_atoms = molecule.num_atoms
-        dim_null = 3 * molecule.num_atoms - contents.count('normal mode')
-
-# Step 3
-gcn_runner.generate(config, dim_null, num_atoms, filenames)
-
+if __name__ == "__main__":
+    if len(sys.argv) != 6:
+        print("Usage: python nmcgen.py <settings path> <unopt geo> <opt geo> <normal modes> <configs>")
+        exit(1)
+    nmcgen(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

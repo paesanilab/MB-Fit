@@ -23,6 +23,6 @@ def generate_normal_modes(settings_path, geo_path, normal_modes_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python geometry_optimizer.py <settings> <geo_path> <normal_modes_file>")
+        print("Usage: python geometry_optimizer.py <settings> <geo_path> <normal_modes_path>")
         exit(1)
     generate_normal_modes(sys.argv[1], sys.argv[2], sys.argv[3])

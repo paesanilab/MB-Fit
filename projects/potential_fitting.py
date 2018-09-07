@@ -1,4 +1,4 @@
-import sys, os, subprocess
+import sys, os, subprocess, contextlib
 import random
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../")
@@ -357,11 +357,12 @@ def execute_maple(settings_path, poly_directory):
     os.chdir(poly_directory)
 
     # clear any old files, because for some reason maple appends to existing files instead of clobbering
-    os.system("rm poly-grd.c 2> /dev/null")
-    os.system("rm poly-nogrd.c 2> /dev/null")
-    os.system("rm poly-grd.cpp 2> /dev/null")
-    os.system("rm poly-nogrd.cpp 2> /dev/null")
-
+    with contextlib.suppress(FileNotFoundError):
+        os.remove("poly-grd.c")
+        os.remove("poly-nogrd.c")
+        os.remove("poly-grd.cpp")
+        os.remove("poly-nogrd.cpp")
+    
     os.system("maple poly-grd.maple")
     os.system("maple poly-nogrd.maple")
 
@@ -496,10 +497,10 @@ def fit_1b_training_set(settings_path, fit_code, training_set, fit_directory, fi
 
     os.system("ncgen -o fit-1b.nc fit-1b.cdl")
 
-    os.system("mv fit-1b.cdl " + fit_directory + "/")
-    os.system("mv fit-1b-initial.cdl " + fit_directory + "/")
-    os.system("mv correlation.dat " + fit_directory + "/")
-    os.system("mv fit-1b.nc " + fitted_code)
+    os.rename("fit-1b.cdl", os.path.join(fit_directory, "fit-1b.cdl"))
+    os.rename("fit-1b-initial.cdl", os.path.join(fit_directory, "fit-1b-initial.cdl"))
+    os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))
+    os.rename("fit-1b.nc", os.path.join(fitted_code, "fit-1b.nc"))
 
 def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory):
     """
@@ -527,16 +528,16 @@ def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory
             log_lines = fit_log.readlines()
             best_log_lines = best_fit_log.readlines()
 
-        rmds = float(log_lines[-4].split()[2])
-        best_rmds = float(best_log_lines[-4].split()[2])
+        rmsd = float(log_lines[-4].split()[2])
+        best_rmsd = float(best_log_lines[-4].split()[2])
 
-        if rmds < best_rmds:
-            os.system("mv " + fit_directory + "/fit.log " + fit_directory + "/best_fit.log")
+        if rmsd < best_rmsd:
+            os.rename(os.path.join(fit_directory, "fit.log"), os.path.join(fit_directory, "best_fit.log"))
             
 
         attempts += 1
 
-    os.system("rm " + fit_directory + "/fit.log")
-    os.system("mv individual_terms.dat " + fit_directory + "/")
-    os.system("mv ttm-params.txt " + fit_directory + "/")
-    os.system("mv correlation.dat " + fit_directory + "/")
+    os.remove(os.path.join(fit_directory, "fit.log"))
+    os.rename("individual_terms.dat", os.path.join(fit_directory, "individual_terms.dat"))
+    os.rename("ttm-params.txt", os.path.join(fit_directory, "ttm-params.txt"))
+    os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))

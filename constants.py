@@ -15,7 +15,7 @@ Constants derived from basic unit constants
 """                                                                      
 au_to_kcal = au_to_joule * avogadro * 1E-03 / cal_to_joule
 ev_to_kcal = au_to_kcal / au_to_ev
-au_per_bohr6_to_kcal_per_ang6 = au_to_kcal * (bohr_to_ang ** 6) # Converts au/(bohr^6) to kcal/mol/(angstrom^6)
+au_times_bohr6_to_kcal_times_ang6 = au_to_kcal * (bohr_to_ang ** 6) # Converts au*(bohr^6) to (kcal/mol)*(angstrom^6)
 
 # list of atomic symbols listed in order of atomic number, 0th item has atomic number 1, 1st item has atomic number 2, etc.
 atomic_symbols = [
@@ -26,7 +26,7 @@ atomic_symbols = [
 ]
 
 # list of atomic masses listed in order of atomic number
-atomic_masses = [
+atomic_masses = [ # Source ptable.com (not a final source)
     1.008,                                                                                                                                  4.0026,
     6.94,   9.0122,                                                                                 10.81,  12.011, 14.007, 15.999, 18.998, 20.180,
     22.990, 24.305,                                                                                 26.982, 28.085, 30.974, 32.06,  35.45,  39.948,

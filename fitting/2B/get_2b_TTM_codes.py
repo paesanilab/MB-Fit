@@ -109,6 +109,8 @@ k_max = config["fitting"]["k_max"]
 # Obtain C6 from user in the same order as the given pairs AA, AB ...:
 # ALL pairs are required (intra and inter)
 c6_constants = parse_array(config["fitting"]["c6"])
+
+# last element of c6_constants is list of the inter_molecular c6 constants
 C6 = c6_constants[len(c6_constants) - 1]
 
 # Define Energy Range for the fitting

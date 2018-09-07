@@ -11,33 +11,19 @@
 #
 # @author Ronak
 
-import os
-import sys
-import shutil
+import os, sys
 
-from configparser import ConfigParser
-
-from molecule import Molecule
-import qcalc
-
-import gcn_runner
-import config_loader
-
-import output_writer
-
-config = config_loader.load()
-filenames, log_name = config_loader.process_files(config)
-  
-qcalc.init(config, log_name)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+import settings_reader
+import geometry_optimizer
+import normal_modes_generator
+import configuration_generator
 
 def nmcgen(settings_path, unopt_geo, opt_geo, normal_modes, configs):
     settings = settings_reader.SettingsReader(settings_path)
     geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
     dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo, normal_modes)
-    configuration_generator.generate_configs(settings_path, opt_geo, normal_modes, dim_null, configs)
-
-    normal_modes_generator.generate_normalModes(settings_path, geometry)
-
+    configuration_generator.generate_configurations(settings_path, opt_geo, normal_modes, dim_null, configs)
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:

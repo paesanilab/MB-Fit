@@ -10,22 +10,6 @@ norm_formatter = "{:> 12.4f}"
 freq_formatter = "{:.2f}"
 mass_formatter = "{:.6f}"
 
-def write_optimized_geo(molecule, energy, optimized_geometry_fn):
-    with open(optimized_geometry_fn, 'w') as opt_geo_file:
-            opt_geo_file.write(str(molecule.num_atoms) + "\n")
-            opt_geo_file.write(energy_formatter.format(energy) + "\n")
-            
-            for i in range(molecule.num_atoms):
-                atom = molecule.atoms[i]
-                coordinates = molecule.coordinates[i]
-                
-                x = filter_neg_zero(opt_formatter.format(coordinates[0]), 6) 
-                y = filter_neg_zero(opt_formatter.format(coordinates[1]), 6)
-                z = filter_neg_zero(opt_formatter.format(coordinates[2]), 6)
-                
-                opt_geo_file.write(atom + "\t" + x + " " + y + " " + z + "\n")
-
-
 def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_fn):
     normal_out = ""
     

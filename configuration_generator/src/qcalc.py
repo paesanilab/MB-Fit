@@ -1,14 +1,14 @@
 # qcalc.py
 #
 # Calculator that uses accepts calls from nmcgen and calls upon the requested quantum chemistry code (e.g. psi4, qchem, etc) to carry out the specified calculation.
-
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../qm_mb_energy_calculator/src")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import io, subprocess
 import molecule_parser
 from molecule import Molecule
-from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
+from exceptions import LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
+from psi4.driver.qcdb.exceptions import QcdbException
 try:
     import psi4
 except ImportError:
@@ -16,21 +16,29 @@ except ImportError:
 else:
     has_psi4 = True
 
-def init(config, log_name):
-    verify_program(config)
-    
-    if config['config_generator']['code'] == 'psi4':
-        psi4_helper.init(config, log_name)
-
 def optimize(settings, molecule, method, basis):
     
-    if settings.get("config_generator", "code") == "psi4":
+    library = settings.get("config_generator", "code")
+
+    # check if the user requested a psi4 calculation
+    if library == "psi4":
         return optimize_psi4(settings, molecule, method, basis)
     
-    elif settings.get("config_generator", "code") == 'qchem':
+    # check if the user requested a qchem calculation
+    elif library == "qchem":
         return optimize_qchem(settings, molecule, method, basis)
 
+    # raise an exception if the user requested an unsupported library
+    raise NoSuchLibraryError(library)
+    
+
 def optimize_psi4(settings, molecule, method, basis):
+
+    # raise an exception if psi4 is not installed
+    if not has_psi4:
+        raise LibraryNotAvailableError("psi4")
+
+    print("Beginning geometry optimization using psi4 of {} with {}/{}.".format(molecule.get_name(), method, basis))
 
     log_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
 
@@ -46,13 +54,20 @@ def optimize_psi4(settings, molecule, method, basis):
     try:
         psi4_mol = psi4.geometry(psi4_string)
     except RuntimeError as e:
-        raise
+        raise LibraryCallError("psi4", "geometry", str(e))
 
-    energy = psi4.optimize("{}/{}".format(method, basis), molecule=psi4_mol)
+    try:
+        energy = psi4.optimize("{}/{}".format(method, basis), molecule=psi4_mol)
+    except QcdbException as e:
+        raise LibraryCallerror("psi4", "optimize", str(e))
+
+    print("Completed geometry optimization.")
 
     return Molecule().read_psi4_string(psi4_mol.save_string_xyz(), "molecule"), energy
 
 def optimize_qchem(settings, molecule, method, basis):
+
+    print("Beginning geometry optimization using qchem of {} with {}/{}/".format(molecule.get_name(), method, basis))
 
     qchem_input_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.in".format(method, basis, molecule.get_SHA1()[-8:])
 
@@ -93,9 +108,12 @@ def optimize_qchem(settings, molecule, method, basis):
     if not os.path.exists(os.path.dirname(qchem_output_path)):
         os.makedirs(os.path.dirname(qchem_output_path))
 
-    subprocess.run("qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path),
+    qchem_call_string = "qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path)
+    if subprocess.run(qchem_call_string,
                    stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                   shell=True, check=True)
+                   shell=True, check=True).returncode != 0:
+        raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code")
+        
 
     found = False
     # found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
@@ -106,13 +124,13 @@ def optimize_qchem(settings, molecule, method, basis):
                 if "ATOM" in line:
                     for atom_index in range(molecule.get_num_atoms()):
                         qchem_output_string += " ".join(qchem_output_file.readline().split()[1:]) + "\n"
+                    print("Completed geometry optimization.")
                     return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_multiplicity(), qchem_output_string), "molecule"), energy
             elif "Final energy is" in line:
                 energy = float(line.split()[3])
                 found = True
 
-
-    
+    raise LibraryCallError("qchem", "optimze", "process returned file of incorrect format")
 
 def frequencies(settings, molecule, method, basis):
 
@@ -122,8 +140,11 @@ def frequencies(settings, molecule, method, basis):
     elif settings.get("config_generator", "code") == 'qchem':
         return frequencies_qchem(settings, molecule, method, basis)
 
+    # raise an exception if the user requested an unsupported library
+    raise NoSuchLibraryError(library)
+
 def frequencies_psi4(settings, molecule, method, basis):
-    print("Using psi4 to determine normal modes.")
+    print("Beginning normal modes calculation using psi4 of {} with {}/{}/".format(molecule.get_name(), method, basis))
 
     log_path = settings.get("files", "log_path") + "/normal_modes/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
 
@@ -140,9 +161,12 @@ def frequencies_psi4(settings, molecule, method, basis):
     try:
         psi4_mol = psi4.geometry(psi4_string)
     except RuntimeError as e:
-        raise
+        raise LibraryCallError("psi4", "geometry", str(e))
 
-    total_energy, wavefunction = psi4.frequency("{}/{}".format(method, basis), molecule=psi4_mol, return_wfn=True)
+    try:
+        total_energy, wavefunction = psi4.frequency("{}/{}".format(method, basis), molecule=psi4_mol, return_wfn=True)
+    except QcdbException as e:
+        raise LibraryCallError("psi4", "frequency", str(e))
 
     vib_info = psi4.qcdb.vib.filter_nonvib(wavefunction.frequency_analysis)
 
@@ -171,7 +195,7 @@ def frequencies_psi4(settings, molecule, method, basis):
 
 
 def frequencies_qchem(settings, molecule, method, basis):
-    print("Using qchem to determine normal modes.")
+    print("Beginning normal modes calculation using qchem of {} with {}/{}/".format(molecule.get_name(), method, basis))
 
     qchem_input_path = settings.get("files", "log_path") + "/normal_modes/{}/{}/{}.in".format(method, basis, molecule.get_SHA1()[-8:])
 
@@ -212,9 +236,11 @@ def frequencies_qchem(settings, molecule, method, basis):
     if not os.path.exists(os.path.dirname(qchem_output_path)):
         os.makedirs(os.path.dirname(qchem_output_path))
 
-    subprocess.run("qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path), 
+    qchem_call_string = "qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path)
+    if subprocess.run(qchem_call_string, 
                    stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                   shell=True, check=True)
+                   shell=True, check=True).returncode != 0:
+        raise LibraryCallError("qchem", "frequency", "process returned non-zero exit code")
 
     num_atoms = molecule.get_num_atoms()
 
@@ -226,6 +252,8 @@ def frequencies_qchem(settings, molecule, method, basis):
             line = qchem_output_file.readline()
 
             if line == "":
+                if frequencies == []:
+                    raise LibraryCallError("qchem", "frequency", "process returned file of incorrect format")
                 break
 
             if "Mode:" in line:

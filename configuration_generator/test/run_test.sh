@@ -20,21 +20,21 @@ then
     err=$(($err+1))
 fi
 
-diff expected/h2o.opt.xyz h2o.opt.xyz > diffs/h2o.opt.xyz.dif
+ndiff -quiet -abserr 1.e-5 expected/h2o.opt.xyz h2o.opt.xyz > diffs/h2o.opt.xyz.dif
 if [ $? -ne 0 ]
 then
     echo "Error: optimized geometries differ - check diffs/h2o.opt.xyz.dif"
     err=$(($err+1))
 fi
 
-diff expected/normal_modes normal_modes > diffs/normal_modes.dif
+ndiff -quiet -abserr 1.e-5 expected/normal_modes normal_modes > diffs/normal_modes.dif
 if [ $? -ne 0 ]
 then
     echo "Error: normalmodes differ - check diffs/normal_modes.dif"
     err=$(($err+1))
 fi
 
-diff expected/configs.xyz configs.xyz > diffs/configs.xyz.dif
+ndiff -quiet -abserr 1.e-5expected/configs.xyz configs.xyz > diffs/configs.xyz.dif
 if [ $? -ne 0 ]
 then
     echo "Error: configurations differ - check diffs/configs.xyz.dif"

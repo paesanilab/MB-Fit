@@ -34,7 +34,7 @@ then
     err=$(($err+1))
 fi
 
-ndiff -quiet -abserr 1.e-5expected/configs.xyz configs.xyz > diffs/configs.xyz.dif
+ndiff -quiet -abserr 1.e-5 expected/configs.xyz configs.xyz > diffs/configs.xyz.dif
 if [ $? -ne 0 ]
 then
     echo "Error: configurations differ - check diffs/configs.xyz.dif"

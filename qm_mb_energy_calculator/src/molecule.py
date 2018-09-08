@@ -1002,6 +1002,32 @@ class Molecule(object):
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
+    def get_symbols(self):
+        """
+        Gets the atomic symbols of the atoms in this molecule as a list
+
+        Args:
+            None
+
+        Returns:
+            list of the atomic symbols of the atoms in this molecule
+        """
+
+        return [atom.get_name() for atom in self.get_atoms()]
+
+    def get_coordinates(self):
+        """
+        Gets the positions of the atoms in this molecule as a list of 3-tuples
+
+        Args:
+            None
+
+        Returns:
+            list of the positions of the atoms in this moleule
+        """
+
+        return [(atom.get_x(), atom.get_y(), atom.get_z()) for atom in self.get_atoms()]
+
     def read_fragment_from_xyz(self, string, name, charge, spin_multiplicity, symmetry):
         """
         Reads a single fragment from the given string and adds it to this molecule

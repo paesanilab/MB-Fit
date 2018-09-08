@@ -751,9 +751,9 @@ class Molecule(object):
 
     def rmsd(self, other_molecule):
         """
-        Computes the RMSD distance between the atoms in two molecules
+        Computes the RMSD distance between the positions of the atoms in two molecules
 
-        molecules must have the same fragments and atoms or an InconsistentValueError will be raised,
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
 
         generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
 
@@ -782,6 +782,49 @@ class Molecule(object):
 
         # compute rmsd as sqrt of mean squared distance
         return math.sqrt(squared_distance / self.get_num_atoms())
+
+    def distancermsd(self, other_molecule):
+        """
+        Computes the RMSD difference between the distances between the atoms in the two molecules
+
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
+
+        generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
+
+        Note:
+            this function is distinct from rmsd() because this function takes the rmsd of the differneces between the distances between pairs of atoms within each molecule
+            while rmsd() takes the rmsd of the distance between the same atoms in each molecule.
+
+        Args:
+            other_molecule - the molecule to ompare this one to
+
+        Returns:
+            the square-root of the mean squared difference in the distance between each pair of atoms in this molecule and the other
+        """
+
+        # fist make sure these molecules have the same number of atoms
+        if self.get_num_atoms() != other_molecule.get_num_atoms():
+            raise InconsistentValueError("number of atoms in self", "number of atoms in other", self.get_num_atoms(), other_molecule.get_num_atoms(), "number of atoms in each molecule must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+        squared_distance_difference = 0
+
+        # loop over each pair of atoms
+        for atom_index, this_atom1, other_atom1 in zip(range(self.get_num_atoms()), self.get_atoms(), other_molecule.get_atoms()):
+            for this_atom2, other_atom2 in zip(self.get_atoms()[atom_index + 1:], other_molecule.get_atoms()[atom_index + 1:]):
+
+                # check to make sure that the atom1s have the same type
+                if this_atom1.get_name() != other_atom1.get_name():
+                    raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+                # check to make sure that the atom2s have the same type
+                if this_atom2.get_name() != other_atom2.get_name():
+                    raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+                # add these atom pairs' contribution to the squared distance difference
+                squared_distance_difference += (this_atom1.distance(this_atom2) - other_atom1.distance(other_atom2)) ** 2
+
+        # compute the rmsd of the sqrt of mean squared distance difference
+        return math.sqrt(squared_distance_difference / self.get_num_atoms())
 
     def compare(self, other_molecule, cutoff_rmsd = 0.1):
         """

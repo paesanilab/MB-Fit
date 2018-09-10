@@ -151,9 +151,9 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
                     monomer1_energy_deformation = (energies[0] - monomer_1_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
                     monomer2_energy_deformation = (energies[1] - monomer_2_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
 
+                # calculate binding energy
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
-                # monomer interaction energy
                 output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation))
             
                 output.write("\n")

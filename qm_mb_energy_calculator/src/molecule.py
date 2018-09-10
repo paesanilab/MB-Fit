@@ -252,19 +252,6 @@ class Atom(object):
         # update the xyz position of this atom, adding back the origin coordinates
         self.set_xyz(x + x_origin, y + y_origin, z + z_origin)
         
-
-    def to_xyz(self):
-        """
-        Gets the string representation of this atom in the xyz file format
-
-        Args:
-            None
-
-        Returns:
-            String containing this atom's atomic symbol and coordinates in the xyz format
-        """
-        return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
-
     def distance(self, atom):
         """
         Finds the distance between another atom and this one
@@ -278,6 +265,19 @@ class Atom(object):
         # compute distance in 3d coordinate plane
         return math.sqrt((self.get_x() - atom.get_x()) ** 2 + (self.get_y() - atom.get_y()) ** 2 + (self.get_z() - atom.get_z()) ** 2)
 
+    def to_xyz(self):
+        """
+        Gets the string representation of this atom in the xyz file format
+
+        Args:
+            None
+
+        Returns:
+            String containing this atom's atomic symbol and coordinates in the xyz format
+        """
+        return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
+    # NOTE: using @ prefix is not universal, setup some way to change ghost representation depending on platform.
     def to_ghost_xyz(self):
         """
         Gets the string representation of this atom in the xyz file format as a ghost atom
@@ -288,7 +288,7 @@ class Atom(object):
         Returns:
             String containing this atom's atomic symbol and coordinates in the xyz ghost atom format
         """
-        return "@{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+        return "@{}".format(self.to_xyz())
 
 class Fragment(object):
     """
@@ -876,27 +876,27 @@ class Molecule(object):
             x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
             atom.set_xyz(x, y, z)
 
-    def rmsd(self, other_molecule):
+    def rmsd(self, other):
         """
         Computes the RMSD distance between the atoms in two molecules
 
         molecules must have the same fragments and atoms or an InconsistentValueError will be raised
 
         Args:
-            other_molecule - the molecule to compare this one to
+            other - the molecule to compare this one to
 
         Returns:
             The square-root of the mean squared distance between the atoms in this molecule and the other
         """
 
         # fist make sure these molecules have the same number of atoms
-        if self.get_num_atoms() != other_molecule.get_num_atoms():
-            raise InconsistentValueError("number of atoms in self", "number of atoms in other", self.get_num_atoms(), other_molecule.get_num_atoms(), "number of atoms in each molecule must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+        if self.get_num_atoms() != other.get_num_atoms():
+            raise InconsistentValueError("number of atoms in self", "number of atoms in other", self.get_num_atoms(), other.get_num_atoms(), "number of atoms in each molecule must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
 
         squared_distance = 0
 
         # loop thru every pair of atoms in the two molecules
-        for this_atom, other_atom in zip(self.get_atoms(), other_molecule.get_atoms()):
+        for this_atom, other_atom in zip(self.get_atoms(), other.get_atoms()):
 
             # check to make sure that these atoms are the same type
             if this_atom.get_name() != other_atom.get_name():
@@ -908,12 +908,12 @@ class Molecule(object):
         # compute rmsd as sqrt of mean squared distance
         return math.sqrt(squared_distance / self.get_num_atoms())
 
-    def compare(self, other_molecule, cutoff_rmsd = 0.1):
+    def compare(self, other, cutoff_rmsd = 0.1):
         """
         Compares two molecules to see if they are similar to eachother bellow a cutoff rmsd
 
         Args:
-            other_molecule - the molecule to compare this one to
+            other - the molecule to compare this one to
             cutoff_rmsd - the rmsd level at which False will be returned, defailt is 0.1
 
         Returns:
@@ -922,7 +922,7 @@ class Molecule(object):
         """
 
         try:
-            return self.rmsd(other_molecule) < cutoff_rmsd
+            return self.rmsd(other) < cutoff_rmsd
         except InconsistentValueError:
             return False
 

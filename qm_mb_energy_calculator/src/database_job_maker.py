@@ -24,7 +24,7 @@ def make_all_jobs(settings_file, database_name, job_dir):
     with Database(database_name) as database:
 
         for calculation in database.missing_energies():
-            write_job(settings, calculation, job_dir)
+            write_job(settings_file, calculation, job_dir)
 
 def make_job(settings_file, database_name, job_dir):   
     """
@@ -46,7 +46,7 @@ def make_job(settings_file, database_name, job_dir):
     # open the database
     with Database(database_name) as database:
 
-        write_job(settings, database.get_missing_energy(), job_dir)
+        write_job(settings_file, database.get_missing_energy(), job_dir)
 
 def write_job(settings_file, calculation, job_dir):
     """

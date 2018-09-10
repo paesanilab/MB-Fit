@@ -62,7 +62,7 @@ class MultipleOptimizedEnergiesError(DatabaseError):
     """Raised when a user performs an operation that requires an optimized energy when 2 or more exist"""
 
     def __init__(self, database, molecule_name, method, basis, cp, tag, num_opt):
-        super().__init__(database, "Found multiple ({}) calculated optimized energies for molecule '{}' with the model '{}/{}' with cp={} and tag='{}'".format(num_opt, molecule_name, method, basis, cp tag
+        super().__init__(database, "Found multiple ({}) calculated optimized energies for molecule '{}' with the model '{}/{}' with cp={} and tag='{}'".format(num_opt, molecule_name, method, basis, cp, tag))
 
 """
 --------------------------- InputException

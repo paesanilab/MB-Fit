@@ -916,7 +916,7 @@ class Molecule(object):
             None
 
         Returns:
-            a tuple in the format (excluded_12, excluded_13, excluded_14) where each ecluded_1x is a list of lists of each fragments excluded pairs
+            a tuple in the format (excluded_12, excluded_13, excluded_14, ..., excluded_1x) where each ecluded_1x is a list of lists of each fragment's excluded 1x pairs
         """
 
         excluded_pairs = [[] for i in range(max_exclusion)]

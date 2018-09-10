@@ -4,7 +4,7 @@ from database import Database
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import constants
-from exceptions import NoEnergiesError, NoOptimizedEnergyError
+from exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError
 
 def generate_1b_training_set(settings_file, database_name, output_path, molecule_name, method, basis, cp, tag):
     """
@@ -38,7 +38,10 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
         
         # find the optimized geometry energy from the database
         try:
-            opt_energies = list(database.get_energies(molecule_name, method, basis, cp, tag, True))[0][1]
+            all_opt_energies = list(database.get_energies(molecule_name, method, basis, cp, tag, True))
+            if len(all_opt_energies) > 1:
+                raise MultipleOptimizedEnergiesError(database_name, molecule_name, method, basis, cp, tag, len(all_opt_energies))
+            opt_energies = all_opt_energies[0][1]
         except IndexError:
             raise NoOptimizedEnergyError(database_name, molecule_name, method, basis, cp, tag) from None
 
@@ -96,12 +99,18 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
         
         # find the optimized geometry energy of the two monomers from the database
         try:
-            monomer_1_opt_energy = list(database.get_energies(monomer_1_name, method, basis, cp, tag, True))[0][1][0]
+            all_opt_energies = list(database.get_energies(monomer_1_name, method, basis, cp, tag, True))
+            if len(all_opt_energies) > 1:
+                raise MultipleOptimizedEnergiesError(database_name, monomer_1_name, method, basis, cp, tag, len(all_opt_energies))
+            monomer_1_opt_energy = all_opt_energies[0][1][0]
         except IndexError:
             raise NoOptimizedEnergyError(database_name, monomer_1_name, method, basis, cp, tag)
 
         try:
-            monomer_2_opt_energy = list(database.get_energies(monomer_2_name, method, basis, cp, tag, True))[0][1][0]
+            all_opt_energies = list(database.get_energies(monomer_2_name, method, basis, cp, tag, True))
+            if len(all_opt_energies) > 1:
+                raise MultipleOptimizedEnergiesError(database_name, monomer_2_name, method, basis, cp, tag, len(all_opt_energies))
+            monomer_2_opt_energy = all_opt_energies[0][1][0]
         except IndexError:
             raise NoOptimizedEnergyError(database_name, monomer_2_name, method, basis, cp, tag)
 
@@ -132,9 +141,9 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
                     monomer1_energy_deformation = (energies[0] - monomer_1_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
                     monomer2_energy_deformation = (energies[1] - monomer_2_opt_energy) * constants.au_to_kcal # covert Hartrees to kcal/mol
 
+                # calculate binding energy
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
-                # monomer interaction energy
                 output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation))
             
                 output.write("\n")

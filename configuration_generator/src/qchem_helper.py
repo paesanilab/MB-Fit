@@ -91,45 +91,52 @@ def frequencies(optimized_molecule, filenames, config):
                    stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                    shell=True, check=True)
 
-    found = False
-    modes_of_each_atom = []
-    #modes_of_each_atom is a list that contains the mode of each atom line by line; it is not in the desired output format and is an intermediate step into getting the desired format
+    with open(fnout, "r") as qchem_out:
+        return read_normal_modes(qchem_out, optimized_molecule.num_atoms)
+
+
+def read_normal_modes(file, num_atoms):
+    frequencies = []
+    red_masses = []
     normal_modes = []
-    with open(fnout, "r") as outfile:
-        for line in outfile:
-            if found:
-                if "Mode:" in line:
-                    #Extracts the number of modes from the line with 'Mode: 1, 2, 3..'                        
-                    num_modes = len(line.split())-1
-                    #Extracts the frequencies from the line after
-                    frequencies = list(map(lambda x: float(x), next(outfile).split()[1:]))
-                    next(outfile)
-                    #Extracts the reduced masses from the line 2 lines after
-                    red_masses = list(map(lambda x: float(x), next(outfile).split()[2:]))
-                    for i in range(4):
-                        next(outfile)
-                    #Gets the normal modes from the lines 4 lines after
-                    for atom in range(optimized_molecule.num_atoms):
-                        #Each line is split into a list modes_of_atom, containing the x y z coordinate of each normal mode of the element in order.
-                        #strip() removes all the strings containing only spaces in the .split() list. The [1:] removes the element name and returns only the normal modes
-                        modes_of_atom = list(filter(lambda x: x.strip(), next(outfile).split("   ")))[1:]
-                        #Each normal mode, originally in a string, is split into a list [x, y, z]
-                        modes_of_atom = list(map(lambda x: x.split(), modes_of_atom))
-                        #Converts the normal mode coordinates from string to float
-                        for x in modes_of_atom:
-                            for y in x:
-                                y = float(y)
-                        #This list of the normal modes of 1 atom, modes_of_atom, is appended to a larger list modes_of_each_atom
-                        modes_of_each_atom.append(modes_of_atom) 
-                    #Creates an empty array and then fills it in to list out each normal mode 
-                    for mode in range(num_modes):
-                        array = np.zeros((optimized_molecule.num_atoms, 3))
-                        for atom in range(optimized_molecule.num_atoms):
-                            array[atom]=modes_of_each_atom[atom][mode]
-                        normal_modes.append(array)
-                    return normal_modes, frequencies, red_masses
-                 
-                #Uses "INFRARED INTENSITIES (KM/MOL)" as a keyword to find where the normal modes are                      
-            elif "INFRARED INTENSITIES (KM/MOL)" in line:
-                found = True
-                
+    while(True):
+        line = file.readline()
+
+        if line == "":
+            break
+
+        if "Mode:" in line:
+            num_modes = len(line.split()) - 1
+
+            # read frequencies from file and cast each to a float
+            frequencies += [float(freq) for freq in file.readline().split()[1:]]
+
+            # skip the Force Constant line
+            file.readline()
+
+            # read red masses from file and cast each to float
+            red_masses += [float(freq) for freq in file.readline().split()[2:]]
+
+            # skip IR Active, IR Intens, Raman Active and labels line
+            for i in range(4):
+                file.readline()
+
+            # initialize 3d list for normal modes
+            modes = [[[0, 0, 0] for i in range(num_atoms)] for k in range(num_modes)]
+
+            for atom in range(num_atoms):
+
+                # read the coordinates for the next atom for the next num_modes modes
+                modes_of_atom = [float(i) for i in file.readline().split()[1:]]
+
+                # loop over each mode
+                for index in range(num_modes):
+
+                    # store coordinates in corresponding entries of modes list
+                    modes[index][atom][0] = modes_of_atom[index * 3]
+                    modes[index][atom][1] = modes_of_atom[index * 3 + 1]
+                    modes[index][atom][2] = modes_of_atom[index * 3 + 2]
+
+            normal_modes += modes
+
+    return normal_modes, frequencies, red_masses

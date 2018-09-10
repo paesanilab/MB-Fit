@@ -57,7 +57,7 @@ class TestFragment(unittest.TestCase):
     Tests the add_atom() and get_atoms() functions of the Fragment class
     """
     def test_add_atom_and_get_atoms(self):
-        fragment = Fragment(0, 1)
+        fragment = Fragment("HCl", 0, 1)
 
         # get_atom() should return list of length 0 before any atoms added to fragment
         self.assertEqual(len(fragment.get_atoms()), 0)
@@ -83,15 +83,15 @@ class TestFragment(unittest.TestCase):
     Tests the get_charge() function of the Fragment class
     """
     def test_get_charge(self):
-        fragment = Fragment(0, 2)
+        fragment = Fragment("Name", 0, 2)
         
         self.assertEqual(fragment.get_charge(), 0)        
 
-        fragment = Fragment(-3, 1)
+        fragment = Fragment("Name", -3, 1)
         
         self.assertEqual(fragment.get_charge(), -3)        
         
-        fragment = Fragment(12, 5)
+        fragment = Fragment("Name", 12, 5)
         
         self.assertEqual(fragment.get_charge(), 12)        
 
@@ -100,15 +100,15 @@ class TestFragment(unittest.TestCase):
     Tests the get_spin_multiplicity() function of the Fragment class
     """
     def test_get_spin_multiplicity(self):
-        fragment = Fragment(0, 2)
+        fragment = Fragment("Name", 0, 2)
         
         self.assertEqual(fragment.get_spin_multiplicity(), 2)        
 
-        fragment = Fragment(-3, 1)
+        fragment = Fragment("Name", -3, 1)
         
         self.assertEqual(fragment.get_spin_multiplicity(), 1)        
         
-        fragment = Fragment(12, 5)
+        fragment = Fragment("Name", 12, 5)
         
         self.assertEqual(fragment.get_spin_multiplicity(), 5)        
 
@@ -117,7 +117,7 @@ class TestFragment(unittest.TestCase):
     Tests the get_num_atoms() function of the Fragment class
     """
     def test_get_num_atoms(self):
-        fragment = Fragment(3, 2);
+        fragment = Fragment("HAlHe", 3, 2);
 
         # get_num_atoms() should return 0 before any Atoms added to Fragment
         self.assertEqual(fragment.get_num_atoms(), 0)
@@ -141,7 +141,7 @@ class TestFragment(unittest.TestCase):
     Test the to_xyz() function of the Fragment class
     """
     def test_to_xyz(self):
-        fragment = Fragment(-2, 2);
+        fragment = Fragment("HClXe", -2, 2);
 
         # to_xyz() should return empty string when no atoms are added to fragment
         self.assertEqual(fragment.to_xyz(), "");
@@ -180,7 +180,7 @@ class TestMolecule(unittest.TestCase):
         # get_fragments() should return list of len 0 before any fragments added to Molecule
         self.assertEqual(len(molecule.get_fragments()), 0)
 
-        fragment0 = Fragment(-3, 2)
+        fragment0 = Fragment("H", -3, 2)
         atom0 = Atom("H", 0, 0, 0)
 
         fragment0.add_atom(atom0)
@@ -191,7 +191,7 @@ class TestMolecule(unittest.TestCase):
         # get_fragments() should return list of len 1 after 1 fragment added to Molecule
         self.assertEqual(len(molecule.get_fragments()), 1)
         
-        fragment1 = Fragment(1, 1)
+        fragment1 = Fragment("HHe2", 1, 1)
         atom1 = Atom("H", 0, 0, 0)
         atom2 = Atom("He", 234, -0.1, 32)
         atom3 = Atom("He", 34, 43.53, 0)
@@ -216,7 +216,7 @@ class TestMolecule(unittest.TestCase):
         # get_atoms() should return list of len 0 before any atoms added to Molecule
         self.assertEqual(len(molecule.get_atoms()), 0)
 
-        fragment0 = Fragment(0, 1)
+        fragment0 = Fragment("H", 0, 1)
         atom0 = Atom("H", 0, 0, 0)
 
         fragment0.add_atom(atom0)
@@ -228,7 +228,7 @@ class TestMolecule(unittest.TestCase):
         self.assertEqual(len(molecule.get_atoms()), 1)
         
         
-        fragment1 = Fragment(0, 1)
+        fragment1 = Fragment("HHe2", 0, 1)
         atom1 = Atom("H", 0, 0, 0)
         atom2 = Atom("He", 234, -0.1, 32)
         atom3 = Atom("He", 34, 43.53, 0)
@@ -255,14 +255,14 @@ class TestMolecule(unittest.TestCase):
         # get_charge() should return 0 before any fragments added to Molecule
         self.assertEqual(molecule.get_charge(), 0)
         
-        fragment0 = Fragment(-1, 3)
+        fragment0 = Fragment("Name", -1, 3)
 
         molecule.add_fragment(fragment0)
 
         # get_charge() should return -1 after first fragment added to Molecule
         self.assertEquals(molecule.get_charge(), -1)
 
-        fragment1 = Fragment(3, 1)
+        fragment1 = Fragment("Name", 3, 1)
 
         molecule.add_fragment(fragment1)
 
@@ -278,14 +278,14 @@ class TestMolecule(unittest.TestCase):
         # get_spin_multiplicity() should return 1 before any fragments added to Molecule
         self.assertEqual(molecule.get_spin_multiplicity(), 1)
         
-        fragment0 = Fragment(-1, 3)
+        fragment0 = Fragment("Name", -1, 3)
 
         molecule.add_fragment(fragment0)
 
         # get_spin_multiplicity() should return 3 after first fragment added to Molecule
         self.assertEquals(molecule.get_spin_multiplicity(), 3)
 
-        fragment1 = Fragment(3, 1)
+        fragment1 = Fragment("Name", 3, 1)
 
         molecule.add_fragment(fragment1)
 
@@ -301,7 +301,7 @@ class TestMolecule(unittest.TestCase):
         # get_num_fragments() should return 0 before any fragments added to molecule
         self.assertEqual(molecule.get_num_fragments(), 0)
         
-        fragment0 = Fragment(1, 2)
+        fragment0 = Fragment("F", 1, 2)
         atom0 = Atom("F", 0, 0, 0)
 
         fragment0.add_atom(atom0)
@@ -311,7 +311,7 @@ class TestMolecule(unittest.TestCase):
         # get_num_fragments() should return 1 after 1 fragment added to molecule
         self.assertEqual(molecule.get_num_fragments(), 1)
 
-        fragment1 = Fragment(3, 2)
+        fragment1 = Fragment("FCl", 3, 2)
         atom1 = Atom("F", 0, 0, 3)
         atom2 = Atom("Cl", 0, 0, 0)
 
@@ -332,7 +332,7 @@ class TestMolecule(unittest.TestCase):
         # get_num_atoms() should return 0 before any atoms added to molecule
         self.assertEqual(molecule.get_num_atoms(), 0)
         
-        fragment0 = Fragment(-1, 2)
+        fragment0 = Fragment("F", -1, 2)
         atom0 = Atom("F", 0, 0, 0)
 
         fragment0.add_atom(atom0)
@@ -342,7 +342,7 @@ class TestMolecule(unittest.TestCase):
         # get_num_fragments() should return 1 after 1 atom added to molecule
         self.assertEqual(molecule.get_num_atoms(), 1)
 
-        fragment1 = Fragment(-1, 2)
+        fragment1 = Fragment("FCl", -1, 2)
         atom1 = Atom("F", 0, 0, 3)
         atom2 = Atom("Cl", 0, 0, 0)
 
@@ -357,10 +357,10 @@ class TestMolecule(unittest.TestCase):
     """
     Tests the to_xyz() function of the Molecule class
     """
-    def test_to_standard_xyz(self):
+    def test_to_xyz(self):
         molecule = Molecule()
 
-        fragment0 = Fragment(-1, 1)
+        fragment0 = Fragment("HClHe", -1, 1)
         fragment0.add_atom(Atom("H", 5, 3, 0.00343))
         fragment0.add_atom(Atom("Cl", 2, 0, -13))
         fragment0.add_atom(Atom("He", 6, 2, 0.343))
@@ -369,19 +369,19 @@ class TestMolecule(unittest.TestCase):
 
         self.assertEqual(molecule.to_xyz(), fragment0.to_xyz()[:-1])
 
-        fragment1 = Fragment(-2, 1)
+        fragment1 = Fragment("Ar", -2, 1)
         fragment1.add_atom(Atom("Ar", 0.23430523424, -34, -234.5235))
 
         molecule.add_fragment(fragment1)
         
         self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment0.to_xyz()[:-1])
 
-        fragment2 = Fragment(0, 2)
+        fragment2 = Fragment("XeBr", 0, 2)
         fragment2.add_atom(Atom("Xe", 0, 0, 0))
         fragment2.add_atom(Atom("Br", 62, 5, 0.001))
 
         molecule.add_fragment(fragment2)
-        self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment2.to_xyz() + fragment0.to_xyz()[:-1])
+        self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment0.to_xyz() + fragment2.to_xyz()[:-1])
 
 atomSuite = unittest.TestLoader().loadTestsFromTestCase(TestAtom)
 fragmentSuite = unittest.TestLoader().loadTestsFromTestCase(TestFragment)

@@ -2,33 +2,31 @@
 A module for computing the energy of a molecule with or without
 many-body decomposition.
 """
-
-"""
-LIBRARY IMPORTS
-"""
-
+import sys, os
 import itertools
 import calculator
 from math import factorial
 
-"""
-Returns a 3d list of indicies to be passed into calc_energy.
-Its hard to explain what this does, so I'll just give examples:    
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 
-if mbdecomp is true, returns an list of every possible combinations
-in the list, sorted into list by size.
-    Example: index_list = [0, 1, 2]
-            return value = [
-                [[0], [1], [2]],          # list of size 1 combinations
-                [[0, 1], [0, 2], [1, 2]], # list of size 2 combinations
-                [[0, 1, 2]]               # list of size 3 combinations
-            ]
-
-if mbdecomp is false:
-    Example: index_list = [0, 1, 2]
-            return value = [[[0, 1, 2]]]  # list with only size 3 combination
-"""
 def build_frag_indices(index_list, mbdecomp):
+    """
+    Returns a 3d list of indicies to be passed into calc_energy.
+    Its hard to explain what this does, so I'll just give examples:    
+
+    if mbdecomp is true, returns an list of every possible combinations
+    in the list, sorted into list by size.
+        Example: index_list = [0, 1, 2]
+                return value = [
+                    [[0], [1], [2]],          # list of size 1 combinations
+                    [[0, 1], [0, 2], [1, 2]], # list of size 2 combinations
+                    [[0, 1, 2]]               # list of size 3 combinations
+                ]
+
+    if mbdecomp is false:
+        Example: index_list = [0, 1, 2]
+                return value = [[[0, 1, 2]]]  # list with only size 3 combination
+    """
     # used to hold list of combinations of index_list
     combinations_arr = []
     
@@ -47,23 +45,22 @@ def build_frag_indices(index_list, mbdecomp):
         combinations_arr.append(size_n_combinations)
     return combinations_arr
 
-""" 
-Computes the energy of a molecule and the MB decomposition,
-if requested.
-Input: A molecule that has no calculations done upon it yet, and a
-       configuration file (settings.ini).
-Output: The calculated energy of the molecule. This can either have
-        only one energy or many energies (from MB decomposition).
-"""
-def get_nmer_energies(molecule, config):
-    if config["MBdecomp"].getboolean("mbdecomp"):
+def get_nmer_energies(molecule, settings):
+
+    """ 
+    Computes the energy of a molecule and the MB decomposition,
+    if requested.
+    Input: A molecule that has no calculations done upon it yet, and a
+           configuration file (settings.ini).
+    Output: The calculated energy of the molecule. This can either have
+            only one energy or many energies (from MB decomposition).
+    """
+    if settings.getboolean("MBdecomp", "mbdecomp"):
         # if multibody decomposition is requested, get a list of all possible combinations of fragment indices sorted into sub lists by size
         combinations = build_frag_indices(range(len(molecule.fragments)), True)
     else:
         # if not, the list will only contain 1 sublist with 1 combination
         combinations = build_frag_indices(range(len(molecule.fragments)), False)
-    # TODO: remove if unused?
-    energy_str = ""
     
     # initialize string to build return value
     output_str = ""
@@ -76,10 +73,7 @@ def get_nmer_energies(molecule, config):
         # for each combination of size n...
         for combination in size_n_combinations:
             # calculate the energy of this set of fragments
-            energy = calculator.calculate_energy(molecule, combination, config["model"]["method"] + "/" + config["model"]["basis"], config["model"].getboolean("cp"), config)
-
-            # TODO: unused?
-            energy_str += str(energy) + " "
+            energy = calculator.calculate_energy(molecule, combination, settings.get("model", "method") + "/" + settings.get("model", "basis"), settings.getboolean("model", "cp"), settings)
             
             # build output_str with 9
             output_str += "%.8f"%energy + " "

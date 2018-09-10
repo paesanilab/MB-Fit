@@ -130,7 +130,7 @@ if var == 'coul0' or var == 'exp0' or var == 'gau0':
 for i in range(len(t1)):
     if t1[i] in vsites:
         continue
-    for j in range(1,len(t1)):
+    for j in range(i + 1,len(t1)):
         if t1[j] in vsites:
             continue
         for nlp in nlp_touse:
@@ -172,7 +172,7 @@ for i in range(len(excl14)):
             excluded_pairs.append(ps)
             
 for i in range(len(t1)):
-    for j in range(i+1,len(t1)):
+    for j in range(i + 1,len(t1)):
         p = sorted([t1[i],t1[j]])
         ps = p[0] + p[1]
         if not ps in pairs:

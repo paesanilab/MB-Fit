@@ -49,10 +49,8 @@ def get_molecule_log_path(log_path, molecule, suffix):
     file_path = os.path.join(log_path, molecule.get_name(), "{}.{}".format(molecule.get_SHA1(), suffix))
 
     # make sure the required directories exist
-    init_file(path)
+    return init_file(file_path)
     
-    return file_path
-
 def get_model_log_path(log_path, molecule, method, basis, cp, suffix):
     """
     Returns the path to a log file for this molecule, method, basis, and cp

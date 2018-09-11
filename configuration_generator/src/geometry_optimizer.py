@@ -17,12 +17,16 @@ def optimize_geometry(settings_path, unopt_path, opt_path):
     Returns:
         None
     """
+
     settings = settings_reader.SettingsReader(settings_path)
 
+    # read the unoptimized geometry
     unopt_molecule = molecule_parser.xyz_to_molecules(unopt_path, settings)[0]
 
+    # optimize the geometry
     opt_molecule, energy = qcalc.optimize(settings, unopt_molecule, settings.get("config_generator", "method"), settings.get("config_generator", "basis"))
 
+    # write the optimized geometry to the output file
     with open(opt_path, "w") as opt_file:
         opt_file.write("{}\n".format(opt_molecule.get_num_atoms()))
         opt_file.write("{}\n".format(energy))

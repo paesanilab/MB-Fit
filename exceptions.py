@@ -9,6 +9,34 @@ class PotentialFittingError(Exception):
         super().__init__("The following error occured in the Potential Fitting Library: {}".format(message))
 
 """
+--------------------------- Called Process Errors
+"""
+
+class CommandError(PotentialFittingError):
+    """Exception for all called process errors to extends"""
+
+    def __init__(self, command, message):
+        super().__init__("Error when executing system command '{}': {}".format(command, message))
+        self.command = command
+
+class CommandNotFoundError(CommandError):
+    """Raised when a command is not found"""
+
+    def __init__(self, command):
+        super().__init__(command, "command not found")
+
+class CommandExecutionError(CommandError):
+    """Raised when a command fails for some reason"""
+
+    def __init__(self, command, call, exit_code, error):
+        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), error, exit_code))
+        self.error = error
+        self.call = call
+
+    def get_error():
+        return self.error
+
+"""
 --------------------------- Library Errors
 """
 

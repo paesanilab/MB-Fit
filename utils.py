@@ -1,3 +1,5 @@
+import os
+
 def init_directory(directory_path):
     """
     Creates the directory (and any superdirectories) if they do not exist
@@ -6,14 +8,13 @@ def init_directory(directory_path):
         directory_path - the path to the directory
 
     Returns:
-        True if the directory already existed, False otherwise
+        the same directory path as was passed in
     """
 
     if not os.path.isdir(directory_path):
-        os.path.makedirs(directory_path)
-        return False
+        os.makedirs(directory_path)
 
-    return True
+    return directory_path
 
 def init_file(file_path):
     """
@@ -23,10 +24,10 @@ def init_file(file_path):
         file_path - the path to the file
 
     Returns:
-        True if the housing directory for the file already existed, False otherwise
+        the same file path as was passed in
     """
 
-    return init_directory(os.path.dirname(file_path))
+    return os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
 
 def get_molecule_log_path(log_path, molecule, suffix):
     """

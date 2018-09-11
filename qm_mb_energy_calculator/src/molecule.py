@@ -1042,7 +1042,7 @@ class Molecule(object):
         file.readline()
 
         for name, atom_count, symmetry, charge, spin_multiplicity in zip(names, atoms_per_fragment, symmetry_per_fragment, charges, spin_multiplicities):
-            # construct each fragment from its charge, spin multiplicity and its line's from the string
+            # construct each fragment from its charge, spin multiplicity and its lines from the file
             self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count, symmetry))
 
         return self

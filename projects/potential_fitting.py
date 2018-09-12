@@ -393,7 +393,7 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_dir
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
     
-    prepare_1b_fitting_code.prepare_1b_fitting_code(settings_path, poly_in_path, poly_path, fit_directory)
+    prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, fit_directory)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
 
@@ -474,7 +474,7 @@ def fit_1b_training_set(settings_path, fit_code, training_set, fit_directory, fi
     os.rename("fit-1b.cdl", os.path.join(fit_directory, "fit-1b.cdl"))
     os.rename("fit-1b-initial.cdl", os.path.join(fit_directory, "fit-1b-initial.cdl"))
     os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))
-    os.rename("fit-1b.nc", os.path.join(fitted_code, "fit-1b.nc"))
+    os.rename("fit-1b.nc", fitted_code)
 
 def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory):
     """

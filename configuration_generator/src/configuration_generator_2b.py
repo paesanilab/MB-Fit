@@ -131,8 +131,8 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
                 if atom1.distance(atom2) < closest_distance:
                     closest_distance = atom1.distance(atom2)
 
-        # if the minimum intermolecular distance in this configuration is not less than min_inter_distance, then this is a valid configuration
-        if not closest_distance < min_inter_distance:
+        # if the minimum intermolecular distance in this configuration is ngreater than or equal to min_inter_distance, then this is a valid configuration
+        if closest_distance >= min_inter_distance:
             return
 
         # otherwise, we repeat the loop and make another attempt
@@ -162,7 +162,7 @@ def get_random_angle(random):
     x_angle = math.pi - random.random() * math.pi*2
 
     # choose a random y angle from the arcsin of a random decimal. This will cause angles closer to 0 to be chosen more often. (and lead to an even distribution of angles.)
-    y_angle = math.asin(random.random()) * -1 if random.random() < 0.5 else 1
+    y_angle = math.asin(random.random()) * (-1 if random.random() < 0.5 else 1)
 
     # because you can reach any angle in 3 dimensions by rotating around 2 axes, z angle can just be 0.
     z_angle = 0

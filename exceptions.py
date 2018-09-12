@@ -138,6 +138,12 @@ class ConfigError(InvalidInputError):
     def __init__(self, file, message):
         super().__init__("Error in settings file '{}': {}".format(file, message))
 
+class ConfigMissingFileError(ConfigError):
+    """Raise when a specified settings file does not exist"""
+
+    def __init__(self, file):
+        super().__init__(file, "file does not exist")
+
 class ConfigMissingSectionError(ConfigError):
     """Raised when a required section is missing from a settings file"""
 

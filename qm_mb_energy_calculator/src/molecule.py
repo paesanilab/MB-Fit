@@ -70,6 +70,31 @@ class Atom(object):
 
         return constants.symbol_to_mass(self.name)
 
+    def get_radius(self):
+        """
+        Gets the atomic radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic radius of this atom
+        """
+
+        return constants.symbol_to_radius(self.name)
+
+    def get_covalent_radius(self):
+        """
+        Gets the covalent radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The covalent radius of this atom
+        """
+
+        return constants.symbol_to_covalent_radius(self.name)
     def get_x(self):
         """
         Gets the x position of this atom
@@ -225,6 +250,20 @@ class Atom(object):
         """
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
+    def is_bonded(self, atom, bond_sensitivity = 1.1):
+        """
+        Calculates whether this atom is likely to be bonded to another based on their atomic radii and the distance between them.
+
+        Args:
+            atom    - the atom to check if this one is bonded to
+            bond_sensitivity - the bond threshold is considered to be this * the sum of the atomic radii
+
+        Returns:
+            True if the distance between the atoms is less than bond_sensitivity * the sum of their covalent radii, otherwise False.
+        """
+
+        return self.distance(atom) < bond_sensitivity * (self.get_covalent_radius() + atom.get_covalent_radius())
+
     # NOTE: using @ prefix is not universal, setup some way to change ghost representation depending on platform.
     def to_ghost_xyz(self):
         """
@@ -376,6 +415,76 @@ class Fragment(object):
 
         for atom in self.get_atoms():
             atom.rotate(quaternion, origin_x, origin_y, origin_z)
+
+    def get_excluded_pairs(self, max_exclusion = 3):
+        """
+        Gets the excluded pairs lists for this fragment
+
+        Args:
+            max_exclusion - get the excluded pairs up to 1x where x is max_exclusion, defualt is 3
+
+        Returns:
+            a tuple consisting of (excluded_12, excluded_13, ..., excluded_1x) lists
+        """
+
+        excluded_pairs = []
+
+        # construct a matrix of size n by n where n is the number of atoms in this fragment
+        # a value of 1 in row a and column b means that atom a and b are bonded
+        connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if these atoms are bonded, set their values in the connectivity matrix to 1.
+                if atom1.is_bonded(atom2):
+                    connectivity_matrix[index1][index2] = 1
+                    connectivity_matrix[index2][index1] = 1
+
+        # current matrix represents connectivity_matrix^x where x is the same as as in the excluded_1x pairs we are currently generating
+        current_matrix = connectivity_matrix
+
+        excluded_pairs_12 = set()
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if the value in the current matrix is at least 1, then these atoms are 1 bond apart, and are added to the excluded_pairs_12 list.
+                if current_matrix[index1][index2] > 0:
+                    excluded_pairs_12.add((index1, index2))
+
+        # add the excluded_pairs_12 to the list of all excluded pairs
+        excluded_pairs.append(excluded_pairs_12)
+
+        for i in range(max_exclusion - 1):
+
+            # current matrix is multiplied by connectivity_matrix so that each iteration of the loop current_matrix = connectivity_matrix^(i + 1)
+            current_matrix = numpy.matmul(current_matrix, connectivity_matrix)
+
+            excluded_pairs_1x = set()
+
+            # loop over each pair of atoms
+            for index1, atom1 in enumerate(self.get_atoms()):
+                for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                    index2 += index1 + 1
+
+                    # if the value in the connectivity matrix is at least 1, then these atoms are x bonds apart, and are added to the excluded_pairs_1x list.
+                    if current_matrix[index1][index2] > 0:
+                        excluded_pairs_1x.add((index1, index2))
+
+            # filter out all terms inside other excluded lists from the new excluded list
+            for excluded_pairs_1y in excluded_pairs:
+                excluded_pairs_1x -= excluded_pairs_1y
+
+            # add the excluded_pairs_1x to the list of all excluded pairs
+            excluded_pairs.append(excluded_pairs_1x)
+
+        return tuple(list(excluded_pairs_1x) for excluded_pairs_1x in excluded_pairs)
+
 
     def to_xyz(self):
         """ 
@@ -769,6 +878,26 @@ class Molecule(object):
             return self.rmsd(other) < cutoff_rmsd
         except InconsistentValueError:
             return False
+
+    def get_excluded_pairs(self, max_exclusion = 3):
+        """
+        Gets the excluded pairs of this molecule
+
+        Args:
+            None
+
+        Returns:
+            a tuple in the format (excluded_12, excluded_13, excluded_14, ..., excluded_1x) where each ecluded_1x is a list of lists of each fragment's excluded 1x pairs
+        """
+
+        excluded_pairs = [[] for i in range(max_exclusion)]
+
+        for index, fragment in enumerate(self.get_fragments()):
+            frag_excluded_pairs = fragment.get_excluded_pairs(max_exclusion)
+            for exclusion_index in range(max_exclusion):
+                excluded_pairs[exclusion_index].append(frag_excluded_pairs[exclusion_index])
+
+        return excluded_pairs
 
     def to_xyz(self, fragments = None, cp = False):
         """

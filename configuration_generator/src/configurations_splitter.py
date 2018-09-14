@@ -133,7 +133,7 @@ class RMSDDescriptor(MolecularDescriptor):
         return molecule1.rmsd(molecule2)
 
 class RMSDDistanceDescriptor(MolecularDescriptor):
-    def difference(self, molecule1, molecul2):
+    def difference(self, molecule1, molecule2):
         return molecule1.distancermsd(molecule2)
 
 class RandomDescriptor(MolecularDescriptor):

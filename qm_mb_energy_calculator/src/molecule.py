@@ -751,7 +751,7 @@ class Molecule(object):
 
     def rmsd(self, other):
         """
-        Computes the RMSD distance between the positions of the atoms in two molecules
+        Computes the RMSD between the positions of the atoms in two molecules
 
         molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
 
@@ -785,7 +785,7 @@ class Molecule(object):
 
     def distancermsd(self, other_molecule):
         """
-        Computes the RMSD difference between the distances between the atoms in the two molecules
+        Computes the RMSD of intramolecular interatomic distances in the two molecules
 
         molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
 
@@ -793,7 +793,7 @@ class Molecule(object):
 
         Note:
             this function is distinct from rmsd() because this function takes the rmsd of the differneces between the distances between pairs of atoms within each molecule
-            while rmsd() takes the rmsd of the distance between the same atoms in each molecule.
+            while rmsd() takes the rmsd of the distance between the positions of the same atoms in each molecule.
 
         Args:
             other_molecule - the molecule to ompare this one to

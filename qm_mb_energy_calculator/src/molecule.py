@@ -182,48 +182,23 @@ class Atom(object):
         self.y += y
         self.z += z
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this atom around a point
+        Rotates this Atom using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
-        # first construct the matrix of rotation
-        rotation_x_matrix = numpy.matrix([
-            [1,                         0,                      0                       ],
-            [0,                         math.cos(x_radians),    - math.sin(x_radians)   ], 
-            [0,                         math.sin(x_radians),    math.cos(x_radians)     ]
-                                        ])
+        x, y, z = quaternion.rotate(self.get_x(), self.get_y(), self.get_z(), origin_x, origin_y, origin_z)
 
-        rotation_y_matrix = numpy.matrix([
-            [math.cos(y_radians),       0,                      math.sin(y_radians)     ],
-            [0,                         1,                      0                       ], 
-            [- math.sin(y_radians),     0,                      math.cos(y_radians)     ]
-                                        ])
-
-        rotation_z_matrix = numpy.matrix([
-            [math.cos(z_radians),       - math.sin(z_radians),  0                       ],
-            [math.sin(z_radians),       math.cos(z_radians),    0                       ], 
-            [0,                         0,                      1                       ]
-                                        ])
-
-        rotation_matrix = rotation_x_matrix * rotation_y_matrix * rotation_z_matrix
-
-        # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
-        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * numpy.matrix(rotation_matrix)).getA1()
-
-        # update the xyz position of this atom, adding back the origin coordinates
-        self.set_xyz(x + x_origin, y + y_origin, z + z_origin)
+        self.set_xyz(x, y, z)
         
     def distance(self, atom):
         """
@@ -385,24 +360,22 @@ class Fragment(object):
         for atom in self.get_atoms():
             atom.translate(x, y, z)
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this fragment around a point
+        Rotates this Fragment using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
         for atom in self.get_atoms():
-            atom.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+            atom.rotate(quaternion, origin_x, origin_y, origin_z)
 
     def to_xyz(self):
         """ 
@@ -639,24 +612,22 @@ class Molecule(object):
         for fragment in self.get_fragments():
             fragment.translate(x, y, z)
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this molecule around a point
+        Rotates this Molecule using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
         for fragment in self.get_fragments():
-            fragment.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+            fragment.rotate(quaternion, origin_x, origin_y, origin_z)
 
     def move_to_center_of_mass(self):
         """
@@ -747,7 +718,7 @@ class Molecule(object):
         # update the position of each atom
         for atom in self.get_atoms():
             x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
-            atom.set_xyz(x, y, z)
+            atom.set_xyz(float(x), float(y), float(z))
 
     def rmsd(self, other):
         """
@@ -907,7 +878,7 @@ class Molecule(object):
         if not len(atoms_per_fragment) == len(names):
             raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
 
-        if num_atoms != sum(atoms_per_fragment):
+        if atoms_per_fragment != None and num_atoms != sum(atoms_per_fragment):
             raise InconsistentValueError("total atoms in xyz file", "fragments", num_atoms, atoms_per_fragment, "fragments list must sum to total atoms from input xyz file")
 
         # throw away the comment line

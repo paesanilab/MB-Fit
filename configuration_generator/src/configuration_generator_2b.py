@@ -2,6 +2,8 @@ import sys, os
 import math
 from random import Random, randint
 
+import quaternion
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../qm_mb_energy_calculator/src/")
 
 from molecule import Molecule
@@ -121,8 +123,8 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
     for attempt in range(attempts):
 
         # rotate each molecule a random amount
-        molecule1.rotate(*get_random_angle(random))
-        molecule2.rotate(*get_random_angle(random), distance, 0, 0)
+        molecule1.rotate(quaternion.Quaternion.get_random_rotation_quaternion(random), 0, 0, 0)
+        molecule2.rotate(quaternion.Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
 
         # calculate the minimum distance of any intermolecular interaction
         closest_distance = min_inter_distance
@@ -145,29 +147,6 @@ class RanOutOfAttemptsException(Exception):
     Used to check if move_to_config runs out of attempts
     """
     pass
-
-
-def get_random_angle(random):
-    """
-    Gets a random set of cartesian angles. The angles are evenly distributed.
-    
-    Args:
-        random - the random object to use to generated the random angle
-
-    Returns:
-        a tuple containing x, y, and z angles as degrees of rotation around the specified axes.
-    """
-
-    # choose a random angle between -pi and pi for the x_angle
-    x_angle = math.pi - random.random() * math.pi*2
-
-    # choose a random y angle from the arcsin of a random decimal. This will cause angles closer to 0 to be chosen more often. (and lead to an even distribution of angles.)
-    y_angle = math.asin(random.random()) * (-1 if random.random() < 0.5 else 1)
-
-    # because you can reach any angle in 3 dimensions by rotating around 2 axes, z angle can just be 0.
-    z_angle = 0
-
-    return x_angle, y_angle, z_angle
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

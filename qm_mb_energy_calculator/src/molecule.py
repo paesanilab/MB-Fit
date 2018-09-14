@@ -1172,6 +1172,121 @@ class Molecule(object):
 
         return self
 
+    def read_xyz_direct(self, string, settings = None):
+        """
+        Reads fragments from a string into this Molecule
+
+        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+
+        Args:
+            string - the string to read from
+            settings - settings file containing information about the molecule
+
+        Returns:
+            self
+        """
+
+        # if settings is None, then infer default values for molecule attributes
+        if settings is None:
+            name_per_fragment = ["noname"]
+            charge_per_fragment = [0]
+            spin_multiplicity_per_fragment = [1]
+
+            total_atoms = int(string.splitlines()[0])
+
+            atoms_per_fragment = [total_atoms]        
+
+            symmetry = ""
+
+            symmetry_class = 65
+
+            # loop over each atom assigning it a unique symmetry class
+            for atom_index in range(total_atoms):
+
+                symmetry += "{}1".format(chr(symmetry_class))
+
+                symmetry_class += 1
+
+
+            symmetry_per_fragment = [symmetry]
+            
+        # if settings is defined, read values from xyz file
+        else:
+            atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
+            name_per_fragment = [int(name) for name in settings.get("molecule", "name").split(",")]
+            charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
+            spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spin").split(",")]
+            symmetry_per_fragment = [int(symmetry) for symmetry in settings.get("molecule", "symmetry").split(",")]
+
+
+        self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+
+        return self
+
+    def read_xyz_file_direct(self, file, settings = None): 
+        """
+        Reads fragments from a file into this Molecule
+
+        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+
+        Args:
+            string - the string to read from
+            settings - settings file containing information about the molecule
+
+        Returns:
+            self
+        """
+        if settings is None:
+            position = file.tell()
+            atoms_per_fragment = [int(file.readline())]
+            file.seek(position)
+        else:
+            atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
+        # build the xyz string
+        string = ""
+
+        # read lines from the file equal to the number needed for one molecule
+        for line_count in range(2 + sum(atoms_per_fragment)):
+
+            line = file.readline()
+
+            # if the line is an empty string, then we have reached end of file mid parse
+            if line == "":
+                if line_count == 0:
+                    raise StopIteration # if the first line is empty, raise StopIteration to indicate that this file is out of molecules to parse
+                raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure the last molecule in the file has a comment line and a number of atoms equal to the amount indicated in the atom count line.")
+
+            string += line
+        
+        self.read_xyz_direct(string, settings)
+
+        return self
+
+    def read_xyz_path_direct(self, path, settings = None):
+        """
+        Reads fragments from an xyz_file indicated by a path into this Molecule
+
+        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+
+        Args:
+            string - the string to read from
+            settings - settings file containing information about the molecule
+
+        Returns:
+            self
+        """
+        
+        with open(path, "r") as file:
+
+            try:
+                self.read_xyz_file_direct(file, settings)
+
+            # if the call to read_xyz_file() raises a StopIteration, it means the file was empty
+            except StopIteration:
+                raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
+
+        return self
+
     def read_psi4_string(self, string):
         """
         Reads the string outputted by a call to psi4.molecule.save_string_xyz() into this molecule as a fragment

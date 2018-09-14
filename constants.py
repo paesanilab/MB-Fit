@@ -34,7 +34,7 @@ atomic_masses = [ # Source ptable.com (not a final source)
 ]
 
 # list of atomic radii (angstroms) in order of atomic number
-atomic_radii = [
+atomic_radii = [ # Source ptable.com
     0.53,                                                                                                                                   0.31,
     1.67,   1.12,                                                                                   0.87,   0.67,   0.56,   0.48,   0.42,   0.38,
     1.90,   1.45,                                                                                   1.18,   1.11,   0.98,   0.88,   0.79,   0.71,
@@ -42,7 +42,7 @@ atomic_radii = [
 ]
 
 # list of covalent radii (angstroms) in order of atomic number
-covalent_radii = [
+covalent_radii = [ # Source ptable.com
     0.37,                                                                                                                                   0.32,
     1.34,   0.90,                                                                                   0.82,   0.77,   0.75,   0.73,   0.71,   0.69,
     1.54,   1.30,                                                                                   1.18,   1.11,   1.06,   1.02,   0.99,   0.97,

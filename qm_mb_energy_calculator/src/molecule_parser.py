@@ -31,7 +31,7 @@ def xyz_to_molecules(file_path, settings = None):
             symmetry_class += 1
 
 
-symmetry_per_fragment = [symmetry]
+        symmetry_per_fragment = [symmetry]
 
     else:
         # the for loop just changes the string array to an int array

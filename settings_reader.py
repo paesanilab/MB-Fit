@@ -114,7 +114,7 @@ class SettingsReader(object):
 
     def getfloat(self, section, prop, default = None):
         """
-        Gets the value of a field as an float.
+        Gets the value of a field as a float.
 
         Will throw a ConfigMissingSectionError if the section does not exist
         and a ConfigMissingPropertyError if the prop does not exist in the section
@@ -124,7 +124,7 @@ class SettingsReader(object):
             prop    - the property of the section to look for
 
         Return:
-            the value of the given property in the given section as an float
+            the value of the given property in the given section as a float
         """
 
         try:

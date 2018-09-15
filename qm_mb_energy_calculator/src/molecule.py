@@ -97,6 +97,31 @@ class Atom(object):
 
         return constants.symbol_to_mass(self.name)
 
+    def get_radius(self):
+        """
+        Gets the atomic radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic radius of this atom
+        """
+
+        return constants.symbol_to_radius(self.name)
+
+    def get_covalent_radius(self):
+        """
+        Gets the covalent radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The covalent radius of this atom
+        """
+
+        return constants.symbol_to_covalent_radius(self.name)
     def get_x(self):
         """
         Gets the x position of this atom
@@ -209,48 +234,23 @@ class Atom(object):
         self.y += y
         self.z += z
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this atom around a point
+        Rotates this Atom using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
-        # first construct the matrix of rotation
-        rotation_x_matrix = numpy.matrix([
-            [1,                         0,                      0                       ],
-            [0,                         math.cos(x_radians),    - math.sin(x_radians)   ], 
-            [0,                         math.sin(x_radians),    math.cos(x_radians)     ]
-                                        ])
+        x, y, z = quaternion.rotate(self.get_x(), self.get_y(), self.get_z(), origin_x, origin_y, origin_z)
 
-        rotation_y_matrix = numpy.matrix([
-            [math.cos(y_radians),       0,                      math.sin(y_radians)     ],
-            [0,                         1,                      0                       ], 
-            [- math.sin(y_radians),     0,                      math.cos(y_radians)     ]
-                                        ])
-
-        rotation_z_matrix = numpy.matrix([
-            [math.cos(z_radians),       - math.sin(z_radians),  0                       ],
-            [math.sin(z_radians),       math.cos(z_radians),    0                       ], 
-            [0,                         0,                      1                       ]
-                                        ])
-
-        rotation_matrix = rotation_x_matrix * rotation_y_matrix * rotation_z_matrix
-
-        # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
-        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * numpy.matrix(rotation_matrix)).getA1()
-
-        # update the xyz position of this atom, adding back the origin coordinates
-        self.set_xyz(x + x_origin, y + y_origin, z + z_origin)
+        self.set_xyz(x, y, z)
         
     def distance(self, atom):
         """
@@ -276,6 +276,20 @@ class Atom(object):
             String containing this atom's atomic symbol and coordinates in the xyz format
         """
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
+    def is_bonded(self, atom, bond_sensitivity = 1.1):
+        """
+        Calculates whether this atom is likely to be bonded to another based on their atomic radii and the distance between them.
+
+        Args:
+            atom    - the atom to check if this one is bonded to
+            bond_sensitivity - the bond threshold is considered to be this * the sum of the atomic radii
+
+        Returns:
+            True if the distance between the atoms is less than bond_sensitivity * the sum of their covalent radii, otherwise False.
+        """
+
+        return self.distance(atom) < bond_sensitivity * (self.get_covalent_radius() + atom.get_covalent_radius())
 
     # NOTE: using @ prefix is not universal, setup some way to change ghost representation depending on platform.
     def to_ghost_xyz(self):
@@ -455,24 +469,92 @@ class Fragment(object):
         for atom in self.get_atoms():
             atom.translate(x, y, z)
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this fragment around a point
+        Rotates this Fragment using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
         for atom in self.get_atoms():
-            atom.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+            atom.rotate(quaternion, origin_x, origin_y, origin_z)
+
+    def get_excluded_pairs(self, max_exclusion = 3):
+        """
+        Gets the excluded pairs lists for this fragment
+
+        Args:
+            max_exclusion - get the excluded pairs up to 1x where x is max_exclusion, defualt is 3
+
+        Returns:
+            a tuple consisting of (excluded_12, excluded_13, ..., excluded_1x) lists
+        """
+
+        excluded_pairs = []
+
+        # construct a matrix of size n by n where n is the number of atoms in this fragment
+        # a value of 1 in row a and column b means that atom a and b are bonded
+        connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if these atoms are bonded, set their values in the connectivity matrix to 1.
+                if atom1.is_bonded(atom2):
+                    connectivity_matrix[index1][index2] = 1
+                    connectivity_matrix[index2][index1] = 1
+
+        # current matrix represents connectivity_matrix^x where x is the same as as in the excluded_1x pairs we are currently generating
+        current_matrix = connectivity_matrix
+
+        excluded_pairs_12 = set()
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if the value in the current matrix is at least 1, then these atoms are 1 bond apart, and are added to the excluded_pairs_12 list.
+                if current_matrix[index1][index2] > 0:
+                    excluded_pairs_12.add((index1, index2))
+
+        # add the excluded_pairs_12 to the list of all excluded pairs
+        excluded_pairs.append(excluded_pairs_12)
+
+        for i in range(max_exclusion - 1):
+
+            # current matrix is multiplied by connectivity_matrix so that each iteration of the loop current_matrix = connectivity_matrix^(i + 1)
+            current_matrix = numpy.matmul(current_matrix, connectivity_matrix)
+
+            excluded_pairs_1x = set()
+
+            # loop over each pair of atoms
+            for index1, atom1 in enumerate(self.get_atoms()):
+                for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                    index2 += index1 + 1
+
+                    # if the value in the connectivity matrix is at least 1, then these atoms are x bonds apart, and are added to the excluded_pairs_1x list.
+                    if current_matrix[index1][index2] > 0:
+                        excluded_pairs_1x.add((index1, index2))
+
+            # filter out all terms inside other excluded lists from the new excluded list
+            for excluded_pairs_1y in excluded_pairs:
+                excluded_pairs_1x -= excluded_pairs_1y
+
+            # add the excluded_pairs_1x to the list of all excluded pairs
+            excluded_pairs.append(excluded_pairs_1x)
+
+        return tuple(list(excluded_pairs_1x) for excluded_pairs_1x in excluded_pairs)
+
 
     def to_xyz(self):
         """ 
@@ -766,24 +848,22 @@ class Molecule(object):
         for fragment in self.get_fragments():
             fragment.translate(x, y, z)
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this molecule around a point
+        Rotates this Molecule using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
         for fragment in self.get_fragments():
-            fragment.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+            fragment.rotate(quaternion, origin_x, origin_y, origin_z)
 
     def move_to_center_of_mass(self):
         """
@@ -874,13 +954,15 @@ class Molecule(object):
         # update the position of each atom
         for atom in self.get_atoms():
             x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
-            atom.set_xyz(x, y, z)
+            atom.set_xyz(float(x), float(y), float(z))
 
     def rmsd(self, other):
         """
-        Computes the RMSD distance between the atoms in two molecules
+        Computes the RMSD between the positions of the atoms in two molecules
 
-        molecules must have the same fragments and atoms or an InconsistentValueError will be raised
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
+
+        generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
 
         Args:
             other - the molecule to compare this one to
@@ -908,6 +990,49 @@ class Molecule(object):
         # compute rmsd as sqrt of mean squared distance
         return math.sqrt(squared_distance / self.get_num_atoms())
 
+    def distancermsd(self, other_molecule):
+        """
+        Computes the RMSD of intramolecular interatomic distances in the two molecules
+
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
+
+        generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
+
+        Note:
+            this function is distinct from rmsd() because this function takes the rmsd of the differneces between the distances between pairs of atoms within each molecule
+            while rmsd() takes the rmsd of the distance between the positions of the same atoms in each molecule.
+
+        Args:
+            other_molecule - the molecule to ompare this one to
+
+        Returns:
+            the square-root of the mean squared difference in the distance between each pair of atoms in this molecule and the other
+        """
+
+        # fist make sure these molecules have the same number of atoms
+        if self.get_num_atoms() != other_molecule.get_num_atoms():
+            raise InconsistentValueError("number of atoms in self", "number of atoms in other", self.get_num_atoms(), other_molecule.get_num_atoms(), "number of atoms in each molecule must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+        squared_distance_difference = 0
+
+        # loop over each pair of atoms
+        for atom_index, this_atom1, other_atom1 in zip(range(self.get_num_atoms()), self.get_atoms(), other_molecule.get_atoms()):
+            for this_atom2, other_atom2 in zip(self.get_atoms()[atom_index + 1:], other_molecule.get_atoms()[atom_index + 1:]):
+
+                # check to make sure that the atom1s have the same type
+                if this_atom1.get_name() != other_atom1.get_name():
+                    raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+                # check to make sure that the atom2s have the same type
+                if this_atom2.get_name() != other_atom2.get_name():
+                    raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+                # add these atom pairs' contribution to the squared distance difference
+                squared_distance_difference += (this_atom1.distance(this_atom2) - other_atom1.distance(other_atom2)) ** 2
+
+        # compute the rmsd of the sqrt of mean squared distance difference
+        return math.sqrt(squared_distance_difference / self.get_num_atoms())
+
     def compare(self, other, cutoff_rmsd = 0.1):
         """
         Compares two molecules to see if they are similar to eachother bellow a cutoff rmsd
@@ -925,6 +1050,26 @@ class Molecule(object):
             return self.rmsd(other) < cutoff_rmsd
         except InconsistentValueError:
             return False
+
+    def get_excluded_pairs(self, max_exclusion = 3):
+        """
+        Gets the excluded pairs of this molecule
+
+        Args:
+            None
+
+        Returns:
+            a tuple in the format (excluded_12, excluded_13, excluded_14, ..., excluded_1x) where each ecluded_1x is a list of lists of each fragment's excluded 1x pairs
+        """
+
+        excluded_pairs = [[] for i in range(max_exclusion)]
+
+        for index, fragment in enumerate(self.get_fragments()):
+            frag_excluded_pairs = fragment.get_excluded_pairs(max_exclusion)
+            for exclusion_index in range(max_exclusion):
+                excluded_pairs[exclusion_index].append(frag_excluded_pairs[exclusion_index])
+
+        return excluded_pairs
 
     def to_xyz(self, fragments = None, cp = False):
         """

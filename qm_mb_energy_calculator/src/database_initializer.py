@@ -26,11 +26,6 @@ def initialize_database(settings_file, database_name, directory):
         None
     """
 
-    # add .db to database name if it doesn't already end in .db 
-    if database_name[-3:] != ".db":
-        print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
-        database_name += ".db"
-
     with Database(database_name) as database:
         
         # Create the database by initializing all tables

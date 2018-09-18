@@ -173,8 +173,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                     # parse the volumes from the next line of the qchem output file
                     effective_volume, free_volume = (float(volume) for volume in qchem_out.readline().split()[1:3])
                     # look up the free polarizability in the dictionary define at top of file
-                    free_polarizability = free_polarizabilities[atomic_symbols[atom_count]]
-
+                    try:
+                        free_polarizability = free_polarizabilities[atomic_symbols[atom_count]]
+                    except KeyError:
+                        raise InvalidValueError("Atom name", atomic_symbols[atom_count], "no free polarizability known for this atom; must be one of {}".format(", ".join(free_polarizabilities.keys())))
                     # calculate the effective polarizability
                     effective_polarizability = free_polarizability * effective_volume / free_volume
 
@@ -286,35 +288,37 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 atom_type_a = fragments[fragment_index_a][::2][atom_index_a]
                 atom_type_b = fragments[fragment_index_b][::2][atom_index_b]
 
+                atoms_a_first = atom_type_a + atom_type_b
+                atoms_b_first = atom_type_b + atom_type_a
+
                 # check if this is an intrafragmental c6 constant
                 if fragment_index_a == fragment_index_b:
-
                     # loop over all fragments and add this c6 constant to any dictionary of an equivelent fragment
                     for fragment_index in range(len(fragments)):
                         if fragments[fragment_index] == fragments[fragment_index_a]:
-                            if atom_type_a + atom_type_b in c6_constant_lists[fragment_index]:
-                                c6_constant_lists[fragment_index][atom_type_a + atom_type_b].append(c6)
+                            if atoms_a_first in c6_constant_lists[fragment_index]:
+                                c6_constant_lists[fragment_index][atoms_a_first].append(c6)
 
-                            elif atom_type_b + atom_type_a in c6_constant_lists[fragment_index]:
-                                c6_constant_lists[fragment_index][atom_type_b + atom_type_a].append(c6)
+                            elif atoms_b_first in c6_constant_lists[fragment_index]:
+                                c6_constant_lists[fragment_index][atoms_b_first].append(c6)
 
                             else:
-                                c6_constant_lists[fragment_index][atom_type_a + atom_type_b] = []
-                                c6_constant_lists[fragment_index][atom_type_a + atom_type_b].append(c6)
+                                c6_constant_lists[fragment_index][atoms_a_first] = []
+                                c6_constant_lists[fragment_index][atoms_a_first].append(c6)
 
                 # otherwise this is an interfragmental c6 constant
                 else:
 
                     # add this c6 constant to the last dictionary (the one for interfragmental c6 constants)
-                    if atom_type_a + atom_type_b in c6_constant_lists[len(fragments)]:
-                        c6_constant_lists[len(fragments)][atom_type_a + atom_type_b].append(c6)
+                    if atoms_a_first in c6_constant_lists[len(fragments)]:
+                        c6_constant_lists[len(fragments)][atoms_a_first].append(c6)
 
-                    elif atom_type_b + atom_type_a in c6_constant_lists[len(fragments)]:
-                        c6_constant_lists[len(fragments)][atom_type_b + atom_type_a].append(c6)
+                    elif atoms_b_first in c6_constant_lists[len(fragments)]:
+                        c6_constant_lists[len(fragments)][atoms_b_first].append(c6)
 
                     else:
-                        c6_constant_lists[len(fragments)][atom_type_a + atom_type_b] = []
-                        c6_constant_lists[len(fragments)][atom_type_a + atom_type_b].append(c6)
+                        c6_constant_lists[len(fragments)][atoms_a_first] = []
+                        c6_constant_lists[len(fragments)][atoms_a_first].append(c6)
 
                 atom_b += 1
 
@@ -348,8 +352,6 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
         # loop thru all the fragments in the molecule
         for fragment in fragments:
-
-            frag_charges = []
 
             # loop thru each atom type in the fragment (ie A,B,C in A1B3C2)
             for atom_index, atom_type in enumerate(fragment[::2]):

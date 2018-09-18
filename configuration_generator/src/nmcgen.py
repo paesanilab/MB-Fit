@@ -20,7 +20,6 @@ import normal_modes_generator
 import configuration_generator
 
 def nmcgen(settings_path, unopt_geo, opt_geo, normal_modes, configs):
-    settings = settings_reader.SettingsReader(settings_path)
     geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
     dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo, normal_modes)
     configuration_generator.generate_configurations(settings_path, opt_geo, normal_modes, dim_null, configs)

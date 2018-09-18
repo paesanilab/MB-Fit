@@ -22,7 +22,7 @@ import configuration_generator
 def nmcgen(settings_path, unopt_geo_path, opt_geo_path, normal_modes_path, configs_path):
     geometry_optimizer.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path)
     dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path)
-    configuration_generator.generate_configurations(settings_path, opt_geo, normal_modes, dim_null, configs_path)
+    configuration_generator.generate_configurations(settings_path, opt_geo_path, normal_modes_path, dim_null, configs_path)
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:

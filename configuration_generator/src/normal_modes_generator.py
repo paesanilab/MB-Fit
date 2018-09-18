@@ -64,6 +64,6 @@ def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path)
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python geometry_optimizer.py <settings> <geo_path> <normal_modes_path>")
+        print("Usage: python geometry_optimizer.py <settings_path> <geo_path> <normal_modes_path>")
         exit(1)
     generate_normal_modes(sys.argv[1], sys.argv[2], sys.argv[3])

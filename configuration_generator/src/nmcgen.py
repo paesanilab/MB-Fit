@@ -19,13 +19,13 @@ import geometry_optimizer
 import normal_modes_generator
 import configuration_generator
 
-def nmcgen(settings_path, unopt_geo, opt_geo, normal_modes, configs):
-    geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
-    dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo, normal_modes)
-    configuration_generator.generate_configurations(settings_path, opt_geo, normal_modes, dim_null, configs)
+def nmcgen(settings_path, unopt_geo_path, opt_geo_path, normal_modes_path, configs_path):
+    geometry_optimizer.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path)
+    dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path)
+    configuration_generator.generate_configurations(settings_path, opt_geo, normal_modes, dim_null, configs_path)
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Usage: python nmcgen.py <settings path> <unopt geo> <opt geo> <normal modes> <configs>")
+        print("Usage: python nmcgen.py <settings path> <unopt geo path> <opt geo path> <normal modes path> <configs path>")
         exit(1)
     nmcgen(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

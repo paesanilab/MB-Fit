@@ -585,7 +585,7 @@ def write_cpp_monomial(cpp_file, index, monomial, variable_permutations):
     cpp_file.write(";\n")                
 
 def write_grd_monomial(grd_file, index, monomial, variable_permutations):
-    grd_file.write("    p[{}] := ".format(index))
+    grd_file.write("    p[{}] := ".format(index + 1))
 
     first_term = True
     for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
@@ -614,7 +614,7 @@ def write_grd_monomial(grd_file, index, monomial, variable_permutations):
     grd_file.write(":\n")                
 
 def write_nogrd_monomial(nogrd_file, index, monomial, variable_permutations):
-    nogrd_file.write("    p[{}] := ".format(index))
+    nogrd_file.write("    p[{}] := ".format(index + 1))
 
     first_term = True
     for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):

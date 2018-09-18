@@ -371,7 +371,7 @@ def execute_maple(settings_path, poly_directory):
 
     os.chdir(original_dir)
 
-def generate_fit_config(settings_path, molecule_in, opt_geometry, config_path):
+def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = 20):
     """
     Generates the fit config for the optimized geometry
 
@@ -379,25 +379,28 @@ def generate_fit_config(settings_path, molecule_in, opt_geometry, config_path):
     40 angstroms
 
     Args:
-        settings_path    - the file containing all relevent settings information
+        settings_path   - the file containing all relevent settings information
         molecule_in     - string of fromat "A1B2"
-        opt_geometry - the optimized geometry of this molecule
-        config_path - the file to write the config file
+        config_path     - path to file to write fit config in
+        opt_geometry_paths - the paths to the optimized geometries to include in this fit config, should be 1 to 3 (inclusive)
+        distance_between - distance between each geometry in the qchem calculation. If the qchemc calculation does not converge, try different values of this
 
     Returns:
         None
     """
+
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
     import get_config_data
-
+    if os.path.dirname(config_path) == "":
+        config_path = "./" + config_path
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    get_config_data.make_config(settings_path, molecule_in, opt_geometry, config_path)
+    get_config_data.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = distance_between)
     
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
 
-def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_directory):
+def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, poly_order, fit_directory):
     """
     Generates the fit code based on the polynomials for a monomer
 
@@ -406,6 +409,7 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_dir
         config    - monomer config file
         poly_in_path - the A3B2.in type file
         poly_path   - directory where polynomial files are
+        poly_order - the order of the polynomial in poly_path
         fit_directory - directory to generate fit code in
 
     Returns:
@@ -419,7 +423,7 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_dir
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
     
-    prepare_1b_fitting_code.prepare_1b_fitting_code(settings_path, poly_in_path, poly_path, fit_directory)
+    prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, poly_order, fit_directory)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
 

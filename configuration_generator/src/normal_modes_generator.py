@@ -5,7 +5,7 @@ import qcalc
 import molecule_parser
 import settings_reader
 
-def generate_normal_modes(settings_path, geo_path, normal_modes_file):
+def generate_normal_modes(settings_path, geo_path, normal_modes_path):
     """
     Generates the normal modes based on a given optimized geometry
     """
@@ -22,12 +22,12 @@ def generate_normal_modes(settings_path, geo_path, normal_modes_file):
     dim_null = 3 * molecule.get_num_atoms() - len(normal_modes)
     
     # write the normal modes to the output file
-    write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_file)
+    write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path)
 
     # return dim null so it can be used as input to configuration_generator
     return dim_null
 
-def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_fn):
+def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path):
 
     # formatter strings
     norm_formatter = "{:> 12.4f}"
@@ -59,7 +59,7 @@ def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_fn):
         normal_out += "\n"
 
     # write the normal modes to the output file
-    with open(normal_modes_fn, 'w') as norm_file:
+    with open(normal_modes_path, 'w') as norm_file:
         norm_file.write(normal_out)
 
 if __name__ == "__main__":

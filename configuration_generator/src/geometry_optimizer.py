@@ -34,6 +34,6 @@ def optimize_geometry(settings_path, unopt_path, opt_path):
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python geometry_optimizer.py <settings> <unopt_path> <opt_path>")
+        print("Usage: python geometry_optimizer.py <settings_path> <unopt_path> <opt_path>")
         exit(1)
     optimize_geometry(sys.argv[1], sys.argv[2], sys.argv[3])

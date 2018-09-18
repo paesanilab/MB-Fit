@@ -77,8 +77,8 @@ class InvalidInputError(PotentialFittingError):
 class XYZFormatError(InvalidInputError):
     """Raised when an XYZ file has invalid formatting"""
 
-    def __init__(self, message, fix):
-        super().__init__("Invalid xyz formatting on or near line: '{}'. Line format should be {}".format(message, fix))
+    def __init__(self, line, fix):
+        super().__init__("Invalid xyz formatting on or near line: '{}'. Line format should be {}".format(line, fix))
 
 class ParsingError(PotentialFittingError):
     """Exception for problems reading a file"""

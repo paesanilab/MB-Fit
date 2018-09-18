@@ -50,7 +50,7 @@ def xyz_to_molecules(file_path, settings = None):
 
         while True:
             try:
-                molecule = Molecule().read_xyz(xyz_file, name_per_fragment, atoms_per_fragment, symmetry_per_fragment, charge_per_fragment, spin_per_fragment)
+                molecule = Molecule().read_xyz_file(xyz_file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_per_fragment, symmetry_per_fragment)
                 molecules.append(molecule)
             except StopIteration:
                 break

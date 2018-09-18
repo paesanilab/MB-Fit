@@ -46,6 +46,6 @@ def generate_configurations(settings_path, geo_path, nm_path, dim_null, config_p
         
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Usage: python geometry_optimizer.py <settings> <geo_path> <normal_modes_path> <dim null> <config_path>")
+        print("Usage: python geometry_optimizer.py <settings_path> <geo_path> <normal_modes_path> <dim null> <config_path>")
         exit(1)
     generate_configurations(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5])

@@ -33,6 +33,22 @@ atomic_masses = [ # Source ptable.com (not a final source)
     39.098, 40.078, 44.956, 47.867, 50.942, 51.996, 54.938, 55.845, 58.933, 58.693, 63.546, 65.38,  69.723, 72.630, 74.922, 78.971, 79.904, 83.798,
 ]
 
+# list of atomic radii (angstroms) in order of atomic number
+atomic_radii = [ # Source ptable.com
+    0.53,                                                                                                                                   0.31,
+    1.67,   1.12,                                                                                   0.87,   0.67,   0.56,   0.48,   0.42,   0.38,
+    1.90,   1.45,                                                                                   1.18,   1.11,   0.98,   0.88,   0.79,   0.71,
+    2.43,   1.94,   1.84,   1.76,   1.71,   1.66,   1.61,   1.56,   1.52,   1.49,   1.45,   1.42,   1.36,   1.25,   1.14,   1.03,   0.94,   0.88,
+]
+
+# list of covalent radii (angstroms) in order of atomic number
+covalent_radii = [ # Source ptable.com
+    0.37,                                                                                                                                   0.32,
+    1.34,   0.90,                                                                                   0.82,   0.77,   0.75,   0.73,   0.71,   0.69,
+    1.54,   1.30,                                                                                   1.18,   1.11,   1.06,   1.02,   0.99,   0.97,
+    1.96,   1.74,   1.44,   1.36,   1.25,   1.27,   1.39,   1.25,   1.26,   1.21,   1.38,   1.31,   1.26,   1.22,   1.19,   1.16,   1.14,   1.10,
+]
+
 def symbol_to_number(symbol):
     """
     Converts an atomic symbol to an atomic number.
@@ -89,3 +105,33 @@ def symbol_to_mass(symbol):
 
     # the atomic mass is indexed in the list atomic_masses as the symbol's atomic number minus 1
     return atomic_masses[symbol_to_number(symbol) - 1]
+
+def symbol_to_radius(symbol):
+    """
+    Finds the atomic radius of the atom with a given atomic symbol in angstroms.
+
+    Args:
+        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+
+    Returns:
+        The atomic radius of the given atom in angstroms
+    """
+
+    # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    return atomic_radii[symbol_to_number(symbol) - 1]
+
+def symbol_to_covalent_radius(symbol):
+    """
+    Finds the covalent radius of the atom with a given atomic symbol in angstroms.
+
+    Covalent radius is half the distance between 2 singly bonded atoms of the same type.
+
+    Args:
+        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+
+    Returns:
+        The covalent radius of the given atom in angstroms
+    """
+
+    # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    return covalent_radii[symbol_to_number(symbol) - 1]

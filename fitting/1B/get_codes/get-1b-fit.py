@@ -13,7 +13,7 @@ import settings_reader
 
 
 if len(sys.argv) != 5:
-    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini> <polynomail_order>\n ")
+    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini> <polynomial_order>\n ")
     sys.exit()
 else:
     name = sys.argv[1]

@@ -1,6 +1,7 @@
+import os
 import configparser
 from configparser import NoSectionError, NoOptionError
-from exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
+from exceptions import ConfigMissingFileError, ConfigMissingSectionError, ConfigMissingPropertyError
 
 class SettingsReader(object):
     """
@@ -20,6 +21,11 @@ class SettingsReader(object):
 
         # create a new ConfigParser
         self.configparser = configparser.ConfigParser(allow_no_value=False)
+
+        # confirm that the input file exists
+        if not os.path.isfile(file):
+            raise ConfigMissingFileError(file)
+
         self.configparser.read(file)
 
         # save the filepath so that we can include it in error messages

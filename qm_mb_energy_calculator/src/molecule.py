@@ -1480,15 +1480,3 @@ class Molecule(object):
         self.read_fragment_from_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry)
 
         return self
-
-    def read_psi4_string(self, string, name):
-        """
-        Reads an xyz file format with 
-        """
-        lines = string.splitlines();
-
-        charge, spin = lines[0].split()
-
-        self.add_fragment(Fragment(name, float(charge), int(spin)).read_xyz_string("\n".join(lines[1:])))
-
-        return self

@@ -506,7 +506,7 @@ def fit_1b_training_set(settings_path, fit_code, training_set, fit_directory, fi
     os.rename("fit-1b.cdl", os.path.join(fit_directory, "fit-1b.cdl"))
     os.rename("fit-1b-initial.cdl", os.path.join(fit_directory, "fit-1b-initial.cdl"))
     os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))
-    os.rename("fit-1b.nc", os.path.join(fitted_code, "fit-1b.nc"))
+    os.rename("fit-1b.nc", fitted_code)
 
 def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory):
     """

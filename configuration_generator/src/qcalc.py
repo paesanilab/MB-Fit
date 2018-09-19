@@ -125,7 +125,7 @@ def optimize_qchem(settings, molecule, method, basis):
                     for atom_index in range(molecule.get_num_atoms()):
                         qchem_output_string += " ".join(qchem_output_file.readline().split()[1:]) + "\n"
                     print("Completed geometry optimization.")
-                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_multiplicity(), qchem_output_string), "molecule"), energy
+                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_multiplicity(), qchem_output_string)), energy
             elif "Final energy is" in line:
                 energy = float(line.split()[3])
                 found = True

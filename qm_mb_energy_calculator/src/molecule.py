@@ -553,7 +553,7 @@ class Fragment(object):
             # add the excluded_pairs_1x to the list of all excluded pairs
             excluded_pairs.append(excluded_pairs_1x)
 
-        return tuple(list(excluded_pairs_1x) for excluded_pairs_1x in excluded_pairs)
+        return [[list(pair) for pair in excluded_pairs_1x] for excluded_pairs_1x in excluded_pairs]
 
 
     def to_xyz(self):

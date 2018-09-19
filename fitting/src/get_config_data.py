@@ -7,6 +7,7 @@ import constants, settings_reader
 from collections import OrderedDict
 from exceptions import InvalidValueError, InconsistentValueError
 import molecule_parser
+from molecule import Molecule
 
 qchem_template = "qchem_template"
 
@@ -399,9 +400,15 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
-    configwriter.set("fitting", "excluded_pairs_12", "[TODO: User must fill this in]")
-    configwriter.set("fitting", "excluded_pairs_13", "[TODO: User must fill this in]")
-    configwriter.set("fitting", "excluded_pairs_14", "[TODO: User must fill this in]")
+    molecule = Molecule()
+    for geo_path in geo_paths:
+        molecule.read_xyz_path_direct(geo_path)
+
+    excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
+
+    configwriter.set("fitting", "excluded_pairs_12", "{}".format(excluded_pairs12))
+    configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
+    configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
 
     configwriter.set("fitting", "charges", str(charges))
     configwriter.set("fitting", "polarizabilities", str(effective_polarizabilities))

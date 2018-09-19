@@ -1,4 +1,4 @@
-from exceptions import InvalidValueError
+from potential_fitting.exceptions import InvalidValueError
 
 """
 Basic unit constants

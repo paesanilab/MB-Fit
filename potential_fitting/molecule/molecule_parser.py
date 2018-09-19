@@ -1,8 +1,4 @@
-import os, sys
-from molecule import Atom, Fragment, Molecule
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
-from exceptions import XYZFormatError, InconsistentValueError
+from potential_fitting.exceptions import XYZFormatError, InconsistentValueError
 
 '''
 Generates a list of Molecule objects from xyz files in the given directory

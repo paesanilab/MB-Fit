@@ -1,9 +1,7 @@
-import sys, os, subprocess, contextlib
+import os, subprocess, contextlib
 import random
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../")
-
-import settings_reader
+from potential_fitting.utils import SettingsReader
 
 def create_dirs(settings_path):
     """
@@ -33,18 +31,12 @@ def optimize_geometry(settings_path, unopt_geo, opt_geo):
         None
     """
 
-    # imports have to be here because we do not yet have a functional python project structure
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
-    import geometry_optimizer
-   
     if os.path.dirname(opt_geo) == "":
         opt_geo = "./" + opt_geo
     if not os.path.isdir(os.path.dirname(opt_geo)):
         os.mkdir(os.path.dirname(opt_geo))
 
     geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
 def generate_normal_modes(settings_path, geo, normal_modes):
     """
@@ -62,18 +54,12 @@ def generate_normal_modes(settings_path, geo, normal_modes):
         Writes DIM NULL to console
     """
     
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
-    import normal_modes_generator
-   
     if os.path.dirname(normal_modes) == "":
         normal_modes = "./" + normal_modes
     if not os.path.isdir(os.path.dirname(normal_modes)):
         os.mkdir(os.path.dirname(normal_modes))
 
     dim_null = normal_modes_generator.generate_normal_modes(settings_path, geo, normal_modes)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
     return dim_null
 
@@ -93,18 +79,12 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
-    import configuration_generator
-   
     if os.path.dirname(configurations) == "":
         configurations = "./" + configurations
     if not os.path.isdir(os.path.dirname(configurations)):
         os.mkdir(os.path.dirname(configurations))
 
     configuration_generator.generate_configurations(settings_path, geo, normal_modes, dim_null, configurations)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
 def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
@@ -127,17 +107,12 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
         None
     """
 
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
-    import configuration_generator_2b
-
     if os.path.dirname(config_path) == "":
         config_path = "./" + config_path
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
     configuration_generator_2b.generate_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
 
 def init_database(settings_path, database_name, config_files):
     """
@@ -153,18 +128,12 @@ def init_database(settings_path, database_name, config_files):
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
-    import database_initializer
-
     if os.path.dirname(database_name) == "":
         database_name = "./" + database_name
     if not os.path.isdir(os.path.dirname(database_name)):
         os.mkdir(os.path.dirname(database_name))
 
     database_initializer.initialize_database(settings_path, database_name, config_files)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
 def fill_database(settings_path, database_name):
     """
@@ -178,13 +147,7 @@ def fill_database(settings_path, database_name):
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
-    import database_filler
-
     database_filler.fill_database(settings_path, database_name)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
 
 def generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
@@ -209,10 +172,6 @@ def generate_1b_training_set(settings_path, database_name, training_set, molecul
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
-    import training_set_generator
-
     if os.path.dirname(training_set) == "":
         training_set = "./" + training_set
     if not os.path.isdir(os.path.dirname(training_set)):
@@ -220,8 +179,6 @@ def generate_1b_training_set(settings_path, database_name, training_set, molecul
 
     training_set_generator.generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method, basis, cp, tag)
 
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
- 
 def generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
     Generates a training set from the energies inside a database.
@@ -246,20 +203,12 @@ def generate_2b_training_set(settings_path, database_name, training_set, monomer
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
-    import training_set_generator
-
     if os.path.dirname(training_set) == "":
         training_set = "./" + training_set
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
     training_set_generator.generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method, basis, cp, tag)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
-    
-
 
 def generate_poly_input(settings_path, poly_in_path):
     """
@@ -275,19 +224,12 @@ def generate_poly_input(settings_path, poly_in_path):
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src")
-    import generate_input_poly
-
-
     if os.path.dirname(poly_in_path) == "":
         poly_in_path = "./" + poly_in_path
     if not os.path.isdir(os.path.dirname(poly_in_path)):
         os.mkdir(os.path.dirname(poly_in_path))
 
     generate_input_poly.generate_input_poly(settings_path, poly_in_path)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src") 
 
 def generate_poly_input_from_database(settings_path, database_name, molecule_name, poly_directory):
     """
@@ -304,17 +246,10 @@ def generate_poly_input_from_database(settings_path, database_name, molecule_nam
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
-    from database import Database
-
     with Database(database_name) as database:
         symmetry = database.get_symmetry(molecule_name)
 
         generate_poly_input(settings_path, poly_directory + "/" + symmetry + ".in")
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
-        
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_directory):
     """
@@ -391,8 +326,6 @@ def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_p
         None
     """
 
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
-    import get_config_data
     if os.path.dirname(config_path) == "":
         config_path = "./" + config_path
     if not os.path.isdir(os.path.dirname(config_path)):
@@ -400,8 +333,6 @@ def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_p
 
     get_config_data.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = distance_between)
     
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
-
 def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, poly_order, fit_directory):
     """
     Generates the fit code based on the polynomials for a monomer
@@ -418,16 +349,10 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, poly_or
         None
     """
 
-    # imports have to be here because python is bad
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes")
-    import prepare_1b_fitting_code
-
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
     
     prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, poly_order, fit_directory)
-
-    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
 
 def generate_2b_ttm_fit_code(settings_path, config, molecule_in, fit_directory):
     """

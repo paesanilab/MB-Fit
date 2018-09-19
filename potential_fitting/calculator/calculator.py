@@ -2,16 +2,12 @@
 A module for the different models for calculating the 
 energy of a set of atoms (a fragment)
 """
-import os, sys, subprocess
-import numpy
+import subprocess
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import constants
 
-import settings_reader
-import constants
-
-from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
-
+from potential_fitting.exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
 
 has_psi4 = True
 

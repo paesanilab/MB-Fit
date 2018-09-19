@@ -1,7 +1,6 @@
-import os
 import configparser
 from configparser import NoSectionError, NoOptionError
-from exceptions import ConfigMissingFileError, ConfigMissingSectionError, ConfigMissingPropertyError
+from potential_fitting.exceptions import ConfigMissingFileError, ConfigMissingSectionError, ConfigMissingPropertyError
 
 class SettingsReader(object):
     """

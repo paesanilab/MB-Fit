@@ -2,7 +2,7 @@ import os
 
 import subprocess
 
-from exceptions import CommandNotFoundError, CommandExecutionError
+from potential_fitting.exceptions import CommandNotFoundError, CommandExecutionError
 
 def init_directory(directory_path):
     """

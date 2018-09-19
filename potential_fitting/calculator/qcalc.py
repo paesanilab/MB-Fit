@@ -1,13 +1,10 @@
 # qcalc.py
 #
 # Calculator that uses accepts calls from nmcgen and calls upon the requested quantum chemistry code (e.g. psi4, qchem, etc) to carry out the specified calculation.
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../qm_mb_energy_calculator/src")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
-import io, subprocess
-import molecule_parser
-from molecule import Molecule
-from exceptions import LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
+import subprocess
+from potential_fitting.molecule import Molecule
+from potential_fitting.exceptions import LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
+
 try:
     import psi4
     from psi4.driver.qcdb.exceptions import QcdbException

@@ -18,10 +18,6 @@ def fill_database(settings_file, database_name):
     Returns:
         None
     """
-    # add .db to the database name if it doesn't already end in .db
-    if database_name[-3:] != ".db":
-        print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
-        database_name += ".db"
 
     # open the database
     with Database(database_name) as database:

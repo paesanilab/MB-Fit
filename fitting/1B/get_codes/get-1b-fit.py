@@ -1,12 +1,10 @@
 # coding: utf-8
 # In[1]:
 
-
-import sys
-import os
+import sys, os
 import json
-import configparser
-
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../../")
+import settings_reader
 
 # ### Check proper if input is provided
 # Commented on Notebook but Uncommented on script.py
@@ -14,14 +12,14 @@ import configparser
 # In[2]:
 
 
-if len(sys.argv) != 4:
-    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini>\n ")
+if len(sys.argv) != 5:
+    print("Usage: ./script <input.in> <poly-direct.cpp_with_path> <config.ini> <polynomial_order>\n ")
     sys.exit()
 else:
     name = sys.argv[1]
     directcpp = sys.argv[2]
     config_filename = sys.argv[3]
-
+    degree = int(sys.argv[4])
 
 # ### Set arguments for testing. 
 # This should be commented in the script.py, but uncommented on the notebook
@@ -41,8 +39,7 @@ else:
 f = open(name, 'r')
 mon1 = f.readline().split('\'')[1]
 
-config = configparser.ConfigParser()
-config.read(config_filename)
+config = settings_reader.SettingsReader(config_filename)
 
 
 # In[5]:
@@ -55,15 +52,15 @@ nat = config.getint("fitting", "number_of_atoms")
 nsites = config.getint("fitting", "number_of_electrostatic_sites")
 
 # Obtain the lists with the excluded pairs
-excl12 = json.loads(config.get("fitting", "excluded_pairs_12"))
-excl13 = json.loads(config.get("fitting", "excluded_pairs_13"))
-excl14 = json.loads(config.get("fitting", "excluded_pairs_14"))
+excl12 = config.getlist("fitting", "excluded_pairs_12", int)[0]
+excl13 = config.getlist("fitting", "excluded_pairs_13", int)[0]
+excl14 = config.getlist("fitting", "excluded_pairs_14", int)[0]
 
 
 # Obtain charges (in the order of input), pols and polfacs
-chg = json.loads(config.get("fitting", "charges"))
-pol = json.loads(config.get("fitting", "polarizabilities"))
-polfac = json.loads(config.get("fitting", "polarizability_fractions"))
+chg = config.getlist("fitting", "charges", float)[0]
+pol = config.getlist("fitting", "polarizabilities", float)[0]
+polfac = config.getlist("fitting", "polarizability_fractions", float)[0]
 
 # Max and min values of k and d (even if you don't use d)
 k_min = config.getfloat("fitting", "k_min")
@@ -75,11 +72,9 @@ d_max = config.getfloat("fitting", "d_max")
 
 # Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
 # Intermolecular C6!
-C6 = json.loads(config.get("fitting", "C6"))
-d6 = json.loads(config.get("fitting", "d6"))
+C6 = config.getlist("fitting", "C6", float)[0]
+d6 = config.getlist("fitting", "d6", float)[0]
 
-# Polynomial degree
-degree = config.getint("common", "polynomial_order")
 # Number ov variables
 nvars = config.getint("fitting", "nvars")
 # Find a way to get the size of the polynomial
@@ -96,7 +91,7 @@ var = config.get("fitting", "var")
 E_range = config.getfloat("fitting", "energy_range")
 
 # Define list of variables that are fictitious
-vsites = json.loads(config.get("fitting", "virtual_sites_labels"))
+vsites = config.getlist("fitting", "virtual_site_labels")
 
 
 # In[6]:

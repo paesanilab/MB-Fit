@@ -24,11 +24,6 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
         None
     """
     
-    # add .db to database name if it doesn't already end in .db 
-    if database_name[-3:] != ".db":
-        print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
-        database_name += ".db"
-    
     # open the database
     with Database(database_name) as database:
 
@@ -87,11 +82,6 @@ def generate_2b_training_set(settings, database_name, output_path, monomer_1_nam
     Return:
         None
     """
-    
-    # add .db to database name if it doesn't already end in .db 
-    if database_name[-3:] != ".db":
-        print("Database name \"{}\" does not end in database suffix \".db\". Automatically adding \".db\" to end of database name.".format(database_name))
-        database_name += ".db"
     
     # open the database
     with Database(database_name) as database:

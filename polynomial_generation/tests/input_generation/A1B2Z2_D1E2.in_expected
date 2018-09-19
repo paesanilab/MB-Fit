@@ -22,3 +22,5 @@ add_variable['Z1', 'a', 'E2', 'b', 'x-EZ']
 add_variable['Z2', 'a', 'D', 'b', 'x-DZ']
 add_variable['Z2', 'a', 'E1', 'b', 'x-EZ']
 add_variable['Z2', 'a', 'E2', 'b', 'x-EZ']
+
+add_filter['degree', 'x-intra-**', '1+', '*']

@@ -28,11 +28,6 @@ def read_job(database_name, job_path, job_log_path):
             energy = float(output_line.split()[1])
             success = True
     
-
-    # add .db to the database name if it doesn't already end in .db
-    if database_name[-3:] != ".db":
-        database_name += ".db"
-
     # open the database
     with Database(database_name) as database:
 

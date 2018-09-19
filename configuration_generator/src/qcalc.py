@@ -8,9 +8,9 @@ import io, subprocess
 import molecule_parser
 from molecule import Molecule
 from exceptions import LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
-from psi4.driver.qcdb.exceptions import QcdbException
 try:
     import psi4
+    from psi4.driver.qcdb.exceptions import QcdbException
 except ImportError:
     has_psi4 = False
 else:

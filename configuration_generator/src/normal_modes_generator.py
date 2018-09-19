@@ -1,22 +1,69 @@
-import configparser
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../qm_mb_energy_calculator/src")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 import qcalc
-import output_writer
-import molecule
-import psi4_helper
+import molecule_parser
+import settings_reader
 
-def generate_normal_modes(settings, geo_path, normal_modes_file):
+def generate_normal_modes(settings_path, geo_path, normal_modes_path):
+    """
+    Generates the normal modes based on a given optimized geometry
+    """
     
-    config = configparser.ConfigParser(allow_no_value=False)
-    config.read(settings)
+    settings = settings_reader.SettingsReader(settings_path)
 
-    psi4_helper.init(config, config["files"]["log_path"] + "/" + "optimize")
+    # parse the optimized geometry
+    molecule = molecule_parser.xyz_to_molecules(geo_path, settings)[0]
+    
+    # calculate the normal modes
+    normal_modes, frequencies, red_masses = qcalc.frequencies(settings, molecule, settings.get("config_generator", "method"), settings.get("config_generator", "basis"))
 
-    with open(geo_path, "r") as geo_file:
-        molec = molecule.Molecule(geo_file.read())
+    # calculate dim null
+    dim_null = 3 * molecule.get_num_atoms() - len(normal_modes)
     
-    normal_modes, frequencies, red_masses = qcalc.frequencies(molec, {"log_name": config["files"]["log_path"]}, config)
-    dim_null = 3 * molec.num_atoms - len(normal_modes)
-    
-    output_writer.write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_file)
-    print("DIM NULL: " + str(dim_null))
+    # write the normal modes to the output file
+    write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path)
+
+    # return dim null so it can be used as input to configuration_generator
     return dim_null
+
+def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path):
+
+    # formatter strings
+    norm_formatter = "{:> 12.4f}"
+    freq_formatter = "{:.2f}"
+    mass_formatter = "{:.6f}"
+
+    normal_out = ""
+    
+    num_modes = len(frequencies)
+
+    # for each normal mode
+    for i in range(1, 1 + num_modes):
+        index = i - 1
+        
+        # get the geometry of this normal mode
+        geo = normal_modes[index]
+        
+        normal_out += "normal mode: " + str(i) + "\n"
+        normal_out += freq_formatter.format(frequencies[index]) + "\n"
+        normal_out += "red_mass = " + mass_formatter.format(red_masses[index]) + "\n"
+        
+        # for each atom in the molecule
+        for atom in range(len(geo)):
+            # write this atom's x, y, and z for this normal mode, setting any values below .000001 to 0.
+            normal_out += norm_formatter.format(0.0 if abs(float(geo[atom][0])) < 1e-6 else float(geo[atom][0])) + "\t"
+            normal_out += norm_formatter.format(0.0 if abs(float(geo[atom][1])) < 1e-6 else float(geo[atom][1])) + "\t"
+            normal_out += norm_formatter.format(0.0 if abs(float(geo[atom][2])) < 1e-6 else float(geo[atom][2])) + "\n"
+        
+        normal_out += "\n"
+
+    # write the normal modes to the output file
+    with open(normal_modes_path, 'w') as norm_file:
+        norm_file.write(normal_out)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python geometry_optimizer.py <settings_path> <geo_path> <normal_modes_path>")
+        exit(1)
+    generate_normal_modes(sys.argv[1], sys.argv[2], sys.argv[3])

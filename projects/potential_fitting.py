@@ -97,8 +97,10 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
     import configuration_generator
    
-    if not os.path.isdir(configurations):
-        os.mkdir(configurations)
+    if os.path.dirname(configurations) == "":
+        configurations = "./" + configurations
+    if not os.path.isdir(os.path.dirname(configurations)):
+        os.mkdir(os.path.dirname(configurations))
 
     configuration_generator.generate_configurations(settings_path, geo, normal_modes, dim_null, configurations)
 

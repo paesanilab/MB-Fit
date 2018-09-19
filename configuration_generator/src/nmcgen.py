@@ -11,64 +11,21 @@
 #
 # @author Ronak
 
-import os
-import sys
-import shutil
+import os, sys
 
-from configparser import ConfigParser
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
+import settings_reader
+import geometry_optimizer
+import normal_modes_generator
+import configuration_generator
 
-from molecule import Molecule
-import qcalc
+def nmcgen(settings_path, unopt_geo_path, opt_geo_path, normal_modes_path, configs_path):
+    geometry_optimizer.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path)
+    dim_null = normal_modes_generator.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path)
+    configuration_generator.generate_configurations(settings_path, opt_geo_path, normal_modes_path, dim_null, configs_path)
 
-import gcn_runner
-import config_loader
-
-import output_writer
-
-config = config_loader.load()
-filenames, log_name = config_loader.process_files(config)
-  
-qcalc.init(config, log_name)
-
-with open(config['files']['input_geometry'], 'r') as input_file: 
-    molecule = Molecule(input_file.read())
-
-# Step 1
-if config['config_generator'].getboolean('optimize'):  
-    molecule, energy = qcalc.optimize(molecule, filenames, config)
-        
-    output_writer.write_optimized_geo(molecule, energy, filenames['optimized_geometry'])
-
-else:
-    print("Optimized geometry already provided, skipping optimization.\n")
-    
-    try:
-        shutil.copyfile(filenames['input_geometry'], filenames['optimized_geometry'])
-    except:
-        welp = "it's the same file"
-
-# Step 2
-if 'input_normal_modes' not in config['files']:
-    
-    normal_modes, frequencies, red_masses = qcalc.frequencies(molecule, filenames, config)
-    num_atoms = molecule.num_atoms
-    dim_null = 3 * num_atoms - len(normal_modes)    
-    
-    output_writer.write_normal_modes(normal_modes, frequencies, red_masses, filenames['normal_modes'])
-
-else:
-    print("Normal modes already provided, skipping frequency calculation.\n")
-    
-    try:
-        shutil.copyfile(config['files']['input_normal_modes'], filenames['normal_modes'])
-    except:
-        welp = "it's the same file"
-    
-    with open(config['files']['input_normal_modes'], 'r') as input_file:
-        contents = input_file.read()
-        num_atoms = molecule.num_atoms
-        dim_null = 3 * molecule.num_atoms - contents.count('normal mode')
-
-# Step 3
-gcn_runner.generate(config, dim_null, num_atoms, filenames)
-
+if __name__ == "__main__":
+    if len(sys.argv) != 6:
+        print("Usage: python nmcgen.py <settings path> <unopt geo path> <opt geo path> <normal modes path> <configs path>")
+        exit(1)
+    nmcgen(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

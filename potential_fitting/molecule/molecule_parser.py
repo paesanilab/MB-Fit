@@ -1,4 +1,5 @@
 from potential_fitting.exceptions import XYZFormatError, InconsistentValueError
+from .molecule import Molecule
 
 '''
 Generates a list of Molecule objects from xyz files in the given directory

@@ -1,3 +1,4 @@
+import os
 import configparser
 from configparser import NoSectionError, NoOptionError
 from potential_fitting.exceptions import ConfigMissingFileError, ConfigMissingSectionError, ConfigMissingPropertyError

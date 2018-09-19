@@ -2,6 +2,7 @@ import os, subprocess, contextlib
 import random
 
 from potential_fitting.utils import SettingsReader
+from . import configurations
 
 def create_dirs(settings_path):
     """
@@ -13,7 +14,7 @@ def create_dirs(settings_path):
     Returns:
         None
     """
-    settings = settings_reader.SettingsReader(settings_path)
+    settings = SettingsReader(settings_path)
 
     if not os.path.isdir(settings.get("files", "log_path")):
         os.mkdir(settings.get("files", "log_path"))
@@ -36,7 +37,7 @@ def optimize_geometry(settings_path, unopt_geo, opt_geo):
     if not os.path.isdir(os.path.dirname(opt_geo)):
         os.mkdir(os.path.dirname(opt_geo))
 
-    geometry_optimizer.optimize_geometry(settings_path, unopt_geo, opt_geo)
+    configurations.optimize_geometry(settings_path, unopt_geo, opt_geo)
 
 def generate_normal_modes(settings_path, geo, normal_modes):
     """
@@ -59,7 +60,7 @@ def generate_normal_modes(settings_path, geo, normal_modes):
     if not os.path.isdir(os.path.dirname(normal_modes)):
         os.mkdir(os.path.dirname(normal_modes))
 
-    dim_null = normal_modes_generator.generate_normal_modes(settings_path, geo, normal_modes)
+    dim_null = configurations.generate_normal_modes(settings_path, geo, normal_modes)
 
     return dim_null
 
@@ -84,7 +85,7 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
     if not os.path.isdir(os.path.dirname(configurations)):
         os.mkdir(os.path.dirname(configurations))
 
-    configuration_generator.generate_configurations(settings_path, geo, normal_modes, dim_null, configurations)
+    configurations.generate_1b_configurations(settings_path, geo, normal_modes, dim_null, configurations)
 
 def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
@@ -112,7 +113,7 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    configuration_generator_2b.generate_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
+    configurations.generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
 
 def init_database(settings_path, database_name, config_files):
     """

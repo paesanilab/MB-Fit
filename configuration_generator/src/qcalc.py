@@ -63,7 +63,7 @@ def optimize_psi4(settings, molecule, method, basis):
 
     print("Completed geometry optimization.")
 
-    return Molecule().read_psi4_string(psi4_mol.save_string_xyz(), "molecule"), energy
+    return Molecule().read_psi4_string(psi4_mol.save_string_xyz()), energy
 
 def optimize_qchem(settings, molecule, method, basis):
 

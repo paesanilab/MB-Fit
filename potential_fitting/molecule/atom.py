@@ -1,3 +1,4 @@
+import math
 from potential_fitting.utils import constants
 
 class Atom(object):

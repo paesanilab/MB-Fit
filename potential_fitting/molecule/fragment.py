@@ -1,5 +1,8 @@
-from potential_fitting.exceptions import InvalidValueError, InconsistentValueError, XYZFormatError
+import numpy
+
 from .atom import Atom
+
+from potential_fitting.exceptions import InvalidValueError, InconsistentValueError, XYZFormatError
 
 class Fragment(object):
     """

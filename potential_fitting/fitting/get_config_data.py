@@ -1,3 +1,4 @@
+import os
 import math, configparser
 from collections import OrderedDict
 
@@ -391,7 +392,6 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.add_section("fitting")
 
     configwriter.set("common", "molecule", molecule_in)
-    configwriter.set("common", "polynomial_order", settings.get("poly_generator", "order"))
 
     configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))

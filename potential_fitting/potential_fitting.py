@@ -2,7 +2,7 @@ import os, subprocess, contextlib
 import random
 
 from potential_fitting.utils import SettingsReader
-from . import configurations, database, polynomials
+from . import configurations, database, polynomials, fitting
 from .database import Database
 
 def create_dirs(settings_path):
@@ -276,7 +276,7 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_directory):
 
     os.chdir(poly_directory)
 
-    os.system(this_file_path + "/../polynomial_generation/src/poly-gen_mb-nrg.pl " + str(order) + " " + original_dir + "/" + poly_in_path + " > poly.log")
+    os.system("poly-gen_mb-nrg.pl " + str(order) + " " + original_dir + "/" + poly_in_path + " > poly.log")
 
     os.chdir(original_dir)
 
@@ -333,7 +333,7 @@ def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_p
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    get_config_data.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = distance_between)
+    fitting.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = distance_between)
     
 def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, poly_order, fit_directory):
     """
@@ -354,7 +354,7 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, poly_or
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
     
-    prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, poly_order, fit_directory)
+    fitting.prepare_1b_fitting_code(config, poly_in_path, poly_path, poly_order, fit_directory)
 
 def generate_2b_ttm_fit_code(settings_path, config, molecule_in, fit_directory):
     """
@@ -379,8 +379,8 @@ def generate_2b_ttm_fit_code(settings_path, config, molecule_in, fit_directory):
 
     os.chdir(fit_directory) 
     
-    subprocess.call("cp " + this_file_path + "/../fitting/2B/template/* .", shell=True)
-    subprocess.call("python " + this_file_path + "/../fitting/2B/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings_path, original_dir + "/" + config, molecule_in), shell=True)
+    subprocess.call("cp " + this_file_path + "/../codes/2b-codes/template/* .", shell=True)
+    subprocess.call("python " + this_file_path + "/../codes/2b-codes/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings_path, original_dir + "/" + config, molecule_in), shell=True)
 
     os.chdir(original_dir)   
 

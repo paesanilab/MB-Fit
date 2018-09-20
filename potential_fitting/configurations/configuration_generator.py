@@ -1,3 +1,5 @@
+import os
+
 from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader
 def generate_1b_configurations(settings_path, geo_path, nm_path, dim_null, config_path):
@@ -37,6 +39,6 @@ def generate_1b_configurations(settings_path, geo_path, nm_path, dim_null, confi
     
     log_path = settings.get("files", "log_path") + "/config_generator/{}.log".format(molecule.get_name())
 
-    os.system(os.path.dirname(os.path.abspath( __file__ )) + "/../norm_distribution/src/generate_configs_normdistrbn < " + input_path + " > " + log_path)
+    os.system("generate_configs_normdistrbn < " + input_path + " > " + log_path)
 
     print("Normal Distribution Configuration generation complete.")

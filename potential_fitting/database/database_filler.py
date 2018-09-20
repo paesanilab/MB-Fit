@@ -1,8 +1,8 @@
 import sys, os
 import sqlite3
-import calculator
-from database import Database
+from .database import Database
 
+from potential_fitting import calculator
 from potential_fitting.exceptions import LibraryCallError
 from potential_fitting.utils import SettingsReader
 

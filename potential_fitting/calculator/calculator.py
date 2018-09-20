@@ -2,6 +2,7 @@
 A module for the different models for calculating the 
 energy of a set of atoms (a fragment)
 """
+import os
 import subprocess
 
 from potential_fitting.utils import SettingsReader

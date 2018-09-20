@@ -1,7 +1,6 @@
-import os, sys
-
+import os
 import sqlite3
-from database import Database
+from .database import Database
 
 from potential_fitting.utils import SettingsReader
 

@@ -2,7 +2,8 @@ import os, subprocess, contextlib
 import random
 
 from potential_fitting.utils import SettingsReader
-from . import configurations
+from . import configurations, database, polynomials
+from .database import Database
 
 def create_dirs(settings_path):
     """
@@ -65,7 +66,7 @@ def generate_normal_modes(settings_path, geo, normal_modes):
     return dim_null
 
 
-def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, configurations):
+def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, config_path):
     """
     Generates 1b configurations for a given monomer from a set of normal modes
 
@@ -74,18 +75,18 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
         geo         - file to read optimized geometry
         normal_modes - file to read normal modes
         dim_null    - the DIM NULL of this molecule, see generate_normal_modes()
-        configurations - file to write configurations
+        config_path - file to write configurations
 
     Returns:
         None
     """
 
-    if os.path.dirname(configurations) == "":
-        configurations = "./" + configurations
-    if not os.path.isdir(os.path.dirname(configurations)):
-        os.mkdir(os.path.dirname(configurations))
+    if os.path.dirname(config_path) == "":
+        config_path = "./" + config_path
+    if not os.path.isdir(os.path.dirname(config_path)):
+        os.mkdir(os.path.dirname(config_path))
 
-    configurations.generate_1b_configurations(settings_path, geo, normal_modes, dim_null, configurations)
+    configurations.generate_1b_configurations(settings_path, geo, normal_modes, dim_null, config_path)
 
 def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
@@ -134,7 +135,7 @@ def init_database(settings_path, database_name, config_files):
     if not os.path.isdir(os.path.dirname(database_name)):
         os.mkdir(os.path.dirname(database_name))
 
-    database_initializer.initialize_database(settings_path, database_name, config_files)
+    database.initialize_database(settings_path, database_name, config_files)
 
 def fill_database(settings_path, database_name):
     """
@@ -148,7 +149,7 @@ def fill_database(settings_path, database_name):
         None
     """
 
-    database_filler.fill_database(settings_path, database_name)
+    database.fill_database(settings_path, database_name)
 
 def generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
@@ -178,7 +179,7 @@ def generate_1b_training_set(settings_path, database_name, training_set, molecul
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    training_set_generator.generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method, basis, cp, tag)
+    database.generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method, basis, cp, tag)
 
 def generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """
@@ -209,7 +210,7 @@ def generate_2b_training_set(settings_path, database_name, training_set, monomer
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    training_set_generator.generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method, basis, cp, tag)
+    database.generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method, basis, cp, tag)
 
 def generate_poly_input(settings_path, poly_in_path):
     """
@@ -230,7 +231,7 @@ def generate_poly_input(settings_path, poly_in_path):
     if not os.path.isdir(os.path.dirname(poly_in_path)):
         os.mkdir(os.path.dirname(poly_in_path))
 
-    generate_input_poly.generate_input_poly(settings_path, poly_in_path)
+    polynomials.generate_input_poly(settings_path, poly_in_path)
 
 def generate_poly_input_from_database(settings_path, database_name, molecule_name, poly_directory):
     """

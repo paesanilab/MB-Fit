@@ -1,4 +1,4 @@
-import potential_fitting.utils.constants
+from potential_fitting.utils import constants
 
 class Atom(object):
     """

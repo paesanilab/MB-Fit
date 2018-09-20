@@ -3,7 +3,8 @@ import numpy, math
 from hashlib import sha1
 
 from potential_fitting.exceptions import XYZFormatError, InvalidValueError, InconsistentValueError
-       
+from .fragment import Fragment
+
 class Molecule(object):
     """
     Stores the fragments of a Molecule

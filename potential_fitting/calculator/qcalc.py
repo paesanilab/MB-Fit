@@ -1,7 +1,7 @@
 # qcalc.py
 #
 # Calculator that uses accepts calls from nmcgen and calls upon the requested quantum chemistry code (e.g. psi4, qchem, etc) to carry out the specified calculation.
-import subprocess
+import subprocess, os
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
 

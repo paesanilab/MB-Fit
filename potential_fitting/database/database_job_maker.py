@@ -1,4 +1,4 @@
-from database import Database
+from .database import Database
 from potential_fitting.utils import SettingsReader
 from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
 

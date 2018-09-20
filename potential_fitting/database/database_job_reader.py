@@ -1,6 +1,5 @@
-import sys
 from potential_fitting.molecule import Molecule
-from database import Database, Calculation
+from .database import Database, Calculation
 
 def read_job(database_name, job_path, job_log_path):
     """

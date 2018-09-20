@@ -1,6 +1,6 @@
-import sys, os, math
+import math
 import sqlite3
-from database import Database
+from .database import Database
 
 from potential_fitting.utils import constants
 from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError

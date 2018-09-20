@@ -1,5 +1,4 @@
-import sys
-from database import Database
+from .database import Database
 
 def clean_database(settings_file, database_name):
     """

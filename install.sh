@@ -1,2 +1,2 @@
 export PYTHONPATH="$PYTHONPATH:$(pwd)"
-echo $PYTHONPATH
+export PATH="$PATH:$(pwd)/codes/normal_distribution_configs"

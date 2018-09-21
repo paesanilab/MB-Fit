@@ -39,12 +39,12 @@ script:
     - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
 
     # QM MB energy calculator (uses psi4)
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomer; source activate psi4env; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomers; source activate psi4env; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimer; source activate psi4env; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimers; source activate psi4env; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimer; source activate psi4env; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh
 
     # training set generation
     #- cd $TRAVIS_BUILD_DIR/codes/normal_distribution_configs; make

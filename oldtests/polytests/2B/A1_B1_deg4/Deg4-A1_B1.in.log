@@ -1,0 +1,38 @@
+<> molecules(2) <>
+
+A1
+B1
+
+<> atoms (2) <>
+
+Aa:Bb
+
+<> permutations (1) <>
+
+0:1
+
+<> variables (1) <>
+
+ 0 :   A(a) <===>   B(b) : x-AB
+
+<> 1st degree <>
+
+1 possible 1st degree monomials
+1 <<== accepted 1st degree terms
+
+<> 2nd degree <>
+
+1 possible (filtered) 2nd degree monomials
+1 <<== accepted 2nd degree terms
+
+<> 3rd degree <>
+
+1 possible (filtered) 3rd degree monomials
+1 <<== accepted 3rd degree terms
+
+<> 4th degree <>
+
+1 possible (filtered) 4th degree monomials
+1 <<== accepted 4th degree terms
+
+ Total number of terms: 4

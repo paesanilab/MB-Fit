@@ -305,8 +305,8 @@ def execute_maple(settings_path, poly_directory):
     os.system("maple poly-grd.maple")
     os.system("maple poly-nogrd.maple")
 
-    os.system(this_file_path + "/../polynomial_generation/src/clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
-    os.system(this_file_path + "/../polynomial_generation/src/clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
+    os.system("clean-maple-c.pl < poly-grd.c > poly-grd.cpp")
+    os.system("clean-maple-c.pl < poly-nogrd.c > poly-nogrd.cpp")
 
     os.chdir(original_dir)
 

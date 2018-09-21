@@ -1,16 +1,25 @@
+# absolute module imports
 from potential_fitting import calculator
 from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader
 
-def generate_normal_modes(settings_path, geo_path, normal_modes_path):
+def generate_normal_modes(settings_path, opt_path, normal_modes_path):
     """
-    Generates the normal modes based on a given optimized geometry
+    Generates the a normal modes input file from an optimized geometry.
+
+    Args:
+        settings_path       - Local path to the ".ini" file containing all relevant settings.
+        opt_path            - Local path to the ".xyz" file to read the optimized geometry from.
+        normal_modes_path   - Local path to the ".dat" file to write the normal modes to.
+
+    Returns:
+        The null dimension of the input molecule.
     """
     
     settings = SettingsReader(settings_path)
 
     # parse the optimized geometry
-    molecule = xyz_to_molecules(geo_path, settings)[0]
+    molecule = xyz_to_molecules(opt_path, settings)[0]
     
     # calculate the normal modes
     normal_modes, frequencies, red_masses = calculator.frequencies(settings, molecule, settings.get("config_generator", "method"), settings.get("config_generator", "basis"))
@@ -25,6 +34,15 @@ def generate_normal_modes(settings_path, geo_path, normal_modes_path):
     return dim_null
 
 def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path):
+    """
+    Writes the info returned by calculator.frequencies() to the file normal_modes_path.
+
+    Args:
+        normal_modes        - The normal modes to write.
+        frequencies         - The frequencies to write.
+        red_masses          - The reduced_masses to write.
+        normal_modes_path   - Local path to the file to write the normal modes to.
+    """
 
     # formatter strings
     norm_formatter = "{:> 12.4f}"

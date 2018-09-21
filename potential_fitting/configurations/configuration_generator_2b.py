@@ -1,27 +1,33 @@
+# external package imports
 import math
 from random import Random, randint
 
+# absolute module imports
 from potential_fitting.utils import Quaternion
-
 from potential_fitting.molecule import Molecule, xyz_to_molecules
 
-def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, configurations_path, min_distance = 1,
+        max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5,
+        seed = randint(-100000, 1000000)):
     """
-    Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file
+    Generates a set of 2 body configurations of the two geometries and outputs them to an xyz file.
 
     Args:
-        geo1        - the first optimized (or series of unoptimized) geometry
-        geo2        - the second optimized (or series of unoptimized) geometry
-        number_of_configs - generate this many configurations
-        config_path - the path to the file to write the configurations
-        min_distance - the minimum distance between the centers of mass of the two monomers
-        max_distance - the maximum distance between the centers of mass of the two monomers
-        min_inter_distance - the minimum distance between any two atoms from oposite monomers
-        use_grid    - if True, then distance between the center of mass of the monomers will be on a grid, otherwise, it will be smooth
-        step_size - only used if use_grid is True, this is the step size of the grid in angstroms
+        geo1_path           - Local path to the file containing the first optimized (or series of unoptimized)
+                geometry.
+        geo2_path           - Local path to the file containing the second optimized (or series of unoptimized)
+                geometry.
+        number_of_configs   - Number of configurations to generate.
+        config_path         - Local path to the file to write the configurations to.
+        min_distance        - The minimum distance between the centers of mass of the two monomers in angstroms.
+        max_distance        - The maximum distance between the centers of mass of the two monomers in angstroms.
+        min_inter_distance  - The minimum distance between any two atoms from oposite monomers in angstroms.
+        use_grid            - If True, then distance between the center of mass of the monomers will be on a grid,
+                otherwise, it will be smooth.
+        step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
 
     Returns:
-        None
+        None.
     """
 
     # if use_grid is false, set the step size to even space the configurations
@@ -35,8 +41,8 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
     configs_per_distance = math.ceil(number_of_configs / num_steps)
 
     # parse the molecules from the input xyz files
-    molecules1 = xyz_to_molecules(geo1)
-    molecules2 = xyz_to_molecules(geo2)
+    molecules1 = xyz_to_molecules(geo1_path)
+    molecules2 = xyz_to_molecules(geo2_path)
 
     # keeps track of how many total configurations have been generated
     total_configs = 0
@@ -44,8 +50,10 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
     # construct a psuedo-random number generator
     random = Random(seed)
 
+    print("Trying to generate {} 2b configurations".format(number_of_configs))
+
     # open the config file to write to
-    with open(config_path, "w") as config_file:
+    with open(configurations_path, "w") as config_file:
 
         # loop over each step on our grid
         for step in range(num_steps):
@@ -62,7 +70,8 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
 
                 try:
                     # move the molecules to a valid configuration, making 5 attempts
-                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance, 5)
+                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance, 
+                            5)
 
                 except RanOutOfAttemptsException:
                     # if we didn't find a valid configuration, skip this config
@@ -89,20 +98,19 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
 
 def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, attempts):
     """
-    Moves the given molecules to a configuration with the given distance between their centers of
-    mass. Raises RanOutOfAttemptsException if a configuration is failed to be found.
+    Moves the molecules to a configuration with the given distance between their centers of
+    mass. Raises RanOutOfAttemptsException if a configuration is failed to be found after a certain number of attempts.
 
     Args:
-        random      - the Random object used to generate the configuration
-        molecule1   - the Molecule object of the 1st monomer
-        molecule2   - the Molecule object of the 2nd monomer
-        distance    - distance between the centers of mass of the two molecules
-        min_inter_distance - minimum distance for any inter-molecular atomic distance
-        attempts    - the number of configurations to try before giving up
+        random              - The Random object used to generate the configuration.
+        molecule1           - The Molecule object of the 1st monomer.
+        molecule2           - The Molecule object of the 2nd monomer.
+        distance            - Distance between the centers of mass of the two molecules.
+        min_inter_distance  - Minimum distance for any inter-molecular atomic distance.
+        attempts            - The number of configurations to try before giving up.
 
     Returns:
-        None
-
+        None.
     """
 
     # put both geoemtries in standard orientation if they are not already
@@ -127,7 +135,8 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
                 if atom1.distance(atom2) < closest_distance:
                     closest_distance = atom1.distance(atom2)
 
-        # if the minimum intermolecular distance in this configuration is ngreater than or equal to min_inter_distance, then this is a valid configuration
+        # if the minimum intermolecular distance in this configuration is greater than or equal to min_inter_distance,
+        # then this is a valid configuration
         if closest_distance >= min_inter_distance:
             return
 

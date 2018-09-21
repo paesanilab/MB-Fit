@@ -1,8 +1,7 @@
-"""
-Contains the Database class, used to read and write to a database
-"""
-import itertools, datetime
-import sqlite3
+# external package imports
+import itertools, datetime, sqlite3
+
+# absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError
 
@@ -11,40 +10,64 @@ class Database():
     Database class. Allows one to access a database and perform operations on it.
     """
     
-    def __init__(self, file_name):
+    def __init__(self, file_path):
         """
-        Initializer, sets up connection, and cursor
+        Initializes the database, sets up connection, and cursor.
 
         Args:
-            file_name   - path to the database file
+            file_path       - Local path to the database file. ".db" will be appended if it does not already end in
+                    ".db".
 
         Returns:
-            a new Database object
+            A new Database object.
         """
 
-        if file_name[-3:] != ".db":
-            print("Automatically ending '.db' suffix to database name {}.".format(file_name))
-            file_name += ".db"
+        # append ".db" suffix if it does not already end in ".db"
+        if file_path[-3:] != ".db":
+            print("Automatically ending '.db' suffix to database name {}.".format(file_path))
+            file_path += ".db"
         
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = sqlite3.connect(file_name)
+        self.connection = sqlite3.connect(file_path)
         
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
-        # this checks to make sure the file specified by file_name is a valid database file. The sqlite3 command will throw an error if the file is exists but is not a database
+        # this checks to make sure the file specified by file_path is a valid database file. The sqlite3 command will
+        # throw an error if the file is exists but is not a database
         try:
             self.cursor.execute("PRAGMA table_info('schema_version')");
         except:
             self.close()
-            raise InconsistentDatabaseError(file_name, "File exists but is not a valid database file.") from None
+            raise InconsistentDatabaseError(file_path, "File exists but is not a valid database file.") from None
     
 
-    # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use with ... as ... syntax on it
+    # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use
+    # with ... as ... syntax on it
     def __enter__(self):
+        """
+        Simply returns self.
+
+        Args:
+            None.
+
+        Returms:
+            self.
+        """
+
         return self
 
     def __exit__(self, type, value, traceback):
+        """
+        Automatically saves and closes the database.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
+
         self.save()
         self.close()
         
@@ -57,10 +80,10 @@ class Database():
         Changes will not be perminent untill this function is called.
 
         Args:
-            None
+            None.
         
         Returns:
-            None
+            None.
         """
 
         self.connection.commit()
@@ -68,26 +91,27 @@ class Database():
     def close(self):
         """
         Close the database.
+
         Always close the database after you are done using it.
 
         Args:
-            None
+            None.
 
         Returns:
-            None
+            None.
         """
 
         self.connection.close()
 
     def create(self):
         """
-        Creates the all tables in the database, if they do not exists
+        Creates all the tables in the database, if they do not exist already.
 
         Args:
-            None
+            None.
 
         Returns:
-            None
+            None.
         """
         
         # create the Models table 

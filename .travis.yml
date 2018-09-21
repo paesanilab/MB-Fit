@@ -21,20 +21,22 @@ script:
     - cd $TRAVIS_BUILD_DIR/codes/ndiff-2.00; ./configure; make
     - PATH=$TRAVIS_BUILD_DIR/codes/ndiff-2.00:$PATH
 
+    - cd $TRAVIS_BUILD_DIR; source install.sh
+
     # test the python package
     - cd $TRAVIS_BUILD_DIR; python run_tests.py
 
-    #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
     #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
     #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh
 
-    #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/input_generation; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/input_generation; bash run_test.sh
 
     # requires MKL, cannot run on Travis-CI unless we reconfigure it to use conda
     #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
 
     # psi4
-    #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
 
     # QM MB energy calculator (uses psi4)
     #- cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomer; source activate psi4env; bash run_test.sh

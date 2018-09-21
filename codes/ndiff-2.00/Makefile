@@ -188,13 +188,13 @@ ZOO		=
 ###=====================================================================
 ### Compiler flags:
 
-CFLAGS		=  $(INCLUDES) $(DEFINES) $(OPT) $(XCFLAGS)
+CFLAGS		= -I. -I/usr/local/include -DVERSION='"2.00"' -DDATE='"10-Dec-2000"' -O $(INCLUDES) $(DEFINES) $(OPT) $(XCFLAGS)
 
 DEFINES		= -DVERSION='"2.00"' -DDATE='"10-Dec-2000"' $(XDEFINES)
 
 INCLUDES	= -I. -I$(prefix)/include $(XINCLUDES)
 
-LDFLAGS		=  -L$(prefix)/lib $(XLDFLAGS)
+LDFLAGS		= -L/usr/local/lib  -L$(prefix)/lib $(XLDFLAGS)
 
 LIBS		=  $(XLIBS)
 

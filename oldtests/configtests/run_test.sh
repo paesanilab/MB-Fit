@@ -1,19 +1,13 @@
 #!/bin/bash
 
-gcn=../norm_distribution/src/generate_configs_normdistrbn
+gcn=generate_configs_normdistrbn
 
 mkdir logs
 mkdir diffs
 
 err=0
 
-if [ ! -x $gcn ]
-then
-    "Error: You must build the norm distribution generator first"
-    exit
-fi
-
-python3 ../src/nmcgen.py settings.ini h2o.xyz h2o.opt.xyz normal_modes configs.xyz
+python3 nmcgen.py settings.ini h2o.xyz h2o.opt.xyz normal_modes configs.xyz
 if [ $? -ne 0 ]
 then
     echo "Error: Execution of generate_nm_configs.py failed"

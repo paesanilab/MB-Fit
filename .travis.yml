@@ -26,25 +26,26 @@ script:
     # test the python package
     - cd $TRAVIS_BUILD_DIR; python run_tests.py
 
-    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
+    # polynomial tests
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/1B; bash run_test.sh
     #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
     #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh
 
-    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/input_generation; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/input_generation; bash run_test.sh
 
     # requires MKL, cannot run on Travis-CI unless we reconfigure it to use conda
     #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
 
     # psi4
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/psi4; source activate psi4env; bash run_test.sh
 
     # QM MB energy calculator (uses psi4)
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimer; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimers; source activate psi4env; bash run_test.sh
 
     # training set generation
     #- cd $TRAVIS_BUILD_DIR/codes/normal_distribution_configs; make
@@ -53,4 +54,4 @@ script:
     #- cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_pf6.sh
     #- cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_minimum.sh
     #- cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_saddle.sh
-    #- cd $TRAVIS_BUILD_DIR/configuration_generator/test; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/configuration_generator/test; bash run_test.sh

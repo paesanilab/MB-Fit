@@ -1,21 +1,23 @@
+# external package imports
 import subprocess
 
+# absolute module imports
 from potential_fitting.exceptions import CommandNotFoundError, CommandExecutionError
 
 def call(command, *args):
     """
-    Performs a system call with the given command and arguments
+    Performs a system call with the given command and arguments.
 
-    A CommandNotFoundError will be raised if the command is not found (exit code 127)
+    A CommandNotFoundError will be raised if the command is not found (exit code 127).
 
-    A CommandExecutionError will be raised if the exit code is not 0
+    A CommandExecutionError will be raised if the exit code is not 0 or 127.
 
     Args:
-        command - the command to be executed
-        args    - any arguments to follow the command
+        command             - The command to be executed.
+        args                - Any arguments to follow the command.
 
     Returns:
-        None
+        None.
     """
 
     try:

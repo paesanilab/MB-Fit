@@ -1,0 +1,97 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:568: checking for gcc
+configure:681: checking whether the C compiler (gcc  ) works
+configure:697: gcc -o conftest    conftest.c  1>&5
+configure:694:1: warning: return type defaults to 'int' [-Wimplicit-int]
+ main(){return(0);}
+ ^
+configure:723: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:728: checking whether we are using GNU C
+configure:737: gcc -E conftest.c
+configure:756: checking whether gcc accepts -g
+configure:793: checking for autoconf
+configure:827: checking for autoheader
+configure:862: checking for mawk
+configure:862: checking for nawk
+configure:862: checking for gawk
+configure:902: checking for sh
+configure:943: checking for mkdir.sh
+configure:984: checking for cat
+configure:1018: checking for checknr
+configure:1018: checking for echo
+configure:1052: checking for checksum
+configure:1052: checking for cat
+configure:1086: checking for chmod
+configure:1120: checking for cmp
+configure:1154: checking for scp
+configure:1188: checking for deroff
+configure:1222: checking for diff
+configure:1256: checking for distill
+configure:1256: checking for ps2pdf
+configure:1290: checking for ditroff
+configure:1290: checking for groff
+configure:1324: checking for dw
+configure:1324: checking for echo
+configure:1358: checking for etags
+configure:1392: checking for grep
+configure:1426: checking for gzip
+configure:1460: checking for ispell
+configure:1460: checking for echo
+configure:1494: checking for jar
+configure:1528: checking for ln
+configure:1562: checking for ls
+configure:1596: checking for man2html
+configure:1630: checking for mv
+configure:1664: checking for nroff
+configure:1698: checking for rm
+configure:1732: checking for sed
+configure:1766: checking for sort
+configure:1800: checking for spell
+configure:1834: checking for tar
+configure:1868: checking for tgrind
+configure:1902: checking for unzip
+configure:1936: checking for zip
+configure:1970: checking for zoo
+configure:2001: checking how to run the C preprocessor
+configure:2022: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2081: checking for ANSI C header files
+configure:2094: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2161: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:2156:67: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+                                                                   ^
+configure:2156:67: warning: incompatible implicit declaration of built-in function 'exit'
+configure:2156:67: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:2157:1: warning: incompatible implicit declaration of built-in function 'exit'
+ exit (0); }
+ ^
+configure:2157:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:2190: checking for ctype.h
+configure:2200: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2190: checking for limits.h
+configure:2200: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2190: checking for stddef.h
+configure:2200: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2190: checking for stdio.h
+configure:2200: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2190: checking for stdlib.h
+configure:2200: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2190: checking for string.h
+configure:2200: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:2228: checking for size_t
+configure:2264: checking GNU multiple-precision library (gmp)
+configure:2286: gcc -o conftest -g -O2 -I/usr/local/include   conftest.c  -L/usr/local/lib -lgmp 1>&5
+configure:2280:17: fatal error: gmp.h: No such file or directory
+compilation terminated.
+configure: failed program was:
+#line 2279 "configure"
+#include "confdefs.h"
+#include <gmp.h>
+int main() {
+mpf_t x; mpf_init(x);
+; return 0; }
+configure:2316: checking for long double
+configure:2334: gcc -o conftest -g -O2   conftest.c  1>&5

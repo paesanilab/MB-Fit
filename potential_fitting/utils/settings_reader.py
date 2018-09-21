@@ -8,7 +8,7 @@ class SettingsReader(object):
     Wrapper class for ConfigParser with added functionality
     """
 
-    def __init__(self, file):
+    def __init__(self, file = None):
         """
         Creates a new SettingsReader
 
@@ -22,17 +22,24 @@ class SettingsReader(object):
         # create a new ConfigParser
         self.configparser = configparser.ConfigParser(allow_no_value=False)
 
-        # confirm that the input file exists
-        if not os.path.isfile(file):
-            raise ConfigMissingFileError(file)
+        if file is not None
+            # confirm that the input file exists
+            if not os.path.isfile(file):
+                raise ConfigMissingFileError(file)
 
-        self.configparser.read(file)
+            self.configparser.read(file)
 
         # save the filepath so that we can include it in error messages
-        self.file = file
+        if file is None:
+            self.file = "None"
+        else:
+            self.file = file
     
     def set(self, section, prop, value):
         self.configparser.set(section, prop, value)
+
+    def write(self, file):
+        self.configparser.write(file)
 
     def get(self, section, prop, default = None):
         """

@@ -22,7 +22,7 @@ class SettingsReader(object):
         # create a new ConfigParser
         self.configparser = configparser.ConfigParser(allow_no_value=False)
 
-        if file is not None
+        if file is not None:
             # confirm that the input file exists
             if not os.path.isfile(file):
                 raise ConfigMissingFileError(file)

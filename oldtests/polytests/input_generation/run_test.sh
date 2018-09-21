@@ -6,7 +6,7 @@ c="A1B4.in"
 
 EXIT_CODE=0
 for i in $a $b $c ; do
-  python3 test.py settings.ini $i
+  python3 ../../src/generate_input_poly.py settings.ini $i
   if diff ${i}_expected $i &> /dev/null ; then
     echo "Test for $i PASSED"
   else

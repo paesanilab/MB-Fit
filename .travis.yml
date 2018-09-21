@@ -28,8 +28,8 @@ script:
 
     # polynomial tests
     - cd $TRAVIS_BUILD_DIR/oldtests/polytests/1B; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
-    #- cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/2B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/3B; bash run_test.sh
 
     - cd $TRAVIS_BUILD_DIR/oldtests/polytests/input_generation; bash run_test.sh
 

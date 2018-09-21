@@ -20,19 +20,19 @@ Oa:Ha1:Ha2:Ob:Hb1:Hb2
 
 <> variables (15) <>
 
- 0 :   O(a) <===>  H1(a) : x-intra-HO
- 1 :   O(a) <===>  H2(a) : x-intra-HO
+ 0 :   O(a) <===>  H1(a) : x-intra-OH
+ 1 :   O(a) <===>  H2(a) : x-intra-OH
  2 :  H1(a) <===>  H2(a) : x-intra-HH
- 3 :   O(b) <===>  H1(b) : x-intra-HO
- 4 :   O(b) <===>  H2(b) : x-intra-HO
+ 3 :   O(b) <===>  H1(b) : x-intra-OH
+ 4 :   O(b) <===>  H2(b) : x-intra-OH
  5 :  H1(b) <===>  H2(b) : x-intra-HH
  6 :   O(a) <===>   O(b) : x-OO
- 7 :   O(a) <===>  H1(b) : x-HO
- 8 :   O(a) <===>  H2(b) : x-HO
- 9 :  H1(a) <===>   O(b) : x-HO
-10 :  H1(a) <===>  H1(b) : x-HH
-11 :  H1(a) <===>  H2(b) : x-HH
-12 :  H2(a) <===>   O(b) : x-HO
+ 7 :   O(a) <===>  H1(b) : x-OH
+ 8 :   O(a) <===>  H2(b) : x-OH
+ 9 :   O(b) <===>  H1(a) : x-OH
+10 :   O(b) <===>  H2(a) : x-OH
+11 :  H1(a) <===>  H1(b) : x-HH
+12 :  H1(a) <===>  H2(b) : x-HH
 13 :  H2(a) <===>  H1(b) : x-HH
 14 :  H2(a) <===>  H2(b) : x-HH
 

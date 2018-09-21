@@ -1,14 +1,10 @@
-"""
-A module for the different models for calculating the 
-energy of a set of atoms (a fragment)
-"""
-import os
-import subprocess
+# external package imports
+import os, subprocess
 
-from potential_fitting.utils import SettingsReader
-from potential_fitting.utils import constants
-
-from potential_fitting.exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
+# absolute module imports
+from potential_fitting.utils import SettingsReader, constants, files, system
+from potential_fitting.exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, \
+        ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError
 
 has_psi4 = True
 
@@ -32,15 +28,15 @@ def calculate_energy(molecule, fragment_indicies, model, cp, settings):
     Calculates the energy of a subset of the fragments of a molecule.
 
     Args:
-        molecule    - the Molecule object to calculate the energy of
-        fragment_indicies - list of indicies of fragments to include in the calculation
-        model       - the model to use for this calculation, should be specified as method/basis
-        cp          - whether to use counterpoise correction, True means that fragments not included in
-                    fragment_indicies will be added as ghost atoms to the calculation
-        settings    - .ini file with settings information
+        molecule            - The Molecule object to calculate the energy of.
+        fragment_indicies   - List of indicies of fragments to include in the calculation.
+        model               - The model to use for this calculation, should be specified as method/basis.
+        cp                  - Whether to use counterpoise correction, True means that fragments not included in
+                fragment_indicies will be added as ghost atoms to the calculation.
+        settings            - SettingsReader object with all relevent settings.
 
     Returns:
-        The calculated energy
+        The calculated energy of the subset of fragments in this molecule.
     """
 
         # check which library to use to calculate the energy
@@ -48,10 +44,10 @@ def calculate_energy(molecule, fragment_indicies, model, cp, settings):
     
     if code == "psi4":
         return calc_psi4_energy(molecule, fragment_indicies, model, cp, settings)
-    
+    '''
     elif code == "TensorMol":
         return TensorMol_convert_str(molecule, fragment_indicies, settings)
-  
+    '''
     elif code == "qchem":
         return calc_qchem_energy(molecule, fragment_indicies, model, cp, settings)
     
@@ -62,36 +58,35 @@ def calculate_energy(molecule, fragment_indicies, model, cp, settings):
 
 def calc_psi4_energy(molecule, fragment_indicies, model, cp, settings):
     """
-    Calculates the energy of a subset of the fragments of a molecule with psi4
+    Calculates the energy of a subset of the fragments of a molecule with psi4.
 
     Args:
-        molecule    - the Molecule object to calculate the energy of
-        fragment_indicies - list of indicies of fragments to include in the calculation
-        model       - the model to use for this calculation, should be specified as method/basis
-        cp          - whether to use counterpoise correction, True means that fragments not included in
-                    fragment_indicies will be added as ghost atoms to the calculation
-        settings    - .ini file with settings information
+        molecule            - The Molecule object to calculate the energy of.
+        fragment_indicies   - List of indicies of fragments to include in the calculation.
+        model               - The model to use for this calculation, should be specified as method/basis.
+        cp                  - Whether to use counterpoise correction, True means that fragments not included in
+                    fragment_indicies will be added as ghost atoms to the calculation.
+        settings            - SettingsReader object with all relevent settings.
 
     Returns:
-        The calculated energy
+        The calculated energy of the subset of fragments in this molecule.
     """
+
+    method, basis = model.split("/")
     
     # if psi4 is not loaded, raise an exception
     if not has_psi4:
         raise LibraryNotAvailableError("psi4")
 
     # file to write logs from psi4 calculation
-    log_file = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
-    
-    # create log file's directory if it does not already exist
-    if not os.path.exists(os.path.dirname(log_file)):
-        os.makedirs(os.path.dirname(log_file))
+    log_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
     
     # set the log file
-    psi4.core.set_output_file(log_file, False)
+    psi4.core.set_output_file(log_path, False)
 
     # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
-    psi4_string = molecule.to_xyz(fragment_indicies, cp) + "\n" + str(molecule.get_charge(fragment_indicies)) + " " + str(molecule.get_spin_multiplicity(fragment_indicies))
+    psi4_string = "{}\n{} {}".format(molecule.to_xyz(fragment_indicies, cp), molecule.get_charge(fragment_indicies),
+            molecule.get_spin_multiplicity(fragment_indicies))
 
     try:
         # Constructs the psi4 Molecule from the string representation by making a call to a psi4 library function
@@ -111,6 +106,7 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, settings):
     except QcdbException as e:
         raise LibraryCallError("psi4", "energy", str(e))
 
+'''
 def TensorMol_convert_str(molecule, fragment_indicies, settings):
     """
     Prepares input data 
@@ -134,35 +130,32 @@ def calc_TensorMol_energy(atoms, coords, settings):
     molset.mols.append(molecule)
     manager = GetWaterNetwork(molset)
     return En(molecule, coords, manager)
+'''
 
 def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     """
-    Calculates the energy of a subset of the fragments of a molecule with q-chem
+    Calculates the energy of a subset of the fragments of a molecule with q-chem.
 
-    Parameters
-    ----------
-    arg1: Molecule
-        The Molecule to calculate the energy of.
-    arg2: int list
-        Which fragments to take into account when calculating energy.
-    arg3: ConfigParser
-        Contains settings, etc, that dictate how to calculate energy.
+    Args:
+        molecule            - The Molecule object to calculate the energy of.
+        fragment_indicies   - List of indicies of fragments to include in the calculation.
+        model               - The model to use for this calculation, should be specified as method/basis.
+        cp                  - Whether to use counterpoise correction, True means that fragments not included in
+                    fragment_indicies will be added as ghost atoms to the calculation.
+        settings            - SettingsReader object with all relevent settings.
 
-    Returns
-    -------
-    int
-        Calculated Energy.
+    Returns:
+        The calculated energy of the subset of fragments in this molecule.
     """
 
+    method, basis = model.split("/")
+
     # Check if the user has qchem isntalled
-    if subprocess.call("which qchem", shell=True) != 0:
+    try:
+        system.call("which", "qchem")
+    except CommandExecutionError:
         raise LibraryNotAvailableError("qchem")
 
-    #prepare Q-chem input file from frag string
-
-    input_file = "qchem_input.txt"
-    output_file = "qchem_out.txt"
-    
     # initialize qchem input string
     qchem_input = "";
     
@@ -187,43 +180,39 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
 
     try:
         qchem_input += "ecp " + settings.get("qchem", "ecp") + "\n"
-    except:
+    except ConfigMissingSectionError, ConfigMissingPropertyError:
         pass
 
     qchem_input += "$end"
 
     # file to write qchem input in
-    log_file_in = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".in"
+    qchem_in_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "in")
     
-    # make sure directory exists prior to writing to file
-    if not os.path.exists(os.path.dirname(log_file_in)):
-        os.makedirs(os.path.dirname(log_file_in))
-    f = open(log_file_in, "w")
-    f.write(qchem_input)
-    f.close()
+    with open(qchem_in_path, "w") as qchem_in_file:
+        f.write(qchem_input)
     
     # file to write qchem output in
-    log_file_out = settings.get("files", "log_path") + "/calculations/" + model + "/" + str(cp) + "/" + molecule.get_SHA1()[:8] + "frags:" + fragments_to_energy_key(fragment_indicies) + ".out"
+    qchem_out_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
 
     # get number of threads
     num_threads = settings.getint("qchem", "num_threads")
 
     # perform system call to run qchem
-    syscall = "qchem -nt {:d} {} {}".format(num_threads, log_file_in, log_file_out)
-    if subprocess.run(syscall, 
-            stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, 
-            shell=True, check=True).returncode != 0:
-        raise LibraryCallError("qchem", "energy calculation", "process returned non-zero exit code")
+    try:
+        system.call("qchem", "-nt", num_threads, log_file_in, log_file_out)
+    except CommandExecutionError as e:
+        raise LibraryCallError("qchem", "energy calculation", "process returned non-zero exit code") from e
 
     # find the energy inside the qchem file output
-    with open(log_file_out) as qchem_out:
-        for line in qchem_out:
+    with open(qchem_out_path) as qchem_out_file:
+        for line in qchem_out_file:
             if line.find("Total energy in the final basis set = ") != -1:
                 return float(line[line.find("Total energy in the final basis set = ") + 39:])
 
     # if no line with "Total energy in the final basis set = " is found, raise an exception
     raise LibraryCallError("qchem", "energy calculation", "process returned file of incorrect format")
 
+'''
 # Water network data is required to be in the same directory under ./networks !!
 def GetWaterNetwork(a):
     """
@@ -254,24 +243,4 @@ def En(m, x_, manager):
     Etotal, Ebp, Ebp_atom, Ecc, Evdw, mol_dipole, atom_charge, gradient = manager.EvalBPDirectEEUpdateSingle(mtmp, PARAMS["AN1_r_Rc"], PARAMS["AN1_a_Rc"],PARAMS["EECutoffOff"], True)
     energy = Etotal[0]
     return energy
-
-def fragments_to_energy_key(fragments):
-    """
-    Generate a simple string from a list of fragments. [1,2,3] -> E123, [0] -> E0
-    For use in naming of log files
-
-    Args:
-        fragments   - list of indicies of fragments
-
-    Returns:
-        string of fromat E123 where 123 are the numbers specified by the fragments list
-    """
-
-    # initialize the key
-    key = "E"
-
-    # loop thru every fragment index in the list
-    for fragment in fragments:
-        key += str(fragment)
-
-    return key
+'''

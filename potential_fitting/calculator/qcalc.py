@@ -159,7 +159,8 @@ def optimize_qchem(settings, molecule, method, basis):
     
     # parse the molecule's geometry out of the output file
     found = False
-    # found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
+    # found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword
+    # 'ATOM' to look for the optimized geometry
     qchem_out_string = ""
     with open(qchem_out_path, "r") as qchem_out_file:
         for line in qchem_out_file:
@@ -168,7 +169,8 @@ def optimize_qchem(settings, molecule, method, basis):
                     for atom_index in range(molecule.get_num_atoms()):
                         qchem_out_string += " ".join(qchem_out_file.readline().split()[1:]) + "\n"
                     print("Completed geometry optimization.")
-                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_multiplicity(), qchem_out_string)), energy
+                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(),
+                            molecule.get_spin_multiplicity(), qchem_out_string)), energy
             elif "Final energy is" in line:
                 energy = float(line.split()[3])
                 found = True
@@ -284,7 +286,8 @@ def frequencies_qchem(settings, molecule, method, basis):
     except CommandExecutionError:
         raise LibraryNotAvailableError("qchem")
 
-    print("Beginning normal modes calculation using qchem of {} with {}/{}.".format(molecule.get_name(), method, basis))
+    print("Beginning normal modes calculation using qchem of {} with {}/{}.".format(molecule.get_name(), method,
+            basis))
 
     qchem_in_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "in")
 

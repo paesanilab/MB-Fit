@@ -84,7 +84,8 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, settings):
     # set the log file
     psi4.core.set_output_file(log_path, False)
 
-    # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing charge and spin multiplicity
+    # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing
+    # charge and spin multiplicity
     psi4_string = "{}\n{} {}".format(molecule.to_xyz(fragment_indicies, cp), molecule.get_charge(fragment_indicies),
             molecule.get_spin_multiplicity(fragment_indicies))
 

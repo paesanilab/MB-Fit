@@ -1,7 +1,0 @@
-'examples/sulfate/so4_wb97mv-apc3_opt.xyz'             | optimized geometry corresponding to normal mode analysis
-'examples/sulfate/so4_wb97mv-apc3_normal_modes.dat'    | input normal modes
-15 6                                                   | dim; dimnull
-Q 8192                                                 | 'P' pseudorandom, 'Q' quasirandom; nconfigs
-'examples/sulfate/so4_linear_Q.xyz'                    | output one-body configurations
-.FALSE. .TRUE.                                         | geometric, linear
-.FALSE.                                                | verbose output

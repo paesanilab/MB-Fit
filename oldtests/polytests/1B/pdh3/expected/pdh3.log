@@ -1,10 +1,10 @@
 <> molecules(1) <>
 
-Pd1H3
+P1H3
 
 <> atoms (4) <>
 
-Pda:Ha1:Ha2:Ha3
+Pa:Ha1:Ha2:Ha3
 
 <> permutations (6) <>
 
@@ -17,12 +17,12 @@ Pda:Ha1:Ha2:Ha3
 
 <> variables (6) <>
 
- 0 :  H1(a) <===>  H2(a) : x-intra-HH
- 1 :  H1(a) <===>  H3(a) : x-intra-HH
- 2 :  H2(a) <===>  H3(a) : x-intra-HH
- 3 :  Pd(a) <===>  H1(a) : x-intra-PdH
- 4 :  Pd(a) <===>  H2(a) : x-intra-PdH
- 5 :  Pd(a) <===>  H3(a) : x-intra-PdH
+ 0 :   P(a) <===>  H1(a) : x-intra-HP
+ 1 :   P(a) <===>  H2(a) : x-intra-HP
+ 2 :   P(a) <===>  H3(a) : x-intra-HP
+ 3 :  H1(a) <===>  H2(a) : x-intra-HH
+ 4 :  H1(a) <===>  H3(a) : x-intra-HH
+ 5 :  H2(a) <===>  H3(a) : x-intra-HH
 
 <> 1st degree <>
 

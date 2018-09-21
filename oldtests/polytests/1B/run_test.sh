@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-generator=$(pwd)/../../src/poly-gen_mb-nrg.pl
+generator=poly-gen_mb-nrg.pl
 order=4
 
 tests="bf4 pdh3"

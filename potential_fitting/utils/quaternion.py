@@ -1,7 +1,13 @@
+# external package imports
 import math
 from random import Random
 
 class Quaternion(object):
+    """
+    Quaternion mathmatical object, with one real part and 3 imaginary parts.
+
+    Can be used to perform rotations in 3d space.
+    """
 
     def get_random_quaternion(random = Random()):
         """

@@ -1,4 +1,4 @@
-# python system imports
+# external package imports
 import os, subprocess, contextlib, random
 
 # local module imports
@@ -96,7 +96,7 @@ def init_database(settings_path, database_path, configurations_path):
         settings_path       - Local path to the file containing all relevent settings information.
         database_path       - Local path to the database file to add the configurations to. ".db" will automatically
                 be added to the end if it does not already end in ".db".
-        configurations_path - Local path to a single .xyz file or a directory containing .xyz files. If this argument
+        configurations_path - Local path to a single .xyz file or a directory containing ".xyz" files. If this argument
                 is a directory, any non .xyz files will be ignored.
 
     Returns:
@@ -226,7 +226,8 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         poly_in_path        - Local path to the file to read the polynomial input from. Name of file should be in
-                the format A1B2.in, it is ok to have extra directories prior to file name (thisplace/thatplace/A3.in).
+                the format "A1B2.in". It is ok to have extra directories prior to file name. For example:
+                "thisplace/thatplace/A3.in".
         order               - The order of the polynomial to generate.
         poly_dir_path       - Local path to the directory to write the polynomial files in.
 
@@ -385,8 +386,8 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
         fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
                 by compile_fit_code.
         training_set_path   - Local path to the file to read the training set from.
-        fit_dir_path        - Local path to the directory to write the .cdl and .dat files created by this fit.
-        fitted_code         - Local path to the file to write the final fitted .nc to.
+        fit_dir_path        - Local path to the directory to write the ".cdl" and ".dat" files created by this fit.
+        fitted_code         - Local path to the file to write the final fitted ".nc" to.
 
     Returns:
         None

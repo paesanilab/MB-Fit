@@ -18,7 +18,7 @@ language: cpp
 
 script:
     # Build ndiff tool
-    - cd $TRAVIS_BUILD_DIR/codes/ndiff-2.00; ./configure; make
+    - cd $TRAVIS_BUILD_DIR/codes/ndiff-2.00; ./configure; make SHELL=/bin/sh
     - PATH=$TRAVIS_BUILD_DIR/codes/ndiff-2.00:$PATH
 
     - cd $TRAVIS_BUILD_DIR; source install.sh

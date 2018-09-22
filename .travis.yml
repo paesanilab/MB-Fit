@@ -13,7 +13,6 @@ install:
   - conda update -q conda
   - conda info -a
   - conda create -q -n psi4env -c psi4 --file requirements.txt python=3.6
-  - conda activate psi4env
 
 language: cpp
 

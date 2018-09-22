@@ -1,0 +1,4 @@
+add_molecule['A1']
+add_molecule['B1']
+
+add_variable['A', 'a',   'B', 'b',  'x-AB']

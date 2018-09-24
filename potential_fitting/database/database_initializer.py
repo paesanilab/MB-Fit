@@ -1,42 +1,46 @@
-import os
-import sqlite3
+# external package imports
+import os, sqlite3
+
+# absolute module imports
+from potential_fitting.utils import SettingsReader
+from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError, \
+        InvalidValueError, XYZFormatError, InconsistentValueError
+from potential_fitting.molecule import xyz_to_molecules
+
+# local module imports
 from .database import Database
 
-from potential_fitting.utils import SettingsReader
-
-from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError, InvalidValueError, XYZFormatError, InconsistentValueError
-
-from potential_fitting.molecule import xyz_to_molecules
-"""
-initializes a database from the config files in a directory
-"""
-def initialize_database(settings_file, database_name, directory):
+def initialize_database(settings_path, database_path, directory_path):
     """
     Initializes a new database or adds energies to be calculated to an existing one.
 
     Args:
-        settings - the .ini file used to initialize the database
-        database_name - the name of the file to save the database in
-        directory - the directory of the config.xyz files to add to the database or a single .xyz file
+        settings_path       - Local path to the ".ini" file with all relevant settings.
+        database_path       - Local path to the database file. ".db" will be appended if it does not already end in
+                ".db".
+        directory_path      - Local path to the directory of ".xyz" files or a single ".xyz" file to add to the
+                database. If a directory is specified, all non ".xyz" or ".xyz.opt" files will be ignored"
 
     Returns:
-        None
+        None.
     """
 
-    with Database(database_name) as database:
+    with Database(database_path) as database:
         
         # Create the database by initializing all tables
         database.create()
     
-        print("Initializing database from xyz files in {} directory into database {}".format(directory, database_name))
+        print("Initializing database from xyz files in {} directory into database {}".format(directory, database_path))
         # get a list of all the files in the directory, or just the filename if directory is just a single file.
-        filenames = get_filenames(directory) if os.path.isdir(directory) else [directory] if directory[-4:] == ".xyz" else []
+        filenames = get_filenames(directory_path) if os.path.isdir(directory_path) else \
+                [directory_path] if directory_path[-4:] == ".xyz" else []
 
         if len(filenames) == 0:
-            raise InvalidValueError("directory", directory, "a directory with 1 or more .xyz files, or a single .xyz file.")
+            raise InvalidValueError("directory", directory, "a directory with 1 or more .xyz files, or a single .xyz \
+                    file.")
 
         # parse settings.ini file
-        settings = SettingsReader(settings_file)
+        settings = SettingsReader(settings_path)
 
         # Read values from the settings file
         method = settings.get("energy_calculator", "method")
@@ -72,18 +76,18 @@ def initialize_database(settings_file, database_name, directory):
                 # add this molecule to the database
                 database.add_calculation(molecule, method, basis, cp, tag, optimized)
 
-        print("Initializing of database {} successful".format(database_name))
+        print("Initializing of database {} successful".format(database_path))
 
 
 def get_filenames(directory):
     """
-    gets list of all filenames in a directory
+    Gets list of all filenames in a directory and any subdirectories.
 
     Args:
-        directory - directory to get filenames from
+        directory           - Directory to get filenames from.
 
     Returns:
-        list of all filenames in that directory, and subdirectories
+        List of all filenames in that directory, and any subdirectories.
     """
     filenames = []
     for root, dirs, files in os.walk(directory):

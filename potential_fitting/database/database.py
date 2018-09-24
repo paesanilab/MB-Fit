@@ -1,4 +1,4 @@
-#external package imports
+# external package imports
 import itertools, datetime, sqlite3
 
 # absolute module imports

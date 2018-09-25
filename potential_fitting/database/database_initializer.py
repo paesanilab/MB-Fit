@@ -3,8 +3,8 @@ import os, sqlite3
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader
-from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError, \
-        InvalidValueError, XYZFormatError, InconsistentValueError
+from potential_fitting.exceptions import (ConfigMissingSectionError, ConfigMissingPropertyError, ParsingError,
+        InvalidValueError, XYZFormatError, InconsistentValueError)
 from potential_fitting.molecule import xyz_to_molecules
 
 # local module imports
@@ -32,12 +32,12 @@ def initialize_database(settings_path, database_path, directory_path):
     
         print("Initializing database from xyz files in {} directory into database {}".format(directory, database_path))
         # get a list of all the files in the directory, or just the filename if directory is just a single file.
-        filenames = get_filenames(directory_path) if os.path.isdir(directory_path) else \
-                [directory_path] if directory_path[-4:] == ".xyz" else []
+        filenames = (get_filenames(directory_path) if os.path.isdir(directory_path) else
+                [directory_path] if directory_path[-4:] == ".xyz" else [])
 
         if len(filenames) == 0:
-            raise InvalidValueError("directory", directory, "a directory with 1 or more .xyz files, or a single .xyz \
-                    file.")
+            raise InvalidValueError("directory", directory, 
+                    "a directory with 1 or more .xyz files, or a single .xyz file.")
 
         # parse settings.ini file
         settings = SettingsReader(settings_path)

@@ -3,8 +3,7 @@ import os
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files
-from potential_fitting.exceptions import InvalidValueError, \
-        InconsistentValueError
+from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 
 def generate_input_poly(settings_file, poly_in_path):
     """
@@ -148,8 +147,7 @@ def generate_input_poly(settings_file, poly_in_path):
                             + split_atom2[0]))
 
                     # check if neither atom is a virtual site
-                    if not split_atom1[0] in virtual_sites and not \
-                            split_atom2[0] in virtual_sites:
+                    if not split_atom1[0] in virtual_sites and not split_atom2[0] in virtual_sites:
 
                         # write valiable to file in proper format
                         poly_in_file.write("add_variable['" + split_atom1[0]

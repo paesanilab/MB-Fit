@@ -3,8 +3,8 @@ import os, subprocess
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, constants, files, system
-from potential_fitting.exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, \
-        ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError
+from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError,
+        ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError)
 
 has_psi4 = True
 

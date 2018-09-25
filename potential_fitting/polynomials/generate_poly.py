@@ -3,8 +3,7 @@ import itertools
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader
-from potential_fitting.exceptions import ParsingError, InvalidValueError, \
-        InconsistentValueError
+from potential_fitting.exceptions import ParsingError, InvalidValueError, InconsistentValueError
 
 # relative module imports
 from . import filters
@@ -222,9 +221,8 @@ def generate_poly(settings_path, input_path, order, output_path):
             write_header_file(header_file, total_terms, len(variables))
 
         # open the three files we will now write to
-        with open(output_path + "/poly-direct.cpp", "w") as cpp_file, \
-                open(output_path + "/poly-grd.maple", "w") as grd_file, \
-                open(output_path + "/poly-nogrd.maple", "w") as nogrd_file:
+        with (open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple", "w") as
+                grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file):
             # write the opening for the cpp file
             write_cpp_opening(cpp_file, total_terms, len(variables))
 
@@ -322,9 +320,8 @@ class Variable(object):
         line = line[line.index("[") + 1:line.index("]")]
 
         # parse the line into this Variable's fields
-        self.atom1_name, self.atom1_fragment, self.atom2_name, \
-                self.atom2_fragment, self.category = \
-                line.replace("'", "").replace(" ", "").split(",")
+        self.atom1_name, self.atom1_fragment, self.atom2_name, self.atom2_fragment, self.category = line.replace("'",
+                "").replace(" ", "").split(",")
 
 def make_permutations(fragment):
     """

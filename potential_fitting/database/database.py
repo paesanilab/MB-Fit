@@ -227,10 +227,11 @@ class Database():
 
                 # insert fragment's atoms into the table
                 for atom in fragment.get_atoms():
-                   self.cursor.execute("INSERT INTO Atoms (fragment_id, symbol, symmetry_class, x, y, z) VALUES \
-                            (?, ?, ?, ?, ?, ?)", (fragment_id, atom.get_name(), atom.get_symmetry_class(),
+                   self.cursor.execute(
+                            "INSERT INTO Atoms (fragment_id, symbol, symmetry_class, x, y, z) VALUES "
+                            + "(?, ?, ?, ?, ?, ?)", (fragment_id, atom.get_name(), atom.get_symmetry_class(),
                             atom.get_x(), atom.get_y(), atom.get_z())) 
-                    
+
         else:
             
             # get id of this molecule
@@ -239,8 +240,9 @@ class Database():
 
         # check if the calculation is not already in the Calculations table
 
-        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Calculations WHERE molecule_id=? AND model_id=? AND \
-                tag=? AND optimized=?)", (molecule_id, model_id, tag, optimized)).fetchone()[0]:
+        if not self.cursor.execute(
+                "SELECT EXISTS(SELECT * FROM Calculations WHERE molecule_id=? AND model_id=? AND tag=? AND "
+                + "optimized=?)", (molecule_id, model_id, tag, optimized)).fetchone()[0]:
             
             # create entry in Calculations table
             self.cursor.execute("INSERT INTO Calculations (molecule_id, model_id, tag, optimized) VALUES (?, ?, ?, ?)",
@@ -286,12 +288,13 @@ class Database():
             return None
         
         # retrieve the calculation and energy to be calculated for this job from the Energies table
-        calculation_id, energy_index = self.cursor.execute("SELECT calculation_id, energy_index FROM Energies WHERE \
-                job_id=?", (job_id,)).fetchone()
+        calculation_id, energy_index = self.cursor.execute(
+                "SELECT calculation_id, energy_index FROM Energies WHERE job_id=?", (job_id,)).fetchone()
 
         # retrieve the molecule and model from the Calculations table
-        molecule_id, model_id, tag, optimized = self.cursor.execute("SELECT molecule_id, model_id, tag, optimized \
-                FROM Calculations WHERE ROWID=?", (calculation_id,)).fetchone()
+        molecule_id, model_id, tag, optimized = self.cursor.execute(
+                "SELECT molecule_id, model_id, tag, optimized FROM Calculations WHERE ROWID=?",
+                (calculation_id,)).fetchone()
 
         # retrieve the method, basis, and cp for this model
         method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?",
@@ -351,9 +354,9 @@ class Database():
         """
         
         if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0] != "running":
-            print("This job is not set to running, but tried to have its energy set. Most likely, this job was \
-                    dispatched a long time ago, and the database has since given up on ever getting a response. \
-                    Energy will be placed into the database anyways.")
+            print("This job is not set to running, but tried to have its energy set. Most likely, this job was "
+                    + "dispatched a long time ago, and the database has since given up on ever getting a response. "
+                    + "Energy will be placed into the database anyways.")
 
 
         # update the row in the Energies table corresponding to this energy
@@ -421,12 +424,13 @@ class Database():
         """
         
         # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE \
-                name=?", (molecule_name,)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
 
         # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method \
-                LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?",
+                (method, basis, cp)).fetchall()]
 
         # get a list of all calculations that have the appropriate method, basis, and cp
         calculation_ids = []
@@ -439,15 +443,15 @@ class Database():
 
                 # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM \
-                            Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?",
-                            (model_id, molecule_id, tag, 1)).fetchall()]
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND "
+                            + "optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
 
                 # otherwise, get all energies (even those marked as optimized)
                 else:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM \
-                            Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id,
-                            tag)).fetchall()]
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?",
+                            (model_id, molecule_id, tag)).fetchall()]
         
         # loop over all the selected calculations
         for calculation_id in calculation_ids:
@@ -458,8 +462,8 @@ class Database():
 
             # check if any energies are uncomputed
             is_complete = True
-            for job_id in [job_id_tuple[0] for job_id_tuple in self.cursor.execute("SELECT job_id FROM Energies WHERE \
-                    calculation_id=?", (calculation_id,)).fetchall()]:
+            for job_id in [job_id_tuple[0] for job_id_tuple in self.cursor.execute(
+                    "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]:
                 if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0] != 
                         "completed":
                     is_complete = False
@@ -470,8 +474,8 @@ class Database():
                 continue
 
             # get the energies corresponding to this calculation
-            energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute("SELECT \
-                    energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
+            energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute(
+                    "SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
 
             # Reconstruct the molecule from the information in this database
             molecule = self.get_molecule(molecule_id)
@@ -501,12 +505,13 @@ class Database():
         """
 
         # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name \
-                LIKE ?", (molecule_name,)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
 
         # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method \
-                LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis,
+                cp)).fetchall()]
 
         # get a list of all calculations that have the appropriate method, basis, and cp
         calculation_ids = []
@@ -519,15 +524,15 @@ class Database():
 
                 # if optimized is True, only get calculations that use optimized geometries
                 if optimized:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM \
-                            Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?",
-                            (model_id, molecule_id, tag, 1)).fetchall()]
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND "
+                            + "optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
 
                 # if optimized is False, get all calculations (even those with optimized geometries)
                 else:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM \
-                            Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id,
-                            tag)).fetchall()]
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?",
+                            (model_id, molecule_id, tag)).fetchall()]
 
         # count the number of calculations with each status
         pending = 0
@@ -539,8 +544,8 @@ class Database():
         for calculation_id in calculation_ids:
 
             # get a list of all the jobs for that calculation
-            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT job_id FROM Energies WHERE \
-                    calculation_id=?", (calculation_id,)).fetchall()]
+            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                    "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]
 
             # count the number of jobs with each status
             num_pending = 0
@@ -606,12 +611,13 @@ class Database():
         """
 
         # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name \
-                LIKE ?", (molecule_name,)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
 
         # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Models WHERE method \
-                LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis, cp)).fetchall()]
+        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis,
+                cp)).fetchall()]
 
         # get a list of all calculations that have the appropriate method, basis, and cp
         calculation_ids = []
@@ -624,15 +630,15 @@ class Database():
 
                 # if optimized is True, only get calculations that use optimized geometries
                 if optimized:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM \
-                            Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND optimized=?", (model_id,
-                            molecule_id, tag, 1)).fetchall()]
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND "
+                            + "optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
 
                 # if optimized is False, get all calculations (even those with optimized geometries)
                 else:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM \
-                            Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?", (model_id, molecule_id,
-                            tag)).fetchall()]
+                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?",
+                            (model_id, molecule_id, tag)).fetchall()]
 
         # count the number of energies with each status
         pending = 0
@@ -644,8 +650,8 @@ class Database():
         for calculation_id in calculation_ids:
 
             # get a list of all the jobs for this calculation
-            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT job_id FROM Energies WHERE \
-                    calculation_id=?", (calculation_id,)).fetchall()]
+            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                    "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]
 
             # loop over all the jobs for this calculation
             for job_id in job_ids:
@@ -683,13 +689,14 @@ class Database():
         """
 
         # get a list of all the molecules in the database with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT ROWID FROM Molecules WHERE name \
-                LIKE ?", (molecule_name,)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
 
         model_ids = []
         for molecule_id in molecule_ids:
-            model_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT model_id FROM Calculations \
-                    WHERE molecule_id=? AND tag LIKE ? AND optimized=?", (molecule_id, tag, optimized)).fetchall()]
+            model_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                    "SELECT model_id FROM Calculations WHERE molecule_id=? AND tag LIKE ? AND optimized=?",
+                    (molecule_id, tag, optimized)).fetchall()]
 
         model_ids = set(model_ids)
 
@@ -719,13 +726,15 @@ class Database():
             status for the corresponding molecule_name.
         """
         try:
-            model_id = self.cursor.execute("SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE \
-                    ?", (method, basis, cp)).fetchone()[0]
+            model_id = self.cursor.execute(
+                    "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis,
+                    cp)).fetchone()[0]
         except TypeError:
             return
 
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute("SELECT molecule_id FROM Calculations \
-                WHERE model_id=? AND tag LIKE ? AND optimized=?", (model_id, tag, optimized)).fetchall()]
+        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
+                "SELECT molecule_id FROM Calculations WHERE model_id=? AND tag LIKE ? AND optimized=?", (model_id, tag,
+                optimized)).fetchall()]
 
         molecule_names = []
 
@@ -750,13 +759,14 @@ class Database():
         molecule = Molecule()
         
         # loop over all rows in the Fragments table that correspond to this molecule
-        for fragment_id, name, charge, spin in self.cursor.execute("SELECT ROWID, name, charge, spin FROM Fragments \
-                WHERE molecule_id=?", (molecule_id,)).fetchall():
+        for fragment_id, name, charge, spin in self.cursor.execute(
+                "SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
             fragment = Fragment(name, charge, spin)
 
             # loop over all rows in the Atoms table that correspond to this fragment
-            for symbol, symmetry_class, x, y, z in self.cursor.execute("SELECT symbol, symmetry_class, x, y, z FROM \
-                    Atoms WHERE fragment_id=?", (fragment_id,)).fetchall():
+            for symbol, symmetry_class, x, y, z in self.cursor.execute(
+                    "SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?",
+                    (fragment_id,)).fetchall():
                 fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
 
             molecule.add_fragment(fragment)

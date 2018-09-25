@@ -3,18 +3,13 @@ from potential_fitting.exceptions import InvalidValueError
 
 def parse_filter(*args):
     """
-    Takes in the arguments for a single filter and returns the filter that they
-    represent.
+    Takes in the arguments for a single filter and returns the filter that they represent.
 
-    Valid filters are Not and Degree, see descriptions of their constructors
-    to see their arguments.
-
+    Valid filters are Not and Degree, see descriptions of their constructors to see their arguments.
 
     Args:
-        args                - The arguments that make up the filter. The first
-                item should be the name of the filter ("not" or "degree") the
-                rest should be the arguments for the constructor of that
-                filter.
+        args                - The arguments that make up the filter. The first item should be the name of the filter
+                ("not" or "degree") the rest should be the arguments for the constructor of that filter.
 
     Returns:
         A new filter object.
@@ -27,8 +22,7 @@ def parse_filter(*args):
         return DegreeFilter(*args[1:])
 
     # if the filter type is not a valid filter, raise an error.
-    raise InvalidValueError("filter type", args[0], 
-            "must be one of 'not', 'degree'")
+    raise InvalidValueError("filter type", args[0], "must be one of 'not', 'degree'")
 
 class Filter(object):
     """
@@ -37,14 +31,11 @@ class Filter(object):
 
     def keep(self, monomial, variables):
         """
-        Tells whether the input monomial formed by the input variables is not
-        filtered out by this filter.
+        Tells whether the input monomial formed by the input variables is not filtered out by this filter.
 
         Args:
-            monomial        - The monomial to filter, specified as list of
-                    degrees of length len(variables).
-            variables       - List of variables in this monomial, should be
-                    same length as monomial.
+            monomial        - The monomial to filter, specified as list of degrees of length len(variables).
+            variables       - List of variables in this monomial, should be same length as monomial.
 
         Returns:
             False if this Filter filters out this monomial, True otherwise.
@@ -54,8 +45,8 @@ class Filter(object):
 
 class NotFilter(Filter):
     """
-    Inverts another filter, so this filter will filter out any terms that would
-    NOT be filtered out by the other filter.
+    Inverts another filter, so this filter will filter out any terms that would NOT be filtered out by the other
+    filter.
     """
 
     def __init__(self, not_filter):
@@ -63,28 +54,23 @@ class NotFilter(Filter):
         Creates a new NotFilter from a filter to invert.
 
         Args:
-            not_filter      - This filter is the filter to be inverted by this
-                    one.
+            not_filter      - This filter is the filter to be inverted by this one.
         """
         self.not_filter = not_filter
 
     def keep(self, monomial, variables):
         """
-        Tells whether the input monomial formed by the input variables is not
-        filtered out by this filter.
+        Tells whether the input monomial formed by the input variables is not filtered out by this filter.
 
         Args:
-            monomial        - The monomial to filter, specified as list of
-                    degrees of length len(variables).
-            variables       - List of variables in this monomial, should be
-                    same length as monomial.
+            monomial        - The monomial to filter, specified as list of degrees of length len(variables).
+            variables       - List of variables in this monomial, should be same length as monomial.
 
         Returns:
             False if this Filter filters out this monomial, True otherwise.
         """
 
-        # simply check if this monomial would not be filtered out by the
-        # inverted filter
+        # simply check if this monomial would not be filtered out by the inverted filter
         return not self.not_filter.keep(monomial, variables)
 
 

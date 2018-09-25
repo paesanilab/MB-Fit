@@ -6,14 +6,14 @@ from potential_fitting.utils import SettingsReader, files
 from potential_fitting.exceptions import InvalidValueError, \
         InconsistentValueError
 
-def generate_input_poly(settings_file, poly_input):
+def generate_input_poly(settings_file, poly_in_path):
     """
     Generates an input file for the polynomial generator.
 
     Args:
         settings_file       - Local path to the ".ini" file with all relevant
                 settings.
-        poly_input          - Local path to the ".in" file to write the poly
+        poly_in_path        - Local path to the ".in" file to write the poly
                 input to. Should be named like "A1B2.in". It is OK to have
                 extra paths before it. ("some/path/to/A2B4C2.in")
     """
@@ -23,13 +23,13 @@ def generate_input_poly(settings_file, poly_input):
     # get the string representation of the molecule by getting the A1B2C2,
     # etc part of the name
     try:
-        molecule = os.path.splitext(poly_input)[0].split("/")[-1]
+        molecule = os.path.splitext(poly_in_path)[0].split("/")[-1]
     except IndexError:
-        raise InvalidValueError("poly_input", poly_input,
+        raise InvalidValueError("poly_in_path", poly_in_path,
                 "in format somepath/A1B2_A1B2.in")
 
     # file will be automatically closed after block by with open as ... syntax
-    with open(files.init_file(poly_input), "w") as poly_in_file:
+    with open(files.init_file(poly_in_path), "w") as poly_in_file:
 
         # split along _ to seperate fragments
         fragments = molecule.split('_')
@@ -53,11 +53,11 @@ def generate_input_poly(settings_file, poly_input):
 
             # first check the formatting on this fragment
             if fragment[0].isdigit():
-                raise InvalidValueError("poly_input", poly_input,
+                raise InvalidValueError("poly_in_path", poly_in_path,
                         "formatted such that the first character of every fragment is a letter")
             for i in range(1, len(fragment), 2):
                 if not fragment[i].isdigit():
-                    raise InvalidValueError("poly_input", poly_input,
+                    raise InvalidValueError("poly_in_path", poly_in_path,
                             "formatted such that every letter is followed by a single-digit number, even if that number is 1")
             frag_set = []
             

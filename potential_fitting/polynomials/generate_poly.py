@@ -10,15 +10,12 @@ from . import filters
 
 def generate_poly(settings_path, input_path, order, output_path):
     """
-    Generates the ".cpp", ".h", and ".maple" polynomial files for the
-    polynomial described by the input file.
+    Generates the ".cpp", ".h", and ".maple" polynomial files for the polynomial described by the input file.
 
     Args:
-        settings_path       - Local path to the ".ini" file with
-                relevent settings.
+        settings_path       - Local path to the ".ini" file with relevent settings.
         input_path          - Local path to the ".in" polynomial file to read.
-        output_path         - Local path to the directory to write the output
-                files in.
+        output_path         - Local path to the directory to write the output files in.
 
     Returns:
         None.
@@ -33,9 +30,9 @@ def generate_poly(settings_path, input_path, order, output_path):
     # parse declaired fragments and variables from the input-file
     fragments, variables, monomial_filters = parse_input(input_path)
 
-    # open output files for polynomials, will automatically be closed by with
-    # open as syntax
     poly_log_path = "{}/poly.log".format(output_path)
+
+    # open output file for polynomials, will automatically be closed by with open as syntax
     with open(poly_log_path, "w") as poly_log_file:
 
         # write number of fragments to log
@@ -55,8 +52,8 @@ def generate_poly(settings_path, input_path, order, output_path):
         number_per_fragment = []
         # index of first atom in atom_names of each fragment
         index_each_fragment = []
-        # letter to be part of atom_name, signifies which fragment this atom is
-        # a part of starts at 'a', will be incremented to 'b', etc
+        # letter to be part of atom_name, signifies which fragment this atom is a part of starts at 'a', will be
+        # incremented to 'b', etc
         fragname = 97
         
         # loop over each fragment
@@ -68,22 +65,20 @@ def generate_poly(settings_path, input_path, order, output_path):
                         "formatted such that the first character of every fragment is a letter")
             for i in range(1, len(fragment), 2):
                 if not fragment[i].isdigit():
-                    raise InvalidValueError("fragment", fragment,
-                            "formatted such that every letter is followed by a single-digit number, even if that number is 1")
+                    raise InvalidValueError("fragment", fragment, "formatted such that every letter is followed by a "
+                            + "single-digit number, even if that number is 1")
             
             # counter to count how many atoms are in this fragment
             number_of_atoms = 0
 
-            # loop thru all the atomic symbols in the fragment (skipping the
-            # numbers)
+            # loop thru all the atomic symbols in the fragment (skipping the numbers)
             for symbol in fragment[::2]:
 
-                # loop once for each atom of this type as signified by the
-                # number immediately following the atomic symbol
+                # loop once for each atom of this type as signified by the number immediately following the atomic
+                # symbol
                 for k in range(0, int(fragment[fragment.index(symbol) + 1])):
 
-                    # check if there are multiple atoms of this type in this
-                    # fragment
+                    # check if there are multiple atoms of this type in this fragment
                     if int(fragment[fragment.index(symbol) + 1]) > 1:
 
                         # add to atom_names in form Aa1
@@ -123,23 +118,19 @@ def generate_poly(settings_path, input_path, order, output_path):
             # generate all permutations for this fragment
             permutations = list(make_permutations(fragment))
             
-            # add to each permutation the index of the first atom in this
-            # fragment in the molecule
+            # add to each permutation the index of the first atom in this fragment in the molecule
             for permutation in permutations:
                 for index in range(len(permutation)):
                     permutation[index] += index_each_fragment[frag_index]
 
             fragment_permutations.append(permutations)
 
-        # construct total permutations from the fragments, including
-        # permutations of like fragments
+        # construct total permutations from the fragments, including permutations of like fragments
 
-        atom_permutations = list(combine_permutations(fragments,
-                fragment_permutations))
+        atom_permutations = list(combine_permutations(fragments, fragment_permutations))
 
         # write permutation count to log file
-        poly_log_file.write("<> permutations ({}) <>\n".format(
-                len(atom_permutations)))
+        poly_log_file.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
         poly_log_file.write("\n")
 
         # write each permutation to log file
@@ -152,8 +143,7 @@ def generate_poly(settings_path, input_path, order, output_path):
         poly_log_file.write("\n")
 
         # generate the variable permutations
-        variable_permutations = list(make_variable_permutations(variables,
-                atom_permutations, atom_names))
+        variable_permutations = list(make_variable_permutations(variables, atom_permutations, atom_names))
 
         # make the .cpp vars file
         with open(output_path + "/vars.cpp", "w") as vars_file:
@@ -161,19 +151,16 @@ def generate_poly(settings_path, input_path, order, output_path):
 
         # write each variable to log file
         for index, variable in zip(range(len(variables)), variables):
-            poly_log_file.write(
-                    "{:>2} : {:>3}({:>1}) <===> {:>3}({:>1}) : {}\n".format(
-                    index, variable.atom1_name, variable.atom1_fragment,
-                    variable.atom2_name, variable.atom2_fragment,
-                    variable.category))
+            poly_log_file.write("{:>2} : {:>3}({:>1}) <===> {:>3}({:>1}) : {}\n".format(index, variable.atom1_name,
+                    variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment, variable.category))
         poly_log_file.write("\n")
 
         # generate the monomials
 
         total_terms = 0
 
-        # this list will be filled so that the first item is all the 1st degree
-        # monomials, second item is all the 2nd degree monomials, etc
+        # this list will be filled so that the first item is all the 1st degree monomials, second item is all the 2nd
+        # degree monomials, etc
         total_monomials = []
 
         # loop thru every degree in this polynomial
@@ -187,30 +174,23 @@ def generate_poly(settings_path, input_path, order, output_path):
             monomials = list(generate_monomials(len(variables), degree))
 
             # log number of possible monomials
-            poly_log_file.write("{} possible {} degree monomials\n".format(
-                    len(monomials), degree))
+            poly_log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
-            # filter out monomials from the list based on filters in the
-            # poly.in file
-            accepted_monomials = list(filter_monomials(monomials, variables,
-                    monomial_filters))
+            # filter out monomials from the list based on filters in the poly.in file
+            accepted_monomials = list(filter_monomials(monomials, variables, monomial_filters))
 
-            # filter out redundant monomials (that are a permutation of
-            # eachother)
-            accepted_monomials = list(eliminate_redundant_monomials(
-                    accepted_monomials, variable_permutations))
+            # filter out redundant monomials (that are a permutation of eachother)
+            accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
 
             # log number of accpeted terms
-            poly_log_file.write("{} <<== accepted {} degree terms\n".format(
-                    len(accepted_monomials), degree))
+            poly_log_file.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
 
             poly_log_file.write("\n")
 
             # update the total number of terms
             total_terms += len(accepted_monomials)
 
-            # add the monomials of the current degree to the list of all
-            # monomials
+            # add the monomials of the current degree to the list of all monomials
             total_monomials.append(accepted_monomials)
 
         # log the total number of terms
@@ -223,22 +203,19 @@ def generate_poly(settings_path, input_path, order, output_path):
         # open the three files we will now write to
         with (open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple", "w") as
                 grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file):
+
             # write the opening for the cpp file
             write_cpp_opening(cpp_file, total_terms, len(variables))
 
-            # keeps track of what index in a list of all monomials the current
-            # monomial would occupy
+            # keeps track of what index in a list of all monomials the current monomial would occupy
             monomial_index = 0
 
             # loop thru every degree in this polynomial
             for degree in range(1, order + 1):
                 for monomial in total_monomials[degree - 1]:
-                    write_cpp_monomial(cpp_file, monomial_index, monomial,
-                            variable_permutations)
-                    write_grd_monomial(grd_file, monomial_index, monomial,
-                            variable_permutations)
-                    write_nogrd_monomial(nogrd_file, monomial_index, monomial,
-                            variable_permutations)
+                    write_cpp_monomial(cpp_file, monomial_index, monomial, variable_permutations)
+                    write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
+                    write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
                     monomial_index += 1
 
                 cpp_file.write("\n")
@@ -251,16 +228,14 @@ def generate_poly(settings_path, input_path, order, output_path):
 
 def parse_input(input_path):
     """
-    Reads the polynomial input file and returns a list of fragments, variables,
-    and filters.
+    Reads the polynomial input file and returns a list of fragments, variables, and filters.
 
     Args:
         input_path          - Local path to the ".in" polynomial input file.
 
     Returns:
-        A 3-tuple (fragments, variables, filters) as read from the input file.
-        fragments is a list of "A1B2" type formats, variables is a list of
-        Variable objects, filters is a list of Fitler objects.
+        A 3-tuple (fragments, variables, filters) as read from the input file. fragments is a list of "A1B2" type
+        formats, variables is a list of Variable objects, filters is a list of Fitler objects.
     """
 
     fragments = []
@@ -285,17 +260,13 @@ def parse_input(input_path):
                 variables.append(Variable(line))
 
             elif line.startswith("add_filter"):
-                # remove all the extra information before and after the
-                # brackets
+                # remove all the extra information before and after the brackets
                 line = line[line.index("[") + 1:line.index("]")]
-                monomial_filters.append(filters.parse_filter(*line.replace("'",
-                        "").replace(" ", "").split(",")))
+                monomial_filters.append(filters.parse_filter(*line.replace("'", "").replace(" ", "").split(",")))
                 
-            # if line is neither a add_molecule statement, add_variable
-            # statement, or a blank line, it is invalid
+            # if line is neither a add_molecule statement, add_variable statement, or a blank line, it is invalid
             elif line != "\n":
-                raise ParsingError(input_path,
-                        "Unrecongnized line format: '{}'".format(line))
+                raise ParsingError(input_path, "Unrecongnized line format: '{}'".format(line))
 
     return fragments, variables, monomial_filters
 
@@ -309,8 +280,7 @@ class Variable(object):
         Creates a new Variable from a line from the polynomial input file.
 
         Args:
-            line            - The line from the poly.in to read into this
-                    variable.
+            line            - The line from the poly.in to read into this variable.
 
         Returns:
             A new Variable.
@@ -325,8 +295,7 @@ class Variable(object):
 
 def make_permutations(fragment):
     """
-    Takes in a fragment and constructs all permutations of that fragment by
-    swapping positions of equivelent atoms.
+    Takes in a fragment and constructs all permutations of that fragment by swapping positions of equivelent atoms.
 
     Example Input and output:
     A3 -> [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
@@ -335,23 +304,18 @@ def make_permutations(fragment):
     A2B2 -> [[0, 1, 2, 3], [0, 1, 3, 2], [1, 0, 2, 3], [1, 0, 3, 2]]
 
     Args:
-        fragment            - String in the form"A1B2", "A3", etc. indicating
-                which atoms are equivelent.
+        fragment            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
 
     Returns:
-        A list of lists of indices representing permutations of the fragment,
-        created by forming all permutations of equivelent atoms.
-        If [0, 1] and [1, 0] are both included in the output, then atoms 0 and
-        1 are interchangable.
+        A list of lists of indices representing permutations of the fragment, created by forming all permutations of
+        equivelent atoms. If [0, 1] and [1, 0] are both included in the output, then atoms 0 and 1 are interchangable.
     """
 
     try:
-        # read the 2nd letter of the fragment, the atom count. (For instance 2
-        # in A2B3)
+        # read the 2nd letter of the fragment, the atom count. (For instance 2 in A2B3)
         count = int(fragment[1])
     except IndexError:
-        # if the fragment string is empty, then this fragment has no
-        # permutations
+        # if the fragment string is empty, then this fragment has no permutations
         yield []
         return
 
@@ -361,39 +325,31 @@ def make_permutations(fragment):
     # loop thru each of the permutations
     for permutation in permutations:
         
-        # yield from the generator created by concatinating the permutation of
-        # the first atom type in the fragment with the permutations created by
-        # a recursive call on the rest of the fragment
-        # increase each item in the lists given by the recursive call equal to
-        # the number of atoms of the first type in the fragment
-        yield from (list(permutation) + [count + i for i in perm] for perm in
-                make_permutations(fragment[2:]))
+        # yield from the generator created by concatinating the permutation of the first atom type in the fragment with
+        # the permutations created by a recursive call on the rest of the fragment
+        # increase each item in the lists given by the recursive call equal to the number of atoms of the first type in
+        # the fragment
+        yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(fragment[2:]))
 
 def combine_permutations(fragments, fragment_permutations):
     """
-    Takes a list of fragments ("A1B2", "A1B1C1", etc) and a list of the
-    permutations of those fragments and yields permutations of the molecule
-    as a whole.
+    Takes a list of fragments ("A1B2", "A1B1C1", etc) and a list of the permutations of those fragments and yields
+    permutations of the molecule as a whole.
 
-    Works by generating one permutation for every possible choice of 1
-    permutation from each fragment, but if 2 fragments are the same, their
-    permutations will also be swapped with eachother to create all permutations
-    where equivelent atoms are swapped in every possible order.
+    Works by generating one permutation for every possible choice of 1 permutation from each fragment, but if 2
+    fragments are the same, their permutations will also be swapped with eachother to create all permutations where
+    equivelent atoms are swapped in every possible order.
 
     Args:
-        fragments           - List of strings of format "A1B2" representing the
-                fragments.
-        fragment_permutations - List of permutations for each fragment as
-                generated by make_permutations().
+        fragments           - List of strings of format "A1B2" representing the fragments.
+        fragment_permutations - List of permutations for each fragment as generated by make_permutations().
 
     Returns:
-        A list of lists of indicies representing all permutations of the atoms
-        in this molecule where equivelent atoms are swapped in every possible
-        order.
+        A list of lists of indicies representing all permutations of the atoms in this molecule where equivelent atoms
+        are swapped in every possible order.
     """
     
-    # if there are no fragments, then there are no permutations for this
-    # molecule
+    # if there are no fragments, then there are no permutations for this molecule
     if len(fragments) == 0:
         yield []
         return
@@ -401,10 +357,8 @@ def combine_permutations(fragments, fragment_permutations):
     # loop thru every permutation of the first fragment
     for permutation in fragment_permutations[0]:
 
-        # yield from the first fragment's permutation concatinated with the
-        # permutations of the rest of the molecule
-        yield from (permutation + perm for perm in
-                combine_permutations(fragments[1:], fragment_permutations[1:]))
+        # yield from the first fragment's permutation concatinated with the permutations of the rest of the molecule
+        yield from (permutation + perm for perm in combine_permutations(fragments[1:], fragment_permutations[1:]))
 
     # loop thru every other fragmanet in the molecule
     for i in range(1, len(fragments)):
@@ -412,19 +366,14 @@ def combine_permutations(fragments, fragment_permutations):
         # check if the current fragment (0) is the same as another one
         if fragments[i] == fragments[0]:
 
-            # loop thru every permutation of the fragment that is the same as
-            # the current one
+            # loop thru every permutation of the fragment that is the same as the current one
             for permutation in fragment_permutations[i]:
 
-                # yield from that fragment's permutation concatinated with the
-                # permuations of the rest of the molecule with the current
-                # fragment (0) swapped into the position of the fragment it is
-                # the same as.
-                # the reason we swap the permutations is because identical
-                # fragments DO NOT have the same numbers in their permutations
-                # as the numbers are indices of atoms in the molecule, so the
-                # 2nd fragment will have greater indices than the first, even
-                # if the fragments are the same.
+                # yield from that fragment's permutation concatinated with the permuations of the rest of the molecule
+                # with the current fragment (0) swapped into the position of the fragment it is the same as.
+                # the reason we swap the permutations is because identical fragments DO NOT have the same numbers in
+                # their permutations as the numbers are indices of atoms in the molecule, so the 2nd fragment will have
+                # greater indices than the first, even if the fragments are the same.
                 yield from (permutation + perm for perm in combine_permutations(fragments[1:i] + [fragments[0]] +
                         fragments[i + 1:], fragment_permutations[1:i] + [fragment_permutations[0]]
                         + fragment_permutations[i + 1:]))

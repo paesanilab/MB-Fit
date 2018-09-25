@@ -5,6 +5,9 @@ from configparser import NoSectionError, NoOptionError
 # absolute module imports
 from potential_fitting.exceptions import ConfigMissingFileError, ConfigMissingSectionError, ConfigMissingPropertyError
 
+# local module imports
+from . import files
+
 class SettingsReader(object):
     """
     Wrapper class for ConfigParser with added functionality.
@@ -63,7 +66,7 @@ class SettingsReader(object):
             None.
         """
 
-        self.configparser.write(file)
+        self.configparser.write(files.init_file(file))
 
     def get(self, section, prop, default = None):
         """

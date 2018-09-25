@@ -76,65 +76,47 @@ class NotFilter(Filter):
 
 class DegreeFilter(Filter):
     """
-    Filters out monomials based on their degree in particular variables and
-    their overal degree.
+    Filters out monomials based on their degree in particular variables and their overal degree.
     """
 
     def __init__(self, variable_string, degree_string, term_string):
         """
         Creates a new DegreeFilter from the given parameters.
 
-        This filter will filter OUT any monomials with degree as specified by
-        degree_string in one of the variables as specified by variable_string
-        with TOTAL degree as specified by term_string.
+        This filter will filter OUT any monomials with degree as specified by degree_string in one of the variables as
+        specified by variable_string with TOTAL degree as specified by term_string.
 
         Args:
-            variable_string - '/' delimited list of variables to apply this
-                    filter to. Each item seperated by a '/' should be in the
-                    following format:
+            variable_string - '/' delimited list of variables to apply this filter to. Each item seperated by a '/'
+                    should be in the following format:
                         * TYPE-ATOMS
                     where TYPE is one of:
                         * x         -- Only affects intermolecular variables.
                         * x-intra   -- Only affects intramolecular variables.
-                        * x-*       -- Affects both intermolecular and
-                                intramolecular variables.
+                        * x-*       -- Affects both intermolecular and intramolecular variables.
                     and ATOMS is one of:
-                        * AB        -- Affects variables describing the
-                                distance between A and B.
-                        * *A or A*  -- Affects variables describing the
-                                distance between A and any other atom.
-                        * **        -- Affects variables regardless of the atom
-                                types involved.
+                        * AB        -- Affects variables describing the distance between A and B.
+                        * *A or A*  -- Affects variables describing the distance between A and any other atom.
+                        * **        -- Affects variables regardless of the atom types involved.
                     A and B can be substituted for any other atom type.
-            degree_string   - '/' delimited list of degrees to apply this
-                    filter to. Each item seperated by a '/' should be in one of
-                    the following formats:
-                        * y-        -- Affects monomials with degree equal to
-                                or less than y in one or more of the specified
-                                variables.
-                        * y+        -- Affects monomials with degree equal to
-                                or greater than y in one or more of the
+            degree_string   - '/' delimited list of degrees to apply this filter to. Each item seperated by a '/'
+                    should be in one of the following formats:
+                        * y-        -- Affects monomials with degree equal to or less than y in one or more of the
                                 specified variables.
-                        * y-z       -- Affects monomials with degree in the
-                                range [y, z] (inclusive) in one or more of the
+                        * y+        -- Affects monomials with degree equal to or greater than y in one or more of the
                                 specified variables.
-                        * y         -- Affects monomials with degree y in one
-                                or more of the specified variables.
-                        * *         -- Affects monomials regardless of their
-                                degrees.
+                        * y-z       -- Affects monomials with degree in the range [y, z] (inclusive) in one or more of
+                                the specified variables.
+                        * y         -- Affects monomials with degree y in one or more of the specified variables.
+                        * *         -- Affects monomials regardless of their degrees.
                     y and z can be any integer >= 0.
-            term_string - '/' delimited list of terms to apply this filter to.
-                    Each item seperated by a '/' should be in one of the
-                    following formats:
-                        * y-        -- Affects monomials with TOTAL degree
-                                equal to or less than y.
-                        * y+        -- Affects monomials with TOTAL degree
-                                equal to or greater than y.
-                        * y-z       -- Affects monomials with TOTAL degree in
-                                the range [y, z] (inclusive).
+            term_string - '/' delimited list of terms to apply this filter to. Each item seperated by a '/' should be
+                    in one of the following formats:
+                        * y-        -- Affects monomials with TOTAL degree equal to or less than y.
+                        * y+        -- Affects monomials with TOTAL degree equal to or greater than y.
+                        * y-z       -- Affects monomials with TOTAL degree in the range [y, z] (inclusive).
                         * y         -- Affects monomials with TOTAL degree y.
-                        * *         -- Affects monomials regardless of their
-                                TOTAL degree.
+                        * *         -- Affects monomials regardless of their TOTAL degree.
                     y and z can be any integer >= 0.
 
         Returns:
@@ -148,14 +130,11 @@ class DegreeFilter(Filter):
 
     def keep(self, monomial, variables):
         """
-        Tells whether the input monomial formed by the input variables is not
-        filtered out by this filter.
+        Tells whether the input monomial formed by the input variables is not filtered out by this filter.
 
         Args:
-            monomial        - The monomial to filter, specified as list of
-                    degrees of length len(variables).
-            variables       - List of variables in this monomial, should be
-                    same length as monomial.
+            monomial        - The monomial to filter, specified as list of degrees of length len(variables).
+            variables       - List of variables in this monomial, should be same length as monomial.
 
         Returns:
             False if this Filter filters out this monomial, True otherwise.
@@ -189,7 +168,8 @@ class DegreeFilter(Filter):
 
             # if the term has a "-" (but did not end in "-") then it is a range specifier
             elif "-" in term_string:
-                if term >= int(term_string[:term_string.index("-")]) and term <= int(term_string[term_string.index("-") + 1:]):
+                if term >= int(term_string[:term_string.index("-")]) and term <= int(term_string[term_string.index("-")
+                        + 1:]):
                     applicable_term = True
                     break
 
@@ -222,24 +202,32 @@ class DegreeFilter(Filter):
 
                     # tracks if the atom portion of this variable string matches the current variable's
                     fits_atoms = False
-                    # tracks if the type portion of this variable string matches the current variable's (inter or intra)
+                    # tracks if the type portion of this variable string matches the current variable's (inter or
+                    # intra)
                     fits_type = False
 
-                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all variables regardless of atom type
+                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
+                    # variables regardless of atom type
                     if variable_string[-2] == "*" and variable_string[-1] == "*":
                         fits_atoms = True
 
-                    # if the second to last character or the last character of the variable string is a wildcard (but not both), then this filter is eligable to apply to all variables where one of the atoms is the other atom specified by the variable string
+                    # if the second to last character or the last character of the variable string is a wildcard (but
+                    # not both), then this filter is eligable to apply to all variables where one of the atoms is the
+                    # other atom specified by the variable string
                     elif variable_string[-2] == "*":
-                        fits_atoms = variable.category[-1] == variable_string[-1] or variable.category[-2] == variable_string[-1]
+                        fits_atoms = (variable.category[-1] == variable_string[-1]
+                                or variable.category[-2] ==variable_string[-1])
                     elif variable_string[-1] == "*":
-                        fits_atoms = variable.category[-1] == variable_string[-2] or variable.category[-2] == variable_string[-2]
+                        fits_atoms = (variable.category[-1] == variable_string[-2]
+                                or variable.category[-2] == variable_string[-2])
 
-                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this filter
+                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
+                    # filter
                     else:
                         fits_atoms = variable.category[-2:] == variable_string[-2:]
 
-                    # if the second character of the variable string is an * but not the 3rd (as in x-*-AA but NOT x-**), then this filter is eligable to apply to all variables regardless of inter/intra type
+                    # if the second character of the variable string is an * but not the 3rd (as in x-*-AA but NOT
+                    # x-**), then this filter is eligable to apply to all variables regardless of inter/intra type
                     if variable_string[2] == "*" and variable_string[3] != "*":
                         fits_type = True
 
@@ -247,7 +235,8 @@ class DegreeFilter(Filter):
                     else:
                         fits_type = variable_string[:-2] == variable.category[:-2]
 
-                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to this variable! 
+                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
+                    # this variable! 
                     if fits_type and fits_atoms:
                         applicable_variable = True
                         break 
@@ -280,7 +269,8 @@ class DegreeFilter(Filter):
 
                 # if this degree contains a "-" (but does not end in "-") then it is a range specifier
                 elif "-" in degree_string:
-                    if degree >= int(degree_string[:degree_string.index("-")]) and degree <= int(degree_string[degree_string.index("-") + 1:]):
+                    if degree >= int(degree_string[:degree_string.index("-")]) and degree <=
+                            int(degree_string[degree_string.index("-") + 1:]):
                         return False
 
                 # otherwise, it is an exact value specifier

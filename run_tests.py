@@ -1,0 +1,3 @@
+import test_potential_fitting
+
+test_potential_fitting.execute_tests()

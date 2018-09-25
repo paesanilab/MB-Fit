@@ -2,6 +2,7 @@
 import itertools, datetime, sqlite3
 
 # absolute module imports
+from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError
 
@@ -28,7 +29,7 @@ class Database():
             file_path += ".db"
         
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = sqlite3.connect(file_path)
+        self.connection = sqlite3.connect(files.init_file(file_path))
         
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()

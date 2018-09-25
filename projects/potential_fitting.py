@@ -97,14 +97,16 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
     import configuration_generator
    
-    if not os.path.isdir(configurations):
-        os.mkdir(configurations)
+    if os.path.dirname(configurations) == "":
+        configurations = "./" + configurations
+    if not os.path.isdir(os.path.dirname(configurations)):
+        os.mkdir(os.path.dirname(configurations))
 
     configuration_generator.generate_configurations(settings_path, geo, normal_modes, dim_null, configurations)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src") 
 
-def generate_2b_configurations(settings_path, geo1, geo2, configs_per_distance, min_distance, configurations, flex = False, seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer
 
@@ -112,30 +114,30 @@ def generate_2b_configurations(settings_path, geo1, geo2, configs_per_distance, 
         settings_path - the file containing all relevent settings information
         geo1        - the first optimized geometry
         geo2        - the second optimized geometry
-        configs_per_distance - number of configurations per distance
-        min_distance - min distance between any 2 molecules from each monomer
-        configurations - file to write configurations
-        flex        - True will generate flex rather than rigid configurations. Default is False
-        seed        - seed to generate random configs, the same seed will yeild the same configurations. Defualt is a random seed
+        number_of_configs - target number of configurations to generate, if max_distance is set too low or min_inter_distance is set too high, then less configurations may be generated
+        config_path - path to file in which to generate configurations
+        min_distance - minimum distance between the centers of mass of the two molecules
+        max_distance - the maximum distance between the centers of mass of the two molecules
+        min_inter_distance - the minimum distance of any intermolecular pair of atoms
+        use_grid - if False, configurations are space roughly evenly between min_distance and max_distance. If True, then configurations are placed at intervals along this distance.
+        step_size - if use_grid is True, then this dictates the distance of the spacing interval used to place the centers of masses of the molecules, otherwise, this parameter has no effect.
+        seed - the same seed will generate the same configurations.
 
     Returns:
         None
     """
 
-    original_dir = os.getcwd()
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
+    import configuration_generator_2b
 
-    if not os.path.isdir(configurations):
-        os.mkdir(configurations)
+    if os.path.dirname(config_path) == "":
+        config_path = "./" + config_path
+    if not os.path.isdir(os.path.dirname(config_path)):
+        os.mkdir(os.path.dirname(config_path))
 
-    os.chdir(configurations)
+    configuration_generator_2b.generate_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
 
-    if flex:
-        os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_flex " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
-    else:
-        os.system(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/2b_configs/bin/2b_ts_rigid " + original_dir + "/" + geo1 + " " + original_dir + "/" + geo2 + " " + str(configs_per_distance) + " " + str(min_distance) + " " + str(seed) + " > /dev/null")
-
-    os.chdir(original_dir)
-
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../configuration_generator/src")
 
 def init_database(settings_path, database_name, config_files):
     """
@@ -287,6 +289,32 @@ def generate_poly_input(settings_path, poly_in_path):
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../polynomial_generation/src") 
 
+def generate_poly_input_from_database(settings_path, database_name, molecule_name, poly_directory):
+    """
+    Generates an input file for the polynomial generation script.
+    Looks in a database to find the symmetry and creates a file in the given directory.
+
+    Args:
+        settings_path - the file containing all relevent settings information
+        database_name - the name of the database to read the symmetry from
+        molecule_name - name of molecule to read symmetry of
+        poly_directory - the directory to make the input file in
+
+    Returns:
+        None
+    """
+
+    # imports have to be here because python is bad
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src")
+    from database import Database
+
+    with Database(database_name) as database:
+        symmetry = database.get_symmetry(molecule_name)
+
+        generate_poly_input(settings_path, poly_directory + "/" + symmetry + ".in")
+
+    sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../qm_mb_energy_calculator/src") 
+        
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_directory):
     """
@@ -345,7 +373,7 @@ def execute_maple(settings_path, poly_directory):
 
     os.chdir(original_dir)
 
-def generate_fit_config(settings_path, molecule_in, opt_geometry, config_path):
+def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = 20):
     """
     Generates the fit config for the optimized geometry
 
@@ -353,25 +381,28 @@ def generate_fit_config(settings_path, molecule_in, opt_geometry, config_path):
     40 angstroms
 
     Args:
-        settings_path    - the file containing all relevent settings information
+        settings_path   - the file containing all relevent settings information
         molecule_in     - string of fromat "A1B2"
-        opt_geometry - the optimized geometry of this molecule
-        config_path - the file to write the config file
+        config_path     - path to file to write fit config in
+        opt_geometry_paths - the paths to the optimized geometries to include in this fit config, should be 1 to 3 (inclusive)
+        distance_between - distance between each geometry in the qchem calculation. If the qchemc calculation does not converge, try different values of this
 
     Returns:
         None
     """
+
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
     import get_config_data
-
+    if os.path.dirname(config_path) == "":
+        config_path = "./" + config_path
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    get_config_data.make_config(settings_path, molecule_in, opt_geometry, config_path)
+    get_config_data.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = distance_between)
     
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/src")
 
-def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_directory):
+def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, poly_order, fit_directory):
     """
     Generates the fit code based on the polynomials for a monomer
 
@@ -380,6 +411,7 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_dir
         config    - monomer config file
         poly_in_path - the A3B2.in type file
         poly_path   - directory where polynomial files are
+        poly_order - the order of the polynomial in poly_path
         fit_directory - directory to generate fit code in
 
     Returns:
@@ -392,8 +424,8 @@ def generate_1b_fit_code(settings_path, config, poly_in_path, poly_path, fit_dir
 
     if not os.path.isdir(fit_directory):
         os.mkdir(fit_directory)
-    
-    prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, fit_directory)
+
+    prepare_1b_fitting_code.prepare_1b_fitting_code(config, poly_in_path, poly_path, poly_order, fit_directory)
 
     sys.path.remove(os.path.dirname(os.path.abspath(__file__)) + "/../fitting/1B/get_codes") 
 

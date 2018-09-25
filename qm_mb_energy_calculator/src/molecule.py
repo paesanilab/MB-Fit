@@ -12,7 +12,7 @@ class Atom(object):
     Stores name, x, y, and z of a single atom
     """
 
-    def __init__(self, name, x, y, z):
+    def __init__(self, name, symmetry_class, x, y, z):
         """
         Creates a new atom
 
@@ -27,6 +27,7 @@ class Atom(object):
         """
 
         self.name = name
+        self.symmetry_class = symmetry_class
         self.x = x
         self.y = y
         self.z = z
@@ -43,6 +44,32 @@ class Atom(object):
         """
 
         return self.name
+
+    def get_symmetry_class(self):
+        """
+        Gets the symmetry class of this atom
+
+        Args:
+            None
+
+        Returns:
+            The symmetry class of this atom
+        """
+
+        return self.symmetry_class
+
+    def set_symmetry_class(self, symmetry_class):
+        """
+        Changes the symmetry class of this atom
+
+        Args:
+            symmetry_class - the new symmetry class of this atom
+
+        Returns:
+            None
+        """
+
+        self.symmetry_class = symmetry_class
 
     def get_number(self):
         """
@@ -70,6 +97,31 @@ class Atom(object):
 
         return constants.symbol_to_mass(self.name)
 
+    def get_radius(self):
+        """
+        Gets the atomic radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The atomic radius of this atom
+        """
+
+        return constants.symbol_to_radius(self.name)
+
+    def get_covalent_radius(self):
+        """
+        Gets the covalent radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The covalent radius of this atom
+        """
+
+        return constants.symbol_to_covalent_radius(self.name)
     def get_x(self):
         """
         Gets the x position of this atom
@@ -182,48 +234,23 @@ class Atom(object):
         self.y += y
         self.z += z
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this atom around a point
+        Rotates this Atom using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
-        # first construct the matrix of rotation
-        rotation_x_matrix = numpy.matrix([
-            [1,                         0,                      0                       ],
-            [0,                         math.cos(x_radians),    - math.sin(x_radians)   ], 
-            [0,                         math.sin(x_radians),    math.cos(x_radians)     ]
-                                        ])
+        x, y, z = quaternion.rotate(self.get_x(), self.get_y(), self.get_z(), origin_x, origin_y, origin_z)
 
-        rotation_y_matrix = numpy.matrix([
-            [math.cos(y_radians),       0,                      math.sin(y_radians)     ],
-            [0,                         1,                      0                       ], 
-            [- math.sin(y_radians),     0,                      math.cos(y_radians)     ]
-                                        ])
-
-        rotation_z_matrix = numpy.matrix([
-            [math.cos(z_radians),       - math.sin(z_radians),  0                       ],
-            [math.sin(z_radians),       math.cos(z_radians),    0                       ], 
-            [0,                         0,                      1                       ]
-                                        ])
-
-        rotation_matrix = rotation_x_matrix * rotation_y_matrix * rotation_z_matrix
-
-        # get the new xyz values after multiplying by rotation matrix, moving coordinates to transform around the origin
-        x, y, z = (numpy.matrix([self.x - x_origin, self.y - y_origin, self.z - z_origin]) * numpy.matrix(rotation_matrix)).getA1()
-
-        # update the xyz position of this atom, adding back the origin coordinates
-        self.set_xyz(x + x_origin, y + y_origin, z + z_origin)
+        self.set_xyz(x, y, z)
         
     def distance(self, atom):
         """
@@ -249,6 +276,20 @@ class Atom(object):
             String containing this atom's atomic symbol and coordinates in the xyz format
         """
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
+    def is_bonded(self, atom, bond_sensitivity = 1.1):
+        """
+        Calculates whether this atom is likely to be bonded to another based on their atomic radii and the distance between them.
+
+        Args:
+            atom    - the atom to check if this one is bonded to
+            bond_sensitivity - the bond threshold is considered to be this * the sum of the atomic radii
+
+        Returns:
+            True if the distance between the atoms is less than bond_sensitivity * the sum of their covalent radii, otherwise False.
+        """
+
+        return self.distance(atom) < bond_sensitivity * (self.get_covalent_radius() + atom.get_covalent_radius())
 
     # NOTE: using @ prefix is not universal, setup some way to change ghost representation depending on platform.
     def to_ghost_xyz(self):
@@ -315,6 +356,10 @@ class Fragment(object):
             None
         """
 
+        for existing_atom in self.get_atoms():
+            if existing_atom.get_symmetry_class() == atom.get_symmetry_class() and existing_atom.get_name() != atom.get_name():
+                raise InconsistentValueError("symmetry class of {}".format(existing_atom.get_name()), "symmetry class of {}".format(atom.get_name()), existing_atom.get_symmetry_class(), atom.get_symmetry_class(), "atoms with a different atomic symbol in the same fragment cannot have the same symmetry class.")
+
         self.atoms.append(atom)
 
     def get_atoms(self):
@@ -328,7 +373,46 @@ class Fragment(object):
             A list of the atoms in this fragment, sorted in standard order
         """
 
-        return sorted(self.atoms, key=lambda atom: atom.to_xyz())
+        return sorted(self.atoms, key=lambda atom: atom.get_symmetry_class())
+
+    def get_symmetry(self):
+        """
+        Gets the symmetry of this fragment
+
+        Args:
+            None
+
+        Returns:
+            the symmetry of this fragment in A1B2 form
+        """
+
+        # used to build the symmetry string
+        symmetry = self.get_atoms()[0].get_symmetry_class()
+
+        # used to count how many atoms there are of the current symmetry
+        symmetric_atom_count = 1
+
+        for atom in self.get_atoms()[1:]:
+
+            # if this atom has a different symmetry than the one before it
+            if atom.get_symmetry_class() != symmetry[-1]:
+
+                # record the number of atoms with the previous symmetry
+                symmetry += str(symmetric_atom_count) + atom.get_symmetry_class()
+
+                # reset the atom counter
+                symmetric_atom_count = 1
+
+            # if this atom has the same symmetry than the one before it
+            else:
+
+                # record this atom in the atom count
+                symmetric_atom_count += 1
+
+        # record the number of atoms with the last symmetry
+        symmetry += str(symmetric_atom_count)
+
+        return symmetry
 
     def get_charge(self):
         """
@@ -385,24 +469,92 @@ class Fragment(object):
         for atom in self.get_atoms():
             atom.translate(x, y, z)
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this fragment around a point
+        Rotates this Fragment using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
         for atom in self.get_atoms():
-            atom.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+            atom.rotate(quaternion, origin_x, origin_y, origin_z)
+
+    def get_excluded_pairs(self, max_exclusion = 3):
+        """
+        Gets the excluded pairs lists for this fragment
+
+        Args:
+            max_exclusion - get the excluded pairs up to 1x where x is max_exclusion, defualt is 3
+
+        Returns:
+            a tuple consisting of (excluded_12, excluded_13, ..., excluded_1x) lists
+        """
+
+        excluded_pairs = []
+
+        # construct a matrix of size n by n where n is the number of atoms in this fragment
+        # a value of 1 in row a and column b means that atom a and b are bonded
+        connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if these atoms are bonded, set their values in the connectivity matrix to 1.
+                if atom1.is_bonded(atom2):
+                    connectivity_matrix[index1][index2] = 1
+                    connectivity_matrix[index2][index1] = 1
+
+        # current matrix represents connectivity_matrix^x where x is the same as as in the excluded_1x pairs we are currently generating
+        current_matrix = connectivity_matrix
+
+        excluded_pairs_12 = set()
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if the value in the current matrix is at least 1, then these atoms are 1 bond apart, and are added to the excluded_pairs_12 list.
+                if current_matrix[index1][index2] > 0:
+                    excluded_pairs_12.add((index1, index2))
+
+        # add the excluded_pairs_12 to the list of all excluded pairs
+        excluded_pairs.append(excluded_pairs_12)
+
+        for i in range(max_exclusion - 1):
+
+            # current matrix is multiplied by connectivity_matrix so that each iteration of the loop current_matrix = connectivity_matrix^(i + 1)
+            current_matrix = numpy.matmul(current_matrix, connectivity_matrix)
+
+            excluded_pairs_1x = set()
+
+            # loop over each pair of atoms
+            for index1, atom1 in enumerate(self.get_atoms()):
+                for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                    index2 += index1 + 1
+
+                    # if the value in the connectivity matrix is at least 1, then these atoms are x bonds apart, and are added to the excluded_pairs_1x list.
+                    if current_matrix[index1][index2] > 0:
+                        excluded_pairs_1x.add((index1, index2))
+
+            # filter out all terms inside other excluded lists from the new excluded list
+            for excluded_pairs_1y in excluded_pairs:
+                excluded_pairs_1x -= excluded_pairs_1y
+
+            # add the excluded_pairs_1x to the list of all excluded pairs
+            excluded_pairs.append(excluded_pairs_1x)
+
+        return [[list(pair) for pair in excluded_pairs_1x] for excluded_pairs_1x in excluded_pairs]
+
 
     def to_xyz(self):
         """ 
@@ -441,41 +593,57 @@ class Fragment(object):
             string += atom.to_ghost_xyz() + "\n"
 
         return string
-    
-    def read_xyz(self, file, num_atoms):
-        """
-        Reads a number of lines from an open file into this fragment
 
+    def read_xyz(self, string, symmetry):
+        """
+        Reads the given string into this Fragment with the given symmetry
+        
         Args:
-            file  - the file to read lines from
-            num_atoms - the number of lines (and atoms) to read from the xyz file
+            string - the xyz file format string, just the lines with the atom information, no atom count / comment line
+            symmetry - the symmetry of this Fragment
 
         Returns:
-            This Fragment
+            self
         """
 
-        # loop once for each atom expected to be read
-        for i in range(num_atoms):
+        # used to keep track of the index of the current atom symmetry class in the symmetry string
+        class_index = 0
+        # used to keep track of how many atoms of the current atom symmetry class have been made
+        class_counter = 0
 
-            # get the line corresponding to this atom
-            line = file.readline()
+        for line in string.splitlines():
 
-            # if we have reached EOF, raise an error because we expected at least 1 more atom
-            if line == "":
-                raise XYZFormatError("end of file reached while parsing", "expected additional atom line")
+            # if we have made as many atoms of the current symmetry class as indicated by the symmetry string, move on to the next symmetry class
+            if class_counter >= int(symmetry[class_index + 1]):
+                class_index += 2
+                class_counter = 0
 
             try:
-                # construct each atom from the info in the line
+                # read one line of the input string into an atom
                 symbol, x, y, z = line.split()
-
             except ValueError:
                 # if we cannot parse the line, raise an error                
                 raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
 
-            self.add_atom(Atom(symbol, float(x), float(y), float(z)))
+            try:
+                symmetry_class = symmetry[class_index]
+            except IndexError:
+                raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
+
+            self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
+
+            # update the number of atoms with the current symmetry class that have been read from the input
+            class_counter += 1
+
+        try:
+            if class_counter == int(symmetry[class_index + 1]):
+                symmetry[class_index + 2]
+            raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
+        except IndexError:
+            pass
 
         return self
-
+        
 class Molecule(object):
     """
     Stores the fragments of a Molecule
@@ -514,6 +682,27 @@ class Molecule(object):
 
         return "-".join([fragment.get_name() for fragment in self.get_fragments()])
 
+    def get_symmetry(self):
+        """
+        Gets the symmetry of this molecule
+
+        Args:
+            None
+
+        Returns:
+            The symmetry of this molecule in A1B2_C1D1E1 form
+        """
+
+        # used to assemble the symmetry string
+        symmetry = self.get_fragments()[0].get_symmetry()
+
+        # add each fragment's symmetry to the string
+        for fragment in self.get_fragments()[1:]:
+
+            symmetry += "_" + fragment.get_symmetry()
+
+        return symmetry
+
     def add_fragment(self, fragment):
         """
         Adds a fragment to this molecule
@@ -525,7 +714,27 @@ class Molecule(object):
             None
         """
 
+        # make sure the symmetry class of the atoms in this fragment doesn't violate the 1 symmetry class -> 1 atom type rule
+        for existing_fragment in self.get_fragments():
+            for atom1 in existing_fragment.get_atoms():
+                for atom2 in fragment.get_atoms():
+                    if atom1.get_symmetry_class() == atom2.get_symmetry_class() and atom1.get_name() != atom2.get_name():
+                        raise InconsistentValueError("symmetry class of {}".format(atom1.get_name()), "symmetry class of {}".format(atom2.get_name()), atom1.get_symmetry_class(), atom2.get_symmetry_class(), "atoms with a different atomic symbol in the same molecule (even if different fragments) cannot have the same symmetry class.")
+
         self.fragments.append(fragment)
+
+        # adjust the symmetry class of atoms to be in the right order
+        next_symmetry = 65
+        new_symmetries = {}
+        for fragment in self.get_fragments():
+            for atom in fragment.get_atoms():
+                if atom.get_symmetry_class() not in new_symmetries:
+                    new_symmetries[atom.get_symmetry_class()] = chr(next_symmetry)
+                    next_symmetry += 1
+
+        for fragment in self.get_fragments():
+            for atom in fragment.get_atoms():
+                atom.set_symmetry_class(new_symmetries[atom.get_symmetry_class()])
 
     def get_fragments(self):
         """
@@ -538,7 +747,7 @@ class Molecule(object):
             List of fragments in this molecule in standard order
         """
 
-        return sorted(self.fragments, key=lambda fragment: fragment.get_name() + " " + fragment.to_xyz())
+        return sorted(self.fragments, key=lambda fragment: fragment.get_name())
 
     def get_atoms(self):
         """
@@ -639,24 +848,22 @@ class Molecule(object):
         for fragment in self.get_fragments():
             fragment.translate(x, y, z)
 
-    def rotate(self, x_radians, y_radians, z_radians, x_origin = 0, y_origin = 0, z_origin = 0):
+    def rotate(self, quaternion, origin_x = 0, origin_y = 0, origin_z = 0):
         """
-        Rotates this molecule around a point
+        Rotates this Molecule using the rotation defined by the given Quaternion
 
         Args:
-            x_radians - the number of radians to rotate around the x axis
-            y_radians - the number of radians to rotate around the y axis
-            z_radians - the number of radians to rotate around the z axis
-            x_origin - x position of point to rotate around, default is 0
-            y_origin - y position of point to rotate around, default is 0
-            z_origin - z position of point to rotate around, default is 0
+            quaternion - the Quaternion to rotate by
+            origin_x - x position of the point to rotate around, default is 0
+            origin_y - y position of the point to rotate around, default is 0
+            origin_z - z position of the point to rotate around, default is 0
 
         Returns:
             None
         """
 
         for fragment in self.get_fragments():
-            fragment.rotate(x_radians, y_radians, z_radians, x_origin, y_origin, z_origin)
+            fragment.rotate(quaternion, origin_x, origin_y, origin_z)
 
     def move_to_center_of_mass(self):
         """
@@ -747,13 +954,15 @@ class Molecule(object):
         # update the position of each atom
         for atom in self.get_atoms():
             x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
-            atom.set_xyz(x, y, z)
+            atom.set_xyz(float(x), float(y), float(z))
 
     def rmsd(self, other):
         """
-        Computes the RMSD distance between the atoms in two molecules
+        Computes the RMSD between the positions of the atoms in two molecules
 
-        molecules must have the same fragments and atoms or an InconsistentValueError will be raised
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
+
+        generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
 
         Args:
             other - the molecule to compare this one to
@@ -781,6 +990,49 @@ class Molecule(object):
         # compute rmsd as sqrt of mean squared distance
         return math.sqrt(squared_distance / self.get_num_atoms())
 
+    def distancermsd(self, other_molecule):
+        """
+        Computes the RMSD of intramolecular interatomic distances in the two molecules
+
+        molecules must have the same fragments and atoms or an InconsistentValueError will be raised.
+
+        generally, you should make sure that both molecules have been moved to their center of mass and rotated on their principal axes.
+
+        Note:
+            this function is distinct from rmsd() because this function takes the rmsd of the differneces between the distances between pairs of atoms within each molecule
+            while rmsd() takes the rmsd of the distance between the positions of the same atoms in each molecule.
+
+        Args:
+            other_molecule - the molecule to ompare this one to
+
+        Returns:
+            the square-root of the mean squared difference in the distance between each pair of atoms in this molecule and the other
+        """
+
+        # fist make sure these molecules have the same number of atoms
+        if self.get_num_atoms() != other_molecule.get_num_atoms():
+            raise InconsistentValueError("number of atoms in self", "number of atoms in other", self.get_num_atoms(), other_molecule.get_num_atoms(), "number of atoms in each molecule must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+        squared_distance_difference = 0
+
+        # loop over each pair of atoms
+        for atom_index, this_atom1, other_atom1 in zip(range(self.get_num_atoms()), self.get_atoms(), other_molecule.get_atoms()):
+            for this_atom2, other_atom2 in zip(self.get_atoms()[atom_index + 1:], other_molecule.get_atoms()[atom_index + 1:]):
+
+                # check to make sure that the atom1s have the same type
+                if this_atom1.get_name() != other_atom1.get_name():
+                    raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+                # check to make sure that the atom2s have the same type
+                if this_atom2.get_name() != other_atom2.get_name():
+                    raise InconsistentValueError("self atom symbol", "other atom symbol", this_atom.get_name(), other_atom.get_name(), "symbols must be the same, make sure you are computing the rmsd of two molecules with the same atoms and fragments")
+
+                # add these atom pairs' contribution to the squared distance difference
+                squared_distance_difference += (this_atom1.distance(this_atom2) - other_atom1.distance(other_atom2)) ** 2
+
+        # compute the rmsd of the sqrt of mean squared distance difference
+        return math.sqrt(squared_distance_difference / self.get_num_atoms())
+
     def compare(self, other, cutoff_rmsd = 0.1):
         """
         Compares two molecules to see if they are similar to eachother bellow a cutoff rmsd
@@ -798,6 +1050,26 @@ class Molecule(object):
             return self.rmsd(other) < cutoff_rmsd
         except InconsistentValueError:
             return False
+
+    def get_excluded_pairs(self, max_exclusion = 3):
+        """
+        Gets the excluded pairs of this molecule
+
+        Args:
+            None
+
+        Returns:
+            a tuple in the format (excluded_12, excluded_13, excluded_14, ..., excluded_1x) where each ecluded_1x is a list of lists of each fragment's excluded 1x pairs
+        """
+
+        excluded_pairs = [[] for i in range(max_exclusion)]
+
+        for index, fragment in enumerate(self.get_fragments()):
+            frag_excluded_pairs = fragment.get_excluded_pairs(max_exclusion)
+            for exclusion_index in range(max_exclusion):
+                excluded_pairs[exclusion_index].append(frag_excluded_pairs[exclusion_index])
+
+        return excluded_pairs
 
     def to_xyz(self, fragments = None, cp = False):
         """
@@ -875,46 +1147,336 @@ class Molecule(object):
         hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
-    def read_xyz(self, file, names, atoms_per_fragment, charges, spin_multiplicities):
+    def get_symbols(self):
         """
-        Reads a single xyz configuration from an open file into this molecule
-
-        If the molecule already has some fragments, new fragments will be added in addition to any existing fragments
+        Gets the atomic symbols of the atoms in this molecule as a list
 
         Args:
-            file  - the xyz file containing the atom coordinates
-            names   - list of the names of each fragment
-            atoms_per_fragment - list of the number of atoms in each fragment
-            charges - list of the charges of each fragment
-            spin_multiplicites - list of the spin multiplicities of each fragment
+            None
 
         Returns:
-            This Molecule. Will be UNCHANGED if an empty file (or a file with all of its lines already read) is passed
+            list of the atomic symbols of the atoms in this molecule
         """
 
-        first_line = file.readline()
+        return [atom.get_name() for atom in self.get_atoms()]
 
-        # check for end of file
-        if first_line == "":
-            raise StopIteration
+    def get_coordinates(self):
+        """
+        Gets the positions of the atoms in this molecule as a list of 3-tuples
 
-        num_atoms = int(first_line)
+        Args:
+            None
 
-        if not len(atoms_per_fragment) == len(charges):
-            raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charges, "lists must be same length")
-        if not len(atoms_per_fragment) == len(spin_multiplicities):
-            raise InconsistentValueError("atoms per fragment", "spin multiplicities per fragment", atoms_per_fragment, spin_multiplicities, "lists must be same length")
-        if not len(atoms_per_fragment) == len(names):
+        Returns:
+            list of the positions of the atoms in this moleule
+        """
+
+        return [(atom.get_x(), atom.get_y(), atom.get_z()) for atom in self.get_atoms()]
+
+    def read_fragment_from_xyz(self, string, name, charge, spin_multiplicity, symmetry):
+        """
+        Reads a single fragment from the given string and adds it to this molecule
+
+        Args:
+            string - the string in the xyz file format, should include just the atom lines, no total atom line or comment line
+            name - the name of this new fragment
+            charge - the charge of this new fragment
+            spin_multiplicity - the spin multiplicity of the new fragment
+            symmetry - the symmetry of the new fragment, specified as a string in form A1B2
+
+        Returns:
+            self
+        """
+
+        self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(string, symmetry))
+
+        return self
+
+    def read_xyz(self, string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        """
+        Reads fragments from an xyz string into this Molecule
+
+        Args:
+            string - the xyz format string
+            atoms_per_fragment - list containing the number of atoms in each fragment
+            name_per_fragment - list containing the names of each fragment
+            charge_per_fragment - list containing the charges of each fragment
+            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
+            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+
+        Returns:
+            self
+        """
+
+        # Error checking to make sure all lists passed in are the same length
+        if not len(atoms_per_fragment) == len(symmetry_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "symmetry per fragment", atoms_per_fragment, symmetry_per_fragment, "lists must be same length")
+        if not len(atoms_per_fragment) == len(charge_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "charges per fragment", atoms_per_fragment, charge_per_fragment, "lists must be same length")
+        if not len(atoms_per_fragment) == len(spin_multiplicity_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "spin multiplicities per fragment", atoms_per_fragment, spin_multiplicity_per_fragment, "lists must be same length")
+        if not len(atoms_per_fragment) == len(name_per_fragment):
             raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
 
-        if num_atoms != sum(atoms_per_fragment):
-            raise InconsistentValueError("total atoms in xyz file", "fragments", num_atoms, atoms_per_fragment, "fragments list must sum to total atoms from input xyz file")
+        # break the input string apart along \n characters
+        lines = string.splitlines()
 
-        # throw away the comment line
-        file.readline()
+        # read the total number of atoms from the first line of the xyz
+        try:
+            atom_total = int(lines[0])
+        except ValueError:
+            raise XYZFormatError("atom count line '{}' cannot be parsed into an integer".format(lines[0]), "line should contain a single integer")
 
-        for name, atom_count, charge, spin_multiplicity in zip(names, atoms_per_fragment, charges, spin_multiplicities):
-            # construct each fragment from its charge, spin multiplicity and its line's from the string
-            self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(file, atom_count))
+        # make sure that the total number of atoms indicated by the xyz file matches the number of atoms indicated per fragment
+        if atom_total != sum(atoms_per_fragment):
+            raise InconsistentValueError("total atoms in xyz string", "fragments", atom_total, atoms_per_fragment, "fragments list must sum to total atoms from input xyz string")
+
+        # remove the atom total and comment lines from the lines list
+        lines = lines[2:]
+
+        # make sure that there are a number of lines equal to the total number of atoms
+        if len(lines) != atom_total:
+            raise InconsistentValueError("total atoms in xyz string", "atom lines in xyz string", atom_total, len(lines), "number of total atoms indicated in xyz string should match number of atom lines")
+
+        # loop over each item in the lists, each iteration containing the information to assemble one fragment
+        for num_atoms, name, charge, spin, symmetry in zip(atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+
+            # read this fragment into this Molecule
+            self.read_fragment_from_xyz("\n".join(lines[:num_atoms]), name, charge, spin, symmetry)
+
+            # remove a number of lines from the lines list equal to the number used in the Fragment that was just read
+            lines = lines[num_atoms:]
+
+        return self
+
+    def read_xyz_file(self, file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        """
+        Reads fragments from an xyz file into this Molecule
+
+        Will attempt to read lines from the given file handle, raising a StopIteration exception if called on an empty file and a
+        
+
+        Args:
+            file - the file to read from
+            atoms_per_fragment - list containing the number of atoms in each fragment
+            name_per_fragment - list containing the names of each fragment
+            charge_per_fragment - list containing the charges of each fragment
+            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
+            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+
+        Returns:
+            self
+        """
+        
+        # build the xyz string
+        string = ""
+
+        # read lines from the file equal to the number needed for one molecule
+        for line_count in range(2 + sum(atoms_per_fragment)):
+
+            line = file.readline()
+
+            # if the line is an empty string, then we have reached end of file mid parse
+            if line == "":
+                if line_count == 0:
+                    raise StopIteration # if the first line is empty, raise StopIteration to indicate that this file is out of molecules to parse
+                raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure the last molecule in the file has a comment line and a number of atoms equal to the amount indicated in the atom count line.")
+
+            string += line
+        
+        self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+
+        return self
+
+    def read_xyz_path(self, path, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        """
+        Reads fragments from an xyz file indicated by a filepath into this Molecule
+
+        Will attempt to read lines from the file at the given file path, raising an exception if it runs out of lines mid-parse
+
+        Args:
+            path - the path to the file to read from
+            atoms_per_fragment - list containing the number of atoms in each fragment
+            name_per_fragment - list containing the names of each fragment
+            charge_per_fragment - list containing the charges of each fragment
+            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
+            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+
+        Returns:
+            self
+        """
+
+        with open(path, "r") as file:
+
+            try:
+                self.read_xyz_file(file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+
+            # if the call to read_xyz_file() raises a StopIteration, it means the file was empty
+            except StopIteration:
+                raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
+
+        return self
+
+    def read_xyz_direct(self, string, settings = None):
+        """
+        Reads fragments from a string into this Molecule
+
+        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+
+        Args:
+            string - the string to read from
+            settings - settings file containing information about the molecule
+
+        Returns:
+            self
+        """
+
+        # if settings is None, then infer default values for molecule attributes
+        if settings is None:
+            name_per_fragment = ["noname"]
+            charge_per_fragment = [0]
+            spin_multiplicity_per_fragment = [1]
+
+            total_atoms = int(string.splitlines()[0])
+
+            atoms_per_fragment = [total_atoms]        
+
+            symmetry = ""
+
+            symmetry_class = 65
+
+            # loop over each atom assigning it a unique symmetry class
+            for atom_index in range(total_atoms):
+
+                symmetry += "{}1".format(chr(symmetry_class))
+
+                symmetry_class += 1
+
+
+            symmetry_per_fragment = [symmetry]
+            
+        # if settings is defined, read values from xyz file
+        else:
+            atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
+            name_per_fragment = [int(name) for name in settings.get("molecule", "name").split(",")]
+            charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
+            spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spin").split(",")]
+            symmetry_per_fragment = [int(symmetry) for symmetry in settings.get("molecule", "symmetry").split(",")]
+
+
+        self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+
+        return self
+
+    def read_xyz_file_direct(self, file, settings = None): 
+        """
+        Reads fragments from a file into this Molecule
+
+        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+
+        Args:
+            string - the string to read from
+            settings - settings file containing information about the molecule
+
+        Returns:
+            self
+        """
+        if settings is None:
+            position = file.tell()
+            atoms_per_fragment = [int(file.readline())]
+            file.seek(position)
+        else:
+            atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
+        # build the xyz string
+        string = ""
+
+        # read lines from the file equal to the number needed for one molecule
+        for line_count in range(2 + sum(atoms_per_fragment)):
+
+            line = file.readline()
+
+            # if the line is an empty string, then we have reached end of file mid parse
+            if line == "":
+                if line_count == 0:
+                    raise StopIteration # if the first line is empty, raise StopIteration to indicate that this file is out of molecules to parse
+                raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure the last molecule in the file has a comment line and a number of atoms equal to the amount indicated in the atom count line.")
+
+            string += line
+        
+        self.read_xyz_direct(string, settings)
+
+        return self
+
+    def read_xyz_path_direct(self, path, settings = None):
+        """
+        Reads fragments from an xyz_file indicated by a path into this Molecule
+
+        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+
+        Args:
+            string - the string to read from
+            settings - settings file containing information about the molecule
+
+        Returns:
+            self
+        """
+        
+        with open(path, "r") as file:
+
+            try:
+                self.read_xyz_file_direct(file, settings)
+
+            # if the call to read_xyz_file() raises a StopIteration, it means the file was empty
+            except StopIteration:
+                raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
+
+        return self
+
+    def read_psi4_string(self, string):
+        """
+        Reads the string outputted by a call to psi4.molecule.save_string_xyz() into this molecule as a fragment
+
+        the fragments added will not have name or symmetry saved correctly, because this information is not available
+        from the output of psi4.molecule.save_string_xyz(). As a result certain operations will not work on this molecule, for example
+        do not add this molecule to a database or attempt to generate its polynomial input format in style A1B2
+
+        Should never be called on a molecule that already has fragments, as this will have unexpected results
+
+        Args:
+            output of psi4.molecule.save_string_xyz()
+
+        Returns:
+            self
+        """
+
+        # divide the string along \n characters
+        lines = string.splitlines()
+
+        # read charge and spin from first line of input string, casting each to an int
+        try:
+            charge, spin_multiplicity = [int(value) for value in lines[0].split()]
+        except ValueError:
+            raise XYZFormatError(lines[0], "line format should be 'charge spin_multiplicity', make sure you are passing in the output of psi4.molecule.save_string_xyz()")
+
+        # calculate total atoms in this molecule
+        total_atoms = len(lines) - 1
+
+        # these fields do not matter
+        name = "unnamed"
+
+        # used to build the symmetry string for the fragment
+        symmetry = ""
+
+        # keeps track of which symmetry_class to use for the next atom
+        symmetry_class = 65
+
+        # loop over each atom assigning it a unique symmetry class
+        for atom_index in range(total_atoms):
+
+            symmetry += "{}1".format(chr(symmetry_class))
+
+            symmetry_class += 1
+
+        self.read_fragment_from_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry)
 
         return self

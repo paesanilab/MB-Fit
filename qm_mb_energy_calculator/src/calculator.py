@@ -12,11 +12,11 @@ import constants
 
 from exceptions import LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
 
-from psi4.driver.qcdb.exceptions import QcdbException
 
 has_psi4 = True
 
 try:
+    from psi4.driver.qcdb.exceptions import QcdbException
     import psi4
 except ImportError:
     has_psi4 = False

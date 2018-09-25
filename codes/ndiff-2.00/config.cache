@@ -33,7 +33,7 @@ ac_cv_prog_CHECKSUM=${ac_cv_prog_CHECKSUM=cat}
 ac_cv_prog_CHMOD=${ac_cv_prog_CHMOD=chmod}
 ac_cv_prog_CMP=${ac_cv_prog_CMP=cmp}
 ac_cv_prog_CP=${ac_cv_prog_CP=scp}
-ac_cv_prog_CPP=${ac_cv_prog_CPP='gcc -E'}
+ac_cv_prog_CPP=${ac_cv_prog_CPP=/home/ebullvul/anaconda3/bin/x86_64-conda_cos6-linux-gnu-cpp}
 ac_cv_prog_DIFF=${ac_cv_prog_DIFF=diff}
 ac_cv_prog_DISTILL=${ac_cv_prog_DISTILL=ps2pdf}
 ac_cv_prog_DITROFF=${ac_cv_prog_DITROFF=groff}

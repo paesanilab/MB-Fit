@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-generator=$(pwd)/../../src/poly-gen_mb-nrg.pl
+generator=poly-gen_mb-nrg.pl
 
 run_test() {
     test=$1

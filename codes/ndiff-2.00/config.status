@@ -2,7 +2,7 @@
 # Generated automatically by configure.
 # Run this file to recreate the current configuration.
 # This directory was configured as follows,
-# on host beatrix:
+# on host leonardo:
 #
 # ./configure 
 #
@@ -35,12 +35,12 @@ sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
 /^[ 	]*VPATH[ 	]*=[^:]*$/d
 
 s%@SHELL@%/bin/sh%g
-s%@CFLAGS@%%g
-s%@CPPFLAGS@%%g
-s%@CXXFLAGS@%%g
-s%@FFLAGS@%%g
+s%@CFLAGS@%-I. -I/usr/local/include -DVERSION='"2.00"' -DDATE='"10-Dec-2000"' -O%g
+s%@CPPFLAGS@%-DNDEBUG -D_FORTIFY_SOURCE=2 -O2%g
+s%@CXXFLAGS@%-fvisibility-inlines-hidden -std=c++17 -fmessage-length=0 -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -pipe%g
+s%@FFLAGS@%-fopenmp -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -pipe%g
 s%@DEFS@%-DHAVE_CONFIG_H%g
-s%@LDFLAGS@%%g
+s%@LDFLAGS@%-L/usr/local/lib %g
 s%@LIBS@%%g
 s%@exec_prefix@%${prefix}%g
 s%@prefix@%/usr/local%g
@@ -96,7 +96,7 @@ s%@TGRIND@%%g
 s%@UNZIP@%unzip%g
 s%@ZIP@%zip%g
 s%@ZOO@%%g
-s%@CPP@%gcc -E%g
+s%@CPP@%/home/ebullvul/anaconda3/bin/x86_64-conda_cos6-linux-gnu-cpp%g
 s%@CHECKOKAY@%okay-ldb%g
 
 CEOF

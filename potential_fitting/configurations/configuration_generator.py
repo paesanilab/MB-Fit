@@ -1,6 +1,8 @@
 from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader, utils
 from potential_fitting.exceptions import ParsingError, LineFormatError
+from random import randint, Random
+import math, numpy
 def generate_1b_configurations(settings_path, geo_path, normal_modes_path, config_path):
     """
     Generates a set of 1b configurations for a molecule given its optimized geometry and normal modes.
@@ -13,6 +15,8 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
     """
 
     print("Parsing normal mode input file.")
+
+    settings = SettingsReader(settings_path)
 
     # read the optimized geometry    
     molecule = xyz_to_molecules(geo_path, settings)[0]
@@ -110,15 +114,31 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
 
     print("Completed parsing normal modes input file.")
 
-    generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes)
+    generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path)
 
+hbar = 1
+bohr = 0.52917721092
+autoeV = 27.211385
+eVtoau = 3.674932379e-2
+autocm = 2.194746313e5
+autokcalmol = 627.5096
+Ktoau = 3.1668114e-6
+cmtoau = 4.5563352527e-6
+melectron = 1822.88839
+freq_cutoff = 10 * cmtoau
 
-def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path, seed = random.randint(-100000, 100000), geometric = True):
+def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path, seed = randint(-100000, 100000), geometric = True):
     """
     NOTES/TODOS:
         * currently, highest frequency must be last, lowest frequency must be first
+        * currently does not support imaginary frequencies
+        * currently mutates the input arrays
 
-    """    
+    """
+
+    # clear the output file
+    with open(config_path, "w") as config_file:
+        pass
 
     print("Running normal distribution configuration generator...")
 
@@ -126,22 +146,99 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
 
     molecule = xyz_to_molecules(geo_path, settings)[0]
 
+    random = Random(seed)
+
     num_configs = settings.getint("config_generator", "num_configs")
 
     dim = 3 * molecule.get_num_atoms()
     dim_null = dim - len(normal_modes)
 
+    num_A_configs = num_configs // 2
+    num_temp_configs = num_configs - num_A_configs
+
+    # mass-scale and normalize the normal modes
+    for normal_mode in normal_modes:
+        mass_scale = 0
+        for coordinates, atom in zip(normal_mode, molecule.get_atoms()):
+            coordinates = [ordinate * math.sqrt(atom.get_mass()) for ordinate in coordinates]
+            mass_scale += coordinates[0] ** 2
+            mass_scale += coordinates[1] ** 2
+            mass_scale += coordinates[2] ** 2
+
+        mass_scale = math.sqrt(mass_scale)
+
+        for coordinates, atom in zip(normal_mode, molecule.get_atoms()):
+            coordinates = [ordinate / mass_scale for ordinate in coordinates]
+
     # first generate the T distribution configs
     if geometric:
-        min_temp = ? # Kelvin
-        max_temp = 2 * frequencies[len(frequencies) - 1] / autocm # Kelvin
-        min_A = 1
-        max_A = 2
+        temp_min = frequencies[0] / autocm # Kelvin
+        temp_max = 2 * frequencies[len(frequencies) - 1] / autocm # Kelvin
+        temp_factor = (temp_min / temp_max) ** (-1 / num_temp_configs)
+        temp_addend = 0
     else:
-        min_temp = 0 # Kelvin
-        max_temp = frequencies[len(frequencies) - 1] / autocm # Kelvin
-        min_A = 0
-        max_A = 2
+        temp_min = 0 # Kelvin
+        temp_max = frequencies[len(frequencies) - 1] / autocm # Kelvin
+        temp_factor = 1
+        temp_addend = (temp_max - temp_min) / num_temp_configs
+
+    temp = temp_min
+    for config_index in range(num_temp_configs):
+
+        # generate a config
+        G = [[0 for i in range(dim)] for k in range(dim)] # ???
+        d = [0 for i in frequencies] # ???
+
+        for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies, reduced_masses, normal_modes):
+            if frequency < freq_cutoff:
+
+                d[normal_mode_index] = 0
+
+            else:
+
+                # check if temp is significantly larger than zero
+                if temp > 0.0e-8:
+                    d[normal_mode_index] = 0.5 / (numpy.tanh(frequency / (2 * temp)) * frequency)
+
+                # otherwise temp is about 0
+                else:
+                    d[normal_mode_index] = 0.5 / frequency
+
+                for i in range(dim):
+                    for j in range(dim):
+                        G[i][j] += math.sqrt(d[normal_mode_index])*normal_mode[i // 3][i % 3]*normal_mode[j // 3][j % 3]
+
+        # displacement from reference geometry
+        displacement = [[0, 0, 0] for i in range(molecule.get_num_atoms())]
+
+        # random_list = [random.random() for i in range(dim)]
+
+        norm_dist_list = [random.normalvariate(0, 1) for i in range(dim)]
+
+        for i in range(dim):
+            displacement[i // 3][i % 3] = numpy.dot([g[i] for g in G], norm_dist_list)
+            displacement[i // 3][i % 3] /= math.sqrt(molecule.get_atoms()[i // 3].get_mass())
+
+        with open(config_path, "a") as config_file:
+
+            # write number of atoms
+            config_file.write("{}\n".format(molecule.get_num_atoms()))
+
+            # write index of this config in comment line
+            config_file.write("{}\n".format(config_index))
+
+            # write each atom
+            for atom_index, atom in enumerate(molecule.get_atoms()):
+
+                x = atom.get_x() + displacement[atom_index][0]
+                y = atom.get_y() + displacement[atom_index][1]
+                z = atom.get_z() + displacement[atom_index][2]
+
+                config_file.write("{:2} {:22.14e} {:22.14e} {:22.14e}\n".format(atom.get_name(), x, y, z))
+
+        # increase temp
+        temp = temp * temp_factor + temp_addend
+
     # now generate the A distribution configs
 
     print("Normal Distribution Configuration generation complete.")

@@ -160,7 +160,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
     for normal_mode in normal_modes:
         mass_scale = 0
         for coordinates, atom in zip(normal_mode, molecule.get_atoms()):
-            coordinates = [ordinate * math.sqrt(atom.get_mass()) for ordinate in coordinates]
+            coordinates = [ordinate * math.sqrt(atom.get_mass() * melectron) for ordinate in coordinates]
             mass_scale += coordinates[0] ** 2
             mass_scale += coordinates[1] ** 2
             mass_scale += coordinates[2] ** 2
@@ -217,7 +217,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
 
         for i in range(dim):
             displacement[i // 3][i % 3] = numpy.dot([g[i] for g in G], norm_dist_list)
-            displacement[i // 3][i % 3] /= math.sqrt(molecule.get_atoms()[i // 3].get_mass())
+            displacement[i // 3][i % 3] /= math.sqrt(molecule.get_atoms()[i // 3].get_mass() * melectron)
 
         with open(config_path, "a") as config_file:
 

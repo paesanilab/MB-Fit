@@ -127,7 +127,8 @@ cmtoau = 4.5563352527e-6
 melectron = 1822.88839
 freq_cutoff = 10 * cmtoau
 
-def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path, seed = randint(-100000, 100000), geometric = True):
+def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
+        seed = randint(-100000, 100000), geometric = True):
     """
     NOTES/TODOS:
         * currently, highest frequency must be last, lowest frequency must be first
@@ -136,89 +137,190 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
 
     """
 
-    # clear the output file
+    # clear the output file, because we will append to it later
     with open(config_path, "w") as config_file:
         pass
 
     print("Running normal distribution configuration generator...")
 
+    # parse the ".ini" file into a SettingsReader object
     settings = SettingsReader(settings_path)
 
+    # parse the molecule from the input ".xyz" into a Molecule object
     molecule = xyz_to_molecules(geo_path, settings)[0]
 
+    # generate a new random seed
     random = Random(seed)
 
+    # get the number of configurations to generate from settings
     num_configs = settings.getint("config_generator", "num_configs")
 
+    # calculate the dimension of this molecule
     dim = 3 * molecule.get_num_atoms()
+    # calculate the dimension of the null space of this molecule
     dim_null = dim - len(normal_modes)
 
+    # number of configs using a distribution over A
     num_A_configs = num_configs // 2
+    # number of configs using a distribution over temp
     num_temp_configs = num_configs - num_A_configs
 
     # mass-scale and normalize the normal modes
     for normal_mode in normal_modes:
-        mass_scale = 0
+
+        # normalization scale is used to keep track of the length of the normal mode vector to normalize it.
+        normalization_scale = 0
+
         for coordinates, atom in zip(normal_mode, molecule.get_atoms()):
+
+            # scale each element of the normal modes relative to its atom's mass relative to the mass of an electron
+            # (for some reason)
             coordinates = [ordinate * math.sqrt(atom.get_mass() * melectron) for ordinate in coordinates]
-            mass_scale += coordinates[0] ** 2
-            mass_scale += coordinates[1] ** 2
-            mass_scale += coordinates[2] ** 2
 
-        mass_scale = math.sqrt(mass_scale)
+            # add each ordinate squared to the normalization scale
+            normalization_scale += coordinates[0] ** 2
+            normalization_scale += coordinates[1] ** 2
+            normalization_scale += coordinates[2] ** 2
 
+        normalization_scale = math.sqrt(normalization_scale)
+
+        # normalize the normal mode by dividing by the normalization scale
         for coordinates, atom in zip(normal_mode, molecule.get_atoms()):
-            coordinates = [ordinate / mass_scale for ordinate in coordinates]
+            coordinates = [ordinate / normalization_scale for ordinate in coordinates]
 
-    # first generate the T distribution configs
+    # convert the frequencies to atomic units from cm
+    frequencies = [frequency / autocm for frequency in frequencies]
+
+    # first we will generate the temp distribution configs
+
+    # if a geometric progression was requested, set min, max, factor, and addend of temp to correspond
     if geometric:
+
         temp_min = frequencies[0] / autocm # Kelvin
         temp_max = 2 * frequencies[len(frequencies) - 1] / autocm # Kelvin
         temp_factor = (temp_min / temp_max) ** (-1 / num_temp_configs)
         temp_addend = 0
+
+    # if a linear progression was requested, set min, max, factor, and addend of temp to correspond
     else:
+
         temp_min = 0 # Kelvin
         temp_max = frequencies[len(frequencies) - 1] / autocm # Kelvin
         temp_factor = 1
         temp_addend = (temp_max - temp_min) / num_temp_configs
 
+    # initialize temp to the temp minimum, it will be increased each iteration of the loop
     temp = temp_min
+
+    # loop over each temp distribution config to generate
     for config_index in range(num_temp_configs):
 
-        # generate a config
+        # fill G with all 0s
         G = [[0 for i in range(dim)] for k in range(dim)] # ???
-        d = [0 for i in frequencies] # ???
 
-        for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies, reduced_masses, normal_modes):
+        # for each normal mode, frequency pair, update d and G.
+        for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
+                reduced_masses, normal_modes):
+
+            # if the frequency is too low for this normal mdoe, then it has no effect
             if frequency < freq_cutoff:
-
-                d[normal_mode_index] = 0
+                pass
 
             else:
 
-                # check if temp is significantly larger than zero
-                if temp > 0.0e-8:
-                    d[normal_mode_index] = 0.5 / (numpy.tanh(frequency / (2 * temp)) * frequency)
+                # if temp is significantly larger than 0, then set this normal mode's d by the formula
+                if temp > 1.0e-8:
+                    d = 0.5 / (numpy.tanh(frequency / (2 * temp)) * frequency)
 
-                # otherwise temp is about 0
+                # if temp is not significantly larger than 0 (so it is close to 0), then we must use a different
+                # formula to avoid divide-by-zero error.
                 else:
-                    d[normal_mode_index] = 0.5 / frequency
+                    d = 0.5 / frequency
 
                 for i in range(dim):
                     for j in range(dim):
-                        G[i][j] += math.sqrt(d[normal_mode_index])*normal_mode[i // 3][i % 3]*normal_mode[j // 3][j % 3]
+                        G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
 
-        # displacement from reference geometry
+        make_config(config_path, config_index, molecule, dim, G, random)
+
+        # increase temp
+        temp = temp * temp_factor + temp_addend
+
+
+    # now we will generate the A distribution configs
+
+    # if a geometric progression was requested, set min, max, factor, and addend of A to correspond
+    if geometric:
+        A_min = 1
+        A_max = 2
+        A_factor = (A_min / A_max) ** (-1 / num_A_configs)
+        A_addend = 0
+
+    # if a linear progression was requested, set min, max, factor, and addend of A to correspond
+    else:
+        A_min = 0
+        A_max = 2
+        A_factor = 1
+        A_addend = (A_max - A_min) / num_A_configs
+
+    # initialize A to the A minimum, it will be increased each iteration of the loop
+    A = A_min
+
+    # loop over each A distribution config to generate
+    for config_index in range(num_A_configs):
+
+        # fill G with all 0s
+        G = [[0 for i in range(dim)] for k in range(dim)] # ???
+
+        # for each normal mode, frequency pair, update d and G.
+        for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
+                reduced_masses, normal_modes):
+
+            # if the frequency is too low for this normal mdoe, then it has no effect
+            if frequency < freq_cutoff:
+                pass
+
+            else:
+
+                # set this normal mode's d based on the formula
+                d = 0.5 / (numpy.tanh(0.5 / A) * frequency)
+
+                for i in range(dim):
+                    for j in range(dim):
+                        G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
+
+        make_config(config_path, config_index, molecule, dim, G, random)
+
+        # increase A
+        A = A * A_factor + A_addend
+
+
+    print("Normal Distribution Configuration generation complete.")
+
+def make_config(config_path, config_index, molecule, dim, G, random):
+        # initialize the displacement lists to all zero, they track this configurations displacement from the
+        # optimized geometry
         displacement = [[0, 0, 0] for i in range(molecule.get_num_atoms())]
 
-        # random_list = [random.random() for i in range(dim)]
-
+        # generate a list of random numbers in a normal distribution, with mean 0 and standard deviation 1
         norm_dist_list = [random.normalvariate(0, 1) for i in range(dim)]
 
-        for i in range(dim):
-            displacement[i // 3][i % 3] = numpy.dot([g[i] for g in G], norm_dist_list)
-            displacement[i // 3][i % 3] /= math.sqrt(molecule.get_atoms()[i // 3].get_mass() * melectron)
+        # loop over each atom's displacement
+        for atom_index, atom, atom_displacement in zip(range(molecule.get_num_atoms()), molecule.get_atoms(),
+                displacement):
 
+            # loop over x, y, and z in the current atom's displacement
+            for coordinate_index in range(3):
+
+                # set the displacement equal to the inner product of the corresponding column vector from G and the
+                # random number list
+                atom_displacement[coordinate_index] = numpy.dot([g[atom_index * 3 + coordinate_index] for g in G],
+                        norm_dist_list)
+
+                # de-scale the atom displacement ordinate by the molecules mass relative to that of an electron
+                atom_displacement[coordinate_index] /= math.sqrt(atom.get_mass() * melectron)
+
+        # open the configuration output file to append a configuration
         with open(config_path, "a") as config_file:
 
             # write number of atoms
@@ -227,18 +329,19 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
             # write index of this config in comment line
             config_file.write("{}\n".format(config_index))
 
-            # write each atom
+            # loop over each atom in the molecule
             for atom_index, atom in enumerate(molecule.get_atoms()):
 
-                x = atom.get_x() + displacement[atom_index][0]
-                y = atom.get_y() + displacement[atom_index][1]
-                z = atom.get_z() + displacement[atom_index][2]
+                # scale each atom's coordinates to atomic units and add the displacement
+                x = atom.get_x() / bohr + displacement[atom_index][0]
+                y = atom.get_y() / bohr + displacement[atom_index][1]
+                z = atom.get_z() / bohr + displacement[atom_index][2]
 
+                # convert back to angstroms
+                x *= bohr
+                y *= bohr
+                z *= bohr
+
+                # write this atom's atomic symbol and coordinates
                 config_file.write("{:2} {:22.14e} {:22.14e} {:22.14e}\n".format(atom.get_name(), x, y, z))
 
-        # increase temp
-        temp = temp * temp_factor + temp_addend
-
-    # now generate the A distribution configs
-
-    print("Normal Distribution Configuration generation complete.")

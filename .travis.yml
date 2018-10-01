@@ -7,40 +7,46 @@ before_install:
 install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
+  - source $HOME/miniconda/etc/profile.d/conda.sh
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda create -q -n psi4env -c psi4 --file qm_mb_energy_calculator/requirements.txt python=3.6
+  - conda create -q -n psi4env -c psi4 --file requirements.txt python=3.6
+  - conda activate psi4env
 
 language: cpp
 
 script:
     # Build ndiff tool
-    - cd $TRAVIS_BUILD_DIR/tools/ndiff-2.00; ./configure; make
-    - PATH=$TRAVIS_BUILD_DIR/tools/ndiff-2.00:$PATH
+    - cd $TRAVIS_BUILD_DIR/codes/ndiff-2.00; ./configure; make SHELL=/bin/sh
+    - PATH=$TRAVIS_BUILD_DIR/codes/ndiff-2.00:$PATH
 
-    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/1B; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/2B; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/3B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR; source install.sh
 
-    - cd $TRAVIS_BUILD_DIR/polynomial_generation/tests/input_generation; bash run_test.sh
+    # test the python package
+    - cd $TRAVIS_BUILD_DIR; python run_tests.py
+
+    # polynomial tests
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/1B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/2B; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/3B; bash run_test.sh
+
+    - cd $TRAVIS_BUILD_DIR/oldtests/polytests/input_generation; bash run_test.sh
 
     # requires MKL, cannot run on Travis-CI unless we reconfigure it to use conda
     #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
 
     # psi4
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/psi4; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/psi4; bash run_test.sh
 
     # QM MB energy calculator (uses psi4)
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/monomers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/dimers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/trimers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/qm_mb_energy_calculator/tests/pythonTests; python executeTests.py
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomer; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomers; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimer; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimers; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimer; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimers; bash run_test.sh
 
     # training set generation
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/src; make
@@ -49,4 +55,4 @@ script:
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_pf6.sh
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_minimum.sh
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_saddle.sh
-    - cd $TRAVIS_BUILD_DIR/configuration_generator/test; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/configtests; bash run_test.sh

@@ -6,7 +6,7 @@
 
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
-import settings_reader
+from potential_fitting.utils import SettingsReader
 
 # In[ ]:
 
@@ -25,8 +25,8 @@ else:
     config_path = sys.argv[2]
     name = sys.argv[3]
 
-settings = settings_reader.SettingsReader(settings_path)
-config = settings_reader.SettingsReader(config_path)
+settings = SettingsReader(settings_path)
+config = SettingsReader(config_path)
 
 # In[ ]:
 

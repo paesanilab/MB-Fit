@@ -1,12 +1,14 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]; then
+if [ $# -ne 6 ]; then
   echo "USAGE: $0 <arg1> <arg2> <arg3> <arg4>"
   echo "Arg 1 is the .in file used to generate the polynomials"
   echo "Arg 2 is the path to the folder were the poly*.cpp files are."
   echo "--> Assumes that Arg1 is inside the path of Arg2."
   echo "Arg 3 is the path to the files inside the template folder"
   echo "Arg 4 is the path to the python script"
+  echo "Arg 5 is the path to the settings.ini"
+  echo "Arg 6 is the path to the config.ini"
   exit
 fi
 
@@ -38,7 +40,7 @@ mv tmp poly_2b_${FNAME}_v1.cpp
 # Execute python script
 echo "Did you change the parameters for your system in the python script?"
 
-python $4 $1 poly-direct.cpp
+python $4 $5 $6 $1 poly-direct.cpp
 
 # Copy the rest of the files
 cp $3/* .

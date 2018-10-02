@@ -383,8 +383,28 @@ def generate_2b_ttm_fit_code(settings_path, config, molecule_in, fit_directory):
     subprocess.call("python " + this_file_path + "/../codes/2b-codes/get_2b_TTM_codes.py {} {} {}".format(original_dir + "/" + settings_path, original_dir + "/" + config, molecule_in), shell=True)
 
     os.chdir(original_dir)   
+ 
+def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_directory):
+    """
+    Generates the fit code based on the polynomials for a monomer
 
+    Args:
+        settings_path - the file containing all relevent settings information
+        config_path    - monomer config file
+        poly_in_path - the A3B2.in type file
+        poly_path   - directory where polynomial files are
+        poly_order - the order of the polynomial in poly_path
+        fit_directory - directory to generate fit code in
 
+    Returns:
+        None
+    """
+
+    if not os.path.isdir(fit_directory):
+        os.mkdir(fit_directory)
+
+    fitting.prepare_2b_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_directory)
+ 
 def compile_fit_code(settings_path, fit_directory):
     """
     Compiles the fit code in the given directory
@@ -435,7 +455,7 @@ def fit_1b_training_set(settings_path, fit_code, training_set, fit_directory, fi
     os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))
     os.rename("fit-1b.nc", fitted_code)
 
-def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory):
+def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory, config_path):
     """
     Fits the ttm fit code to a given training set
 
@@ -444,6 +464,8 @@ def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory
         fit_code    - the code to fit
         training_set - the training set to fit the code to
         fit_directory - the directory where the fit log and other files created by the fit go
+        config_path - Local path to the file to write the d6 and A constants to.
+
 
     Returns:
         None
@@ -474,3 +496,61 @@ def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory
     os.rename("individual_terms.dat", os.path.join(fit_directory, "individual_terms.dat"))
     os.rename("ttm-params.txt", os.path.join(fit_directory, "ttm-params.txt"))
     os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))
+
+
+    # read d6 and A constants from ttm output file
+    with open(os.path.join(fit_directory, "ttm-params.txt"), "r") as ttm_file:
+        A = [float(a) for a in ttm_file.readline().split()]
+        d6 = [float(d) for d in ttm_file.readline().split()]
+
+    # write d6 and A to the config.ini file
+    lines = []
+    with open(config_path, "r") as config_file:
+        for line in config_file:
+            lines.append(line)
+
+    found_A = False
+    with open(config_path, "w") as config_file:
+        for line in lines:
+            if line.startswith("A = "):
+                found_A = True
+            if not line.startswith("d6 = "):
+                config_file.write(line)
+
+            else:
+                config_file.write("d6 = {}\n".format([[], [], d6]))
+
+    if not found_A:
+        config_file.write("A = {}\n".format([[], [], A]))
+
+def fit_2b_training_set(settings_path, fit_code, training_set, fit_directory, fitted_code):
+    """
+    Fits the fit code to a given training set
+
+    Args:
+        settings_path    - the file containing all relevent settings information
+        fit_code    - the code to fit
+        training_set - the training set to fit the code to
+        fit_directory - the directory where the .cdl and .dat files will end up
+        fitted_code - file to write final fitted code to
+
+    Returns:
+        None
+    """
+
+    if not os.path.isdir(fit_directory):
+        os.mkdir(fit_directory)
+    if os.path.dirname(fitted_code) == "":
+        fitted_code = "./" + fitted_code
+    if not os.path.isdir(os.path.dirname(fitted_code)):
+        os.mkdir(os.path.dirname(fitted_code))
+
+    os.system(fit_code + " " + training_set)
+
+    os.system("ncgen -o fit-2b.nc fit-2b.cdl")
+
+    os.rename("fit-2b.cdl", os.path.join(fit_directory, "fit-2b.cdl"))
+    os.rename("fit-2b-initial.cdl", os.path.join(fit_directory, "fit-2b-initial.cdl"))
+    os.rename("correlation.dat", os.path.join(fit_directory, "correlation.dat"))
+    os.rename("fit-2b.nc", fitted_code)
+

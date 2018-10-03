@@ -2,6 +2,7 @@ from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader, utils
 from potential_fitting.exceptions import ParsingError, LineFormatError
 from random import randint, Random
+from potential_fitting.utils import constants
 import math, numpy, copy
 def generate_1b_configurations(settings_path, geo_path, normal_modes_path, config_path):
     """
@@ -116,12 +117,6 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
 
     generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path)
 
-bohr = 0.52917721092
-autocm = 2.194746313e5
-cmtoau = 4.5563352527e-6
-melectron = 1822.88839
-freq_cutoff = 10 * cmtoau
-
 def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
         seed = randint(-100000, 100000)):
     """
@@ -198,7 +193,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
 
             # scale each element of the normal modes relative to its atom's mass relative to the mass of an electron
             # (for some reason)
-            sqrt_mass = math.sqrt(atom.get_mass() * melectron)
+            sqrt_mass = math.sqrt(atom.get_mass() * constants.mass_electron_per_mass_proton)
             for i in range(3):
                 coordinates[i] = coordinates[i] * sqrt_mass
 
@@ -216,7 +211,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
             
     # convert the frequencies to atomic units from cm
     # absolute value allows supporting of imaginary frequencies (i think)
-    frequencies = [abs(frequency) / autocm for frequency in frequencies]
+    frequencies = [abs(frequency) / constants.autocm for frequency in frequencies]
 
     # first we will generate the temp distribution configs
 
@@ -239,11 +234,13 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
     # initialize temp to the temp minimum, it will be increased each iteration of the loop
     temp = temp_min
 
+    freq_cutoff = 10 * constants.cmtoau
+
     # loop over each temp distribution config to generate
     for config_index in range(num_temp_configs):
 
         # fill G with all 0s
-        G = [[0 for i in range(dim)] for k in range(dim)] # ???
+        G = [[0 for i in range(dim)] for k in range(dim)] # sqrt of the mass-scaled covariance matrix
 
         # for each normal mode, frequency pair, update d and G.
         for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
@@ -321,9 +318,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
         # increase A
         A = A * A_factor + A_addend
 
-
     print("Normal Distribution Configuration generation complete.")
-    random.close()
 
 def make_config(config_path, config_index, molecule, dim, G, random):
 
@@ -349,7 +344,9 @@ def make_config(config_path, config_index, molecule, dim, G, random):
                     norm_dist_list)
 
             # de-scale the atom displacement ordinate by the molecules mass relative to that of an electron
-            atom_displacement[coordinate_index] /= math.sqrt(atom.get_mass() * melectron)
+            atom_displacement[coordinate_index] /= math.sqrt(atom.get_mass() * constants.mass_electron_per_mass_proton)
+
+    bohr = constants.bohr*1e10
 
     # open the configuration output file to append a configuration
     with open(config_path, "a") as config_file:

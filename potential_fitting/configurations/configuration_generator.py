@@ -148,10 +148,6 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
         seed                - Seed to use to generate the configurations, the same seed will give the same
                 configurations.
     """
-    """
-    NOTES/TODOS:
-        * currently, highest frequency must be last, lowest frequency must be first
-    """
 
     # clear the output file, because we will append to it later
     with open(config_path, "w") as config_file:
@@ -183,8 +179,9 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
     # number of configs using a distribution over temp
     num_temp_configs = num_configs - num_A_configs
 
-    # deep copy the normal modes input array before we change it
-    normal_modes = copy.deepcopy(normal_modes)
+    # deep copy the frequencies, reduced masses, and normal modes input array before we change it, and sort them so
+    # that they are all sorted from lowest frequency to highest.
+    frequencies, reduced_masses, normal_modes = sort_by_frequency(frequencies, reduced_masses, normal_modes)
 
     # mass-scale and normalize the normal modes
     for normal_mode in normal_modes:
@@ -322,6 +319,30 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
         A = A * A_factor + A_addend
 
     print("Normal Distribution Configuration generation complete.")
+
+def sort_by_frequency(frequencies, reduced_masses, normal_modes):
+    """
+    Sorts the given lists of frequencies, reduced masses, and normal modes by their frequencies from least to greatest.
+
+    The input lists must be ordered such that normal mode x has frequency frequencies[x], reduced mass
+    reduced_masses[x] and offsets normal_modes[x].
+
+    Args:
+        frequencies         - Frequencies of the normal modes.
+        reduced_masses      - Reduced masses of the normal modes.
+        normal_modes        - Offset of each atom for each normal mode. Each element of this list contains one sub-list
+                for each atom in the molecule. Each of these sublists is [x offset, y offset, z offset] of the normal
+                mode.
+
+    Returns:
+        A 3-tuple (frequencies, reduced_masses, normal_modes) sorted by frequencies.
+    """
+
+    reduced_masses = [mass for freq, mass in sorted(zip(frequencies, reduced_masses))]
+    normal_modes = [normal_mode for freq, normal_mode in sorted(zip(frequencies, normal_modes))]
+    frequencies = sorted(frequencies)
+
+    return frequencies, reduced_masses, normal_modes
 
 def make_config(config_path, config_index, molecule, dim, G, random):
 

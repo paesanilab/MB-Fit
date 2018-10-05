@@ -98,7 +98,7 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
                     try:
                         offset = float(token)
 
-                    except ValueErrorL:
+                    except ValueError:
                         raise ParsingError(normal_modes_path,
                                 "cannot parse {} into a offset float".format(token)) from None
 
@@ -166,9 +166,9 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
     # calculate the dimension of the null space of this molecule
     dim_null = dim - len(normal_modes)
 
-    if dim_null < 0:
+    if dim_null < 5:
         raise InvalidValueError("number of normal modes", dim - dim_null,
-                "less than 3 * number of atoms in the molecule ({})".format(dim))
+                "larger than 3 * (number of atoms in the molecule) - 5 ({})".format(dim))
 
     # number of configs using a distribution over A
     num_A_configs = num_configs // 2
@@ -205,7 +205,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
             for i in range(3):
                 coordinates[i] = coordinates[i] / normalization_scale
             
-    # convert the frequencies to atomic units from cm
+    # convert the frequencies to atomic units from cm-1
     # absolute value allows supporting of imaginary frequencies (i think)
     frequencies = [abs(frequency) / constants.autocm for frequency in frequencies]
 
@@ -214,16 +214,16 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
     # if a geometric progression was requested, set min, max, factor, and addend of temp to correspond
     if geometric:
 
-        temp_min = frequencies[0] # Kelvin
-        temp_max = 2 * frequencies[-1] # Kelvin
+        temp_min = frequencies[0] # au
+        temp_max = 2 * frequencies[-1] # au
         temp_factor = (temp_min / temp_max) ** (-1 / (num_temp_configs - 1))
         temp_addend = 0
 
     # if a linear progression was requested, set min, max, factor, and addend of temp to correspond
     else:
 
-        temp_min = 0 # Kelvin
-        temp_max = frequencies[-1] # Kelvin
+        temp_min = 0 # au
+        temp_max = frequencies[-1] # au
         temp_factor = 1
         temp_addend = (temp_max - temp_min) / (num_temp_configs - 1)
 
@@ -257,6 +257,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
                     else:
                         d = 0.5 / frequency
 
+                    # G = ( d * U * U^T )^(1/2), where U are normal modes
                     for i in range(dim):
                         for j in range(dim):
                             G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
@@ -293,7 +294,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
         for config_index in range(num_A_configs):
 
             # fill G with all 0s
-            G = [[0 for i in range(dim)] for k in range(dim)] # ???
+            G = [[0 for i in range(dim)] for k in range(dim)] # sqrt of the mass scaled covariance matrix
 
             # for each normal mode, frequency pair, update d and G.
             for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
@@ -311,6 +312,7 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
                     else:
                         d = 0.5 / frequency
 
+                    # G = ( d * U * U^T )^(1/2), where U are normal modes
                     for i in range(dim):
                         for j in range(dim):
                             G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
@@ -383,7 +385,7 @@ def make_config(config_file, config_index, molecule, G, random):
             atom_displacement[coordinate_index] = numpy.dot([g[atom_index * 3 + coordinate_index] for g in G],
                     norm_dist_list)
 
-            # de-scale the atom displacement ordinate by the molecules mass relative to that of an electron
+            # unscale the atom displacement ordinate by the molecules mass relative to that of an electron
             atom_displacement[coordinate_index] /= math.sqrt(atom.get_mass() * constants.mass_electron_per_mass_proton)
 
     # scale the bohr constants from meters to angstroms

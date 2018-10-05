@@ -43,8 +43,8 @@ def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path)
         geo = normal_modes[index]
         
         normal_out += "normal mode: " + str(i) + "\n"
-        normal_out += freq_formatter.format(frequencies[index]) + "\n"
-        normal_out += "red_mass = " + mass_formatter.format(red_masses[index]) + "\n"
+        normal_out += "frequency = " + freq_formatter.format(frequencies[index]) + "\n"
+        normal_out += "reduced mass = " + mass_formatter.format(red_masses[index]) + "\n"
         
         # for each atom in the molecule
         for atom in range(len(geo)):

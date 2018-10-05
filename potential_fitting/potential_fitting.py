@@ -66,7 +66,7 @@ def generate_normal_modes(settings_path, geo, normal_modes):
     return dim_null
 
 
-def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, config_path):
+def generate_1b_configurations(settings_path, geo, normal_modes, config_path, seed = random.randint(-1000000, 1000000)):
     """
     Generates 1b configurations for a given monomer from a set of normal modes
 
@@ -74,7 +74,6 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
         settings_path - the file containing all relevent settings information
         geo         - file to read optimized geometry
         normal_modes - file to read normal modes
-        dim_null    - the DIM NULL of this molecule, see generate_normal_modes()
         config_path - file to write configurations
 
     Returns:
@@ -86,7 +85,7 @@ def generate_1b_configurations(settings_path, geo, normal_modes, dim_null, confi
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    configurations.generate_1b_configurations(settings_path, geo, normal_modes, dim_null, config_path)
+    configurations.generate_1b_configurations(settings_path, geo, normal_modes, config_path, seed = seed)
 
 def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """

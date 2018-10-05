@@ -111,8 +111,14 @@ class XYZFormatError(InvalidInputError):
 class ParsingError(PotentialFittingError):
     """Exception for problems reading a file"""
 
-    def __init__(self, f, message):
-        super().__init__("A problem occured while parsing file '{}': {}".format(f, message))
+    def __init__(self, file_path, message):
+        super().__init__("A problem occured while parsing file '{}': {}".format(file_path, message))
+
+class LineFormatError(ParsingError):
+    """Exception for problems with the format of a line in a file"""
+
+    def __init__(self, file_path, line, correct_format):
+        super().__init__(file_path, "Error in line '{}': format should be: '{}'".format(line, correct_format))
 
 class InvalidValueError(InvalidInputError):
     """Raised when a value a user inputs has an invalid value"""

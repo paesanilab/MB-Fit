@@ -10,6 +10,10 @@ cal_to_joule = 4.184
 bohr = 0.52917721067e-10 # meter, 2014 CODATA
 bohr_to_ang = bohr * 1.0e10 # 0.52 ang / 1 bohr
 ang_to_bohr = 1/bohr_to_ang # 1.82 bohr / 1 ang
+
+autocm = 2.194746313e5 # Hartree to wavenumbers (cm-1) - TODO: derive from fundamental constants
+cmtoau = 4.5563352527e-6 # wavenumbers (cm-1) to Hartree
+mass_electron_per_mass_proton = 1822.88839 # mass of proton / mass of electron
 """
 Constants derived from basic unit constants
 """                                                                      

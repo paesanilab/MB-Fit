@@ -7,18 +7,19 @@ before_install:
 install:
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
+  - source $HOME/miniconda/etc/profile.d/conda.sh
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
   - conda create -q -n psi4env -c psi4 --file requirements.txt python=3.6
+  - conda activate psi4env
 
 language: cpp
 
 script:
     # Build ndiff tool
-    - cd $TRAVIS_BUILD_DIR/codes/ndiff-2.00; ./configure; make
+    - cd $TRAVIS_BUILD_DIR/codes/ndiff-2.00; ./configure; make SHELL=/bin/sh
     - PATH=$TRAVIS_BUILD_DIR/codes/ndiff-2.00:$PATH
 
     - cd $TRAVIS_BUILD_DIR; source install.sh
@@ -37,15 +38,15 @@ script:
     #- cd $TRAVIS_BUILD_DIR/fitting/1B/get_codes; bash run_test.sh
 
     # psi4
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/psi4; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/psi4; bash run_test.sh
 
     # QM MB energy calculator (uses psi4)
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimers; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimer; source activate psi4env; bash run_test.sh
-    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimers; source activate psi4env; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomer; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomers; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimer; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimers; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimer; bash run_test.sh
+    - cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimers; bash run_test.sh
 
     # training set generation
     - cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/src; make

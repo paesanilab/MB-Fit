@@ -61,8 +61,7 @@ def write_job(settings_path, job, job_dir):
     # parse settings file
     settings = SettingsReader(settings_path)
 
-    with (open(job_dir + "/job_{}.py".format(job.job_id), "w") as job_file, open("job_template.py", "r") as
-            job_template):
+    with open(job_dir + "/job_{}.py".format(job.job_id), "w") as job_file, open("job_template.py", "r") as job_template:
         job_string = "".join(job_template.readlines())
 
         job_file.write(job_string.format(**{

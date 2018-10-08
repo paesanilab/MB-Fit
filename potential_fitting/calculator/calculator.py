@@ -44,10 +44,10 @@ def calculate_energy(molecule, fragment_indicies, model, cp, settings):
     
     if code == "psi4":
         return calc_psi4_energy(molecule, fragment_indicies, model, cp, settings)
-    '''
-    elif code == "TensorMol":
-        return TensorMol_convert_str(molecule, fragment_indicies, settings)
-    '''
+    
+    # elif code == "TensorMol":
+    #     return TensorMol_convert_str(molecule, fragment_indicies, settings)
+    
     elif code == "qchem":
         return calc_qchem_energy(molecule, fragment_indicies, model, cp, settings)
     
@@ -181,7 +181,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
 
     try:
         qchem_input += "ecp " + settings.get("qchem", "ecp") + "\n"
-    except ConfigMissingSectionError, ConfigMissingPropertyError:
+    except (ConfigMissingSectionError, ConfigMissingPropertyError):
         pass
 
     qchem_input += "$end"

@@ -464,8 +464,8 @@ class Database():
             is_complete = True
             for job_id in [job_id_tuple[0] for job_id_tuple in self.cursor.execute(
                     "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]:
-                if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0] != 
-                        "completed":
+                if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?",
+                        (job_id,)).fetchone()[0] != "completed":
                     is_complete = False
                     break
 

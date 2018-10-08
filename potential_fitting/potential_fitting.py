@@ -345,11 +345,13 @@ def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_pa
 
     files.init_directory(fit_dir_path)
 
-    os.chdir(fit_dir_path) 
-    
-    system.call("cp", this_file_path + "/../codes/2b-codes/template/*", ".")
+    os.chdir(fit_dir_path)
 
-    ttm_script_path = "{}/../codes/2b-codes/get_2b_TTM_codes.py".format(this_file_path))
+    codes_path = os.path.join(this_file_path, "..", "codes", "2b-codes")
+    
+    system.call("cp", os.path.join(codes_path, "template", "*"), ".")
+
+    ttm_script_path = os.path.join(codes_path, "get_2b_TTM_codes.py")
 
     system.call("python", ttm_script_path, "{}/{}".format(original_dir, settings_path), "{}/{}".format(original_dir, config_path), molecule_in)
 
@@ -508,12 +510,8 @@ def fit_2b_training_set(settings_path, fit_code, training_set, fit_directory, fi
         None
     """
 
-    if not os.path.isdir(fit_directory):
-        os.mkdir(fit_directory)
-    if os.path.dirname(fitted_code) == "":
-        fitted_code = "./" + fitted_code
-    if not os.path.isdir(os.path.dirname(fitted_code)):
-        os.mkdir(os.path.dirname(fitted_code))
+    files.init_directory(fit_directory)
+    files.init_file(fitted_code)
 
     os.system(fit_code + " " + training_set)
 

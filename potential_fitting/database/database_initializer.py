@@ -30,7 +30,7 @@ def initialize_database(settings_path, database_path, directory_path):
         # Create the database by initializing all tables
         database.create()
     
-        print("Initializing database from xyz files in {} directory into database {}".format(directory, database_path))
+        print("Initializing database from xyz files in {} directory into database {}".format(directory_path, database_path))
         # get a list of all the files in the directory, or just the filename if directory is just a single file.
         filenames = (get_filenames(directory_path) if os.path.isdir(directory_path) else
                 [directory_path] if directory_path[-4:] == ".xyz" else [])

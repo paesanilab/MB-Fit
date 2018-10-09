@@ -201,8 +201,8 @@ def generate_poly(settings_path, input_path, order, output_path):
             write_header_file(header_file, total_terms, len(variables))
 
         # open the three files we will now write to
-        with (open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple", "w") as
-                grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file):
+        with open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple",
+                "w") as grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file:
 
             # write the opening for the cpp file
             write_cpp_opening(cpp_file, total_terms, len(variables))

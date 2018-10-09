@@ -269,8 +269,8 @@ class DegreeFilter(Filter):
 
                 # if this degree contains a "-" (but does not end in "-") then it is a range specifier
                 elif "-" in degree_string:
-                    if degree >= int(degree_string[:degree_string.index("-")]) and degree <=
-                            int(degree_string[degree_string.index("-") + 1:]):
+                    if (degree >= int(degree_string[:degree_string.index("-")]) and degree <=
+                            int(degree_string[degree_string.index("-") + 1:])):
                         return False
 
                 # otherwise, it is an exact value specifier

@@ -19,7 +19,7 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path):
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo, opt_geo)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path)
 
 def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
     """
@@ -38,7 +38,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
 
     return dim_null
 
-def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, dim_null, configurations_path,
+def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
         seed = random.randint(-1000000, 1000000)):
     """
     Generates 1b configurations for a given monomer from a set of normal modes.
@@ -106,7 +106,7 @@ def init_database(settings_path, database_path, configurations_path):
         None.
     """
 
-    database.initialize_database(settings_path, database_path, configurations_files)
+    database.initialize_database(settings_path, database_path, configurations_path)
 
 def fill_database(settings_path, database_path):
     """
@@ -220,7 +220,7 @@ def generate_poly_input_from_database(settings_path, database_path, molecule_nam
     with Database(database_path) as database:
         symmetry = database.get_symmetry(molecule_name)
 
-        generate_poly_input(settings_path, poly_dir_path + "/" + symmetry + ".in")
+        generate_poly_input(settings_path, os.path.join(input_dir_path, symmetry + ".in"))
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
     """

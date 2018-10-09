@@ -11,7 +11,8 @@ def init_directory(directory_path):
     Returns:
         The same directory path as was passed in.
     """
-
+    if directory_path == "":
+        directory_path = "."
     if not os.path.isdir(directory_path):
         os.makedirs(directory_path)
 
@@ -43,7 +44,7 @@ def get_molecule_log_path(log_path, molecule, suffix):
         The log file for the given molecule with the given suffix.
     """
 
-    file_path = os.path.join(log_path, molecule.get_name(), "{}.{}".format(molecule.get_SHA1(), suffix))
+    file_path = os.path.join(log_path, molecule.get_name(), "{}.{}".format(molecule.get_SHA1()[-8:], suffix))
 
     # make sure the required directories exist
     return init_file(file_path)
@@ -79,7 +80,7 @@ def get_optimization_log_path(log_path, molecule, method, basis, suffix):
     Returns:
         The log file for the optimization of this molecule using the given method/basis with the given suffix.
     """
-    return get_model_log_path(os.path.join(log_path, "optimizations"), method, basis, suffix)
+    return get_model_log_path(os.path.join(log_path, "optimizations"), molecule, method, basis, suffix)
 
 def get_energy_log_path(log_path, molecule, method, basis, cp, suffix):
     """
@@ -97,7 +98,8 @@ def get_energy_log_path(log_path, molecule, method, basis, cp, suffix):
         The log file for the energy calculation of this molecule using the given method/basis/cp with the given suffix.
     """
     
-    return get_model_log_path(os.path.join(log_path, "energy", "cp" if cp else "nocp"), method, basis, suffix)
+    return get_model_log_path(os.path.join(log_path, "energy", "cp" if cp else "nocp"), molecule, method, basis,
+            suffix)
 
 def get_frequencies_log_path(log_path, molecule, method, basis, suffix):
     """
@@ -115,4 +117,4 @@ def get_frequencies_log_path(log_path, molecule, method, basis, suffix):
         suffix.
     """
 
-    return get_model_log_path(os.path.join(log_path, "frequencies"), method, basis, suffix)
+    return get_model_log_path(os.path.join(log_path, "frequencies"), molecule, method, basis, suffix)

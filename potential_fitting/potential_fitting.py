@@ -238,17 +238,7 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
         None.
     """
 
-    this_file_path = os.path.dirname(os.path.abspath(__file__))
-
-    original_dir = os.getcwd()
-
-    files.init_directory(poly_dir_path)
-
-    os.chdir(poly_dir_path)
-
-    system.call("poly-gen_mb-nrg.pl", str(order), "{}/{}".format(original_dir, poly_in_path), ">", "poly.log")
-
-    os.chdir(original_dir)
+    polynomials.generate_poly(settings_path, poly_in_path, order, poly_dir_path)
 
 def execute_maple(settings_path, poly_dir_path):
     """

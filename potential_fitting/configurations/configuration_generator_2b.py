@@ -19,6 +19,7 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
         min_inter_distance - the minimum distance between any two atoms from oposite monomers
         use_grid    - if True, then distance between the center of mass of the monomers will be on a grid, otherwise, it will be smooth
         step_size - only used if use_grid is True, this is the step size of the grid in angstroms
+        num_attempts - the number of attempts before giving up.
 
     Returns:
         None
@@ -43,13 +44,55 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
 
     # construct a psuedo-random number generator
     random = Random(seed)
+    
+    #num_attempts is set to five (default)
+    num_attempts = 5
+    
+    total_configs = number_of_configs
 
     # open the config file to write to
     with open(config_path, "w") as config_file:
+     
+        while total_configs > 0 :
+        
+            #random distance between min_distance and max_distance
+            
+            random_distance = random.uniform(min_distance, max_distance)
+            
+            #getting the molecules
+            molecule1 = random.choice(molecules1)
+            molecule2 = random.choice(molecules2)
+            
+            #generating one confiugration at that random distance
+        
+            try:
+                move_to_config(random, molecule1, molecule2, random_distance, min_inter_distance, num_attempts)
+            except RanOutOfAttemptsException:
+                # if we didn't find a valid configuration, skip this config
+                continue
+            # write total number of atoms to config file
+            config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
 
+            # in the comment line, write how many configs have been generated before this one
+            config_file.write("{}\n".format(total_configs))
+
+            # write the xyz of each monomer to the config file
+            config_file.write("{}\n{}\n".format(molecule1.to_xyz(), molecule2.to_xyz()))
+            
+            #decrementing required number of configs
+            total_configs -= 1
+            
+            
+            # if we have hit our target number of configs, return
+        print("Generated {} configurations".format(number_of_configs))
+        return
+        
+            
+            
+
+        '''
         # loop over each step on our grid
         for step in range(num_steps):
-
             # loop over how many configs we want to generate at this step in the grid, which is equal
             #   to the number of configs remaining to be generated divided by the number of steps left.
             #   this ensures that unless a config at the last step is impossible, we will always have
@@ -83,6 +126,7 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
                 if total_configs == number_of_configs:
                     print("Generated {} configurations".format(total_configs))
                     return
+           '''
 
     # if we did not hit our target number of configs, notify the user
     print("Generated {} configurations".format(total_configs))

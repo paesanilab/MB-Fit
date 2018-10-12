@@ -4,7 +4,7 @@ import subprocess
 # absolute module imports
 from potential_fitting.exceptions import CommandNotFoundError, CommandExecutionError
 
-def call(command, *args):
+def call(command, *args, in_file = None, out_file = None):
     """
     Performs a system call with the given command and arguments.
 
@@ -15,16 +15,18 @@ def call(command, *args):
     Args:
         command             - The command to be executed.
         args                - Any arguments to follow the command.
+        in_file             - File handle to redirect input from.
+        out_file            - File handle to redirect output to.
 
     Returns:
         None.
     """
 
     try:
-        subprocess.run([command, *args], stderr = subprocess.PIPE, check = True)
+        subprocess.run([command, *args], stdin = in_file, stdout = out_file, stderr = subprocess.PIPE, check = True)
     except subprocess.CalledProcessError as e:
         if e.returncode == 127:
-            raise CommandNotFoundError(command)
-        raise CommandExecutionError(command, e.cmd, e.returncode, e.stderr)
+            raise CommandNotFoundError(command) from None
+        raise CommandExecutionError(command, e.cmd, e.returncode, e.stderr) from None
     except FileNotFoundError:
-        raise CommandNotFoundError(command)
+        raise CommandNotFoundError(command) from None

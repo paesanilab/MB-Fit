@@ -149,11 +149,11 @@ def optimize_qchem(settings, molecule, method, basis):
         # tells qchem that configuration ends here
         qchem_in_file.write("$end\n")
 
-    qchem_in_path = files.get_optimization_log_path(settings.get("files", "log_path"), molecule, method, basis, "out")
+    qchem_out_path = files.get_optimization_log_path(settings.get("files", "log_path"), molecule, method, basis, "out")
 
     # make the qchem system call
     try:
-        system.call("qchem", "-nt", settings.getint("qchem", "num_threads", 1), qchem_in_path, qchem_out_path)
+        system.call("qchem", "-nt", str(settings.getint("qchem", "num_threads", 1)), qchem_in_path, qchem_out_path)
     except CommandExecutionError as e:
         raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code") from e
     
@@ -324,7 +324,7 @@ def frequencies_qchem(settings, molecule, method, basis):
     qchem_out_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "out")
 
     try:
-        system.call("qche", "-nt", settings.getint("qchem", "num_threads", 1), qchem_in_path, qchem_out_path)
+        system.call("qchem", "-nt", str(settings.getint("qchem", "num_threads", 1)), qchem_in_path, qchem_out_path)
     except CommandExecutionError:
         raise LibraryCallError("qchem", "frequency", "process returned non-zero exit code")
 

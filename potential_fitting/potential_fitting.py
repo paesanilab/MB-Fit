@@ -269,8 +269,10 @@ def execute_maple(settings_path, poly_dir_path):
     system.call("maple", "poly-grd.maple")
     system.call("maple", "poly-nogrd.maple")
 
-    system.call("clean-maple-c.pl", "<", "poly-grd.c", ">", "poly-grd.cpp")
-    system.call("clean-maple-c.pl", "<", "poly-nogrd.c", ">", "poly-nogrd.cpp")
+    with open("poly-grd.c", "r") as in_file, open("poly-grd.cpp", "w") as out_file:
+        system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
+    with open("poly-nogrd.c", "r") as in_file, open("poly-nogrd.cpp", "w") as out_file:
+        system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
 
     os.chdir(original_dir)
 

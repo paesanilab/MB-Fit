@@ -190,7 +190,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     qchem_in_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "in")
     
     with open(qchem_in_path, "w") as qchem_in_file:
-        f.write(qchem_input)
+        qchem_in_file.write(qchem_input)
     
     # file to write qchem output in
     qchem_out_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
@@ -200,7 +200,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
 
     # perform system call to run qchem
     try:
-        system.call("qchem", "-nt", num_threads, log_file_in, log_file_out)
+        system.call("qchem", "-nt", str(num_threads), qchem_in_path, qchem_out_path)
     except CommandExecutionError as e:
         raise LibraryCallError("qchem", "energy calculation", "process returned non-zero exit code") from e
 

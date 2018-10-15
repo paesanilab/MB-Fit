@@ -87,7 +87,7 @@ def generate_1b_configurations(settings_path, geo, normal_modes, config_path, se
 
     configurations.generate_1b_configurations(settings_path, geo, normal_modes, config_path, seed = seed)
 
-def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, progression = False, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer
 
@@ -100,9 +100,11 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
         min_distance - minimum distance between the centers of mass of the two molecules
         max_distance - the maximum distance between the centers of mass of the two molecules
         min_inter_distance - the minimum distance of any intermolecular pair of atoms
+        progression - The parameter that determines whether to use a smooth progression of lengths or randomly determined lengths.
         use_grid - if False, configurations are space roughly evenly between min_distance and max_distance. If True, then configurations are placed at intervals along this distance.
         step_size - if use_grid is True, then this dictates the distance of the spacing interval used to place the centers of masses of the molecules, otherwise, this parameter has no effect.
         seed - the same seed will generate the same configurations.
+        
 
     Returns:
         None
@@ -113,7 +115,7 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
     if not os.path.isdir(os.path.dirname(config_path)):
         os.mkdir(os.path.dirname(config_path))
 
-    configurations.generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
+    configurations.generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, seed)
 
 def init_database(settings_path, database_name, config_files):
     """

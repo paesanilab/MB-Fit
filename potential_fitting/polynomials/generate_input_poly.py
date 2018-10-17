@@ -5,36 +5,39 @@ import os
 from potential_fitting.utils import SettingsReader, files
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 
-def generate_input_poly(settings_file, poly_in_path):
+# local module imports
+from .molecule_in_parser import MoleculeInParser
+
+def generate_input_poly(settings_file, molecule_in, in_file_path):
     """
     Generates an input file for the polynomial generator.
 
     Args:
         settings_file       - Local path to the ".ini" file with all relevant settings.
-        poly_in_path        - Local path to the ".in" file to write the poly input to. Should be named like "A1B2.in".
-                It is OK to have extra paths before it. ("some/path/to/A2B4C2.in")
+        molecule_in         - String indicating the symmetry of the molecule, for example 'A1B2_A1B2'
+        in_file_path       - Local path to the ".in" file to write the polynomial input file to.
     """
 
     settings = SettingsReader(settings_file)
 
-    # get the string representation of the molecule by getting the A1B2C2, etc. part of the name
-    try:
-        molecule = os.path.splitext(poly_in_path)[0].split("/")[-1]
-    except IndexError:
-        raise InvalidValueError("poly_in_path", poly_in_path, "in format somepath/A1B2_A1B2.in")
-
     # file will be automatically closed after block by with open as ... syntax
-    with open(files.init_file(poly_in_path), "w") as poly_in_file:
+    with open(files.init_file(in_file_path), "w") as poly_in_file:
 
-        # split along _ to seperate fragments
-        fragments = molecule.split('_')
+        molecule_in_parser = MoleculeInParser(molecule_in)
 
         # loop thru each fragment and add an add_molecule line at top of file
-        for fragment in fragments:
-            poly_in_file.write("add_molecule['" + fragment + "']\n")
+        for fragment_parser in molecule_in_parser.get_fragments():
+            poly_in_file.write("add_molecule['" + fragment_parser.get_fragment_in() + "']\n")
 
         # these letters mark virtual sites instead of atoms
         virtual_sites = ['X', 'Y', 'Z']
+
+        for fragment_parser in molecule_in_parser.get_fragments():
+
+            # intra-molecular variables
+            for atom_type_index, atom_parser1 in enumerate(fragment_parser.get_atoms()):
+
+            # inter-molecular variables
 
         # loop thru each type list and generate each fragment's set of uniquely named atoms
         sets_list = []
@@ -43,11 +46,11 @@ def generate_input_poly(settings_file, poly_in_path):
         letter = 97
 
         # loop thru every fragment
-        for fragment in fragments:
+        for fragment in molecule_in_parser.get_fragments():
 
             # first check the formatting on this fragment
             if fragment[0].isdigit():
-                raise InvalidValueError("poly_in_path", poly_in_path,
+                raise InvalidValueError("molecule_in", in_file_path,
                         "formatted such that the first character of every fragment is a letter")
             for i in range(1, len(fragment), 2):
                 if not fragment[i].isdigit():

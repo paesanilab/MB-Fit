@@ -8,6 +8,24 @@ from potential_fitting.molecule import Molecule, xyz_to_molecules
 def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, seed = randint(-100000, 1000000)):
 
+        
+    """
+    Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and outputs them to an xyz file
+
+    Args:
+        geo1        - the first optimized (or series of unoptimized) geometry
+        geo2        - the second optimized (or series of unoptimized) geometry
+        number_of_configs - generate this many configurations
+        config_path - the path to the file to write the configurations
+        min_distance - the minimum distance between the centers of mass of the two monomers
+        max_distance - the maximum distance between the centers of mass of the two monomers
+        min_inter_distance - the factor to multiply the sum of the vanderwall_radius 
+                             of the 2 body configuration.
+        num_attempts - the number of attempts before giving up.
+    Returns:
+        None
+    """
+    
     #parse the molecules from the input xyz files
     molecules1 = xyz_to_molecules(geo1)
     molecules2 = xyz_to_molecules(geo2)
@@ -65,7 +83,7 @@ def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path
 def generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
     """
-    Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file
+    Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth progression and outputs them to an xyz file
 
     Args:
         geo1        - the first optimized (or series of unoptimized) geometry
@@ -106,42 +124,46 @@ def generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path
     
     #num_attempts is set to five (default)
     num_attempts = 5
+    
+    
+    # open the config file to write to
+    with open(config_path, "w") as config_file:
+    
+        # loop over each step on our grid
+        for step in range(num_steps):
+            # loop over how many configs we want to generate at this step in the grid, which is equal
+            #   to the number of configs remaining to be generated divided by the number of steps left.
+            #   this ensures that unless a config at the last step is impossible, we will always have
+            #   exactly number_of_configs configs.
+            for config in range(math.ceil((number_of_configs - total_configs) / (num_steps - step))):
 
-    # loop over each step on our grid
-    for step in range(num_steps):
-        # loop over how many configs we want to generate at this step in the grid, which is equal
-        #   to the number of configs remaining to be generated divided by the number of steps left.
-        #   this ensures that unless a config at the last step is impossible, we will always have
-        #   exactly number_of_configs configs.
-        for config in range(math.ceil((number_of_configs - total_configs) / (num_steps - step))):
+                # first select a random geometry for each monomer
+                molecule1 = random.choice(molecules1)
+                molecule2 = random.choice(molecules2)
 
-            # first select a random geometry for each monomer
-            molecule1 = random.choice(molecules1)
-            molecule2 = random.choice(molecules2)
+                try:
+                    # move the molecules to a valid configuration, making 5 attempts
+                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance, 5)
 
-            try:
-                # move the molecules to a valid configuration, making 5 attempts
-                move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance, 5)
+                except RanOutOfAttemptsException:
+                    # if we didn't find a valid configuration, skip this config
+                    continue
 
-            except RanOutOfAttemptsException:
-                # if we didn't find a valid configuration, skip this config
-                continue
+                # write total number of atoms to config file
+                config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
 
-            # write total number of atoms to config file
-            config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
+                # in the comment line, write how many configs have been generated before this one
+                config_file.write("{}\n".format(total_configs))
 
-            # in the comment line, write how many configs have been generated before this one
-            config_file.write("{}\n".format(total_configs))
-
-            # write the xyz of each monomer to the config file
-            config_file.write("{}\n{}\n".format(molecule1.to_xyz(), molecule2.to_xyz()))
+                # write the xyz of each monomer to the config file
+                config_file.write("{}\n{}\n".format(molecule1.to_xyz(), molecule2.to_xyz()))
         
-            total_configs += 1
+                total_configs += 1
 
-            # if we have hit our target number of configs, return
-            if total_configs == number_of_configs:
-                print("Generated {} configurations".format(total_configs))
-                return
+                # if we have hit our target number of configs, return
+                if total_configs == number_of_configs:
+                    print("Generated {} configurations".format(total_configs))
+                    return
 
 
 
@@ -220,7 +242,28 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
 
 def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+        
+    """
+    Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file
 
+    Args:
+        geo1        - the first optimized (or series of unoptimized) geometry
+        geo2        - the second optimized (or series of unoptimized) geometry
+        number_of_configs - generate this many configurations
+        config_path - the path to the file to write the configurations
+        min_distance - the minimum distance between the centers of mass of the two monomers
+        max_distance - the maximum distance between the centers of mass of the two monomers
+        min_inter_distance - the factor to multiply the sum of the vanderwall_radius 
+                             of the 2 body configuration.
+        progression - parameter to determine if a configuration is based on smooth progression or randomly determined
+        use_grid    - if True, then distance between the center of mass of the monomers will be on a grid, otherwise, it will be smooth
+        step_size - only used if use_grid is True, this is the step size of the grid in angstroms
+        num_attempts - the number of attempts before giving up.
+
+    Returns:
+        None
+    """    
+    
     if progression == False:
         generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, seed)
     else:

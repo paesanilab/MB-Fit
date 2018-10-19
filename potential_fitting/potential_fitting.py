@@ -87,7 +87,7 @@ def generate_1b_configurations(settings_path, geo, normal_modes, config_path, se
 
     configurations.generate_1b_configurations(settings_path, geo, normal_modes, config_path, seed = seed)
 
-def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer
 
@@ -99,7 +99,8 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
         config_path - path to file in which to generate configurations
         min_distance - minimum distance between the centers of mass of the two molecules
         max_distance - the maximum distance between the centers of mass of the two molecules
-        min_inter_distance - the minimum distance of any intermolecular pair of atoms
+        min_inter_distance - the factor to multiply the sum of the vanderwall_radius 
+                             of the 2 body configuration
         use_grid - if False, configurations are space roughly evenly between min_distance and max_distance. If True, then configurations are placed at intervals along this distance.
         step_size - if use_grid is True, then this dictates the distance of the spacing interval used to place the centers of masses of the molecules, otherwise, this parameter has no effect.
         seed - the same seed will generate the same configurations.

@@ -6,7 +6,7 @@ from potential_fitting.utils import Quaternion
 from potential_fitting.molecule import Molecule, xyz_to_molecules
 
 def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 1.2, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, seed = randint(-100000, 1000000)):
 
     #parse the molecules from the input xyz files
     molecules1 = xyz_to_molecules(geo1)
@@ -63,7 +63,7 @@ def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path
 
 
 def generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file
 
@@ -74,7 +74,8 @@ def generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path
         config_path - the path to the file to write the configurations
         min_distance - the minimum distance between the centers of mass of the two monomers
         max_distance - the maximum distance between the centers of mass of the two monomers
-        min_inter_distance - the minimum distance between any two atoms from oposite monomers
+        min_inter_distance - the factor to multiply the sum of the vanderwall_radius 
+                             of the 2 body configuration.
         use_grid    - if True, then distance between the center of mass of the monomers will be on a grid, otherwise, it will be smooth
         step_size - only used if use_grid is True, this is the step size of the grid in angstroms
         num_attempts - the number of attempts before giving up.
@@ -155,7 +156,8 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
         molecule1   - the Molecule object of the 1st monomer
         molecule2   - the Molecule object of the 2nd monomer
         distance    - distance between the centers of mass of the two molecules
-        min_inter_distance - minimum distance for any inter-molecular atomic distance
+        min_inter_distance - the factor to multiply the sum of the vanderwall_radius 
+                             of the 2 body configuration.
         attempts    - the number of configurations to try before giving up
 
     Returns:
@@ -179,17 +181,36 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
         molecule2.rotate(Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
 
         # calculate the minimum distance of any intermolecular interaction
-        closest_distance = min_inter_distance
+        flag = True
+
+
+
         for atom1 in molecule1.get_atoms():
             for atom2 in molecule2.get_atoms():
-                if atom1.distance(atom2) < closest_distance:
-                    closest_distance = atom1.distance(atom2)
+                sum_vdw_distance = atom1.get_vdw_radius() + atom2.get_vdw_radius()
+                if atom1.distance(atom2) < min_inter_distance * sum_vdw_distance:
+                    flag = False
+
+        if flag:
+            return 
+
+
+        
+        '''Ethan's Old Code, will change once final changes are done.
+
+        #closest_distance = min_inter_distance
+        #for atom1 in molecule1.get_atoms():
+            #for atom2 in molecule2.get_atoms():
+                #if atom1.distance(atom2) < closest_distance:
+                    #closest_distance = atom1.distance(atom2)
 
         # if the minimum intermolecular distance in this configuration is ngreater than or equal to min_inter_distance, then this is a valid configuration
-        if closest_distance >= min_inter_distance:
-            return
+
+        #if closest_distance >= min_inter_distance:
+            #return
 
         # otherwise, we repeat the loop and make another attempt
+        '''
 
     # if we run out of attempts without generating a valid configuration, raise an exception
     raise RanOutOfAttemptsException
@@ -198,12 +219,12 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
 
 
 def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 1.2, progression = False, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
 
     if progression == False:
-        generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2,seed = randint(-100000, 1000000))
+        generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, seed)
     else:
-        generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000))
+        generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000))
 
 
      

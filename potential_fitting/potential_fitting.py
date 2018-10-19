@@ -182,20 +182,20 @@ def generate_2b_training_set(settings_path, database_path, training_set_path, mo
     database.generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
             method, basis, cp, tag)
 
-def generate_poly_input(settings_path, poly_in_path):
+def generate_poly_input(settings_path, molecule_in, in_file_path):
     """
     Generates an input file for polynomial generation.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        poly_in_path        - Local path to the file to write the polynomial input to. Name of file should be in
-                the format A1B2.in, it is ok to have extra directories prior to file name (thisplace/thatplace/A3.in).
+        molecule_in         - String idicating symmetry of molecule, ie "A1B2_A1B2" for (CO2)2
+        in_file_path        - Local path to the file to write the polynomial input to.
 
     Returns:
         None.
     """
 
-    polynomials.generate_input_poly(settings_path, poly_in_path)
+    polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
 
 def generate_poly_input_from_database(settings_path, database_path, molecule_name, input_dir_path):
     """

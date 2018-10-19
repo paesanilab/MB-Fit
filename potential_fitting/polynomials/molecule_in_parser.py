@@ -12,10 +12,26 @@ class MoleculeInParser(object):
 
             self.fragment_parsers.append(FragmentParser(fragment_in, frag_id))
 
-            frag_id = chr(int(frag_id) + 1)
+            frag_id = chr(ord(frag_id) + 1)
 
     def get_molecule_in(self):
         return "_".join([fragment_parser.get_fragment_in() for fragment_parser in self.fragment_parsers])
+
+    def get_intra_molecular_variables(self):
+        for fragment_parser in self.get_fragments():
+
+            yield from fragment_parser.get_intra_molecular_variables()
+
+    def get_inter_molecular_variables(self):
+        for fragment_parser_index, fragment_parser1 in enumerate(self.get_fragments()):
+
+            for fragment_parser2 in list(self.get_fragments())[fragment_parser_index + 1:]:
+
+                yield from fragment_parser1.get_inter_molecular_variables(fragment_parser2)
+
+    def get_variables(self):
+        yield from self.get_intra_molecular_variables()
+        yield from self.get_inter_molecular_variables()
 
     def get_fragments(self):
 
@@ -29,7 +45,7 @@ class FragmentParser(object):
 
         self.atom_parsers = []
 
-        for atom_in in self.split_fragment_in(fragment_in):
+        for atom_in in self.split_fragments_in(fragment_in):
 
             self.atom_parsers.append(AtomTypeParser(atom_in))
 
@@ -44,15 +60,17 @@ class FragmentParser(object):
     def get_intra_molecular_variables(self):
         for atom_parser in self.get_atom_types():
 
-            yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id()]
-                    for atom1, atom2 in atom_parser.get_intra_atom_type_variables()]
+            yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id(),
+                    "x-intra-{}".format(var_type)] for atom1, atom2, var_type
+                    in atom_parser.get_intra_atom_type_variables()]
 
         for atom_parser_index, atom_parser1 in enumerate(self.get_atom_types()):
 
-            for atom_parser1 in self.get_atom_types()[atom_parser_index:]:
+            for atom_parser2 in list(self.get_atom_types())[atom_parser_index + 1:]:
 
-                yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id()]
-                        for atom1, atom2 in atom_parser1.get_intra_atom_type_variables(atom_parser2)]
+                yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id(),
+                        "x-intra-{}".format(var_type)] for atom1, atom2, var_type
+                        in atom_parser1.get_inter_atom_type_variables(atom_parser2)]
                 
 
 
@@ -61,8 +79,9 @@ class FragmentParser(object):
 
             for atom_parser_other in other.get_atom_types():
 
-                yield from [[atom1, self.get_fragment_id(), atom2, other.get_fragment_id()]
-                        for atom1, atom2 in atom_parser_self.get_intra_atom_type_variables(atom_parser_other)]
+                yield from [[atom1, self.get_fragment_id(), atom2, other.get_fragment_id(),
+                        "x-inter-{}".format(var_type)] for atom1, atom2, var_type
+                        in atom_parser_self.get_inter_atom_type_variables(atom_parser_other)]
                 
 
     def get_atom_types(self):
@@ -87,7 +106,7 @@ class FragmentParser(object):
 
             try:
                 # read character code of current character
-                character_code = int(fragment_in[start_index])
+                character_code = ord(fragment_in[end_index])
 
             # IndexError will be thrown when we reach the end of the string
             except IndexError:
@@ -116,7 +135,7 @@ class FragmentParser(object):
                     reading_atom_type = False
                     
                 
-                end_index++
+                end_index += 1
 
             # if the character is a capital letter
             elif character_code >= 65 and character_code < 91:
@@ -132,36 +151,42 @@ class FragmentParser(object):
 
                     reading_atom_type = True
 
-                end_index++
+                end_index += 1
 
             # if character is not a digit or capital letter
             else:
 
                 # raise exception, because fragment_in must be all numbers and capital letters.
                 raise Exception
+
 class AtomTypeParser(object):
 
     def __init__(self, atom_type_in):
-        count_str = "".join(itertools.takewhile(str.isupper, atom_type_in))
-        self.count = int(count_str)
-        self.atom_type = atom_type_in[len(count_str):]
+        self.atom_type= "".join(itertools.takewhile(str.isupper, atom_type_in))
+        self.count = int(atom_type_in[len(self.atom_type):])
 
     def get_atom_in(self):
         return self.atom_type + str(self.count)
 
+    def get_type(self):
+        return self.atom_type
+
+    def get_count(self):
+        return self.count
+
     def get_intra_atom_type_variables(self):
-        for i in range(self.count):
-            for k in range(i, self.count):
-                yield self.atom_type + str(i), self.atom_type + str(k)
+        for atom_index, atom1 in enumerate(self.get_atoms()):
+            for atom2 in list(self.get_atoms())[atom_index + 1:]:
+                yield atom1, atom2, "{0}+{0}".format(self.atom_type)
 
     def get_inter_atom_type_variables(self, other):
-        for i in range(self.count):
-            for k in range(other.count):
-                yield self.atom_type + str(i), other.atom_type + str(k)
-
+        for atom1 in self.get_atoms():
+            for atom2 in other.get_atoms():
+                yield atom1, atom2, "+".join(sorted([self.atom_type,
+                        other.atom_type]))
 
     def get_atoms(self):
 
-        for i in range(self.count):
+        for i in range(1, self.count + 1):
 
-            yield self.atom_type
+            yield self.atom_type + str(i)

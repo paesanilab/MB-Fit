@@ -154,7 +154,7 @@ def fill_database(settings_path, database_name):
 
     database.fill_database(settings_path, database_name)
 
-def generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%"):
+def generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method = "%", basis = "%", cp = "%", tag = "%", e_min = 0, e_max = float('inf')):
     """
     Generates a training set from the energies inside a database.
 
@@ -172,6 +172,8 @@ def generate_1b_training_set(settings_path, database_name, training_set, molecul
         basis       - only use energies calculated in this basis
         cp          - only use energies calculated with the same cp
         tag         - only use energies marked with this tag
+        e_min       - the minimum energy threshold for filtering configs (default is 0)
+        e_max       - the maximum energy threshold for filtering configs (default is infinity)
 
     Returns:
         None
@@ -182,7 +184,7 @@ def generate_1b_training_set(settings_path, database_name, training_set, molecul
     if not os.path.isdir(os.path.dirname(training_set)):
         os.mkdir(os.path.dirname(training_set))
 
-    database.generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method, basis, cp, tag)
+    database.generate_1b_training_set(settings_path, database_name, training_set, molecule_name, method, basis, cp, tag, e_min, e_max)
 
 def generate_2b_training_set(settings_path, database_name, training_set, monomer1_name, monomer2_name, method = "%", basis = "%", cp = "%", tag = "%"):
     """

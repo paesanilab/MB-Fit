@@ -202,17 +202,21 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
         molecule1.rotate(Quaternion.get_random_rotation_quaternion(random), 0, 0, 0)
         molecule2.rotate(Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
 
-        # calculate the minimum distance of any intermolecular interaction
+        # setting a flag variable to keep track of a valid configuration
         flag = True
 
 
-
+        #loop through atoms in molecule 1
         for atom1 in molecule1.get_atoms():
+            #loop through atoms in molecule 2
             for atom2 in molecule2.get_atoms():
+                #get the sum of the venderwall radii of the pair
                 sum_vdw_distance = atom1.get_vdw_radius() + atom2.get_vdw_radius()
+                #comparing with our factor (default = 0.8)
                 if atom1.distance(atom2) < min_inter_distance * sum_vdw_distance:
                     flag = False
 
+        #Returning only valid configurations.             
         if flag:
             return 
 

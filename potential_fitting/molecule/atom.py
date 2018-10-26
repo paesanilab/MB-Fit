@@ -116,6 +116,20 @@ class Atom(object):
         """
 
         return constants.symbol_to_covalent_radius(self.name)
+
+    def get_vdw_radius(self):
+        """
+        Gets the vanderwalls radius of this atom
+
+        Args:
+            None
+
+        Returns:
+            The vanderwalls radius of this atom
+        """
+        return constants.symbol_to_vdw_radius(self.name)
+
+
     def get_x(self):
         """
         Gets the x position of this atom

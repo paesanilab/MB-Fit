@@ -53,6 +53,17 @@ covalent_radii = [ # Source ptable.com
     1.96,   1.74,   1.44,   1.36,   1.25,   1.27,   1.39,   1.25,   1.26,   1.21,   1.38,   1.31,   1.26,   1.22,   1.19,   1.16,   1.14,   1.10,
 ]
 
+#list of vanderwalls radii (vdw) (angstroms) in order of atomic number
+vdw_radii = [ # Source: ptable.com for elements unless in list below.
+			  # Be, B, Al, Ca (Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3658832/)
+			  # vdw_radius is -1.0, if a definite value cannot be found. 
+    1.2,                                                                                                                                    1.4,
+    1.82,   1.53,                                                                                   1.92,   1.70,   1.55,   1.52,   1.47,   1.54,
+    2.27,   1.73,                                                                                   1.84,   2.10,   1.80,   1.80,   1.75,   1.88,
+    2.75,   2.31,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   1.63,   1.40,   1.39,   1.87,   -1.0,   1.85,   1.90,   1.85,   2.02,
+]
+
+
 def symbol_to_number(symbol):
     """
     Converts an atomic symbol to an atomic number.
@@ -139,3 +150,28 @@ def symbol_to_covalent_radius(symbol):
 
     # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
     return covalent_radii[symbol_to_number(symbol) - 1]
+
+
+def symbol_to_vdw_radius(symbol):
+    """
+    Finds the vanderwalls radius of the atom with a given atomic symbol in angstroms.
+
+    Van der Waals radius is defined as half of the internuclear separation of two 
+    non-bonded atoms of the same element on their closest possible approach.
+
+    Args:
+        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+
+    Returns:
+        The vanderwall radius of the given atom in angstroms, if defined. Otherwise, throws an Exception. 
+    """
+
+    #the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    vdw_radius = vdw_radii[symbol_to_number(symbol) - 1]
+
+    if vdw_radius != -1.0:
+        return vdw_radius
+    else:
+        message = "Vanderwall radius for element not defined!"
+        raise InvalidValueError(message)
+

@@ -3,9 +3,9 @@ import sqlite3
 from .database import Database
 
 from potential_fitting.utils import constants
-from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError
+from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError, NoEnergyInRangeError
 
-def generate_1b_training_set(settings_file, database_name, output_path, molecule_name, method, basis, cp, tag):
+def generate_1b_training_set(settings_file, database_name, output_path, molecule_name, method, basis, cp, tag, e_min = 0, e_max = float('inf')):
     """
     Creates a training set file from the calculated energies in a database.
 
@@ -18,6 +18,8 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
         basis       - use energies calculated with this basis. Use % for any basis
         cp          - use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp
         tag         - use energies marked with this tag. Use % for any tag
+        e_min       - the minimum energy threshold for filtering configs (default is 0)
+        e_max       - the maximum energy threshold for filtering configs (default is infinity)
 
     Return:
         None
@@ -27,6 +29,9 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
     with Database(database_name) as database:
 
         print("Creating a fitting input file from database {} into file {}".format(database_name, output_path))
+
+        #intializing a counter
+        count_configs = 0
 
         # get list of all [molecule, energies] pairs calculated in the database
         molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
@@ -52,16 +57,29 @@ def generate_1b_training_set(settings_file, database_name, output_path, molecule
                 molecule = molecule_energy_pair[0]
                 energies = molecule_energy_pair[1]
 
-                # write the number of atoms to the output file
-                output.write(str(molecule.get_num_atoms()) + "\n")
+                # monomer deformation energy
+                deformation_energy_hartrees = (float(energies[0]) - float(opt_energies[0]))
+                if deformation_energy_hartrees < e_max:
+                    if deformation_energy_hartrees - e_min > -0.0000000000001:
 
-                # monomer interaction energy
-                output.write(str((float(energies[0]) - float(opt_energies[0])) * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
-            
-                output.write("\n")
+                        # write the number of atoms to the output file
+                        output.write(str(molecule.get_num_atoms()) + "\n")
+                        output.write(str(deformation_energy_hartrees * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+                        output.write("\n")
 
-                # write the molecule's atoms' coordinates to the xyz file
-                output.write(molecule.to_xyz() + "\n")
+                        # write the molecule's atoms' coordinates to the xyz file
+                        output.write(molecule.to_xyz() + "\n")
+
+                        #increment the counter
+                        count_configs += 1
+
+            if count_configs == 0:
+                raise NoEnergyInRangeError(database_name, molecule_name, method, basis, cp, tag, e_min, e_max)
+            print("Generated training set with " + str(count_configs) + " Configurations.")
+
+
+
+                    
 
 def generate_2b_training_set(settings, database_name, output_path, monomer_1_name, monomer_2_name, method, basis, cp, tag):
     """"

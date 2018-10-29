@@ -27,6 +27,7 @@ atomic_symbols = [
     "Li",   "Be",                                                                                   "B",    "C",    "N",    "O",    "F",    "Ne",
     "Na",   "Mg",                                                                                   "Al",   "Si",   "P",    "S",    "Cl",   "Ar",
     "K",    "Ca",   "Sc",   "Ti",   "V",    "Cr",   "Mn",   "Fe",   "Co",   "Ni",   "Cu",   "Zn",   "Ga",   "Ge",   "As",   "Se",   "Br",   "Kr",
+    "Rb",   "Sr",   "Y",    "Zr",   "Nb",   "Mo",   "Tc",   "Ru",   "Rh",   "Pd",   "Ag",   "Cd",   "In",   "Sn",   "Sb",   "Te",   "I",    "Xe"
 ]
 
 # list of atomic masses listed in order of atomic number
@@ -61,6 +62,7 @@ vdw_radii = [ # Source: ptable.com for elements unless in list below.
     1.82,   1.53,                                                                                   1.92,   1.70,   1.55,   1.52,   1.47,   1.54,
     2.27,   1.73,                                                                                   1.84,   2.10,   1.80,   1.80,   1.75,   1.88,
     2.75,   2.31,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   1.63,   1.40,   1.39,   1.87,   -1.0,   1.85,   1.90,   1.85,   2.02,
+    -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   1.63,   1.72,   1.58,   1.93,   2.17,   -1.0,   2.06,   1.98,   2.16
 ]
 
 
@@ -172,6 +174,5 @@ def symbol_to_vdw_radius(symbol):
     if vdw_radius != -1.0:
         return vdw_radius
     else:
-        message = "Vanderwall radius for element not defined!"
-        raise InvalidValueError(message)
+        raise InvalidValueError("Element", symbol, "has no valid vanderwall radius defined!") 
 

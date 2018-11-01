@@ -197,7 +197,7 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
 
-def generate_poly_input_from_database(settings_path, database_path, molecule_name, input_dir_path):
+def generate_poly_input_from_database(settings_path, database_path, molecule_name, in_file_path):
     """
     Generates an input file for polynomial generation.
     Looks in a database to find the symmetry and creates a file in the given directory.
@@ -211,7 +211,7 @@ def generate_poly_input_from_database(settings_path, database_path, molecule_nam
                 automatically be added to the end if it does not already end in ".db".
         molecule_name       - The name of the molecule to generate a polynomial generation input file for. At least one
                 instance of this molecule must be in the database.
-        input_dir_path      - Local path to the directory to write the polynomial generation input file in.
+        in_file_path        - Local path to the file to write the polynomial input to.
 
     Returns:
         None.
@@ -220,7 +220,7 @@ def generate_poly_input_from_database(settings_path, database_path, molecule_nam
     with Database(database_path) as database:
         symmetry = database.get_symmetry(molecule_name)
 
-        generate_poly_input(settings_path, os.path.join(input_dir_path, symmetry + ".in"))
+        generate_poly_input(settings_path, symmetry, in_file_path)
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
     """
@@ -298,7 +298,7 @@ def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_p
     fitting.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths,
             distance_between = distance_between)
     
-def generate_1b_fit_code(settings_path, config_path, poly_in_path, poly_dir_path, order, fit_dir_path):
+def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
     """
     Generates the fit code based on the polynomials and config file for a monomer.
 
@@ -315,7 +315,7 @@ def generate_1b_fit_code(settings_path, config_path, poly_in_path, poly_dir_path
         None.
     """
 
-    fitting.prepare_1b_fitting_code(config_path, poly_in_path, poly_dir_path, order, fit_dir_path)
+    fitting.prepare_1b_fitting_code(config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path)
 
 def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_path):
     """

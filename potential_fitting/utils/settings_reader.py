@@ -173,7 +173,6 @@ class SettingsReader(object):
         return parse_array(string, type)
 
 def parse_array(string, type):
-    print(string)
     num_open_brackets = 0
     elements = []
     element = ""
@@ -197,5 +196,4 @@ def parse_array(string, type):
             elements.append(element)
     else:
         print("Something went wrong while parsing a string into a list")
-    print(elements)
     return [parse_array(element, type) if "," in element or "[" in element or "]" in element else type(element) for element in elements]

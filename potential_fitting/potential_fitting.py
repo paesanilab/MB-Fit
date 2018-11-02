@@ -489,7 +489,12 @@ def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory
             best_log_lines = best_fit_log.readlines()
 
         rmsd = float(log_lines[-4].split()[2])
+
+        print("completed fit with rmsd {}".format(rmsd))
+
         best_rmsd = float(best_log_lines[-4].split()[2])
+
+        print("current best fit has rmsd {}".format(best_rmsd))
 
         if rmsd < best_rmsd:
             os.rename(os.path.join(fit_directory, "fit.log"), os.path.join(fit_directory, "best_fit.log"))
@@ -525,8 +530,8 @@ def fit_2b_ttm_training_set(settings_path, fit_code, training_set, fit_directory
             else:
                 config_file.write("d6 = {}\n".format([[], [], d6]))
 
-    if not found_A:
-        config_file.write("A = {}\n".format([[], [], A]))
+        if not found_A:
+            config_file.write("A = {}\n".format([[], [], A]))
 
 def fit_2b_training_set(settings_path, fit_code, training_set, fit_directory, fitted_code):
     """

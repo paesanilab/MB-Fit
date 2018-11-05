@@ -51,16 +51,21 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
         plt.figure(1)
         ttm_vs_calc = plt.scatter(calc_array, ttm_array)
         mb_vs_calc = plt.scatter(calc_array, mb_array)
-        plt.plot(calc_array, calc_array, 'r-')
+        plt.plot(calc_array, calc_array, 'r--')
         plt.legend((ttm_vs_calc, mb_vs_calc), ('TTM', 'MB'))
+        plt.xlabel("Ref. Energy [Kcal/mol]")
+        plt.ylabel("Fitted Energy [Kcal/mol]")
         #plt.show()
 
         #plt.clf()
         plt.figure(2)
         error_ttm = plt.scatter(calc_array, ttm_array - calc_array)
         error_mb = plt.scatter(calc_array, mb_array - calc_array)
-        plt.plot(calc_array, [0 for i in range(len(calc_array))], 'r-')
+        plt.plot(calc_array, [0 for i in range(len(calc_array))], 'r--')
         plt.legend((error_ttm, error_mb), ('Error TTM', 'Error MB'))
+        plt.xlabel("Ref. Energy [Kcal/mol]")
+        plt.ylabel("Error [Kcal/mol]")
+
         plt.show()
 
 

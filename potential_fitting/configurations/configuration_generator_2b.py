@@ -6,7 +6,7 @@ from potential_fitting.utils import Quaternion
 from potential_fitting.molecule import Molecule, xyz_to_molecules
 
 def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, seed = None):
 
         
     """
@@ -26,6 +26,9 @@ def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path
         None
     """
     
+    if seed is None:
+        seed = random.randint(-100000, 100000)
+
     #parse the molecules from the input xyz files
     molecules1 = xyz_to_molecules(geo1)
     molecules2 = xyz_to_molecules(geo2)
@@ -81,7 +84,7 @@ def generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path
 
 
 def generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, seed = None):
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth progression and outputs them to an xyz file
 
@@ -101,6 +104,9 @@ def generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path
     Returns:
         None
     """
+
+    if seed is None:
+        seed = random.randint(-100000, 100000)
 
     # if use_grid is false, set the step size to even space the configurations
     if not use_grid:
@@ -245,7 +251,7 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
 
 
 def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = None):
         
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file
@@ -266,12 +272,15 @@ def generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_d
 
     Returns:
         None
-    """    
+    """
+
+    if seed is None:
+        seed = random.randint(-100000, 100000)
     
     if progression == False:
         generate_2b_configurations_random(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, seed)
     else:
-        generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000))
+        generate_2b_configurations_smooth(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
 
 
      

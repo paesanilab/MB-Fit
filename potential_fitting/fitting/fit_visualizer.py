@@ -9,21 +9,31 @@ from potential_fitting.utils import constants
 
 import numpy as np
 
-def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag, threshold = 50):
+def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name, monomer2_name, method, basis, cp, tag, threshold = 50):
     ttm = []
     mb = []
+
+    molecule_name = "-".join(sorted([monomer1_name, monomer2_name]))
 
     with Database(db_name) as database:
 
         energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
+
+        monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag))[0][1][0]
+        monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag))[0][1][0]
     
         molecules = [i[0] for i in energy_molecule_pairs]
 
-        calc = [j[1][2] for j in energy_molecule_pairs]
+        calc = [j[1][2] - j[1][1] - j[1][0] for j in energy_molecule_pairs]
 
-        min_calc = min(calc)
+        binding_energies = [interaction - 
+                ((energies[1][0] if len(energies[1]) == 3 else energies[1][3]) - monomer1_opt) - 
+                ((energies[1][1] if len(energies[1]) == 3 else energies[1][4]) - monomer2_opt) 
+                for interaction, energies in zip(calc, energy_molecule_pairs)]
 
-        calc = [(i - min_calc) * constants.au_to_kcal for i in calc]
+        binding_energies = [i * constants.au_to_kcal for i in binding_energies]
+
+        calc = [i * constants.au_to_kcal for i in calc]
 
         for m in molecules:
             molecule_xyz = m.to_xyz()
@@ -55,7 +65,7 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
 
 
         for i in range(len(calc)):
-            if calc[i] >= 50:
+            if binding_energies[i] >= threshold:
                 calc_above += [calc[i]]
                 ttm_above += [ttm[i]]
                 mb_above += [mb[i]]
@@ -81,13 +91,13 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
 
         plt.figure(1)
 
-        ttm_vs_calc_above = plt.scatter(calc_above_array, ttm_above_array, c = '#00008B' )
-        ttm_vs_calc_below = plt.scatter(calc_below_array, ttm_below_array, c = '#00BFFF')
+        ttm_vs_calc_above = plt.scatter(calc_above_array, ttm_above_array, c = '#00074c', s = 5, alpha = 0.5)
+        ttm_vs_calc_below = plt.scatter(calc_below_array, ttm_below_array, c = '#0017ff', s = 5, alpha = 0.5)
 
-        mb_vs_calc_above = plt.scatter(calc_above_array, mb_above_array, c = '#008000' )
-        mb_vs_calc_below = plt.scatter(calc_below_array, mb_below_array, c = '##00FA9A')
+        mb_vs_calc_above = plt.scatter(calc_above_array, mb_above_array, c = '#db2000', s = 5, alpha = 0.5 )
+        mb_vs_calc_below = plt.scatter(calc_below_array, mb_below_array, c = '#5b0d00', s = 5, alpha = 0.5)
 
-        plt.plot(calc_array, calc_array, 'r--')
+        plt.plot(calc_array, calc_array, c = 'orange', alpha = 0.5)
         plt.legend((ttm_vs_calc_above, mb_vs_calc_above), ('TTM', 'MB'))
         plt.xlabel("Ref. Energy [Kcal/mol]")
         plt.ylabel("Fitted Energy [Kcal/mol]")
@@ -95,14 +105,44 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
 
         plt.figure(2)
 
-        error_ttm_above = plt.scatter(calc_above_array, ttm_above_array - calc_above_array, c = '#00008B')
-        error_ttm_below = plt.scatter(calc_below_array, ttm_below_array - calc_below_array, c = '#00BFFF')
+        error_ttm_above = plt.scatter(calc_above_array, ttm_above_array - calc_above_array, c = '#00074c', s = 5, alpha = 0.5)
+        error_ttm_below = plt.scatter(calc_below_array, ttm_below_array - calc_below_array, c = '#0017ff', s = 5, alpha = 0.5)
 
-        error_mb_above = plt.scatter(calc_above_array, mb_above_array - calc_above_array, c = '#008000')
-        error_mb_below = plt.scatter(calc_below_array, mb_below_array - calc_below_array, c = '#00FA9A')
+        error_mb_above = plt.scatter(calc_above_array, mb_above_array - calc_above_array, c = '#db2000', s = 5, alpha = 0.5)
+        error_mb_below = plt.scatter(calc_below_array, mb_below_array - calc_below_array, c = '#5b0d00', s = 5, alpha = 0.5)
 
 
-        plt.plot(calc_array, [0 for i in range(len(calc_array))], 'r--')
+        plt.plot(calc_array, [0 for i in range(len(calc_array))], c = 'orange', alpha = 0.5)
+        plt.legend((error_ttm_above, error_mb_above), ('Error TTM', 'Error MB'))
+        plt.xlabel("Ref. Energy [Kcal/mol]")
+        plt.ylabel("Error [Kcal/mol]")
+
+
+        plt.figure(3)
+        
+        ttm_vs_calc_below = plt.scatter(calc_below_array, ttm_below_array, c = '#0017ff', s = 5, alpha = 0.5)
+
+        mb_vs_calc_below = plt.scatter(calc_below_array, mb_below_array, c = '#5b0d00', s = 5, alpha = 0.5)
+        
+        plt.plot(calc_below_array, calc_below_array, c = 'orange', alpha = 0.5)
+
+
+        plt.legend((ttm_vs_calc_below, mb_vs_calc_below), ('TTM', 'MB'))
+
+        plt.xlabel("Ref. Energy [Kcal/mol]")
+        plt.ylabel("Fitted Energy [Kcal/mol]")
+
+        plt.figure(4)
+
+        
+        error_ttm_below = plt.scatter(calc_below_array, ttm_below_array - calc_below_array, c = '#0017ff', s = 5, alpha = 0.5)
+
+        error_mb_below = plt.scatter(calc_below_array, mb_below_array - calc_below_array, c = '#5b0d00', s = 5, alpha = 0.5)
+
+
+        plt.plot(calc_below_array, [0 for i in range(len(calc_below_array))], c = 'orange', alpha = 0.5)
+
+        
         plt.legend((error_ttm_above, error_mb_above), ('Error TTM', 'Error MB'))
         plt.xlabel("Ref. Energy [Kcal/mol]")
         plt.ylabel("Error [Kcal/mol]")

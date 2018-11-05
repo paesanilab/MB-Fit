@@ -5,7 +5,7 @@ from random import randint, Random
 from potential_fitting.utils import constants
 import math, numpy, copy
 def generate_1b_configurations(settings_path, geo_path, normal_modes_path, config_path,
-        seed = randint(-1000000, 1000000)):
+        seed = None):
     """
     Generates a set of 1b configurations for a molecule given its optimized geometry and normal modes.
 
@@ -16,6 +16,9 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
         config_path - path to the file to write the configurations, existing content will be clobbered.
         seed - use this seed to generate random numbers, the same seed will give the same configurations.
     """
+
+    if seed is None:
+        seed = random.randint(-100000, 100000)
 
     print("Parsing normal mode input file.")
 
@@ -117,7 +120,7 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
             seed = seed)
 
 def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
-        seed = randint(-100000, 100000)):
+        seed = None):
     """
     Generates 1b configurations based on a geometry (should usually be optimized) and the normal modes corresponding
     to that geometry.
@@ -144,6 +147,9 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
         seed                - Seed to use to generate the configurations, the same seed will give the same
                 configurations.
     """
+
+    if seed is None:
+        seed = random.randint(-100000, 100000)
 
     print("Running normal distribution configuration generator...")
 

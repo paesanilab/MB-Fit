@@ -87,7 +87,7 @@ def generate_1b_configurations(settings_path, geo, normal_modes, config_path, se
 
     configurations.generate_1b_configurations(settings_path, geo, normal_modes, config_path, seed = seed)
 
-def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, config_path, min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = None):
 
     """
     Generates 2b configurations for a given dimer
@@ -112,6 +112,9 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
         None
     """
 
+    if seed is None:
+        seed = random.randint(-100000, 100000)
+
     if os.path.dirname(config_path) == "":
         config_path = "./" + config_path
     if not os.path.isdir(os.path.dirname(config_path)):
@@ -119,7 +122,7 @@ def generate_2b_configurations(settings_path, geo1, geo2, number_of_configs, con
 
     configurations.generate_2b_configurations(geo1, geo2, number_of_configs, config_path, min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, seed)
 
-def init_database(settings_path, database_name, config_files):
+def init_database(settings_path, database_name, config_files, tag = "none"):
     """
     Creates a database from the given config files. Can be called on a new file
     to create a new database, or an existing database to add more energies to be calculated
@@ -138,7 +141,7 @@ def init_database(settings_path, database_name, config_files):
     if not os.path.isdir(os.path.dirname(database_name)):
         os.mkdir(os.path.dirname(database_name))
 
-    database.initialize_database(settings_path, database_name, config_files)
+    database.initialize_database(settings_path, database_name, config_files, tag)
 
 def fill_database(settings_path, database_name):
     """

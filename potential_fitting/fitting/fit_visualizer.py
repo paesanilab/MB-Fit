@@ -99,7 +99,7 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
         error_ttm_below = plt.scatter(calc_below_array, ttm_below_array - calc_below_array, c = '#00BFFF')
 
         error_mb_above = plt.scatter(calc_above_array, mb_above_array - calc_above_array, c = '#008000')
-        error_mb_below = plt.scatter(calc_below_array, mb_below_array - calc_below_array, c = '##00FA9A')
+        error_mb_below = plt.scatter(calc_below_array, mb_below_array - calc_below_array, c = '#00FA9A')
 
 
         plt.plot(calc_array, [0 for i in range(len(calc_array))], 'r--')

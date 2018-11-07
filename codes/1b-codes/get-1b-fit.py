@@ -1969,7 +1969,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X1B.cpp for software
+# ## X1B.cpp for eval
 
 # In[23]:
 
@@ -2592,7 +2592,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X1B.h for eval
+# ## X1B.h for software
 
 # In[22]:
 
@@ -2952,7 +2952,6 @@ namespace x1b_""" + mon1 + "_deg" + str(degree) + """ {
 """
 ff.write(a)
 
-# TODO see if we can extract the monomer name directly from config.ini
 a = """
 
 x1b_""" + mon1 + """_v1x::x1b_""" + mon1 + """_v1x(std::string mon) {

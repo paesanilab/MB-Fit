@@ -9,6 +9,11 @@ from potential_fitting.utils import constants
 
 import numpy as np
 
+def rmsd(error_array):
+    rmsd_calculated = np.sqrt(np.mean(error_array**2))
+    return rmsd_calculated
+    
+
 def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name, monomer2_name, method, basis, cp, tag, threshold = 50):
     ttm = []
     mb = []
@@ -111,8 +116,25 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
         error_mb_above = plt.scatter(calc_above_array, mb_above_array - calc_above_array, c = '#db2000', s = 5, alpha = 0.5)
         error_mb_below = plt.scatter(calc_below_array, mb_below_array - calc_below_array, c = '#5b0d00', s = 5, alpha = 0.5)
 
+        rmsd_ttm = rmsd(ttm_array - calc_array)
+        rmsd_mb = rmsd(mb_array - calc_array)
 
-        plt.plot(calc_array, [0 for i in range(len(calc_array))], c = 'orange', alpha = 0.5)
+        rmsd_positive_ttm = np.array([rmsd_ttm for i in calc_array])
+        rmsd_negative_ttm = np.array([-rmsd_ttm for i in calc_array])
+
+        rmsd_positive_mb = np.array([rmsd_mb for i in calc_array])
+        rmsd_negative_mb = np.array([-rmsd_mb for i in calc_array])
+
+
+
+
+        plt.plot(calc_array, [0 for i in calc_array], c = 'orange', alpha = 0.5)
+        plt.plot(calc_array, rmsd_positive_ttm, c= 'blue')
+        plt.plot(calc_array, rmsd_negative_ttm, c = 'blue')
+
+        plt.plot(calc_array, rmsd_positive_mb, c = 'red')
+        plt.plot(calc_array, rmsd_negative_mb, c = 'red')
+
         plt.legend((error_ttm_above, error_mb_above), ('Error TTM', 'Error MB'))
         plt.xlabel("Ref. Energy [Kcal/mol]")
         plt.ylabel("Error [Kcal/mol]")

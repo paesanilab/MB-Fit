@@ -36,11 +36,14 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     fit = open(pwd + "/" + fit_path + "/" + fit_cdl,'r')
     line = fit.readline()
     while True:
+        # Skip name tag
         if line.strip().startswith(":"):
             if not "name" in line:
                 constants.append(line.replace(":", "  m_"))
+        # Find number of polynomial linear coefficients
         if line.startswith("  poly"):
             npoly = int(line.strip().split()[2].replace(";",""))
+        # Store polynomial coefficients
         if line.startswith("poly"):
             for i in range(npoly):
                 polycoef.append("            " + fit.readline().replace(";","};"))
@@ -77,6 +80,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     cppout.write(a)
     
+    # Write code that needs to be added in the SITES section of the code
     cppout.write("=====>> SECTION SITES <<=====\n")
     cppout.write("File: src/bblock/sys_tools.cpp\n")
     a = '''
@@ -90,6 +94,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     
     cppout.write(a)
 
+    # Write code that needs to be added in the CHARGES section of the code
     cppout.write("=====>> SECTION CHARGES <<=====\n")
     cppout.write("File: src/bblock/sys_tools.cpp\n")
 
@@ -113,7 +118,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     cppout.write(a)
 
-
+    # Write code that needs to be added in the POLFACS section of the code
     cppout.write("=====>> SECTION POLFACS <<=====\n")
     cppout.write("File: src/bblock/sys_tools.cpp\n")
 
@@ -137,6 +142,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     cppout.write(a)
 
+    # Write code that needs to be added in the POLS section of the code
     cppout.write("=====>> SECTION POLS <<=====\n")
     cppout.write("File: src/bblock/sys_tools.cpp\n")
 
@@ -160,7 +166,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     cppout.write(a)
 
-
+    # Write code that needs to be added in the ONEBODY_NOGRD section of the code
     cppout.write("=====>> SECTION ONEBODY_NOGRD <<=====\n")
     cppout.write("File: src/potential/1b/energy1b.cpp\n")
 
@@ -174,6 +180,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     cppout.write(a)
 
+    # Write code that needs to be added in the ONEBODY_GRD section of the code
     cppout.write("=====>> SECTION ONEBODY_GRD <<=====\n")
     cppout.write("File: src/potential/1b/energy1b.cpp\n")
 
@@ -187,6 +194,8 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     cppout.write(a)
 
+
+    # Write code that needs to be added in the INCLUDE1B section of the code
     cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
     cppout.write("File: src/potential/1b/energy1b.h\n")
 
@@ -201,6 +210,22 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
 
 def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_path, config_file, fit_cdl, mon_name):
+    """
+    Generates the parts of the C++ code needed to add the PEF to the energy software
+
+    Args:
+        settings - the file containing all relevent settings information
+        in_path - the A3B2.in type file
+        poly_path   - directory where polynomial files are
+        poly_order - the order of the polynomial in poly_path
+        fit_path - directory to generate fit code in
+        config_file    - monomer config file
+        fit_cdl - the output cdl file of the fit to use
+        mon_name - the human understandable name of the monomer (co2, h2o, no3...)
+
+    Returns:
+        None
+    """
 
     # software folder name
     sofdir = fit_path + "/" + "software_files"

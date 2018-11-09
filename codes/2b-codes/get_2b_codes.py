@@ -3721,7 +3721,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X2B.h for software
+# ## X2B.h for eval    
 
 # In[ ]:
 
@@ -3791,7 +3791,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X2B.cpp for software
+# ## X2B.cpp for eval    
 
 # In[ ]:
 
@@ -4667,6 +4667,926 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::operator()(const double crd[""" + 
 }
 
 } // namespace x2b_""" + mon1 + "_" + mon2 + """
+
+////////////////////////////////////////////////////////////////////////////////
+"""
+ff.write(a)
+ff.close()
+
+
+# ## X2B.h for software
+
+# In[ ]:
+
+
+hname = "x2b_" + mon1 + "_" + mon2 + "_deg" + str(degree) + "_v1x.h"
+polyhname = "poly_2b_" + mon1 + "_" + mon2 + "_deg" + str(degree) + "_v1x.h"
+defname = "X2B_" + mon1 + "_" + mon2 + "_DEG" + str(degree) + "_V1X_H"
+ff = open(hname,'w')
+ff.write('#ifndef ' + defname + '\n')
+ff.write('#define ' + defname + '\n \n')
+ff.write('#include "' + polyhname + '" \n')
+
+a = """
+#include <iostream>
+#include <cmath>
+#include <cassert>
+#include <cstdlib>
+#include <iomanip>
+#include <string>
+#include <vector>
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace x2b_""" + mon1 + "_" + mon2 + "_deg" + str(degree) + """ {
+
+//----------------------------------------------------------------------------//
+
+"""
+ff.write(a)
+ff.write('struct x2b_' + mon1 + "_" + mon2 + "_v1x { \n")
+a = """
+    x2b_""" + mon1 + "_" + mon2 + """_v1x() {};
+    x2b_""" + mon1 + "_" + mon2 + """_v1x(const std::string mon1, const std::string mon2);
+
+    ~x2b_""" + mon1 + "_" + mon2 + """_v1x() {};
+
+    typedef poly_2b_""" + mon1 + "_" + mon2 + "_deg" + str(degree) + """_v1x polynomial;
+
+    // returns 2B contribution only
+    // XYZ is for the real sites
+"""
+ff.write(a)
+a = """
+    double eval(const double* xyz1, const double* xyz2, const size_t ndim) const;
+    double eval(const double* xyz1, const double* xyz2, double* grad1, double* grad2, const size_t ndim) const;
+    
+private:
+
+"""
+ff.write(a)
+for nl in nlparam_all:
+    ff.write("    double m_" + nl + ";\n")
+a = """
+protected:
+    double m_r2i = """ + str(r2i) + """;
+    double m_r2f = """ + str(r2o) + """;
+
+    double f_switch(const double&, double&) const; // At1_a -- At1_b separation
+
+private:
+    std::vector<double> coefficients;
+};
+
+//----------------------------------------------------------------------------//
+
+} // namespace x2b_""" + mon1 + "_" + mon2 + "_deg" + str(degree) + """
+
+////////////////////////////////////////////////////////////////////////////////
+
+#endif 
+"""
+ff.write(a)
+ff.close()
+
+
+# ## X2B.cpp for software
+
+# In[ ]:
+
+
+cppname = "x2b_" + mon1 + "_" + mon2 + "_deg" + str(degree) + "_v1x.cpp"
+ff = open(cppname,'w')
+a = """
+
+"""
+hname = "x2b_" + mon1 + "_" + mon2 + "_deg" + str(degree) + "_v1x.h"
+ff.write(a)
+ff.write('#include "' + hname + '" \n \n')
+a = """
+////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+
+struct variable {
+    double v_exp0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    double v_exp(const double& k,
+                 const double * p1, const double * p2 );
+
+    double v_coul0(const double& r0, const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_coul(const double& k,
+                  const double * p1, const double * p2 );
+
+    double v_gau0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                  
+    void grads(const double& gg, double * grd1, double * grd2,
+               const double * p1, const double * p2);
+
+    double g[3]; // diff(value, p1 - p2)
+};
+
+//----------------------------------------------------------------------------//
+
+double variable::v_gau0(const double& r0, const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(-k*(r0 - r)*(r0 - r));
+    const double gg = 2*k*(r0 - r)*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_exp0(const double& r0, const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(r0 - r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_exp(const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(- r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+
+double variable::v_coul(const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(-r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_coul0(const double& r0, const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(r0 - r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//----------------------------------------------------------------------------//
+
+void variable::grads(const double& gg, double * grd1, double * grd2, 
+                     const double * p1, const double * p2) {
+    for (size_t i = 0; i < 3 ; i++) {
+        double d = gg*g[i];
+        grd1[i] += d;
+        grd2[i] -= d;
+    }
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+struct monomer {
+    double oh1[3];
+    double oh2[3];
+
+    void setup(const double* ohh,
+               const double& in_plane_g, const double& out_of_plane_g,
+               double x1[3], double x2[3]);
+
+    void grads(const double* g1, const double* g2,
+               const double& in_plane_g, const double& out_of_plane_g,
+               double* grd) const;
+};
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+void monomer::setup(const double* ohh,
+                    const double& in_plane_g, const double& out_of_plane_g,
+                    double* x1, double* x2)
+{
+    for (int i = 0; i < 3; ++i) {
+        oh1[i] = ohh[i + 3] - ohh[i];
+        oh2[i] = ohh[i + 6] - ohh[i];
+    }
+
+    const double v[3] = {
+        oh1[1]*oh2[2] - oh1[2]*oh2[1],
+        oh1[2]*oh2[0] - oh1[0]*oh2[2],
+        oh1[0]*oh2[1] - oh1[1]*oh2[0]
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        const double in_plane = ohh[i] + 0.5*in_plane_g*(oh1[i] + oh2[i]);
+        const double out_of_plane = out_of_plane_g*v[i];
+
+        x1[i] = in_plane + out_of_plane;
+        x2[i] = in_plane - out_of_plane;
+    }
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+void monomer::grads(const double* g1, const double* g2,
+                    const double& in_plane_g, const double& out_of_plane_g,
+                    double* grd) const
+{
+    const double gm[3] = {
+        g1[0] - g2[0],
+        g1[1] - g2[1],
+        g1[2] - g2[2]
+    };
+
+    const double t1[3] = {
+        oh2[1]*gm[2] - oh2[2]*gm[1],
+        oh2[2]*gm[0] - oh2[0]*gm[2],
+        oh2[0]*gm[1] - oh2[1]*gm[0]
+    };
+
+    const double t2[3] = {
+        oh1[1]*gm[2] - oh1[2]*gm[1],
+        oh1[2]*gm[0] - oh1[0]*gm[2],
+        oh1[0]*gm[1] - oh1[1]*gm[0]
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        const double gsum = g1[i] + g2[i];
+        const double in_plane = 0.5*in_plane_g*gsum;
+
+        const double gh1 = in_plane + out_of_plane_g*t1[i];
+        const double gh2 = in_plane - out_of_plane_g*t2[i];
+
+        grd[i + 0] += gsum - (gh1 + gh2); // O
+        grd[i + 3] += gh1; // H1
+        grd[i + 6] += gh2; // H2
+    }
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+//struct vsites {
+//    //void TwoParticleAverageSite() {}
+//    //void ThreeParticleAverageSite() {}
+//    void OutOfPlaneSite(const double& w12, const double& w13,
+//                        const double& wcross, const double x1[3],
+//                        const double y1[3], const double y2[3],
+//                        double vs[3]);
+//    //void LocalCoordinatesSite{}
+//};
+//
+//void vsites::OutOfPlaneSite(const double& w12,
+//                            const double& w13,
+//                            const double& wcross,
+//                            const double x1[3],
+//                            const double y1[3],
+//                            const double y2[3],
+//                            double vs[3]) {
+//    double r12[3], r13[3];
+//
+//    for (int i = 0; i < 3; ++i) {
+//        r12[i] = y1[i] - x1[i];
+//        r13[i] = y2[i] - x1[i];
+//    }
+//                            
+//    double rc[3];
+//    rc[0] = r12[1]*r13[2] - r12[2]*r13[1];
+//    rc[1] = r12[2]*r13[0] - r12[0]*r13[2];
+//    rc[2] = r12[0]*r13[1] - r12[1]*r13[0];
+//    
+//    vs[0] = x1[0] + w12 * r12[0] + w13 * r13[0] + wcross * rc[0];
+//    vs[1] = x1[1] + w12 * r12[1] + w13 * r13[1] + wcross * rc[1];
+//    vs[2] = x1[2] + w12 * r12[2] + w13 * r13[2] + wcross * rc[2];
+//}
+
+} // namespace
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace x2b_""" + mon1 + "_" + mon2 + "_deg" + str(degree) + """ {
+
+//----------------------------------------------------------------------------//
+
+x2b_""" + mon1 + "_" + mon2 + """_v1x::x2b_""" + mon1 + "_" + mon2 + """_v1x(std::string mon1, std::string mon2) {
+
+    // =====>> SECTION CONSTRUCTOR <<=====
+    // =>> PASTE RIGHT BELOW THIS LINE <==
+
+}
+
+//----------------------------------------------------------------------------//
+
+double x2b_""" + mon1 + "_" + mon2 + """_v1x::f_switch(const double& r, double& g) const
+{
+    if (r > m_r2f) {
+        g = 0.0;
+        return 0.0;
+    } else if (r > m_r2i) {
+        const double t1 = M_PI/(m_r2f - m_r2i);
+        const double x = (r - m_r2i)*t1;
+        g = - std::sin(x)*t1/2.0;
+        return (1.0 + std::cos(x))/2.0;
+    } else {
+        g = 0.0;
+        return 1.0;
+    }
+}
+
+//----------------------------------------------------------------------------//
+
+double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const double* xyz2, const size_t ndim) const
+{
+
+    std::vector<double> energies(ndim,0.0);
+
+    for (size_t j = 0; j < ndim; j++) {
+        double mon1[""" + str(nat1*3) + """];
+        double mon2[""" + str(nat2*3) + """];
+
+        std::copy(xyz1 + j * """ + str(nat1*3) + """, xyz1 + (j+1) * """ + str(nat1*3) + """, mon1);
+        std::copy(xyz2 + j * """ + str(nat2*3) + """, xyz2 + (j+1) * """ + str(nat2*3) + """, mon2);
+
+        // Right now it assumes 1st atom of each monomer
+        const double d12[3] = {mon1[0] -  mon2[0],
+                               mon1[1] -  mon2[1],
+                               mon1[2] -  mon2[2]};
+    
+        const double r12sq = d12[0]*d12[0] + d12[1]*d12[1] + d12[2]*d12[2];
+        const double r12 = std::sqrt(r12sq);
+    
+        if (r12 > m_r2f)
+            continue;
+    
+        double xcrd[""" + str(3*(nat1 + nat2)) + """]; // coordinates of real sites ONLY
+    
+        std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
+        std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
+        
+        double v[""" + str(nvars) + """];
+        
+        double sw = 0.0;
+        double gsw = 0.0;
+    
+"""
+ff.write(a)
+
+nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types_a),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types_a[i+1])):
+        if not types_a[i] in vsites:
+            ff.write('        const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xcrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if types_a[i] in vsites:
+            ff.write('        double ' + types_a[i] + '_' + str(n) + '_a[3]' + ';\n')
+            n = n + 1
+ff.write('\n')
+
+# loops over each type of atom in the input
+for i in range(0,len(types_b),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types_b[i+1])):
+        if not types_b[i] in vsites:
+            ff.write('        const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xcrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if types_b[i] in vsites:
+            ff.write('        double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            n = n + 1
+ff.write('\n')
+
+if is_w == 0: 
+    a = """    
+        variable vr[""" + str(nvars) + """];
+    
+"""
+elif is_w == 1:
+    a = """
+        // vsites virt;
+        double w12 =     -9.721486914088159e-02;  //from MBpol
+        double w13 =     -9.721486914088159e-02;
+        double wcross =   9.859272078406150e-02;
+
+        monomer m;
+        
+        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
+                 """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
+                        
+        variable vr[""" + str(nvars) + """];
+    
+"""
+elif is_w == 2:
+    a = """
+        // vsites virt;
+        double w12 =     -9.721486914088159e-02;  //from MBpol
+        double w13 =     -9.721486914088159e-02;
+        double wcross =   9.859272078406150e-02;
+
+        monomer m;
+        
+        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
+                 """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
+                        
+        variable vr[""" + str(nvars) + """];
+    
+"""
+ff.write(a)
+
+nv = 0
+# Intramolecular distances:
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
+            sorted_atoms = "".join(sorted([atom1, atom2]))
+
+            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
+            else:
+                arguments = '(m_k_intra_' + sorted_atoms
+
+            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass
+    else:
+        # inter-molecular variables
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+            var = var_inter
+        else:
+            var = var_lp
+
+        sorted_atoms = "".join(sorted([atom1, atom2]))
+
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + sorted_atoms + ', m_k_' + sorted_atoms
+        else:
+            arguments = '(m_k_' + sorted_atoms
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+ 
+a = """     
+    
+        sw = f_switch(r12, gsw);
+        
+        energies[j] = sw*polynomial::eval(coefficients.data(), v);
+    }
+
+    double energy = 0.0;
+    for (size_t i = 0; i < ndim; i++) {
+      energy += energies[i];
+    }
+
+    return energy;
+    
+}
+
+double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const double* xyz2, 
+                double * grad1, double * grad2, const size_t ndim) const
+{
+
+    std::vector<double> energies(ndim,0.0);
+
+    for (size_t j = 0; j < ndim; j++) {
+        double mon1[""" + str(nat1*3) + """];
+        double mon2[""" + str(nat2*3) + """];
+
+        std::copy(xyz1 + j * """ + str(nat1*3) + """, xyz1 + (j+1) * """ + str(nat1*3) + """, mon1);
+        std::copy(xyz2 + j * """ + str(nat2*3) + """, xyz2 + (j+1) * """ + str(nat2*3) + """, mon2);
+
+        // Right now it assumes 1st atom of each monomer
+        const double d12[3] = {mon1[0] -  mon2[0],
+                               mon1[1] -  mon2[1],
+                               mon1[2] -  mon2[2]};
+    
+        const double r12sq = d12[0]*d12[0] + d12[1]*d12[1] + d12[2]*d12[2];
+        const double r12 = std::sqrt(r12sq);
+    
+        if (r12 > m_r2f)
+            continue;
+    
+        double xcrd[""" + str(3*(nat1 + nat2)) + """]; // coordinates of real sites ONLY
+    
+        std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
+        std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
+        
+        double v[""" + str(nvars) + """];
+        
+        double sw = 0.0;
+        double gsw = 0.0;
+    
+"""
+ff.write(a)
+
+nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types_a),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types_a[i+1])):
+        if not types_a[i] in vsites:
+            ff.write('        const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xcrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if types_a[i] in vsites:
+            ff.write('        double ' + types_a[i] + '_' + str(n) + '_a[3]' + ';\n')
+            n = n + 1
+ff.write('\n')
+
+# loops over each type of atom in the input
+for i in range(0,len(types_b),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types_b[i+1])):
+        if not types_b[i] in vsites:
+            ff.write('        const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xcrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if types_b[i] in vsites:
+            ff.write('        double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            n = n + 1
+ff.write('\n')
+
+if is_w == 0: 
+    a = """    
+        variable vr[""" + str(nvars) + """];
+    
+"""
+elif is_w == 1:
+    a = """
+        //vsites virt;
+        double w12 =     -9.721486914088159e-02;  //from MBpol
+        double w13 =     -9.721486914088159e-02;
+        double wcross =   9.859272078406150e-02;
+
+        monomer m;
+        
+        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross, 
+                 """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
+                        
+        variable vr[""" + str(nvars) + """];
+    
+"""
+elif is_w == 2:
+    a = """
+        //vsites virt;
+        double w12 =     -9.721486914088159e-02;  //from MBpol
+        double w13 =     -9.721486914088159e-02;
+        double wcross =   9.859272078406150e-02;
+
+        monomer m;
+        
+        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross, 
+                 """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
+                        
+        variable vr[""" + str(nvars) + """];
+    
+"""
+ff.write(a)
+
+nv = 0
+# Intramolecular distances:
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
+            sorted_atoms = "".join(sorted([atom1, atom2]))
+
+            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
+            else:
+                arguments = '(m_k_intra_' + sorted_atoms
+
+            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass
+    else:
+        # inter-molecular variables
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+            var = var_inter
+        else:
+            var = var_lp
+
+        sorted_atoms = "".join(sorted([atom1, atom2]))
+
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + sorted_atoms + ', m_k_' + sorted_atoms
+        else:
+            arguments = '(m_k_' + sorted_atoms
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+
+a = """     
+    
+        double g[""" + str(nvars) + """];
+        
+        energies[j] = sw*polynomial::eval(coefficients.data(), v, g);
+        
+        double xgrd[""" + str(3*(len(atom_list_a) + len(atom_list_b))) + """];
+        std::fill(xgrd, xgrd + """ + str(3*(len(atom_list_a) + len(atom_list_b))) + """, 0.0);
+
+""" 
+ff.write(a)   
+
+nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types_a),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types_a[i+1])):
+        if not types_a[i] in vsites:
+            ff.write('        double* ' + types_a[i] + '_' + str(n) + '_a_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+# loops over each type of atom in the input
+for i in range(0,len(types_b),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types_b[i+1])):
+        if not types_b[i] in vsites:
+            ff.write('        double* ' + types_b[i] + '_' + str(n) + '_b_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types_a),2):
+    n = 1
+    for j in range(int(types_a[i+1])):
+        if types_a[i] in vsites:
+            ff.write('        double* ' + types_a[i] + '_' + str(n) + '_a_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+ff.write('\n')
+
+for i in range(0,len(types_b),2):
+    n = 1
+    for j in range(int(types_b[i+1])):
+        if types_b[i] in vsites:
+            ff.write('        double* ' + types_b[i] + '_' + str(n) + '_b_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+ff.write('\n')
+
+nv = 0
+# Intramolecular distances:
+for index, variable in enumerate(variables):
+    atom1 = variable[0][0]
+    atom2 = variable[2][0]
+
+    try:
+        atom1_index = int(variable[0][1:])
+    except ValueError:
+        atom1_index = 1
+
+    try:
+        atom2_index = int(variable[2][1:])
+    except ValueError:
+        atom2_index = 1
+
+    atom1_fragment = variable[1]
+    atom2_fragment = variable[3]
+
+    atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+    atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+    ff.write('        vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
+
+    nv += 1
+            
+a = """
+
+    // ##DEFINE HERE## the redistribution of the gradients
+    
+"""
+ff.write(a)
+a = ""
+if is_w == 1:
+    a = """
+        m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g, 
+                 w12, wcross, """ + types_a[0] + """_1_a_g);
+    """
+elif is_w == 2:
+    a = """
+        m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g, 
+                 w12, wcross, """ + types_b[0] + """_1_b_g);
+"""
+ff.write(a)    
+
+a = """
+    
+        // the switch
+        
+        sw = f_switch(r12, gsw);
+        
+        for (int i = 0; i < """ + str(3*nat1) + """; ++i) {
+            grad1[i + j*""" + str(3*nat1) + """] += sw*xgrd[i];
+        }
+
+        for (int i = 0; i < """ + str(3*nat2) + """; ++i) {
+            grad2[i + j*""" + str(3*nat2) + """] += sw*xgrd[i + """ + str(3*nat1) + """];
+        }
+
+        // gradient of the switch
+
+        gsw *= energies[j]/r12;
+        for (int i = 0; i < 3; ++i) {
+            const double d = gsw*d12[i];
+            grad1[i + j*""" + str(3*nat1) + """] += d;
+            grad2[i + j*""" + str(3*nat2) + """] -= d;
+        }
+
+    }
+
+    double energy = 0.0;
+    for (size_t i = 0; i < ndim; i++) {
+      energy += energies[i];
+    }
+
+    return energy;
+}
+
+} // namespace x2b_""" + mon1 + "_" + mon2 + "_deg" + str(degree) + """
 
 ////////////////////////////////////////////////////////////////////////////////
 """

@@ -101,15 +101,13 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     a = '''
     } else if (mon_id == "''' + mon_name + '''") {
         for (size_t nv = 0; nv < n_mon; nv++) {
-            for (size_t i = 0; i < nsites; i++) {
 '''
     cppout.write(a)
 
     for i in range(len(chg)):
-        cppout.write("                charges[fst_ind + nv*nsites + i] = " + str(chg[i]) + " * CHARGECON;\n")
+        cppout.write("            charges[fst_ind + nv*nsites + " + str(i) + "] = " + str(chg[i]) + " * CHARGECON;\n")
 
     a = '''
-            }
         }
 
 
@@ -125,15 +123,13 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     a = '''
     } else if (mon_id == "''' + mon_name + '''") {
         for (size_t nv = 0; nv < n_mon; nv++) {
-            for (size_t i = 0; i < nsites; i++) {
 '''
     cppout.write(a)
 
     for i in range(len(polfac)):
-        cppout.write("                polfac[fst_ind + nv*nsites + i] = " + str(polfac[i]) + ";\n")
+        cppout.write("            polfac[fst_ind + nv*nsites + " + str(i) + "] = " + str(polfac[i]) + ";\n")
 
     a = '''
-            }
         }
 
 
@@ -149,15 +145,13 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     a = '''
     } else if (mon_id == "''' + mon_name + '''") {
         for (size_t nv = 0; nv < n_mon; nv++) {
-            for (size_t i = 0; i < nsites; i++) {
 '''
     cppout.write(a)
 
     for i in range(len(pol)):
-        cppout.write("                pol[fst_ind + nv*nsites + i] = " + str(pol[i]) + ";\n")
+        cppout.write("            pol[fst_ind + nv*nsites + " + str(i) + "] = " + str(pol[i]) + ";\n")
 
     a = '''
-            }
         }
 
 
@@ -165,6 +159,32 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 '''
 
     cppout.write(a)
+
+    # Write code that needs to be added in excluded pair section
+    cppout.write("=====>> SECTION EXCLUDED <<=====\n")
+    cppout.write("File: src/bblock/sys_tools.cpp\n")
+
+    a = '''
+    if (mon == "''' + mon_name + '''") {
+        // 12 distances
+'''
+
+    cppout.write(a)
+
+    for i in excl12:
+        cppout.write("        exc12.insert(std::make_pair(" + str(i[0]) + "," + str(i[1]) + "));\n")
+
+    cppout.write("        // 13 distances\n")
+
+    for i in excl13:
+        cppout.write("        exc13.insert(std::make_pair(" + str(i[0]) + "," + str(i[1]) + "));\n")
+
+    cppout.write("        // 14 distances\n")
+
+    for i in excl14:
+        cppout.write("        exc14.insert(std::make_pair(" + str(i[0]) + "," + str(i[1]) + "));\n")
+
+    cppout.write("    }\n")
 
     # Write code that needs to be added in the ONEBODY_NOGRD section of the code
     cppout.write("=====>> SECTION ONEBODY_NOGRD <<=====\n")
@@ -258,7 +278,7 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     line_num = 0
     while line_num < len(lines):
         # go line by line, and replace keywords
-        newline = lines[line_num].replace("POLY_MODEL","POLY_1B_" + molecule + "_DEG" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
+        newline = lines[line_num].replace("POLY_MODEL","POLY_1B_" + molecule + "_DEG" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
 
         # skip eval_direct
         if not "eval_direct" in newline:
@@ -275,7 +295,7 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     line_num = 0
     while line_num < len(lines):
         # go line by line, and replace keywords
-        newline = lines[line_num].replace("poly_1b_" + molecule + "_v1x.h","poly_1b_" + molecule + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
+        newline = lines[line_num].replace("poly_1b_" + molecule + "_v1x.h","poly_1b_" + molecule + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
         
         line_num += 1
         grd.write(newline)
@@ -288,7 +308,7 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     line_num = 0
     while line_num < len(lines):
         # go line by line, and replace keywords
-        newline = lines[line_num].replace("poly_1b_" + molecule + "_v1x.h","poly_1b_" + molecule + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
+        newline = lines[line_num].replace("poly_1b_" + molecule + "_v1x.h","poly_1b_" + molecule + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
 
         line_num += 1
         grd.write(newline)

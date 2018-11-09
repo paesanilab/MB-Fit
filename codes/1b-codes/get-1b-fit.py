@@ -2628,7 +2628,7 @@ a = """
 
     ~x1b_""" + mon1 + """_v1x() {};
 
-    typedef poly_1b_""" + mon1 + "_deg" + str(degree) + """ polynomial;
+    typedef poly_1b_""" + mon1 + "_deg" + str(degree) + """_v1x polynomial;
 
     // returns 1b contribution only
     // xyz will be the coordinates of the nmon monomers, one after the other one

@@ -106,9 +106,11 @@ def optimize_qchem(settings, molecule, method, basis):
         os.makedirs(os.path.dirname(qchem_output_path))
 
     qchem_call_string = "qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path)
-    if subprocess.run(qchem_call_string,
+    try:
+        subprocess.run(qchem_call_string,
                    stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                   shell=True, check=True).returncode != 0:
+                   shell=True, check=True)
+    except subprocess.CalledProcessError:
         raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code")
         
 

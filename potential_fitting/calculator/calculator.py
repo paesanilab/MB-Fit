@@ -214,7 +214,7 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
         subprocess.run(syscall, 
             stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, 
             shell=True, check=True)
-    except CalledProcessError:
+    except subprocess.CalledProcessError:
         raise LibraryCallError("qchem", "energy calculation", "process returned non-zero exit code")
 
     # find the energy inside the qchem file output

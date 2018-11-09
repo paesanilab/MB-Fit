@@ -1,9 +1,12 @@
-from potential_fitting.molecule import xyz_to_molecules
-from potential_fitting.utils import SettingsReader, utils
-from potential_fitting.exceptions import ParsingError, LineFormatError, InvalidValueError
-from random import randint, Random
-from potential_fitting.utils import constants
+# external package imports
 import math, numpy, copy
+from random import randint, Random
+
+# absolute module imports
+from potential_fitting.molecule import xyz_to_molecules
+from potential_fitting.utils import SettingsReader, files, constants
+from potential_fitting.exceptions import ParsingError, LineFormatError, InvalidValueError
+
 def generate_1b_configurations(settings_path, geo_path, normal_modes_path, config_path,
         seed = randint(-1000000, 1000000)):
     """
@@ -146,6 +149,9 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
     """
 
     print("Running normal distribution configuration generator...")
+
+    # initialize any directories needed to hold config-path
+    config_path = files.init_file(config_path)
 
     # parse the ".ini" file into a SettingsReader object
     settings = SettingsReader(settings_path)
@@ -411,5 +417,5 @@ def make_config(config_file, config_index, molecule, G, random):
         z *= bohr
 
         # write this atom's atomic symbol and coordinates
-        #config_file.write("{:2} {:22.14e} {:22.14e} {:22.14e}\n".format(atom.get_name(), x, y, z))
+        # config_file.write("{:2} {:22.14e} {:22.14e} {:22.14e}\n".format(atom.get_name(), x, y, z))
         config_file.write("{:2}{:13.8f}{:13.8f}{:13.8f}\n".format(atom.get_name(), x, y, z))

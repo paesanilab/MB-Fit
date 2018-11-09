@@ -1,9 +1,11 @@
-# qcalc.py
-#
-# Calculator that uses accepts calls from nmcgen and calls upon the requested quantum chemistry code (e.g. psi4, qchem, etc) to carry out the specified calculation.
+# external package imports
 import subprocess, os
+
+# absolute module imports
+from potential_fitting.utils import files, system
 from potential_fitting.molecule import Molecule
-from potential_fitting.exceptions import LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError, ConfigMissingPropertyError
+from potential_fitting.exceptions import (LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError,
+        ConfigMissingPropertyError, CommandNotFoundError, CommandExecutionError)
 
 try:
     import psi4
@@ -14,6 +16,20 @@ else:
     has_psi4 = True
 
 def optimize(settings, molecule, method, basis):
+    """
+    Optimizes the geometry of the given molecule with the given method and basis.
+
+    The input molecule will be unchanged.
+
+    Args:
+        settings            - SettingsReader object with relevant settings.
+        molecule            - The Molecule object to optimize.
+        method              - The method to optimize with.
+        basis               - The basis to optimize with.
+
+    Returns:
+        A 2-tuple, containing a new Molecule object of the optimized geometry and the energy of the optimized geometry.
+    """
     
     library = settings.get("config_generator", "code")
 
@@ -27,9 +43,22 @@ def optimize(settings, molecule, method, basis):
 
     # raise an exception if the user requested an unsupported library
     raise NoSuchLibraryError(library)
-    
 
 def optimize_psi4(settings, molecule, method, basis):
+    """
+    Optimizes the geometry of the given molecule using psi4 with the given method and basis.
+
+    The input molecule will be unchanged.
+
+    Args:
+        settings            - SettingsReader object with relevant settings.
+        molecule            - The Molecule object to optimize.
+        method              - The method to optimize with.
+        basis               - The basis to optimize with.
+
+    Returns:
+        A 2-tuple, containing a new Molecule object of the optimized geometry and the energy of the optimized geometry.
+    """
 
     # raise an exception if psi4 is not installed
     if not has_psi4:
@@ -37,22 +66,23 @@ def optimize_psi4(settings, molecule, method, basis):
 
     print("Beginning geometry optimization using psi4 of {} with {}/{}.".format(molecule.get_name(), method, basis))
 
-    log_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
+    log_path = files.get_optimization_log_path(settings.get("files", "log_path"), molecule, method, basis, "log")
 
-    if not os.path.exists(os.path.dirname(log_path)):
-        os.makedirs(os.path.dirname(log_path))
-
+    # set psi4's log path, memory, and number of threads to use.
     psi4.core.set_output_file(log_path, False)
     psi4.set_memory(settings.get("psi4", "memory"))
     psi4.set_num_threads(settings.getint("psi4", "num_threads"))
 
+    # construct an input string for psi4.geometry()
     psi4_string = "{}\n{} {}".format(molecule.to_xyz(), molecule.get_charge(), molecule.get_spin_multiplicity())
 
+    # construct a psi4 molecule from the input string
     try:
         psi4_mol = psi4.geometry(psi4_string)
     except RuntimeError as e:
         raise LibraryCallError("psi4", "geometry", str(e))
 
+    # use psi4 to optimize the geometry
     try:
         energy = psi4.optimize("{}/{}".format(method, basis), molecule=psi4_mol)
     except QcdbException as e:
@@ -63,73 +93,104 @@ def optimize_psi4(settings, molecule, method, basis):
     return Molecule().read_psi4_string(psi4_mol.save_string_xyz()), energy
 
 def optimize_qchem(settings, molecule, method, basis):
+    """
+    Optimizes the geometry of the given molecule using qchem with the given method and basis.
 
-    print("Beginning geometry optimization using qchem of {} with {}/{}/".format(molecule.get_name(), method, basis))
+    The input molecule will be unchanged.
 
-    qchem_input_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.in".format(method, basis, molecule.get_SHA1()[-8:])
+    Args:
+        settings            - SettingsReader object with relevant settings.
+        molecule            - The Molecule object to optimize.
+        method              - The method to optimize with.
+        basis               - The basis to optimize with.
 
-    if not os.path.exists(os.path.dirname(qchem_input_path)):
-        os.makedirs(os.path.dirname(qchem_input_path))
+    Returns:
+        A 2-tuple, containing a new Molecule object of the optimized geometry and the energy of the optimized geometry.
+    """
 
-    with open(qchem_input_path, "w") as qchem_input_file:
+    # Check if the user has qchem isntalled
+    try:
+        system.call("which", "qchem")
+    except CommandExecutionError:
+        raise LibraryNotAvailableError("qchem")
+
+    print("Beginning geometry optimization using qchem of {} with {}/{}.".format(molecule.get_name(), method, basis))
+
+    qchem_in_path = files.get_optimization_log_path(settings.get("files", "log_path"), molecule, method, basis, "in")
+
+    # construct the qchem input file
+    with open(qchem_in_path, "w") as qchem_in_file:
 
         # tells qchem that the molecule starts here
-        qchem_input_file.write("$molecule\n")
+        qchem_in_file.write("$molecule\n")
         # this line contains charge and spin multiplicity
-        qchem_input_file.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
+        qchem_in_file.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
         # write the molecule's xyz format
-        qchem_input_file.write(molecule.to_xyz())
+        qchem_in_file.write(molecule.to_xyz())
         # tells qchem that the molecule ends here
-        qchem_input_file.write("$end\n")
+        qchem_in_file.write("$end\n")
 
-        qchem_input_file.write("\n")
+        qchem_in_file.write("\n")
 
         # tells qchem that configuration starts here
-        qchem_input_file.write("$rem\n")
+        qchem_in_file.write("$rem\n")
         # tells qchem this is an optimization job
-        qchem_input_file.write("jobtype opt\n")
+        qchem_in_file.write("jobtype opt\n")
 
         # tells qchem what method and basis to use
-        qchem_input_file.write("method " + method + "\n")
-        qchem_input_file.write("basis " + basis + "\n")
+        qchem_in_file.write("method " + method + "\n")
+        qchem_in_file.write("basis " + basis + "\n")
 
         try:
-            qchem_input_file.write("ecp " + settings.get("config_generator", "ecp") + "\n")
+            qchem_in_file.write("ecp {}\n".format(settings.get("config_generator", "ecp")))
         except (ConfigMissingSectionError, ConfigMissingPropertyError):
             pass
 
         # tells qchem that configuration ends here
-        qchem_input_file.write("$end\n")
-    qchem_output_path = settings.get("files", "log_path") + "/optimizations/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
+        qchem_in_file.write("$end\n")
 
-    if not os.path.exists(os.path.dirname(qchem_output_path)):
-        os.makedirs(os.path.dirname(qchem_output_path))
+    qchem_out_path = files.get_optimization_log_path(settings.get("files", "log_path"), molecule, method, basis, "out")
 
-    qchem_call_string = "qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path)
-    if subprocess.run(qchem_call_string,
-                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                   shell=True, check=True).returncode != 0:
-        raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code")
-        
-
+    # make the qchem system call
+    try:
+        system.call("qchem", "-nt", str(settings.getint("qchem", "num_threads", 1)), qchem_in_path, qchem_out_path)
+    except CommandExecutionError as e:
+        raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code") from e
+    
+    # parse the molecule's geometry out of the output file
     found = False
-    # found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword 'ATOM' to look for the optimized geometry
-    qchem_output_string = ""
-    with open(qchem_output_path, "r") as qchem_output_file:
-        for line in qchem_output_file:
+    # found is set to true when the keyword 'Final energy is' is found. If found is true, it then looks for the keyword
+    # 'ATOM' to look for the optimized geometry
+    qchem_out_string = ""
+    with open(qchem_out_path, "r") as qchem_out_file:
+        for line in qchem_out_file:
             if found:
                 if "ATOM" in line:
                     for atom_index in range(molecule.get_num_atoms()):
-                        qchem_output_string += " ".join(qchem_output_file.readline().split()[1:]) + "\n"
+                        qchem_out_string += " ".join(qchem_out_file.readline().split()[1:]) + "\n"
                     print("Completed geometry optimization.")
-                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(), molecule.get_spin_multiplicity(), qchem_output_string)), energy
+                    return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(),
+                            molecule.get_spin_multiplicity(), qchem_out_string)), energy
             elif "Final energy is" in line:
                 energy = float(line.split()[3])
                 found = True
 
+    # if we didn't find a geometry to parse, raise an exception.
     raise LibraryCallError("qchem", "optimze", "process returned file of incorrect format")
 
 def frequencies(settings, molecule, method, basis):
+    """
+    Performs a frequency calculation on the molecule with the given method and basis.
+
+    Args:
+        settings            - SettingsReader object with relevant settings.
+        molecule            - The Molecule object to perform a frequency calculation on.
+        method              - The method to use for the frequency calculation.
+        basis               - The basis to use for the frequency calculation.
+
+    Returns:
+        A 3-tuple containing the normal modes, frequencies, and reduced masses of the molecule.
+    """
 
     if settings.get("config_generator", "code") == "psi4":
         return frequencies_psi4(settings, molecule, method, basis)
@@ -141,30 +202,44 @@ def frequencies(settings, molecule, method, basis):
     raise NoSuchLibraryError(library)
 
 def frequencies_psi4(settings, molecule, method, basis):
-    print("Beginning normal modes calculation using psi4 of {} with {}/{}/".format(molecule.get_name(), method, basis))
+    """
+    Performs a frequency calculation on the molecule using psi4 with the given method and basis.
 
-    log_path = settings.get("files", "log_path") + "/normal_modes/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
+    Args:
+        settings            - SettingsReader object with relevant settings.
+        molecule            - The Molecule object to perform a frequency calculation on.
+        method              - The method to use for the frequency calculation.
+        basis               - The basis to use for the frequency calculation.
 
-    if not os.path.exists(os.path.dirname(log_path)):
-        os.makedirs(os.path.dirname(log_path))
+    Returns:
+        A 3-tuple containing the normal modes, frequencies, and reduced masses of the molecule.
+    """
 
+    print("Beginning normal modes calculation using psi4 of {} with {}/{}.".format(molecule.get_name(), method, basis))
+
+    log_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "log")
+
+    # set psi4's log path, memory, and number of threads to use.
     psi4.core.set_output_file(log_path, False)
-
     psi4.set_memory(settings.get("psi4", "memory"))
     psi4.set_num_threads(settings.getint("psi4", "num_threads"))
 
+    # construct an input string for psi4.geometry()
     psi4_string = "{}\n{} {}".format(molecule.to_xyz(), molecule.get_charge(), molecule.get_spin_multiplicity())
 
+    # construct a psi4 molecule from the input string
     try:
         psi4_mol = psi4.geometry(psi4_string)
     except RuntimeError as e:
         raise LibraryCallError("psi4", "geometry", str(e))
 
+    # use psi4 to perform a frequency calculation
     try:
         total_energy, wavefunction = psi4.frequency("{}/{}".format(method, basis), molecule=psi4_mol, return_wfn=True)
     except QcdbException as e:
         raise LibraryCallError("psi4", "frequency", str(e))
 
+    # retrieve the normal modes, frequencies, and reduced masses from the psi4 output object
     vib_info = psi4.qcdb.vib.filter_nonvib(wavefunction.frequency_analysis)
 
     frequencies = wavefunction.frequencies().to_array()
@@ -186,67 +261,82 @@ def frequencies_psi4(settings, molecule, method, basis):
         
         normal_modes.append(normal_mode)
 
-    print("Normal mode/frequency analysis complete. {} normal modes found".format(num_modes))
+    print("Normal mode/frequency analysis complete. {} normal modes found.".format(num_modes))
     
     return normal_modes, frequencies, red_masses
 
 
 def frequencies_qchem(settings, molecule, method, basis):
-    print("Beginning normal modes calculation using qchem of {} with {}/{}/".format(molecule.get_name(), method, basis))
+    """
+    Performs a frequency calculation on the molecule using qchem with the given method and basis.
 
-    qchem_input_path = settings.get("files", "log_path") + "/normal_modes/{}/{}/{}.in".format(method, basis, molecule.get_SHA1()[-8:])
+    Args:
+        settings            - SettingsReader object with relevant settings.
+        molecule            - The Molecule object to perform a frequency calculation on.
+        method              - The method to use for the frequency calculation.
+        basis               - The basis to use for the frequency calculation.
 
-    if not os.path.exists(os.path.dirname(qchem_input_path)):
-        os.makedirs(os.path.dirname(qchem_input_path))
+    Returns:
+        A 3-tuple containing the normal modes, frequencies, and reduced masses of the molecule.
+    """
 
-    with open(qchem_input_path, "w") as qchem_input_file:
+    # Check if the user has qchem isntalled
+    try:
+        system.call("which", "qchem")
+    except CommandExecutionError:
+        raise LibraryNotAvailableError("qchem")
+
+    print("Beginning normal modes calculation using qchem of {} with {}/{}.".format(molecule.get_name(), method,
+            basis))
+
+    qchem_in_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "in")
+
+    with open(qchem_in_path, "w") as qchem_in_file:
 
         # tells qchem that the molecule starts here
-        qchem_input_file.write("$molecule\n")
+        qchem_in_file.write("$molecule\n")
         # this line contains charge and spin multiplicity
-        qchem_input_file.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
+        qchem_in_file.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
         # write the molecule's xyz format
-        qchem_input_file.write(molecule.to_xyz())
+        qchem_in_file.write(molecule.to_xyz())
         # tells qchem that the molecule ends here
-        qchem_input_file.write("$end\n")
+        qchem_in_file.write("$end\n")
 
-        qchem_input_file.write("\n")
+        qchem_in_file.write("\n")
 
         # tells qchem that configuration starts here
-        qchem_input_file.write("$rem\n")
+        qchem_in_file.write("$rem\n")
         # tells qchem this is an optimization job
-        qchem_input_file.write("jobtype freq\n")
+        qchem_in_file.write("jobtype freq\n")
 
         # tells qchem what method and basis to use
-        qchem_input_file.write("method " + method + "\n")
-        qchem_input_file.write("basis " + basis + "\n")
+        qchem_in_file.write("method " + method + "\n")
+        qchem_in_file.write("basis " + basis + "\n")
 
         try:
-            qchem_input_file.write("ecp " + settings.get("config_generator", "ecp") + "\n")
+            qchem_in_file.write("ecp " + settings.get("config_generator", "ecp") + "\n")
         except (ConfigMissingSectionError, ConfigMissingPropertyError):
             pass
 
         # tells qchem that configuration ends here
-        qchem_input_file.write("$end\n")
-    qchem_output_path = settings.get("files", "log_path") + "/normal_modes/{}/{}/{}.out".format(method, basis, molecule.get_SHA1()[-8:])
+        qchem_in_file.write("$end\n")
 
-    if not os.path.exists(os.path.dirname(qchem_output_path)):
-        os.makedirs(os.path.dirname(qchem_output_path))
+    qchem_out_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "out")
 
-    qchem_call_string = "qchem -nt {} {} {}".format(settings.getint("qchem", "num_threads", 1), qchem_input_path, qchem_output_path)
-    if subprocess.run(qchem_call_string, 
-                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                   shell=True, check=True).returncode != 0:
+    try:
+        system.call("qchem", "-nt", str(settings.getint("qchem", "num_threads", 1)), qchem_in_path, qchem_out_path)
+    except CommandExecutionError:
         raise LibraryCallError("qchem", "frequency", "process returned non-zero exit code")
 
     num_atoms = molecule.get_num_atoms()
 
-    with open(qchem_output_path, "r") as qchem_output_file:
+    # now parse the qchem output file to read the normal modes, frequencies, and reduced masses
+    with open(qchem_out_path, "r") as qchem_out_file:
         frequencies = []
         red_masses = []
         normal_modes = []
         while(True):
-            line = qchem_output_file.readline()
+            line = qchem_out_file.readline()
 
             if line == "":
                 if frequencies == []:
@@ -257,17 +347,17 @@ def frequencies_qchem(settings, molecule, method, basis):
                 num_modes = len(line.split()) - 1
 
                 # read frequencies from file and cast each to a float
-                frequencies += [float(freq) for freq in qchem_output_file.readline().split()[1:]]
+                frequencies += [float(freq) for freq in qchem_out_file.readline().split()[1:]]
 
                 # skip the Force Constant line
-                qchem_output_file.readline()
+                qchem_out_file.readline()
 
                 # read red masses from file and cast each to float
-                red_masses += [float(freq) for freq in qchem_output_file.readline().split()[2:]]
+                red_masses += [float(freq) for freq in qchem_out_file.readline().split()[2:]]
 
                 # skip IR Active, IR Intens, Raman Active and labels line
                 for i in range(4):
-                    qchem_output_file.readline()
+                    qchem_out_file.readline()
 
                 # initialize 3d list for normal modes
                 modes = [[[0, 0, 0] for i in range(num_atoms)] for k in range(num_modes)]
@@ -275,7 +365,7 @@ def frequencies_qchem(settings, molecule, method, basis):
                 for atom in range(num_atoms):
 
                     # read the coordinates for the next atom for the next num_modes modes
-                    modes_of_atom = [float(i) for i in qchem_output_file.readline().split()[1:]]
+                    modes_of_atom = [float(i) for i in qchem_out_file.readline().split()[1:]]
 
                     # loop over each mode
                     for index in range(num_modes):

@@ -1,75 +1,74 @@
-from .database import Database
+# absolute module imports
 from potential_fitting.utils import SettingsReader
 from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
 
-def make_all_jobs(settings_file, database_name, job_dir):
+# local module imports
+from .database import Database
+
+def make_all_jobs(settings_path, database_path, job_dir):
     """
-    Makes all the jobs that still need to be performed in this database
+    Makes a Job file for each energy that still needs to be calculated in this Database.
 
     Args:
-        settings_file - .ini file with relevent settings
-        database_name - file path to where the database is stored
-        job_dir - directory to place the jobs in
+        settings_path       - Local path to the ".ini" file with relevent settings.
+        database_path       - Local path to the database file. ".db" will be appended if it does not already end in
+                ".db".
+        job_dir             - Local path to the directory to place the job files in.
 
     Returns:
-        None
+        None.
     """
-    
+
     # open the database
-    database = Database(database_name)
-    with Database(database_name) as database:
+    with Database(database_path) as database:
 
         for calculation in database.missing_energies():
-            write_job(settings_file, calculation, job_dir)
+            write_job(settings_path, calculation, job_dir)
 
-def make_job(settings_file, database_name, job_dir):   
+def make_job(settings_path, database_path, job_dir):   
     """
-    Makes a single job that still needs to be performed in this database
+    Makes a single Job file for an energy that still needs to be calculated in this Database.
 
     Args:
-        settings_file - .ini file with relevent settings
-        database_name - file path to where the database is stored
-        job_dir - directory to place the job in
+        settings_path       - Local path to the ".ini" file with relevent settings
+        database_path       - Local path to the database file. ".db" will be appended if it does not already end in
+                ".db".
+        job_dir             - Local path to the directory to place the job file in.
 
     Returns:
-        None
+        None.
     """
-    
-    # add .db to the database name if it doesn't already end in .db
-    if database_name[-3:] != ".db":
-        database_name += ".db"
 
     # open the database
-    with Database(database_name) as database:
+    with Database(database_path) as database:
 
-        write_job(settings_file, database.get_missing_energy(), job_dir)
+        write_job(settings_path, database.get_missing_energy(), job_dir)
 
-def write_job(settings_file, calculation, job_dir):
+def write_job(settings_path, job, job_dir):
     """
-    Makes a job from a specific Calculation
+    Makes a Job file for a specific Calculation.
 
-    file will be located at job_dir/job_<id>.py
-    
     Args:
-        settings_file - .ini file with relevent settings
-        calculation - the Calculation object (see database.py) with the information needed to make a job
-        job_dir - directory to place the job in
+        settings_path       - Local path to the ".ini" file with relevent settings
+        job                 - The Job object (see database.py) with the information needed to make a job
+        job_dir             - Local path to the directory to place the job file in.
 
     Returns:
-        None
+        None.
     
     """
-    # parse settings file
-    settings = SettingsReader(settings_file)
 
-    with open(job_dir + "/job_{}.py".format(calculation.job_id), "w") as job_file, open("job_template.py", "r") as job_template:
+    # parse settings file
+    settings = SettingsReader(settings_path)
+
+    with open(job_dir + "/job_{}.py".format(job.job_id), "w") as job_file, open("job_template.py", "r") as job_template:
         job_string = "".join(job_template.readlines())
 
         job_file.write(job_string.format(**{
-            "job_id":       calculation.job_id,
-            "molecule":     calculation.molecule.to_xyz(calculation.fragments, calculation.cp).replace("\n", "\\n"),
-            "method":       calculation.method,
-            "basis":        calculation.basis,
+            "job_id":       job.job_id,
+            "molecule":     job.molecule.to_xyz(job.fragments, job.cp).replace("\n", "\\n"),
+            "method":       job.method,
+            "basis":        job.basis,
             "num_threads":  settings.get("psi4", "num_threads"),
             "memory":       settings.get("psi4", "memory"),
             "format":       "{}"

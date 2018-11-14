@@ -9,7 +9,21 @@ from potential_fitting.utils import constants
 
 import numpy as np
 
+class Dataset():
 
+    def __init__(self, calc_energies, ref_energies, method):
+        self.calc_energies = calc_energies
+        self.ref_energies = ref_energies
+        self.method = method
+
+    def get_below_threshold(self, low_threshold):
+        pass
+        
+
+
+def make_graphs(*datasets, low_threshold = 50):
+
+    # divide each dataset into low and high threshold energy data
 
 def rmsd(error_array):
 

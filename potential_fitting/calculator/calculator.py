@@ -170,7 +170,8 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
     qchem_input += "$molecule\n"
 
     # charge and spin multiplicity
-    qchem_input += "{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity())
+    qchem_input += "{} {}\n".format(molecule.get_charge(fragment_indicies),
+            molecule.get_spin_multiplicity(fragment_indicies))
 
     # atoms in the molecule
     # might need to add whitespace before each line?

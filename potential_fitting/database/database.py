@@ -25,6 +25,8 @@ class Database():
         if file_name[-3:] != ".db":
             print("Automatically ending '.db' suffix to database name {}.".format(file_name))
             file_name += ".db"
+
+        self.file_name = file_name
         
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = sqlite3.connect(file_name)

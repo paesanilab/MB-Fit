@@ -13,12 +13,12 @@ import numpy as np
 
 def rmsd(error_array):
 
-	'''
+    '''
     Calculates and returns the root-mean-square-distance, given a numpy array
 
     Args:
         error_array: The array whose rmsd needs to be calculated.
-	'''
+    '''
 
     rmsd_calculated = np.sqrt(np.mean(error_array**2))
 
@@ -28,14 +28,14 @@ def rmsd(error_array):
 
 def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name, monomer2_name, method, basis, cp, tag, threshold = 50):
 
-	'''
+    '''
     Generates a visualization of a Calculated energy vs TTM_fit  and Calculated Energy vs MB_fit, using matplotlib
     and color codes the values, based on the magnitude (dark = high and light = low). Also generates the visualization 
     for the errors along with the RMSD values.
 
-	Args:
-	    file_path_TTM: The file path to containing the TTM values
-	    file_path_TTM_params: The file path containing the parameters for the TTM fit 
+    Args:
+        file_path_TTM: The file path to containing the TTM values
+        file_path_TTM_params: The file path containing the parameters for the TTM fit 
         file_path_MB: The file path to containing the MB values
         file_path_MB_params: The file path containing the parameters for the MB fit 
         db_name: Name of the database
@@ -43,7 +43,7 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
         monomer2_name: Name of monomer 2 of the dimer 
         threshold: Sets the default threshold to classify as "high" or "low"
                    (default set to 50KJ/mol)
-	'''
+    '''
 
 
     ttm = []
@@ -60,7 +60,7 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
         monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag))[0][1][0]
         monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag))[0][1][0]
 
-    	#getting the molecules
+        #getting the molecules
         molecules = [i[0] for i in energy_molecule_pairs]
 
         #calculating the required energy from the energy-molecule pairs
@@ -78,7 +78,7 @@ def compare_energies(file_path_TTM, file_path_TTM_params, file_path_MB, file_pat
         calc = [i * constants.au_to_kcal for i in calc]
 
         for m in molecules:
-        	#writing to xyz file
+            #writing to xyz file
             molecule_xyz = m.to_xyz()
 
             with open("file1.txt", "w") as f:

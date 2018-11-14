@@ -472,7 +472,13 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
 
         attempts += 1
 
-    os.remove(fit_log_path)
+    # remove the most recent fit file
+    try:
+        os.remove(fit_log_path)
+    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
+    except FileNotFoundError:
+        pass
+
     os.rename("individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
     os.rename("ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
     os.rename("correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))

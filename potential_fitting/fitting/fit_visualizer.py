@@ -11,19 +11,47 @@ import numpy as np
 
 class Dataset():
 
-    def __init__(self, calc_energies, ref_energies, method):
+    colors = (((1, 0, 0), (1, 0.5, 0.5)), ((0, 1, 0), (0.5, 1, 0.5)), ((0, 0, 1), (0.5, 0.5, 1)))
+
+    def __init__(self, calc_energies, fit_energies, method, color):
         self.calc_energies = calc_energies
-        self.ref_energies = ref_energies
+        self.fit_energies = fit_energies
         self.method = method
 
-    def get_below_threshold(self, low_threshold):
-        pass
-        
+    def split_at_threshold(self, threshold):
+        raise NotImplementedError
+
 
 
 def make_graphs(*datasets, low_threshold = 50):
 
-    # divide each dataset into low and high threshold energy data
+    # make the graphs featuring all information divided into low and high energy dataset
+
+    # Set figure number
+    plt.figure(1)
+
+    above_plots = []
+    below_ploits = []
+
+    # plot each dataset
+    for dataset in datasets:
+
+        low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
+
+        below_plots.append(plt.scatter(low_dataset.calc_energies, low_dataset.fit_energies, c = Dataset.colors[i][0], s = 5, alpha = 0.5))
+        above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies, c = Dataset.colors[i][1], s = 5, alpha = 0.5))
+
+    # plotting an idealized prediction using color codes for TTM fit
+    # NOT IDEAL, should just plot y=x constrained to the graph
+    plt.plot(datasets[0].calc_array, datasets[0].calc_array, c = 'orange', alpha = 0.5)
+
+    #Adding a legend
+    plt.legend((*datasets), (dataset.method for dataset in datasets))
+
+    #Adding axes titles
+    plt.xlabel("Ref. Energy [Kcal/mol]")
+    plt.ylabel("Fitted Energy [Kcal/mol]")
+    
 
 def rmsd(error_array):
 

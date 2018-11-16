@@ -1,3 +1,4 @@
+# absolute module imports
 from potential_fitting.exceptions import InvalidValueError
 
 """
@@ -21,7 +22,8 @@ au_to_kcal = au_to_joule * avogadro * 1E-03 / cal_to_joule
 ev_to_kcal = au_to_kcal / au_to_ev
 au_times_bohr6_to_kcal_times_ang6 = au_to_kcal * (bohr_to_ang ** 6) # Converts au*(bohr^6) to (kcal/mol)*(angstrom^6)
 
-# list of atomic symbols listed in order of atomic number, 0th item has atomic number 1, 1st item has atomic number 2, etc.
+# list of atomic symbols listed in order of atomic number, 0th item has atomic number 1, 1st item has atomic number 2,
+# etc.
 atomic_symbols = [
     "H",                                                                                                                                    "He",
     "Li",   "Be",                                                                                   "B",    "C",    "N",    "O",    "F",    "Ne",
@@ -71,7 +73,8 @@ def symbol_to_number(symbol):
     Converts an atomic symbol to an atomic number.
 
     Args:
-        symbol - The 1 or 2 letter atomic symbol to convert to an atomic number. For example: "He", "F". Case non-sensitive.
+        symbol              - The 1 or 2 letter atomic symbol to convert to an atomic number. For example: "He", "F".
+                Case non-sensitive.
 
     Returns:
         The atomic number for the atom specified by the given symbol.
@@ -92,7 +95,7 @@ def number_to_symbol(number):
     Converts an atomic number to an atomic symbol.
 
     Args:
-        number - the atomic number to convert to an atomic symbol.
+        number              - The atomic number to convert to an atomic symbol.
 
     Returns:
         The atomic symbol of the atom with the given atomic number.
@@ -114,7 +117,8 @@ def symbol_to_mass(symbol):
     Finds the atomic mass of the atom with a given atomic symbol
 
     Args:
-        symbol - The 1 or 2 letter atomic symbol to find the mass of. For example: "He", "F". Case non-sensitive.
+        symbol              - The 1 or 2 letter atomic symbol to find the mass of. For example: "He", "F".
+                Case non-sensitive.
 
     Returns:
         The atomic mass of the given atom.
@@ -128,10 +132,11 @@ def symbol_to_radius(symbol):
     Finds the atomic radius of the atom with a given atomic symbol in angstroms.
 
     Args:
-        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+        symbol              - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F".
+                Case non-sensitive.
 
     Returns:
-        The atomic radius of the given atom in angstroms
+        The atomic radius of the given atom in angstroms.
     """
 
     # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
@@ -144,10 +149,11 @@ def symbol_to_covalent_radius(symbol):
     Covalent radius is half the distance between 2 singly bonded atoms of the same type.
 
     Args:
-        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+        symbol              - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F".
+                Case non-sensitive.
 
     Returns:
-        The covalent radius of the given atom in angstroms
+        The covalent radius of the given atom in angstroms.
     """
 
     # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1

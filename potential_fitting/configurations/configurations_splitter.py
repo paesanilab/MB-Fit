@@ -1,21 +1,28 @@
+# external package imports
 import random
+
+# absolute module imports
 from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader
 
-def split_configurations(settings_file, configurations_path, training_set_path, test_set_path, training_set_size, molecular_descriptor = None):
+def split_configurations(settings_path, configurations_path, training_set_path, test_set_path, training_set_size,
+        molecular_descriptor = None):
     """
-    Splits a set of configurations into a training set and a test set using furthest
-    point sampling by some measure defined by the given molecular_descriptor
+    Splits a set of configurations into a training set and a test set using furthest point sampling by some measure
+    defined by the given molecular_descriptor.
 
-    All the molecules will be moved to their center of mass and rotated on their principal axes in the process
+    All the molecules will be moved to their center of mass and rotated on their principal axes in the process.
 
     Args:
-        settings_file - path to .ini file containing relevent settings information
-        configurations_path - file path to the xyz file with configurations to be divided into a training and test set
-        training_set_path - file path to the xyz file to write the training set to.
-        test_set_path - file path to the xyz file to write the test set to.
-        training_set_size - the desired size of the training set, all other molecules will be put into the test set
-        molecular_descriptor - the MolecularDescriptor used to measure the difference between two molecules.
+        settings_path       - Local path to ".in"i file containing relevent settings information.
+        configurations_path - Local path to the ".xyz" file to read configurations to be split.
+        training_set_path   - Local path to the ".xyz" file to write the training set to.
+        test_set_path       - Local path to the ".xyz" file to write the test set to.
+        training_set_size   - The desired size of the training set, all other molecules will be put into the test set.
+        molecular_descriptor - The MolecularDescriptor used to measure the difference between two molecules.
+
+    Returns:
+        None.
     """
 
     # if the user did not specify a molecular descriptor, use the RMSD descriptor    
@@ -23,7 +30,7 @@ def split_configurations(settings_file, configurations_path, training_set_path, 
         molecular_descriptor = RMSDDescriptor()
 
     # parse the configurations into a list of [id, molecule]
-    molecules = list(enumerate(xyz_to_molecules(configurations_path, SettingsReader(settings_file))))
+    molecules = list(enumerate(xyz_to_molecules(configurations_path, SettingsReader(settings_path))))
 
     # move all molecules to their center of mass and rotate them on their principal axes
     for index, molecule in molecules:
@@ -127,12 +134,43 @@ class MolecularDescriptor():
 
 class RMSDDescriptor(MolecularDescriptor):
     def difference(self, molecule1, molecule2):
+        """
+        Finds the difference between these two molecules using the rmsd of their atom positions.
+
+        Args:
+            molecule1       - The first molecule to compare.
+            molecule2       - The second molecule to compare.
+
+        Returns:
+            The rmsd of the positions of the equivelent atoms in each molecule.
+        """
         return molecule1.rmsd(molecule2)
 
 class RMSDDistanceDescriptor(MolecularDescriptor):
     def difference(self, molecule1, molecule2):
+        """
+        Finds the difference between these two molecules using the rmsd of the equivelent intra-molecular distances.
+
+        Args:
+            molecule1       - The first molecule to compare.
+            molecule2       - The second molecule to compare.
+
+        Returns:
+            The rmsd of the equivelent intra-molecular distances in each molecule.
+        """
         return molecule1.distancermsd(molecule2)
 
 class RandomDescriptor(MolecularDescriptor):
     def difference(self, molecule1, molecule2):
+        """
+        Randomly defines the distance between these two molecules. Not guaranteed to return the same value if called
+        with the same input.
+
+        Args:
+            molecule1       - The first molecule to compare.
+            molecule2       - The second molecule to compare.
+
+        Returns:
+            A random number between 0 (inclusive) and 1 (exclusive).
+        """
         return random.random()

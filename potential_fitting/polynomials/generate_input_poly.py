@@ -1,24 +1,30 @@
+# external package imports
 import os
-from potential_fitting.utils import SettingsReader
+
+# absolute module imports
+from potential_fitting.utils import SettingsReader, files
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 
-def generate_input_poly(settings_file, poly_input):
+def generate_input_poly(settings_file, poly_in_path):
     """
-    Generates the input for the polynomial generator
+    Generates an input file for the polynomial generator.
 
-    Will be file with name like A1B2C2.in, etc as specified in the settings file
+    Args:
+        settings_file       - Local path to the ".ini" file with all relevant settings.
+        poly_in_path        - Local path to the ".in" file to write the poly input to. Should be named like "A1B2.in".
+                It is OK to have extra paths before it. ("some/path/to/A2B4C2.in")
     """
 
-    # create SettingsReader currently unused, but in future could be used for stuff like adding filters
     settings = SettingsReader(settings_file)
 
-    # get the string representation of the molecule by getting the A1B2C2, etc part of the name
+    # get the string representation of the molecule by getting the A1B2C2, etc. part of the name
     try:
-        molecule = os.path.splitext(poly_input)[0].split("/")[-1]
+        molecule = os.path.splitext(poly_in_path)[0].split("/")[-1]
     except IndexError:
-        raise InvalidValueError("poly_input", poly_input, "in format somepath/A1B2_A1B2.in")
+        raise InvalidValueError("poly_in_path", poly_in_path, "in format somepath/A1B2_A1B2.in")
+
     # file will be automatically closed after block by with open as ... syntax
-    with open(poly_input, "w") as poly_in_file:
+    with open(files.init_file(poly_in_path), "w") as poly_in_file:
 
         # split along _ to seperate fragments
         fragments = molecule.split('_')
@@ -41,16 +47,20 @@ def generate_input_poly(settings_file, poly_input):
 
             # first check the formatting on this fragment
             if fragment[0].isdigit():
-                raise InvalidValueError("poly_input", poly_input, "formatted such that the first character of every fragment is a letter")
+                raise InvalidValueError("poly_in_path", poly_in_path,
+                        "formatted such that the first character of every fragment is a letter")
             for i in range(1, len(fragment), 2):
                 if not fragment[i].isdigit():
-                    raise InvalidValueError("poly_input", poly_input, "formatted such that every letter is followed by a single-digit number, even if that number is 1")
+                    raise InvalidValueError("poly_in_path", poly_in_path,
+                            "formatted such that every letter is followed by a single-digit number, even if that"
+                            + "number is 1")
             frag_set = []
             
             # loop thru every other character in fragment, get the letters (A, B, C) but not numbers (1, 2, 3)
             for i in range(0, len(fragment), 2):
 
-                # check if there is only one of this atom in this fragment by looking at the character after the letter, which is a number signifying how many of that atom are in this fragment
+                # check if there is only one of this atom in this fragment by looking at the character after the
+                # letter, which is a number signifying how many of that atom are in this fragment
                 if (int(fragment[i + 1]) == 1):
 
                     # check if this atom is not a virtual site
@@ -107,19 +117,25 @@ def generate_input_poly(settings_file, poly_input):
             for i in range(0, len(frag_set) - 1):
                 for j in range(i + 1, len(frag_set)):
 
-                    # split the first atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                    # split the first atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "",
+                    # "a"]
                     split_atom1 = frag_set[i].split('_')
-                    # split the second atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                    # split the second atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "",
+                    # "a"]
                     split_atom2 = frag_set[j].split('_')
 
-                    # combine first element of each split atom in alphabetical order to get something like "AA", or "AB"
-                    combined_letters = ''.join(sorted(split_atom1[0] + split_atom2[0]))
+                    # combine first element of each split atom in alphabetical order to get something like "AA", or
+                    # "AB"
+                    combined_letters = ''.join(sorted(split_atom1[0]
+                            + split_atom2[0]))
 
                     # check if neither atom is a virtual site
                     if not split_atom1[0] in virtual_sites and not split_atom2[0] in virtual_sites:
 
                         # write valiable to file in proper format
-                        poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2] + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-intra-" + combined_letters + "']\n")
+                        poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2]
+                                + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-intra-"
+                                + combined_letters + "']\n")
         
         # loop thru every pair of fragments and add write variables to file for interfragmental interactions
         for frag_set1 in sets_list:
@@ -130,24 +146,32 @@ def generate_input_poly(settings_file, poly_input):
                 for i in range(0,len(frag_set1)):
                     for j in range(0,len(frag_set2)):
                         
-                        # split the first atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                        # split the first atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A",
+                        # "", "a"]
                         split_atom1 = frag_set1[i].split('_')
-                        # split the second atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A", "", "a"]
+                        # split the second atom along _ to seperate it: "A_1_a" -> ["A", "1", "a"] or "A__a" -> ["A",
+                        # "", "a"]
                         split_atom2 = frag_set2[j].split('_')
                         
-                        # combine first element of each split atom in alphabetical order to get something like "AA", or "AB"
+                        # combine first element of each split atom in alphabetical order to get something like "AA", or
+                        # "AB"
                         combined_letters = ''.join(sorted(split_atom1[0] + split_atom2[0]))
-                        poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2] + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-" + combined_letters + "']\n")
+                        poly_in_file.write("add_variable['" + split_atom1[0] + split_atom1[1] + "', '" + split_atom1[2]
+                                + "', '" + split_atom2[0] + split_atom2[1] + "', '" + split_atom2[2] + "', 'x-"
+                                + combined_letters + "']\n")
 
         # newline between variables and filters
         poly_in_file.write("\n")
 
         # add filter based on the filtering setting in settings.ini
-        polynomial_filtering = settings.get("poly_generation", "accepted_terms", "all" if len(fragments) == 1 else "purely-inter")
+        polynomial_filtering = settings.get("poly_generation", "accepted_terms",
+                "all" if len(fragments) == 1 else "purely-inter")
 
         # make sure the user hasn't chosed intermolecular terms only with a monomer
         if len(fragments) == 1 and not polynomial_filtering == "all":
-            raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms", len(fragments), polynomial_filtering, "when there is only 1 fragment, there are no intermolecular interactions, so you must use 'all' terms")
+            raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms", len(fragments),
+                    polynomial_filtering, "when there is only 1 fragment, there are no intermolecular interactions, "
+                    + "so you must use 'all' terms")
 
         if polynomial_filtering == "purely-inter":
             # this filter filters out all terms that have any intra-molecular components
@@ -157,4 +181,5 @@ def generate_input_poly(settings_file, poly_input):
             poly_in_file.write("add_filter['not', 'degree', 'x-**', '1+', '*']")
 
         elif polynomial_filtering != "all":
-            raise InvalidValueError("[poly_generation][accepted_terms]", polynomial_filtering, "one of 'all', 'partly-inter', or 'purely-inter'")
+            raise InvalidValueError("[poly_generation][accepted_terms]",polynomial_filtering,
+                    "one of 'all', 'partly-inter', or 'purely-inter'")

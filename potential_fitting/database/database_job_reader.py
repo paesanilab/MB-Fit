@@ -1,18 +1,23 @@
+# absolute module imports
 from potential_fitting.molecule import Molecule
+
+# local module imports
 from .database import Database, Calculation
 
-def read_job(database_name, job_path, job_log_path):
+def read_job(database_path, job_path, job_log_path):
     """
-    Reads a completed job from its output file and enters the result into a database
+    Reads a completed job from its output file and enters the result into a database.
     
     Args:
-        database_name - the filepath to file where the database is stores
-        job_path - the path to the job_<id>.out output file to enter into the datbase
-        job_log_path - path to the log file from this job
+        database_path       - Local path to the file where the database is stored. ".db" will be appended if it does
+                not already end in "db".
+        job_path            - Local path to the job_<id>.out output file to enter into the datbase.
+        job_log_path        - Local path to the log file from this job.
 
     Returns:
         None
     """
+
     with open(job_path, "r") as job_file:
 
         # parse the job id
@@ -28,7 +33,7 @@ def read_job(database_name, job_path, job_log_path):
             success = True
     
     # open the database
-    with Database(database_name) as database:
+    with Database(database_path) as database:
 
         if success:
             database.set_energy(job_id, energy, job_log_path)

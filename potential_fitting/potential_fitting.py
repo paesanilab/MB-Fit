@@ -90,9 +90,6 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
         None.
     """
 
-    if seed is None:
-        seed = random.randint(-100000, 100000)
-
     configurations.generate_2b_configurations(geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, seed)
 

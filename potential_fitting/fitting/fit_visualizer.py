@@ -13,7 +13,7 @@ class Dataset():
 
     colors = (((1, 0, 0), (1, 0.5, 0.5)), ((0, 1, 0), (0.5, 1, 0.5)), ((0, 0, 1), (0.5, 0.5, 1)))
 
-    def __init__(self, calc_energies, fit_energies, method, color):
+    def __init__(self, calc_energies, fit_energies, method):
         self.calc_energies = calc_energies
         self.fit_energies = fit_energies
         self.method = method
@@ -21,14 +21,60 @@ class Dataset():
     def split_at_threshold(self, threshold):
         raise NotImplementedError
 
+class Dataset_2b(Dataset):
 
+    def split_at_threshold(self, threshold):
+        # TODO
+        return Dataset(), Dataset()
+
+def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag, threshold = 5):
+    
+
+    with Database(db_name) as database:
+
+        energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
+
+        # getting the monomer optimized energies 
+        opt_energy = list(database.get_energies(monomer1_name, method, basis, cp, tag))[0][1][0]
+
+        # getting the molecules
+        molecules = [i[0] for i in energy_molecule_pairs]
+
+        # calculating the required energy from the energy-molecule pairs
+        calc = [i[1][0] for i in energy_molecule_pairs]
+
+        calc = [i * constants.au_to_kcal for i in calc]
+
+        for m in molecules:
+            #writing to xyz file
+            molecule_xyz = m.to_xyz()
+
+            with open("file1.txt", "w") as f:
+
+                f.write(str(m.get_num_atoms()))
+                f.write('\n')
+                f.write("######\n")
+                f.write(molecule_xyz)
+
+            result_ttm = subprocess.run([file_path_TTM, file_path_TTM_params, "file1.txt"], stdout=subprocess.PIPE)
+
+            #getting the ttm_data and adding to a list
+            ttm += [float(result_ttm.stdout.split()[2])]
+
+            #getting the mb data
+            result_mb = subprocess.run([file_path_MB, file_path_MB_params, "file1.txt"], stdout=subprocess.PIPE)
+            #adding mb_data to a list
+            mb += [float(result_mb.stdout.split()[2])]
 
 def make_graphs(*datasets, low_threshold = 50):
+    make_energy_graph(datasets, 1, low_threshold)
+    make_error_graph(datasets, 2, low_threshold)
 
-    # make the graphs featuring all information divided into low and high energy dataset
+def make_energy_graph(*datasets, figure_num, low_threshold):
+    # make the graph featuring all information divided into low and high energy datasets
 
     # Set figure number
-    plt.figure(1)
+    plt.figure(figure_num)
 
     above_plots = []
     below_ploits = []
@@ -51,7 +97,37 @@ def make_graphs(*datasets, low_threshold = 50):
     #Adding axes titles
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy [Kcal/mol]")
+
+    # make the graph of the error featuring all info divided into low and high energy datasets
+
+def make_error_graph(*datasets, figure_num, low_threshold):
+    # make the graph featuring all error information high and low
+
+    plt.figure(figure_num)
+
+    above_plots = []
+    below_plots = []
+
+    for dataset in datasets:
+
+        low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
+
+        below_plots.append(plt.scatter(low_dataset.calc_energies, [fit - calc for fit, calc in zip(low_dataset.fit_energies, low_dataset.calc_energies)], c = Dataset.colors[i][0], s = 5, alpha = 0.5))
+        below_plots.append(plt.scatter(low_dataset.calc_energies, [fit - calc for fit, calc in zip(high_dataset.fit_energies, high_dataset.calc_energies)], c = Dataset.colors[i][1], s = 5, alpha = 0.5))
     
+    # plotting an idealized prediction using color codes for TTM fit
+    # NOT IDEAL, should just plot y=x constrained to the graph
+    plt.plot(datasets[0].calc_array, datasets[0].calc_array, c = 'orange', alpha = 0.5)
+
+    #Adding a legend
+    plt.legend((*datasets), (dataset.method for dataset in datasets))
+
+    #Adding axes titles
+    plt.xlabel("Ref. Energy [Kcal/mol]")
+    plt.ylabel("Fitted Energy [Kcal/mol]")
+
+    # make the graph of the error featuring all info divided into low and high energy datasets
+
 
 def rmsd(error_array):
 

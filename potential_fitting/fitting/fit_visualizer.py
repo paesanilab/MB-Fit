@@ -166,7 +166,7 @@ def make_2b_graphs(file_path_ttm, file_path_ttm_params, file_path_MB, file_path_
             #adding mb_data to a list
             mb += [float(result_mb.stdout.split()[2])]
 
-    make_graphs(Dataset_2b(calc, ttm, "ttm"), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp)), low_threshold = low_threshold)
+    make_graphs(Dataset_2b(calc, ttm, "ttm", binding), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding), low_threshold = low_threshold)
 
 
 def make_graphs(*datasets, low_threshold = 50):

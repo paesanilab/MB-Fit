@@ -72,7 +72,7 @@ class Dataset_2b(Dataset):
                 high_fit.append(fit_energy)
                 high_bind.append(binding_energy)
 
-        return Dataset(low_calc, low_fit, self.method + " below {} kcal/mol".format(threshold), low_bind), Dataset(high_calc, high_fit, self.method + " above {} kcal/mol".format(threshold), high_bind)
+        return Dataset_2b(low_calc, low_fit, self.method + " below {} kcal/mol".format(threshold), low_bind), Dataset_2b(high_calc, high_fit, self.method + " above {} kcal/mol".format(threshold), high_bind)
 
 def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
         low_threshold = 50):
@@ -111,7 +111,7 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
 
     make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), low_threshold = low_threshold)
 
-def make_2b_graphs(file_path_ttm, file_path_ttm_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag, low_threshold = 50):
 
     ttm = []
@@ -166,7 +166,9 @@ def make_2b_graphs(file_path_ttm, file_path_ttm_params, file_path_MB, file_path_
             #adding mb_data to a list
             mb += [float(result_mb.stdout.split()[2])]
 
-    make_graphs(Dataset_2b(calc, ttm, "ttm", binding), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding), low_threshold = low_threshold)
+    print("Finished generating data")
+
+    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), low_threshold = low_threshold)
 
 
 def make_graphs(*datasets, low_threshold = 50):
@@ -187,8 +189,10 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
 
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
-        below_plots.append(plt.scatter(low_dataset.calc_energies, low_dataset.fit_energies, c = Dataset.colors[index][0], s = 5, alpha = 0.5))
-        above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies, c = Dataset.colors[index][1], s = 5, alpha = 0.5))
+        below_plots.append(plt.scatter(low_dataset.calc_energies, low_dataset.fit_energies,
+                c = Dataset.colors[index][0], s = 5, alpha = 0.5))
+        above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies,
+                c = Dataset.colors[index][1], s = 5, alpha = 0.5))
 
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph
@@ -218,7 +222,7 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50):
         below_plots.append(plt.scatter(low_dataset.calc_energies,
                 [fit - calc for fit, calc in zip(low_dataset.fit_energies, low_dataset.calc_energies)],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
-        below_plots.append(plt.scatter(high_dataset.calc_energies,
+        above_plots.append(plt.scatter(high_dataset.calc_energies,
                 [fit - calc for fit, calc in zip(high_dataset.fit_energies, high_dataset.calc_energies)],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
     

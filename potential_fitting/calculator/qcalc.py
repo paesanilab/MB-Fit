@@ -5,7 +5,7 @@ import subprocess, os
 from potential_fitting.utils import files, system
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import (LibraryNotAvailableError, NoSuchLibraryError, ConfigMissingSectionError,
-        ConfigMissingPropertyError, CommandNotFoundError, CommandExecutionError)
+        ConfigMissingPropertyError, CommandNotFoundError, CommandExecutionError, LibraryCallError)
 
 try:
     import psi4

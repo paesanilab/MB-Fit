@@ -63,7 +63,7 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     """
     
     if seed is None:
-        seed = random.randint(-100000, 100000)
+        seed = randint(-100000, 100000)
 
     #parse the molecules from the input xyz files
     molecules1 = xyz_to_molecules(geo1_path)
@@ -145,7 +145,7 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
     """
 
     if seed is None:
-        seed = random.randint(-100000, 100000)
+        seed = randint(-100000, 100000)
 
     # if use_grid is false, set the step size to even space the configurations
     if not use_grid:

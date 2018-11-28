@@ -39,7 +39,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     parser = MoleculeInParser(molecule_in)
 
-    molecule_in = "".join(["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_types()]) for frag in parser.get_fragments()])
+    molecule_in = "_".join(["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_types()]) for frag in parser.get_fragments()])
 
     fragments = molecule_in.split("_")
 

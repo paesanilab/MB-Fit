@@ -78,12 +78,13 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
         low_threshold = 50):
     
     mb = []
+
     with Database(db_name) as database:
 
         energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
         # getting the monomer optimized energies 
-        opt_energy = list(database.get_energies(molecule_name, method, basis, cp, tag))[0][1][0]
+        opt_energy = list(database.get_energies(molecule_name, method, basis, cp, tag, optimized = True))[0][1][0]
 
     # getting the molecules
     molecules = [i[0] for i in energy_molecule_pairs]
@@ -125,8 +126,8 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
         energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
         #getting the monomer optimized energies 
-        monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag))[0][1][0]
-        monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag))[0][1][0]
+        monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag, optimized = True))[0][1][0]
+        monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag, optimized = True))[0][1][0]
 
         #getting the molecules
         molecules = [i[0] for i in energy_molecule_pairs]
@@ -193,6 +194,7 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
         above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies,
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
+
 
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph

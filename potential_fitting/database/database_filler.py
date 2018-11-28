@@ -45,7 +45,7 @@ def fill_database(settings_path, database_path):
                 # update the energy in the database
                 database.set_energy(calculation.job_id, energy, "some/log/path")
             except LibraryCallError:
-                database.set_failed(calculation.job_id, "failed", "some/log/path")
+                database.set_failed(calculation.job_id, "some/log/path")
             
             # save changes to the database
             database.save()

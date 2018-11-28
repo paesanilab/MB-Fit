@@ -55,7 +55,12 @@ class Molecule(object):
         """
 
         # used to assemble the symmetry string
-        symmetry = self.get_fragments()[0].get_symmetry()
+        try:
+            symmetry = self.get_fragments()[0].get_symmetry()
+        except IndexError:
+
+            # if there are no fragments, symmetry is empty string
+            return ""
 
         # add each fragment's symmetry to the string
         for fragment in self.get_fragments()[1:]:
@@ -707,7 +712,11 @@ class Molecule(object):
 
             symmetry = ""
 
-            symmetry_class = 65
+            try:
+                symmetry_class = ord(max(self.get_symmetry().strip("_"))) + 1
+                print("SYM START:", symmetry) 
+            except ValueError:
+                symmetry_class = 65
 
             # loop over each atom assigning it a unique symmetry class
             for atom_index in range(total_atoms):

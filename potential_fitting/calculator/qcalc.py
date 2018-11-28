@@ -86,7 +86,7 @@ def optimize_psi4(settings, molecule, method, basis):
     try:
         energy = psi4.optimize("{}/{}".format(method, basis), molecule=psi4_mol)
     except QcdbException as e:
-        raise LibraryCallerror("psi4", "optimize", str(e))
+        raise LibraryCallError("psi4", "optimize", str(e))
 
     print("Completed geometry optimization.")
 

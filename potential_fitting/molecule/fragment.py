@@ -36,6 +36,8 @@ class Fragment(object):
             raise InvalidValueError("spin multiplicity", spin_multiplicity, "1 or greater")
         self.spin_multiplicity = spin_multiplicity
 
+        self.index = -1
+
     def get_name(self):
         """
         Gets the name of this fragment
@@ -78,6 +80,19 @@ class Fragment(object):
         """
 
         return sorted(self.atoms, key=lambda atom: atom.get_symmetry_class())
+
+    def get_index(self):
+        """
+        Gets the index of this fragment in the molecule
+
+        Args:
+            None
+
+        Returns:
+            The index of this framgnet
+        """
+
+        return self.index
 
     def get_symmetry(self):
         """

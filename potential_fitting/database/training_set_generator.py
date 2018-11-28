@@ -94,7 +94,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
         print("Creating a fitting input file from database {} into file {}".format(database_name, training_set_path))
 
         # construct name of molecule from name of monomers
-        molecule_name = "-".join(sorted([monomer_1_name, monomer_2_name]))
+        molecule_name = "-".join([monomer_1_name, monomer_2_name])
         # get list of all [molecule, energies] pairs calculated in the database
         molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 

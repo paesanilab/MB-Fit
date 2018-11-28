@@ -134,7 +134,7 @@ class Database():
         # create the Fragments table
         self.cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, name TEXT, charge INT, spin INT)
+            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, frag_index INT, name TEXT, charge INT, spin INT)
             """
         )
 
@@ -219,8 +219,8 @@ class Database():
 
             # insert molecule's fragments into the table
             for fragment in molecule.get_fragments():
-                self.cursor.execute("INSERT INTO Fragments (molecule_id, name, charge, spin) VALUES (?, ?, ?, ?)",
-                        (molecule_id, fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
+                self.cursor.execute("INSERT INTO Fragments (molecule_id, frag_index, name, charge, spin) VALUES (?, ?, ?, ?, ?)",
+                        (molecule_id, fragment.get_index(), fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
                 
                 # get id of this fragment
                 fragment_id = self.cursor.lastrowid
@@ -757,10 +757,12 @@ class Database():
     def get_molecule(self, molecule_id):
         # Reconstruct the molecule from the information in the database
         molecule = Molecule()
+
+        index_fragment_pairs = []
         
         # loop over all rows in the Fragments table that correspond to this molecule
-        for fragment_id, name, charge, spin in self.cursor.execute(
-                "SELECT ROWID, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
+        for fragment_id, index, name, charge, spin in self.cursor.execute(
+                "SELECT ROWID, frag_index, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
             fragment = Fragment(name, charge, spin)
 
             # loop over all rows in the Atoms table that correspond to this fragment
@@ -769,6 +771,9 @@ class Database():
                     (fragment_id,)).fetchall():
                 fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
 
+            index_fragment_pairs.append([index, fragment])
+
+        for index, fragment in sorted(index_fragment_pairs, key=lambda pair: pair[0]):
             molecule.add_fragment(fragment)
 
         return molecule

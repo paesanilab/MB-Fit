@@ -125,6 +125,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         # tells qchem that the molecule has ended
         qchem_in.write("$end\n")
 
+        qchem_in.write("$rem\n")
+        qchem_in.write("method " + settings.get("config", "method", "wb97m-v") + "\n")
+        qchem_in.write("basis " + settings.get("config", "basis", "aug-cc-pvtz") + "\n")
+
         # read the qchem template and append it to the qchem in
         qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
         with open(qchem_template_path, "r") as template:

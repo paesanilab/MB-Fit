@@ -119,7 +119,7 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     mb = []
 
     #creating a dimer
-    molecule_name = "-".join(sorted([monomer1_name, monomer2_name]))
+    molecule_name = monomer1_name + "-" + monomer2_name
 
     with Database(db_name) as database:
 
@@ -207,6 +207,8 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy [Kcal/mol]")
 
+    plt.savefig("fit.png", dpi = 300)
+
     # make the graph of the error featuring all info divided into low and high energy datasets
 
 def make_error_graph(figure_num, *datasets, low_threshold = 50):
@@ -238,6 +240,8 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50):
     #Adding axes titles
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy - Ref. Energy [Kcal/mol]")
+
+    plt.savefig("rmsd.png", dpi = 300)
 
     # make the graph of the error featuring all info divided into low and high energy datasets
 

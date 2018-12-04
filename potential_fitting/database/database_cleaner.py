@@ -1,11 +1,19 @@
+# local module imports
 from .database import Database
 
-def clean_database(settings_file, database_name):
+def clean_database(settings_path, database_path):
     """
-    Calls the database.clean() method on the given database. Sets all running calculations back to pending.
-        
+    Sets all running calculations back to pending in the given database.
+
+    Args:
+        settings_path       - Local path to ".ini" file containing all relevent settings.
+        database_path       - Local path to the file with the database. ".db" will be appended if it does not already
+                end in ".db".
+
+    Returns:
+        None.
     """
 
-    with Database(database_name) as database:
+    with Database(database_path) as database:
 
         database.clean()

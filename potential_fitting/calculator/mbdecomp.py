@@ -1,10 +1,12 @@
-"""
-A module for computing the energy of a molecule with or without
-many-body decomposition.
-"""
+# external package imports
 import itertools
-from . import calculator
 from math import factorial
+
+# local module imports
+from . import calculator
+
+# ****** I'm not gonna clean this up because its on the top of the rework/remove chopping block ******
+# ****** currently only used by driver.py ******
 
 def build_frag_indices(index_list, mbdecomp):
     """

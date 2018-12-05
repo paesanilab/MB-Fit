@@ -12,9 +12,9 @@ import numpy as np
 class Dataset():
 
     colors = [
-        [[[1, 0, 0]], [[1, 0.5, 0.5]]],
-        [[[0, 1, 0]], [[0.5, 1, 0.5]]],
-        [[[0, 0, 1]], [[0.5, 0.5, 1]]]
+        [[[1, 0, 0]], [[1, 0.7, 0.7]]],
+        [[[0, 1, 0]], [[0.7, 1, 0.7]]],
+        [[[0, 0, 1]], [[0.7, 0.7, 1]]]
     ]
 
     def __init__(self, calc_energies, fit_energies, method):
@@ -174,6 +174,8 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 def make_graphs(*datasets, low_threshold = 50):
     make_energy_graph(1, *datasets, low_threshold = low_threshold)
     make_error_graph(2, *datasets, low_threshold = low_threshold)
+    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
+    make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
 
 def make_energy_graph(figure_num, *datasets, low_threshold = 50):
     # make the graph featuring all information divided into low and high energy datasets

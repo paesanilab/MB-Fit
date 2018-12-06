@@ -59,9 +59,9 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
     configurations.generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
             seed = seed)
 
-def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
-        min_distance = 1, max_distance = 5, min_inter_distance = 1.2, use_grid = False, step_size = 0.5,
-        seed = random.randint(-1000000, 1000000)):
+def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
+        min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
+        step_size = 0.5, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer.
 
@@ -71,12 +71,15 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
         geo2_path           - Local path to read the second optimized geometry from.
         number_of_configs   - The target number of configurations to generate. If max_distance is set too low or 
                 min_inter_distance is set too high, then less configurations may be generated.
-        config_path         - Local path to the file in to write the configurations to.
+        configurations_path - Local path to the file in to write the configurations to.
         min_distance        - The minimum distance between the centers of mass of the two molecules in any
                 configuration.
         max_distance        - The maximum distance between the centers of mass of the two molecules in any
                 configuration.
-        min_inter_distance  - The minimum intermolecular atomic distance in any configuration.
+        min_inter_distance  - Minimum intermolecular distance in any config is the sum of two atoms vdw radii * this
+                value.
+        progression         - If True, use a linear progression for distance between atoms, otherwise random
+                progression.r
         use_grid            - If False, configurations are space roughly evenly between min_distance and max_distance.
                 If True, then configurations are placed at intervals along this distance based on step_size.
         step_size           - If use_grid is True, then this dictates the distance of the spacing interval used to
@@ -88,7 +91,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     """
 
     configurations.generate_2b_configurations(geo1_path, geo2_path, number_of_configs, configurations_path,
-            min_distance, max_distance, min_inter_distance, use_grid, step_size, seed)
+            min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, seed)
 
 def init_database(settings_path, database_path, configurations_path):
     """
@@ -125,7 +128,7 @@ def fill_database(settings_path, database_path):
     database.fill_database(settings_path, database_path)
 
 def generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, method = "%", basis = "%",
-            cp = "%", tag = "%"):
+            cp = "%", tag = "%", e_min = 0, e_max = float('inf')):
     """
     Generates a 1b training set from the energies inside a database.
 
@@ -145,13 +148,15 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
         cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
                 effect on 1b energies.
         tag                 - Only use energies marked with this tag.
+        e_min               - Minimum (inclusive) energy of any config to include in this training set.
+        e_max               - Maximum (exclusive) energy of any config to include in this training set.
 
     Returns:
         None.
     """
 
     database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, method, basis,
-            cp, tag)
+            cp, tag, e_min, e_max)
 
 def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
         method = "%", basis = "%", cp = "%", tag = "%"):
@@ -466,7 +471,13 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
 
         attempts += 1
 
-    os.remove(fit_log_path)
+    # remove the most recent fit file
+    try:
+        os.remove(fit_log_path)
+    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
+    except FileNotFoundError:
+        pass
+
     os.rename("individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
     os.rename("ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
     os.rename("correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))

@@ -92,6 +92,12 @@ class MultipleOptimizedEnergiesError(DatabaseError):
     def __init__(self, database, molecule_name, method, basis, cp, tag, num_opt):
         super().__init__(database, "Found multiple ({}) calculated optimized energies for molecule '{}' with the model '{}/{}' with cp={} and tag='{}'".format(num_opt, molecule_name, method, basis, cp, tag))
 
+class NoEnergyInRangeError(DatabaseError):
+    """Raised when a user performs an operation that has no valid energy configurations in the provided range of potential values."""
+
+    def __init__(self, database, molecule_name, method, basis, cp, tag, e_min, e_max):
+        super().__init__(database, "Unable to generate training set for molecule'{}' with the model '{}/{}' with e_min = '{}' and e_max = '{}'".format(molecule_name, method, basis, e_min, e_max))
+
 """
 --------------------------- InputException
 """

@@ -23,10 +23,11 @@ class Database():
             A new Database object.
         """
 
-        # append ".db" suffix if it does not already end in ".db"
         if file_path[-3:] != ".db":
             print("Automatically ending '.db' suffix to database name {}.".format(file_path))
             file_path += ".db"
+
+        self.file_name = file_path
         
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = sqlite3.connect(files.init_file(file_path))

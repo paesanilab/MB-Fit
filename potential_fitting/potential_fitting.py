@@ -79,7 +79,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
         min_inter_distance  - Minimum intermolecular distance in any config is the sum of two atoms vdw radii * this
                 value.
         progression         - If True, use a linear progression for distance between atoms, otherwise random
-                progression.
+                progression.r
         use_grid            - If False, configurations are space roughly evenly between min_distance and max_distance.
                 If True, then configurations are placed at intervals along this distance based on step_size.
         step_size           - If use_grid is True, then this dictates the distance of the spacing interval used to

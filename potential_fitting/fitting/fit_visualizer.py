@@ -12,9 +12,9 @@ import numpy as np
 class Dataset():
 
     colors = [
-        [[[1, 0, 0]], [[1, 0.5, 0.5]]],
-        [[[0, 1, 0]], [[0.5, 1, 0.5]]],
-        [[[0, 0, 1]], [[0.5, 0.5, 1]]]
+        [[[1, 0, 0]], [[1, 0.7, 0.7]]],
+        [[[0, 1, 0]], [[0.7, 1, 0.7]]],
+        [[[0, 0, 1]], [[0.7, 0.7, 1]]]
     ]
 
     def __init__(self, calc_energies, fit_energies, method):
@@ -74,8 +74,7 @@ class Dataset_2b(Dataset):
 
         return Dataset_2b(low_calc, low_fit, self.method + " below {} kcal/mol".format(threshold), low_bind), Dataset_2b(high_calc, high_fit, self.method + " above {} kcal/mol".format(threshold), high_bind)
 
-def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
-        low_threshold = 50):
+def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag):
     
     mb = []
 
@@ -110,10 +109,10 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
         #adding mb_data to a list
         mb += [float(result_mb.stdout.split()[2])]
 
-    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), low_threshold = low_threshold)
+    return molecules, calc, mb
 
-def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
-        monomer2_name, method, basis, cp, tag, low_threshold = 50):
+def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+        monomer2_name, method, basis, cp, tag):
 
     ttm = []
     mb = []
@@ -167,7 +166,20 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
             #adding mb_data to a list
             mb += [float(result_mb.stdout.split()[2])]
 
-    print("Finished generating data")
+    return molecules, calc, mb, ttm, binding_energies
+
+def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
+        low_threshold = 50):
+
+    molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag)
+
+    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), low_threshold = low_threshold)
+
+def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+        monomer2_name, method, basis, cp, tag, low_threshold = 50):
+
+    molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+        monomer2_name, method, basis, cp, tag)
 
     make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), low_threshold = low_threshold)
 
@@ -175,6 +187,8 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 def make_graphs(*datasets, low_threshold = 50):
     make_energy_graph(1, *datasets, low_threshold = low_threshold)
     make_error_graph(2, *datasets, low_threshold = low_threshold)
+    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
+    make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
 
 def make_energy_graph(figure_num, *datasets, low_threshold = 50):
     # make the graph featuring all information divided into low and high energy datasets

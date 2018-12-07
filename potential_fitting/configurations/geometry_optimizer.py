@@ -1,18 +1,19 @@
+# absolute module imports
 from potential_fitting import calculator
 from potential_fitting.utils import SettingsReader
 from potential_fitting.molecule import xyz_to_molecules
 
 def optimize_geometry(settings_path, unopt_path, opt_path):
     """
-    Optimizes a given geometry
+    Optimizes a given geometry.
 
     Args:
-        settings_path - path to the .ini file with all relevent settings
-        unopt_path  - path to the geometry .xy file to optimize
-        opt_path    - path to .xyz file to write the optimized geometry
+        settings_path       - Local path to the ".ini" file with all relevent settings.
+        unopt_path          - Local path to the ".xyz" file to read the unoptimized geometry from.
+        opt_path            - Local path to the ".xyz" file to write the optimized geometry to.
 
     Returns:
-        None
+        None.
     """
 
     settings = SettingsReader(settings_path)

@@ -36,8 +36,8 @@ else:
 # In[4]:
 
 
-f = open(name, 'r')
-mon1 = f.readline().split('\'')[1]
+with open(name, 'r') as f:
+    mon1 = f.readline().split('\'')[1]
 
 config = SettingsReader(config_filename)
 
@@ -75,8 +75,6 @@ d_max = config.getfloat("fitting", "d_max")
 C6 = config.getlist("fitting", "C6", float)[0]
 d6 = config.getlist("fitting", "d6", float)[0]
 
-# Number ov variables
-nvars = config.getint("fitting", "nvars")
 # Find a way to get the size of the polynomial
 npoly = config.getint("fitting", "npoly")
 
@@ -102,83 +100,62 @@ types = list(mon1)
 
 # In[7]:
 
+# create dictionary mapping from atom index to atom name
+atom_list = []
+complete_real_pairs = []
 
-# Generating the non linear parameter list
-nlparam = []
-t1 = []
+for type_index in range(0, len(types), 2):
+    for atom_index in range(1, int(types[type_index + 1]) + 1):
+        atom_list.append(types[type_index] + str(atom_index))
+
+    for type2_index in range(type_index, len(types), 2):
+        complete_real_pairs.append(types[type_index] + types[type2_index])
+
+print("atom list:", atom_list)
+print("complete real pairs:", complete_real_pairs)
+
+
+# read the poly.in file to get the variables
+
+variables = []
+pairs = []
 # Monomer 1 parameters
-for i in range(0,len(types),2):
-    for j in range(int(types[i+1])):
-        t1.append(types[i])
+with open(name, "r") as input_file:
+    for line in input_file:
+        if line.startswith("add_variable"):
+            args = line[line.index('[') + 1:line.index(']')].replace("'", "").replace(" ", "").split(",")
 
-print(t1)
+            variables.append(args)
+            if args[0][0] + args[2][0] not in pairs:
+                # only works for 1 letter variable names
+                pairs.append(args[0][0] + args[2][0])
 
-
+nvars = len(variables)
 # In[8]:
-
 
 nlp_touse = ['k']
 if var == 'coul0' or var == 'exp0' or var == 'gau0':
     nlp_touse.append('d')
 
-# Appending for mon1
-for i in range(len(t1)):
-    if t1[i] in vsites:
-        continue
-    for j in range(i + 1,len(t1)):
-        if t1[j] in vsites:
-            continue
-        for nlp in nlp_touse:
-            const_intra = nlp + '_' + t1[i] + t1[j]
-            if not const_intra in nlparam:
-                nlparam.append(const_intra)
-
-# Getting the pairs
-pairs = []
+# Generating the non linear parameter list
+nlparam = []
+for pair in pairs:
+    for prefix in nlp_touse:
+        nlparam.append("{}_{}".format(prefix, pair))
+    
+# Getting the real pairs
 real_pairs = []
+for pair in pairs:
+    if not pair[0] in vsites and not pair[1] in vsites:
+        real_pairs.append(pair)
 
-# First, the excluded pairs (12,13,14)
-excluded_pairs = []
-for i in range(len(excl12)):
-    x = t1[excl12[i][0]]
-    y = t1[excl12[i][1]]
-    if not x in vsites and not y in vsites:
-        p = sorted([x,y])
-        ps = p[0] + p[1]
-        if not ps in excluded_pairs:
-            excluded_pairs.append(ps)
+# The excluded pairs (12,13,14)
+excluded_pairs = excl12 + excl13 + excl14
             
-for i in range(len(excl13)):
-    x = t1[excl13[i][0]]
-    y = t1[excl13[i][1]]
-    if not x in vsites and not y in vsites:
-        p = sorted([x,y])
-        ps = p[0] + p[1]
-        if not ps in excluded_pairs:
-            excluded_pairs.append(ps)
-            
-for i in range(len(excl14)):
-    x = t1[excl14[i][0]]
-    y = t1[excl14[i][1]]
-    if not x in vsites and not y in vsites:
-        p = sorted([x,y])
-        ps = p[0] + p[1]
-        if not ps in excluded_pairs:
-            excluded_pairs.append(ps)
-            
-for i in range(len(t1)):
-    for j in range(i + 1,len(t1)):
-        p = sorted([t1[i],t1[j]])
-        ps = p[0] + p[1]
-        if not ps in pairs:
-            pairs.append(ps)
-        if not p[0] in vsites and not p[1] in vsites and not ps in real_pairs:
-            real_pairs.append(ps)
-
-print(nlparam)
-print(pairs)
-print(real_pairs)
-print(excluded_pairs)
+print("non-linear params:", nlparam)
+print("pairs:", pairs)
+print("real pairs:", real_pairs)
+print("excluded pairs", excluded_pairs)
 
 
 # In[9]:
@@ -783,9 +760,9 @@ ff.write(a)
 ff.write('bool x1b_' + mon1 + '_v1x::nonlinear_parameters_out_of_range() const { \n')
 ff.write('    const double k_min =  ' + str(k_min) + ' ;\n')
 ff.write('    const double k_max =  ' + str(k_max) + ' ;\n')
-
-ff.write('    const double d_min =  ' + str(d_min) + ' ;\n')
-ff.write('    const double d_max =  ' + str(d_max) + ' ;\n')
+if "d" in nlp_touse:
+    ff.write('    const double d_min =  ' + str(d_min) + ' ;\n')
+    ff.write('    const double d_max =  ' + str(d_max) + ' ;\n')
 
 ff.write('return false')
 for nl in nlparam:
@@ -808,23 +785,22 @@ ff.write('void  x1b_' + mon1 + '_v1x::cart_to_vars(const double* xyz, double* v)
 ff.write('    // NOTE: XYZ contains ONLY the real sites. The lone pairs etc are calculated here \n')
 
 nc = 0
-set_m1 = []
+# loops over each type of atom in the input
 for i in range(0,len(types),2):
     n = 1
+    # loops over each atom of that type
     for j in range(int(types[i+1])):
         if not types[i] in vsites:
             ff.write('    const double* ' + types[i] + '_' + str(n) + '_a' + '= xyz + ' + str(3 * nc) + ';\n')
-            set_m1.append(types[i] + '_' + str(n) + '_a')
             n = n + 1
             nc = nc + 1
 ff.write('\n')
-            
+
 for i in range(0,len(types),2):
     n = 1
     for j in range(int(types[i+1])):
         if types[i] in vsites:
             ff.write('    double ' + types[i] + '_' + str(n) + '_a[3]' + ';\n')
-            set_m1.append(types[i] + '_' + str(n) + '_a')
             n = n + 1
 ff.write('\n')
 
@@ -838,19 +814,45 @@ a = """
 ff.write(a)
 nv = 0
 # Intramolecular distances:
-for i in range(0,len(set_m1) - 1):
-    for j in range(i + 1,len(set_m1)):
-        ti = set_m1[i].split('_')[0]
-        tj = set_m1[j].split('_')[0]
-        t = ''.join(sorted(ti + tj))
-        if not ti in vsites and not tj in vsites:
-            variables = ""
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
             if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                variables = '(m_d_' + t + ', m_k_' + t
+                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
             else:
-                variables = '(m_k_' + t
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
-            nv = nv + 1
+                arguments = '(m_k_' + atom1 + atom2
+
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
 ff.write('\n')
 
 
@@ -959,12 +961,13 @@ struct x1b_disp {
 
 """
 ff.write(a)
-for i in range(len(real_pairs)):
-    if not real_pairs[i] in excluded_pairs:
-        ff.write('  const double m_C6_' + real_pairs[i] + ' = ' + C6[i] + ' ; \n')
-for i in range(len(real_pairs)):
-    if not real_pairs[i] in excluded_pairs:
-        ff.write('  const double m_d6_' + real_pairs[i] + ' = ' + d6[i] + ' ; \n')
+
+# make sure that c6 and the pairs are consistent
+for pair, c6_const in zip(complete_real_pairs, C6):
+    ff.write('  const double m_C6_' + pair + ' = ' + str(c6_const) + ' ; \n')
+
+for pair, d6_const in zip(complete_real_pairs, d6):
+    ff.write('  const double m_d6_' + pair + ' = ' + str(d6_const) + ' ; \n')
     
 a = """
 
@@ -1088,26 +1091,26 @@ double x1b_disp::get_dispersion() {
 ff.write(a)
 
 nc = 0
-set_m1 = []
+# loops over each type of atom in the input
 for i in range(0,len(types),2):
     n = 1
+    # loops over each atom of that type
     for j in range(int(types[i+1])):
         if not types[i] in vsites:
-            ff.write('  const double* ' + types[i] + '_' + str(n) + ' = xyz1 + ' + str(3 * nc) + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    const double* ' + types[i] + '_' + str(n) + '= xyz1 + ' + str(3 * nc) + ';\n')
             n = n + 1
             nc = nc + 1
 ff.write('\n')
-   
-for i in range(0,len(set_m1) - 1):
-    for j in range(i + 1,len(set_m1)):
-        ti = set_m1[i].split('_')[0]
-        tj = set_m1[j].split('_')[0]
-        t = ''.join(sorted(ti + tj))
-        if not t in excluded_pairs:
-            ff.write('  disp += x6(m_C6_' + t + ', m_d6_' + t + ', m_C8, m_d8, ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
-            
+
+for atom1_index, atom1 in enumerate(atom_list):
+    for atom2_index, atom2 in enumerate(atom_list[atom1_index + 1:]):
+        atom2_index += atom1_index + 1
+        if [atom1_index, atom2_index] not in excluded_pairs:
+            varname = atom1[0] + atom2[0]
+            ff.write('  disp += x6(m_C6_' + varname + ', m_d6_' + varname + ', m_C8, m_d8, ' + atom1[0] + '_' + atom1[1:] + ', ' + atom2[0] + '_' + atom2[1:] + ');\n')
+
     ff.write('\n')
+
 a = """
   return disp;
 }
@@ -1119,41 +1122,38 @@ double x1b_disp::get_dispersion(double * grd) {
 ff.write(a)
 
 nc = 0
-set_m1 = []
+# loops over each type of atom in the input
 for i in range(0,len(types),2):
     n = 1
+    # loops over each atom of that type
     for j in range(int(types[i+1])):
         if not types[i] in vsites:
-            ff.write('  const double* ' + types[i] + '_' + str(n) + ' = xyz1 + ' + str(3 * nc) + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    const double* ' + types[i] + '_' + str(n) + '= xyz1 + ' + str(3 * nc) + ';\n')
             n = n + 1
             nc = nc + 1
 ff.write('\n')
 
 nc = 0
-set_m1 = []
+# loops over each type of atom in the input
 for i in range(0,len(types),2):
     n = 1
+    # loops over each atom of that type
     for j in range(int(types[i+1])):
         if not types[i] in vsites:
-            ff.write('  const double* ' + types[i] + '_' + str(n) + '_g = grd + ' + str(3 * nc) + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    double* ' + types[i] + '_' + str(n) + '_g = grd + ' + str(3 * nc) + ';\n')
             n = n + 1
             nc = nc + 1
 ff.write('\n')
 
+for atom1_index, atom1 in enumerate(atom_list):
+    for atom2_index, atom2 in enumerate(atom_list[atom1_index + 1:]):
+        atom2_index += atom1_index + 1
+        if [atom1_index, atom2_index] not in excluded_pairs:
+            varname = atom1[0] + atom2[0]
+            ff.write('  disp += x6(m_C6_' + varname + ', m_d6_' + varname + ', m_C8, m_d8, ' + atom1[0] + '_' + atom1[1:] + ', ' + atom2[0] + '_' + atom2[1:] + ', ' + atom1[0] + '_' + atom1[1:] + '_g, ' + atom2[0] + '_' + atom2[1:] + '_g);\n')
 
-
-   
-for i in range(0,len(set_m1) - 1):
-    for j in range(i + 1,len(set_m1)):
-        ti = set_m1[i].split('_')[0]
-        tj = set_m1[j].split('_')[0]
-        t = ''.join(sorted(ti + tj))
-        if not t in excluded_pairs:
-            ff.write('  disp += x6(m_C6_' + t + ', m_d6_' + t + ', m_C8, m_d8, \n             '                 + set_m1[i] + ', ' + set_m1[j] + set_m1[i] + '_g, ' + set_m1[j] + '_g, ' + ');\n')
-        
     ff.write('\n')
+
 a = """
   return disp;
 }
@@ -1735,7 +1735,6 @@ fpolycpp.close()
 
 # In[21]:
 
-
 ff = open('eval-1b.cpp','w')
 a = """
 #include <cmath>
@@ -1873,19 +1872,15 @@ int main(int argc, char** argv) {
 
       xyz[n] = x_orig + eps;
       const double Ep = pot(xyz) ;
-      std::cout << "E_p = " << Ep << std::endl;
 
       xyz[n] = x_orig + 2*eps;
       const double E2p = pot(xyz) ;
-      std::cout << "E_2p = " << E2p << std::endl;
 
       xyz[n] = x_orig - 2*eps;
       const double E2m = pot(xyz) ;
-      std::cout << "E_2m = " << E2m << std::endl;
 
       xyz[n] = x_orig - eps;
       const double Em = pot(xyz) ;
-      std::cout << "E_m = " << Em << std::endl;
 
       const double gfd = (8*(Ep - Em) - (E2p - E2m))/(12*eps);
       xyz[n] = x_orig;
@@ -1909,7 +1904,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X1B.h for software
+# ## X1B.h for eval
 
 # In[22]:
 
@@ -1974,7 +1969,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X1B.cpp for software
+# ## X1B.cpp for eval
 
 # In[23]:
 
@@ -2338,48 +2333,74 @@ double x1b_""" + mon1 + """_v1x::eval(const double* mon1) const
     
 """
 ff.write(a)
+
 nc = 0
-set_m1 = []
+# loops over each type of atom in the input
 for i in range(0,len(types),2):
     n = 1
+    # loops over each atom of that type
     for j in range(int(types[i+1])):
         if not types[i] in vsites:
-            ff.write('    const double* ' + types[i] + '_' + str(n) + '= xcrd + ' + str(3 * nc) + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    const double* ' + types[i] + '_' + str(n) + '_a' + '= xcrd + ' + str(3 * nc) + ';\n')
             n = n + 1
             nc = nc + 1
+ff.write('\n')
 
-ff.write('\n')            
 for i in range(0,len(types),2):
     n = 1
     for j in range(int(types[i+1])):
         if types[i] in vsites:
-            ff.write('    double ' + types_a[i] + '_' + str(n) + '[3]' + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    double ' + types[i] + '_' + str(n) + '_a[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 
-a = """    
+a = """
     variable vr[""" + str(nvars) + """];
-    
+
 """
 
 ff.write(a)
 nv = 0
 # Intramolecular distances:
-for i in range(0,len(set_m1) - 1):
-    for j in range(i + 1,len(set_m1)):
-        ti = set_m1[i].split('_')[0]
-        tj = set_m1[j].split('_')[0]
-        t = ''.join(sorted(ti + tj))
-        if not ti in vsites and not tj in vsites:
-            variables = ""
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
             if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                variables = '(m_d_' + t + ', m_k_' + t
+                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
             else:
-                variables = '(m_k_' + t
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
-            nv = nv + 1
+                arguments = '(m_k_' + atom1 + atom2
+
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
 ff.write('\n')
 
 a = """     
@@ -2401,92 +2422,145 @@ double x1b_""" + mon1 + """_v1x::eval(const double* mon1,
     
 """
 ff.write(a)
+
 nc = 0
-set_m1 = []
+# loops over each type of atom in the input
 for i in range(0,len(types),2):
     n = 1
+    # loops over each atom of that type
     for j in range(int(types[i+1])):
         if not types[i] in vsites:
-            ff.write('    const double* ' + types[i] + '_' + str(n) + '= xcrd + ' + str(3 * nc) + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    const double* ' + types[i] + '_' + str(n) + '_a' + '= xcrd + ' + str(3 * nc) + ';\n')
             n = n + 1
             nc = nc + 1
+ff.write('\n')
 
-ff.write('\n')            
 for i in range(0,len(types),2):
     n = 1
     for j in range(int(types[i+1])):
         if types[i] in vsites:
-            ff.write('    double ' + types_a[i] + '_' + str(n) + '[3]' + ';\n')
-            set_m1.append(types[i] + '_' + str(n))
+            ff.write('    double ' + types[i] + '_' + str(n) + '_a[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 
-
- 
-a = """    
+a = """
     variable vr[""" + str(nvars) + """];
-    
+
 """
+
 ff.write(a)
 nv = 0
 # Intramolecular distances:
-for i in range(0,len(set_m1) - 1):
-    for j in range(i + 1,len(set_m1)):
-        ti = set_m1[i].split('_')[0]
-        tj = set_m1[j].split('_')[0]
-        t = ''.join(sorted(ti + tj))
-        if not ti in vsites and not tj in vsites:
-            variables = ""
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
             if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                variables = '(m_d_' + t + ', m_k_' + t
+                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
             else:
-                variables = '(m_k_' + t
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + variables + ', ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
-            nv = nv + 1
+                arguments = '(m_k_' + atom1 + atom2
+
+            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
 ff.write('\n')
+
 a = """     
     
     double g[""" + str(nvars) + """];
     
     const double E_poly = mb_system::poly_model::eval(m_poly, v, g);
     
-    double xgrd[""" + str(3*(len(t1))) + """];
-    std::fill(xgrd, xgrd + """ + str(3*(len(t1))) + """, 0.0);
+    double xgrd[""" + str(3*(len(atom_list))) + """];
+    std::fill(xgrd, xgrd + """ + str(3*(len(atom_list))) + """, 0.0);
 
 """ 
 ff.write(a)   
 nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types[i+1])):
+        if not types[i] in vsites:
+            ff.write('    double* ' + types[i] + '_' + str(n) + '_a_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
 
 for i in range(0,len(types),2):
     n = 1
     for j in range(int(types[i+1])):
-        if not types[i] in vsites:
-            ff.write('    double* ' + types[i] + '_' + str(n) + '_g' + ' = xgrd + ' + str(3 * nc) + ';\n')
-            n = n + 1
-            nc = nc + 1
-ff.write('\n')
-          
-for i in range(0,len(types),2):
-    n = 1
-    for j in range(int(types[i+1])):
         if types[i] in vsites:
-            ff.write('    double* ' + types[i] + '_' + str(n) + '_g' + ' = xgrd + ' + str(3 * nc) + ';\n')
+            ff.write('    double* ' + types[i] + '_' + str(n) + '_g' + '= xgrd + ' + str(3 * nc) + ';\n')
             n = n + 1
             nc = nc + 1
 ff.write('\n')
-    
+
 nv = 0
 # Intramolecular distances:
-for i in range(0,len(set_m1) - 1):
-    for j in range(i + 1,len(set_m1)):
-        ti = set_m1[i].split('_')[0]
-        tj = set_m1[j].split('_')[0]
-        t = ''.join(sorted(ti + tj))
-        if not ti in vsites and not tj in vsites:
-            ff.write('    vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + set_m1[i] + '_g, ' + set_m1[j] + '_g, ' + set_m1[i] + ', ' + set_m1[j] + ');\n')
-            nv = nv + 1
-ff.write('\n') 
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
+            ff.write('    vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
+ff.write('\n')
 
 a = """
     for (size_t i = 0; i < """ + str(3*nat) + """; i++)
@@ -2518,8 +2592,649 @@ ff.write(a)
 ff.close()
 
 
+# ## X1B.h for software
+
+# In[22]:
+
+hname = "x1b_" + mon1 + "_deg" + str(degree) + "_v1x.h"
+polyhname = "poly_1b_" + mon1 + "_deg" + str(degree) + "_v1x.h"
+defname = "X1B_" + mon1 + "_DEG" + str(degree) + "_V1X_H"
+ff = open(hname,'w')
+ff.write('#ifndef ' + defname + '\n')
+ff.write('#define ' + defname + '\n \n')
+ff.write('#include "' + polyhname + '" \n')
+
+a = """
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cmath>
+#include <cassert>
+#include <cstdlib>
+#include <iomanip>
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace x1b_""" + mon1 + "_deg" + str(degree) + """ {
+
+//----------------------------------------------------------------------------//
+
+"""
+ff.write(a)
+ff.write('struct x1b_' + mon1 + "_v1x { \n")
+a = """
+    x1b_""" + mon1 + """_v1x() {};
+    x1b_""" + mon1 + """_v1x(const std::string mon);
+
+    ~x1b_""" + mon1 + """_v1x() {};
+
+    typedef poly_1b_""" + mon1 + "_deg" + str(degree) + """_v1x polynomial;
+
+    // returns 1b contribution only
+    // xyz will be the coordinates of the nmon monomers, one after the other one
+"""
+ff.write(a)
+a = """
+    std::vector<double> eval(const double* xyz, const size_t nmon) const;
+    std::vector<double> eval(const double* xyz, double* grad, const size_t nmon) const;
+    
+private:
+
+"""
+ff.write(a)
+for nl in nlparam:
+    ff.write("    double m_" + nl + ";\n")
+a = """
+
+    std::vector<double> coefficients;
+};
+
+//----------------------------------------------------------------------------//
+
+} // namespace x1b_""" + mon1 + "_deg" + str(degree) + """
+
+////////////////////////////////////////////////////////////////////////////////
+
+#endif 
+"""
+ff.write(a)
+ff.close()
+
+
+# ## X1B.cpp for software
+
+# In[23]:
+
+
+cppname = "x1b_" + mon1 + "_deg" + str(degree) + "_v1x.cpp"
+ff = open(cppname,'w')
+hname = "x1b_" + mon1 + "_deg" + str(degree) + "_v1x.h"
+
+ff.write('#include "' + hname + '" \n \n')
+a = """
+////////////////////////////////////////////////////////////////////////////////
+
+namespace {
+
+//----------------------------------------------------------------------------//
+
+struct variable {
+    double v_exp0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    double v_exp(const double& k,
+                 const double * p1, const double * p2 );
+
+    double v_coul0(const double& r0, const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_coul(const double& k,
+                  const double * p1, const double * p2 );
+                  
+    double v_gau0(const double& r0, const double& k,
+                 const double * p1, const double * p2 );
+                 
+    void grads(const double& gg, double * grd1, double * grd2,
+               const double * p1, const double * p2);
+
+    double g[3]; // diff(value, p1 - p2)
+};
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_gau0(const double& r0, const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(-k*(r0 - r)*(r0 - r));
+    const double gg = 2*k*(r0 - r)*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+
+//----------------------------------------------------------------------------//
+
+void variable::grads(const double& gg, double * grd1, double * grd2, 
+                     const double * p1, const double * p2) {
+    for (size_t i = 0; i < 3 ; i++) {
+        double d = gg*g[i];
+        grd1[i] += d;
+        grd2[i] -= d;
+    }
+}
+
+//----------------------------------------------------------------------------//
+
+double variable::v_exp0(const double& r0, const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(r0 - r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_coul0(const double& r0, const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(r0 - r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+double variable::v_exp(const double& k,
+                       const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double r = std::sqrt(g[0]*g[0] + g[1]*g[1] + g[2]*g[2]);
+
+    const double exp1 = std::exp(k*(- r));
+    const double gg = - k*exp1/r;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return exp1;
+}
+
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+
+double variable::v_coul(const double& k,
+                        const double * p1, const double * p2)
+{
+    g[0] = p1[0] - p2[0];
+    g[1] = p1[1] - p2[1];
+    g[2] = p1[2] - p2[2];
+
+    const double rsq = g[0]*g[0] + g[1]*g[1] + g[2]*g[2];
+    const double r = std::sqrt(rsq);
+
+    const double exp1 = std::exp(k*(-r));
+    const double rinv = 1.0/r;
+    const double val = exp1*rinv;
+
+    const double gg = - (k + rinv)*val*rinv;
+
+    g[0] *= gg;
+    g[1] *= gg;
+    g[2] *= gg;
+
+    return val;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+struct monomer {
+    double oh1[3];
+    double oh2[3];
+
+    void setup(const double* ohh,
+               const double& in_plane_g, const double& out_of_plane_g,
+               double x1[3], double x2[3]);
+
+    void grads(const double* g1, const double* g2,
+               const double& in_plane_g, const double& out_of_plane_g,
+               double* grd) const;
+};
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+void monomer::setup(const double* ohh,
+                    const double& in_plane_g, const double& out_of_plane_g,
+                    double* x1, double* x2)
+{
+    for (int i = 0; i < 3; ++i) {
+        oh1[i] = ohh[i + 3] - ohh[i];
+        oh2[i] = ohh[i + 6] - ohh[i];
+    }
+
+    const double v[3] = {
+        oh1[1]*oh2[2] - oh1[2]*oh2[1],
+        oh1[2]*oh2[0] - oh1[0]*oh2[2],
+        oh1[0]*oh2[1] - oh1[1]*oh2[0]
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        const double in_plane = ohh[i] + 0.5*in_plane_g*(oh1[i] + oh2[i]);
+        const double out_of_plane = out_of_plane_g*v[i];
+
+        x1[i] = in_plane + out_of_plane;
+        x2[i] = in_plane - out_of_plane;
+    }
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+void monomer::grads(const double* g1, const double* g2,
+                    const double& in_plane_g, const double& out_of_plane_g,
+                    double* grd) const
+{
+    const double gm[3] = {
+        g1[0] - g2[0],
+        g1[1] - g2[1],
+        g1[2] - g2[2]
+    };
+
+    const double t1[3] = {
+        oh2[1]*gm[2] - oh2[2]*gm[1],
+        oh2[2]*gm[0] - oh2[0]*gm[2],
+        oh2[0]*gm[1] - oh2[1]*gm[0]
+    };
+
+    const double t2[3] = {
+        oh1[1]*gm[2] - oh1[2]*gm[1],
+        oh1[2]*gm[0] - oh1[0]*gm[2],
+        oh1[0]*gm[1] - oh1[1]*gm[0]
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        const double gsum = g1[i] + g2[i];
+        const double in_plane = 0.5*in_plane_g*gsum;
+
+        const double gh1 = in_plane + out_of_plane_g*t1[i];
+        const double gh2 = in_plane - out_of_plane_g*t2[i];
+
+        grd[i + 0] += gsum - (gh1 + gh2); // O
+        grd[i + 3] += gh1; // H1
+        grd[i + 6] += gh2; // H2
+    }
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+
+//struct vsites {
+//    //void TwoParticleAverageSite() {}
+//    //void ThreeParticleAverageSite() {}
+//    void OutOfPlaneSite(const double& w12, const double& w13,
+//                        const double& wcross, const double x1[3],
+//                        const double y1[3], const double y2[3],
+//                        double vs[3]);
+//    //void LocalCoordinatesSite{}
+//};
+//
+//void vsites::OutOfPlaneSite(const double& w12,
+//                            const double& w13,
+//                            const double& wcross,
+//                            const double x1[3],
+//                            const double y1[3],
+//                            const double y2[3],
+//                            double vs[3]) {
+//    double r12[3], r13[3];
+//
+//    for (int i = 0; i < 3; ++i) {
+//        r12[i] = y1[i] - x1[i];
+//        r13[i] = y2[i] - x1[i];
+//    }
+//                            
+//    double rc[3];
+//    rc[0] = r12[1]*r13[2] - r12[2]*r13[1];
+//    rc[1] = r12[2]*r13[0] - r12[0]*r13[2];
+//    rc[2] = r12[0]*r13[1] - r12[1]*r13[0];
+//    
+//    vs[0] = x1[0] + w12 * r12[0] + w13 * r13[0] + wcross * rc[0];
+//    vs[1] = x1[1] + w12 * r12[1] + w13 * r13[1] + wcross * rc[1];
+//    vs[2] = x1[2] + w12 * r12[2] + w13 * r13[2] + wcross * rc[2];
+//}
+
+} // namespace
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace x1b_""" + mon1 + "_deg" + str(degree) + """ {
+
+//----------------------------------------------------------------------------//
+
+"""
+ff.write(a)
+
+a = """
+
+x1b_""" + mon1 + """_v1x::x1b_""" + mon1 + """_v1x(std::string mon) {
+
+
+    // =====>> SECTION CONSTRUCTOR <<=====
+    // =>> PASTE RIGHT BELOW THIS LINE <== 
+
+}
+
+//----------------------------------------------------------------------------//
+
+std::vector<double> x1b_""" + mon1 + """_v1x::eval(const double* xyz, const size_t nmon) const
+{
+
+    std::vector<double> energies(nmon,0.0);
+
+    for (size_t j = 0; j < nmon; j++) {
+
+        double xcrd[""" + str(3*(nat)) + """]; // coordinates of real sites ONLY
+
+        std::copy(xyz + j*""" + str(3*(nat)) + """, xyz + (j+1)*""" + str(3*(nat)) + """, xcrd);
+    
+        double v[""" + str(nvars) + """];
+    
+"""
+ff.write(a)
+
+nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types[i+1])):
+        if not types[i] in vsites:
+            ff.write('        const double* ' + types[i] + '_' + str(n) + '_a' + '= xcrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types),2):
+    n = 1
+    for j in range(int(types[i+1])):
+        if types[i] in vsites:
+            ff.write('        double ' + types[i] + '_' + str(n) + '_a[3]' + ';\n')
+            n = n + 1
+ff.write('\n')
+
+a = """
+        variable vr[""" + str(nvars) + """];
+
+"""
+
+ff.write(a)
+nv = 0
+# Intramolecular distances:
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
+            if var == 'exp0' or var == 'coul0' or var == 'gau0':
+                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
+            else:
+                arguments = '(m_k_' + atom1 + atom2
+
+            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
+ff.write('\n')
+
+a = """     
+    
+        energies[j] = polynomial::eval(coefficients.data(), v);
+
+    }
+
+    return energies;
+}
+
+std::vector<double> x1b_""" + mon1 + """_v1x::eval(const double* xyz, 
+                double * grad, const size_t nmon) const
+{
+
+    std::vector<double> energies(nmon,0.0);
+
+    for (size_t j = 0; j < nmon; j++) {
+
+        double xcrd[""" + str(3*(nat)) + """]; // coordinates of real sites ONLY
+
+        std::copy(xyz + j*""" + str(3*(nat)) + """, xyz + (j+1)*""" + str(3*(nat)) + """, xcrd);
+
+        double v[""" + str(nvars) + """];
+    
+"""
+ff.write(a)
+
+nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types[i+1])):
+        if not types[i] in vsites:
+            ff.write('        const double* ' + types[i] + '_' + str(n) + '_a' + '= xcrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types),2):
+    n = 1
+    for j in range(int(types[i+1])):
+        if types[i] in vsites:
+            ff.write('        double ' + types[i] + '_' + str(n) + '_a[3]' + ';\n')
+            n = n + 1
+ff.write('\n')
+
+a = """
+        variable vr[""" + str(nvars) + """];
+
+"""
+
+ff.write(a)
+nv = 0
+# Intramolecular distances:
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
+            if var == 'exp0' or var == 'coul0' or var == 'gau0':
+                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
+            else:
+                arguments = '(m_k_' + atom1 + atom2
+
+            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
+ff.write('\n')
+
+a = """     
+    
+        double g[""" + str(nvars) + """];
+        
+        energies[j] = polynomial::eval(coefficients.data(), v, g);
+        
+        double xgrd[""" + str(3*(len(atom_list))) + """];
+        std::fill(xgrd, xgrd + """ + str(3*(len(atom_list))) + """, 0.0);
+
+""" 
+ff.write(a)   
+nc = 0
+# loops over each type of atom in the input
+for i in range(0,len(types),2):
+    n = 1
+    # loops over each atom of that type
+    for j in range(int(types[i+1])):
+        if not types[i] in vsites:
+            ff.write('        double* ' + types[i] + '_' + str(n) + '_a_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+for i in range(0,len(types),2):
+    n = 1
+    for j in range(int(types[i+1])):
+        if types[i] in vsites:
+            ff.write('        double* ' + types[i] + '_' + str(n) + '_g' + '= xgrd + ' + str(3 * nc) + ';\n')
+            n = n + 1
+            nc = nc + 1
+ff.write('\n')
+
+nv = 0
+# Intramolecular distances:
+for index, variable in enumerate(variables):
+    if variable[4].startswith("x-intra-"):
+        atom1 = variable[0][0]
+        atom2 = variable[2][0]
+
+        try:
+            atom1_index = int(variable[0][1:])
+        except ValueError:
+            atom1_index = 1
+
+        try:
+            atom2_index = int(variable[2][1:])
+        except ValueError:
+            atom2_index = 1
+
+        atom1_fragment = variable[1]
+        atom2_fragment = variable[3]
+
+        atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
+        atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
+
+        if atom1 not in vsites and atom2 not in vsites:
+
+            ff.write('        vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
+
+            nv += 1
+            
+        else:
+            # At some point we might want to use vsites
+            pass   
+    else:
+        # Error
+        pass
+
+ff.write('\n')
+
+a = """
+        for (size_t i = 0; i < """ + str(3*nat) + """; i++)
+            grad[i + j*""" + str(3*nat) + """] = xgrd[i];
+
+    }
+
+    return energies;
+}
+
+} // namespace x1b_""" + mon1 + "_deg" + str(degree) + """
+
+////////////////////////////////////////////////////////////////////////////////
+"""
+ff.write(a)
+ff.close()
+
+
 # In[ ]:
 
+
+# In[ ]:
 
 
 

@@ -1,9 +1,11 @@
 import os
+from potential_fitting.utils import files
 
 def prepare_1b_fitting_code(settings, in_path, poly_path, poly_order, fit_path):
     
     # get just the "A3B2" part of "path/A3B2.in"
     molecule = os.path.splitext(in_path)[0].split("/")[-1]
+    fit_path = files.init_directory(fit_path)
 
     # copy needed files from poly_path to fit_path
     os.system("cp " + in_path + " " + fit_path + "/")

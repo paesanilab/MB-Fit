@@ -181,6 +181,8 @@ types_b = list(mon2)
 atom_list_a = []
 complete_real_pairs_a = []
 
+print("vsites", vsites)
+
 for type_index in range(0, len(types_a), 2):
     for atom_index in range(1, int(types_a[type_index + 1]) + 1):
         atom_list_a.append(types_a[type_index] + str(atom_index))
@@ -1746,9 +1748,11 @@ for i in range(0,len(types_a),2):
             nb = 1
             for l in range(int(types_b[k+1])):
                 
-                t = "".join(sorted([types_a[i], types_b[k]]))
+                if types_a[i] not in vsites and types_b[k] not in vsites:
+                    t = "".join(sorted([types_a[i], types_b[k]]))
 
-                ff.write('  ebuck += buck(m_A_' + t  + ', m_b_' + t + ', ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b" + ');\n')
+                    ff.write('  ebuck += buck(m_A_' + t  + ', m_b_' + t + ', ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b" + ');\n')
+
                 nb += 1
         na += 1
 
@@ -1816,9 +1820,12 @@ for i in range(0,len(types_a),2):
             nb = 1
             for l in range(int(types_b[k+1])):
                 
-                t = "".join(sorted([types_a[i], types_b[k]]))
+                if types_a[i] not in vsites and types_b[k] not in vsites:
 
-                ff.write('  ebuck += buck(m_A_' + t  + ', m_b_' + t + ', ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b," + types_a[i] + "_" + str(na) + "_a_g," + types_b[k] + "_" + str(nb) + "_b_g" + ');\n')
+                    t = "".join(sorted([types_a[i], types_b[k]]))
+
+                    ff.write('  ebuck += buck(m_A_' + t  + ', m_b_' + t + ', ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b," + types_a[i] + "_" + str(na) + "_a_g," + types_b[k] + "_" + str(nb) + "_b_g" + ');\n')
+
                 nb += 1
         na += 1
 
@@ -2015,10 +2022,12 @@ for i in range(0,len(types_a),2):
         for k in range(0,len(types_b),2):
             nb = 1
             for l in range(int(types_b[k+1])):
-                
-                t = "".join(sorted([types_a[i], types_b[k]]))
 
-                ff.write('  disp += x6(m_C6_' + t  + ', m_d6_' + t + ', m_C8, m_d8, ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b" + ');\n')
+                if types_a[i] not in vsites and types_b[k] not in vsites:
+                
+                    t = "".join(sorted([types_a[i], types_b[k]]))
+                    ff.write('  disp += x6(m_C6_' + t  + ', m_d6_' + t + ', m_C8, m_d8, ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b" + ');\n')
+
                 nb += 1
         na += 1
 
@@ -2085,10 +2094,12 @@ for i in range(0,len(types_a),2):
         for k in range(0,len(types_b),2):
             nb = 1
             for l in range(int(types_b[k+1])):
-                
-                t = "".join(sorted([types_a[i], types_b[k]]))
 
-                ff.write('  disp += x6(m_C6_' + t  + ', m_d6_' + t + ', m_C8, m_d8, ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b," + types_a[i] + "_" + str(na) + "_a_g," + types_b[k] + "_" + str(nb) + "_b_g" + ');\n')
+                if types_a[i] not in vsites and types_b[k] not in vsites:
+                
+                    t = "".join(sorted([types_a[i], types_b[k]]))
+
+                    ff.write('  disp += x6(m_C6_' + t  + ', m_d6_' + t + ', m_C8, m_d8, ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b," + types_a[i] + "_" + str(na) + "_a_g," + types_b[k] + "_" + str(nb) + "_b_g" + ');\n')
                 nb += 1
         na += 1
 

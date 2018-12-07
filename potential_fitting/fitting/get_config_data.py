@@ -429,7 +429,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     configwriter.set("fitting", "var", "exp")
     configwriter.set("fitting", "energy_range", str(50.0))
-    configwriter.set("fitting", "virtual_site_labels", str(["X", "Y", "Z"]))
+    configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)

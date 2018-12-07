@@ -7,6 +7,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import constants
 
 # In[ ]:
 
@@ -95,6 +96,25 @@ E_range = config.get("fitting", "energy_range")
 types_a = list(mon1)
 types_b = list(mon2)
 
+for X in constants.lone_pairs:
+    try:
+        index = types_a.index(X)
+        types_a = types_a[:index]
+    except ValueError:
+        pass
+
+for X in constants.lone_pairs:
+    try:
+        index = types_b.index(X)
+        types_b = types_b[:index]
+    except ValueError:
+        pass
+
+print(types_a)
+print(types_b)
+
+# remove all one pairs from the types
+
 #Concatenating excluded pairs:
 excl_a = excl12_a + excl13_a + excl14_a
 excl_b = excl12_b + excl13_b + excl14_b
@@ -108,12 +128,12 @@ t1 = []
 # Monomer 1 parameters
 for i in range(0,len(types_a),2):
     for j in range(int(types_a[i+1])):
-        t1.append(types_a[i])
+            t1.append(types_a[i])
 t2 = []
 # Monomer 2 parameters
 for i in range(0,len(types_b),2):
     for j in range(int(types_b[i+1])):
-        t2.append(types_b[i])
+            t2.append(types_b[i])
 
 
 # In[ ]:

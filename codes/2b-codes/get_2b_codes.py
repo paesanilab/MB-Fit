@@ -1355,7 +1355,7 @@ for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
         if types_b[i] in vsites:
-            ff.write('    double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            ff.write('    double ' + types_b[i] + '_' + str(n) + '_b[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 
@@ -4235,7 +4235,7 @@ for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
         if types_b[i] in vsites:
-            ff.write('    double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            ff.write('    double ' + types_b[i] + '_' + str(n) + '_b[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 
@@ -4424,7 +4424,7 @@ for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
         if types_b[i] in vsites:
-            ff.write('    double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            ff.write('    double ' + types_b[i] + '_' + str(n) + '_b[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 

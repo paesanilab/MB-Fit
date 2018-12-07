@@ -61,8 +61,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, seed = random.randint(-1000000, 1000000)):
-
+        step_size = 0.5, seed = None):
     """
     Generates 2b configurations for a given dimer.
 
@@ -94,7 +93,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, seed)
 
-def init_database(settings_path, database_path, configurations_path):
+def init_database(settings_path, database_path, configurations_path, tag = "none"):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
     to create a new database, or an existing database to add more energies to be calculated
@@ -110,7 +109,7 @@ def init_database(settings_path, database_path, configurations_path):
         None.
     """
 
-    database.initialize_database(settings_path, database_path, configurations_path)
+    database.initialize_database(settings_path, database_path, configurations_path, tag)
 
 def fill_database(settings_path, database_path):
     """
@@ -464,7 +463,12 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
             best_log_lines = best_fit_log.readlines()
 
         rmsd = float(log_lines[-4].split()[2])
+
+        print("completed fit with rmsd {}".format(rmsd))
+
         best_rmsd = float(best_log_lines[-4].split()[2])
+
+        print("current best fit has rmsd {}".format(best_rmsd))
 
         if rmsd < best_rmsd:
             os.rename(fit_log_path, best_fit_log_path)

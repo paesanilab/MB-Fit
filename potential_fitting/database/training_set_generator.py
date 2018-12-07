@@ -41,17 +41,17 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
 
         # if there are no calculated energies, error and exit
         if len(molecule_energy_pairs) == 0:
-            raise NoEnergiesError(database_name, molecule_name, method, basis, cp, tag)
+            raise NoEnergiesError(database.file_name, molecule_name, method, basis, cp, tag)
         
         # find the optimized geometry energy from the database
         try:
             all_opt_energies = list(database.get_energies(molecule_name, method, basis, cp, tag, True))
             if len(all_opt_energies) > 1:
-                raise MultipleOptimizedEnergiesError(database_name, molecule_name, method, basis, cp, tag,
+                raise MultipleOptimizedEnergiesError(database.file_name, molecule_name, method, basis, cp, tag, 
                         len(all_opt_energies))
             opt_energies = all_opt_energies[0][1]
         except IndexError:
-            raise NoOptimizedEnergyError(database_name, molecule_name, method, basis, cp, tag) from None
+            raise NoOptimizedEnergyError(database.file_name, molecule_name, method, basis, cp, tag) from None
 
         # open output file for writing
         with open(training_set_path, "w") as output:
@@ -77,7 +77,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
                     count_configs += 1
 
             if count_configs == 0:
-                raise NoEnergyInRangeError(database_name, molecule_name, method, basis, cp, tag, e_min, e_max)
+                raise NoEnergyInRangeError(database.file_name, molecule_name, method, basis, cp, tag, e_min, e_max)
             print("Generated training set with " + str(count_configs) + " Configurations.")
 
 
@@ -116,26 +116,26 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
 
         # if there are no calculated energies, error and exit
         if len(molecule_energy_pairs) == 0:
-            raise NoEnergiesError(database_name, molecule_name, method, basis, cp, tag)
+            raise NoEnergiesError(database.file_name, molecule_name, method, basis, cp, tag)
         
         # find the optimized geometry energy of the two monomers from the database
         try:
             all_opt_energies = list(database.get_energies(monomer_1_name, method, basis, cp, tag, True))
             if len(all_opt_energies) > 1:
-                raise MultipleOptimizedEnergiesError(database_name, monomer_1_name, method, basis, cp, tag,
+                raise MultipleOptimizedEnergiesError(database.file_name, monomer_1_name, method, basis, cp, tag, 
                         len(all_opt_energies))
             monomer_1_opt_energy = all_opt_energies[0][1][0]
         except IndexError:
-            raise NoOptimizedEnergyError(database_name, monomer_1_name, method, basis, cp, tag)
+            raise NoOptimizedEnergyError(database.file_name, monomer_1_name, method, basis, cp, tag)
 
         try:
             all_opt_energies = list(database.get_energies(monomer_2_name, method, basis, cp, tag, True))
             if len(all_opt_energies) > 1:
-                raise MultipleOptimizedEnergiesError(database_name, monomer_2_name, method, basis, cp, tag,
+                raise MultipleOptimizedEnergiesError(database.file_name, monomer_2_name, method, basis, cp, tag,
                         len(all_opt_energies))
             monomer_2_opt_energy = all_opt_energies[0][1][0]
         except IndexError:
-            raise NoOptimizedEnergyError(database_name, monomer_2_name, method, basis, cp, tag)
+            raise NoOptimizedEnergyError(database.file_name, monomer_2_name, method, basis, cp, tag)
 
         # open output file for writing
         with open(training_set_path, "w") as output:

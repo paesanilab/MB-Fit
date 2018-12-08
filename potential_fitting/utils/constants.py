@@ -29,6 +29,7 @@ atomic_symbols = [
     "Li",   "Be",                                                                                   "B",    "C",    "N",    "O",    "F",    "Ne",
     "Na",   "Mg",                                                                                   "Al",   "Si",   "P",    "S",    "Cl",   "Ar",
     "K",    "Ca",   "Sc",   "Ti",   "V",    "Cr",   "Mn",   "Fe",   "Co",   "Ni",   "Cu",   "Zn",   "Ga",   "Ge",   "As",   "Se",   "Br",   "Kr",
+    "Rb",   "Sr",   "Y",    "Zr",   "Nb",   "Mo",   "Tc",   "Ru",   "Rh",   "Pd",   "Ag",   "Cd",   "In",   "Sn",   "Sb",   "Te",   "I",    "Xe"
 ]
 
 # list of atomic masses listed in order of atomic number
@@ -55,7 +56,7 @@ covalent_radii = [ # Source ptable.com
     1.96,   1.74,   1.44,   1.36,   1.25,   1.27,   1.39,   1.25,   1.26,   1.21,   1.38,   1.31,   1.26,   1.22,   1.19,   1.16,   1.14,   1.10,
 ]
 
-#list of vanderwalls radii (vdw) (angstroms) in order of atomic number
+#list of van der Waals radii (vdw) (angstroms) in order of atomic number
 vdw_radii = [ # Source: ptable.com for elements unless in list below.
 			  # Be, B, Al, Ca (Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3658832/)
 			  # vdw_radius is -1.0, if a definite value cannot be found. 
@@ -63,6 +64,7 @@ vdw_radii = [ # Source: ptable.com for elements unless in list below.
     1.82,   1.53,                                                                                   1.92,   1.70,   1.55,   1.52,   1.47,   1.54,
     2.27,   1.73,                                                                                   1.84,   2.10,   1.80,   1.80,   1.75,   1.88,
     2.75,   2.31,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   1.63,   1.40,   1.39,   1.87,   -1.0,   1.85,   1.90,   1.85,   2.02,
+    -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   1.63,   1.72,   1.58,   1.93,   2.17,   -1.0,   2.06,   1.98,   2.16
 ]
 
 
@@ -160,7 +162,7 @@ def symbol_to_covalent_radius(symbol):
 
 def symbol_to_vdw_radius(symbol):
     """
-    Finds the vanderwalls radius of the atom with a given atomic symbol in angstroms.
+    Finds the van der Waals radius of the atom with a given atomic symbol in angstroms.
 
     Van der Waals radius is defined as half of the internuclear separation of two 
     non-bonded atoms of the same element on their closest possible approach.
@@ -169,7 +171,7 @@ def symbol_to_vdw_radius(symbol):
         symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
 
     Returns:
-        The vanderwall radius of the given atom in angstroms, if defined. Otherwise, throws an Exception. 
+        The van der Waals radius of the given atom in angstroms, if defined. Otherwise, throws an Exception. 
     """
 
     #the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
@@ -178,6 +180,5 @@ def symbol_to_vdw_radius(symbol):
     if vdw_radius != -1.0:
         return vdw_radius
     else:
-        message = "Vanderwall radius for element not defined!"
-        raise InvalidValueError(message)
+        raise InvalidValueError("Element", symbol, "has no valid van der Waals radius defined!") 
 

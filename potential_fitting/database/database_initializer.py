@@ -10,7 +10,7 @@ from potential_fitting.molecule import xyz_to_molecules
 # local module imports
 from .database import Database
 
-def initialize_database(settings_path, database_path, directory_path):
+def initialize_database(settings_path, database_path, directory_path, tag = "none"):
     """
     Initializes a new database or adds energies to be calculated to an existing one.
 
@@ -48,8 +48,6 @@ def initialize_database(settings_path, database_path, directory_path):
         basis = settings.get("energy_calculator", "basis")
 
         cp = settings.getboolean("energy_calculator", "cp")
-
-        tag = settings.get("molecule", "tag")
 
         # loop thru all files in directory
         for filename in filenames:

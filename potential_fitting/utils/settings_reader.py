@@ -227,7 +227,6 @@ def parse_array(string, type):
     Returns:
         A possibly multi-dimensional list of the given type.
     """
-
     # keeps track of the number of open braces encountered minus the number of closed braces
     num_open_brackets = 0
     # will be filled with elements

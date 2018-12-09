@@ -95,9 +95,9 @@ class DegreeFilter(Filter):
                         * x-intra   -- Only affects intramolecular variables.
                         * x-*       -- Affects both intermolecular and intramolecular variables.
                     and ATOMS is one of:
-                        * AB        -- Affects variables describing the distance between A and B.
-                        * *A or A*  -- Affects variables describing the distance between A and any other atom.
-                        * **        -- Affects variables regardless of the atom types involved.
+                        * A+B        -- Affects variables describing the distance between A and B.
+                        * *+A or A+*  -- Affects variables describing the distance between A and any other atom.
+                        * *+*        -- Affects variables regardless of the atom types involved.
                     A and B can be substituted for any other atom type.
             degree_string   - '/' delimited list of degrees to apply this filter to. Each item seperated by a '/'
                     should be in one of the following formats:
@@ -206,34 +206,36 @@ class DegreeFilter(Filter):
                     # intra)
                     fits_type = False
 
+                    var_type, atoms_string = variable_string.split("-")[1:]
+                    atom1, atom2 = atoms_string.split("+")
+
                     # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
                     # variables regardless of atom type
-                    if variable_string[-2] == "*" and variable_string[-1] == "*":
+                    if atom1 == "*" and atom2 == "*":
                         fits_atoms = True
 
                     # if the second to last character or the last character of the variable string is a wildcard (but
                     # not both), then this filter is eligable to apply to all variables where one of the atoms is the
                     # other atom specified by the variable string
-                    elif variable_string[-2] == "*":
-                        fits_atoms = (variable.category[-1] == variable_string[-1]
-                                or variable.category[-2] ==variable_string[-1])
-                    elif variable_string[-1] == "*":
-                        fits_atoms = (variable.category[-1] == variable_string[-2]
-                                or variable.category[-2] == variable_string[-2])
+                    elif atom1 == "*":
+                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom2
+                                or variable.category.split("-")[-1].split("+")[1] == atom2)
+                    elif atom2 == "*":
+                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom1
+                                or variable.category.split("-")[-1].split("+")[1] == atom1)
 
                     # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
                     # filter
                     else:
-                        fits_atoms = variable.category[-2:] == variable_string[-2:]
+                        fits_atoms = variable.category.split("-")[-1].split("+")[0] == atom1 and variable.category.split("-")[-1].split("+")[1] == atom2
 
-                    # if the second character of the variable string is an * but not the 3rd (as in x-*-AA but NOT
-                    # x-**), then this filter is eligable to apply to all variables regardless of inter/intra type
-                    if variable_string[2] == "*" and variable_string[3] != "*":
+                    # check if the middle bit of this filter is an "*"
+                    if variable_string.split("-")[1] == "*":
                         fits_type = True
 
                     # otherwise, this variable string specifies an exact inter/intra type (x- or x-intra-)
                     else:
-                        fits_type = variable_string[:-2] == variable.category[:-2]
+                        fits_type = variable_string.split("-")[1] == variable.category.split("-")[1]
 
                     # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
                     # this variable! 

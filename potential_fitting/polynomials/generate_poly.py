@@ -264,7 +264,7 @@ def make_permutations(atom_types):
     A2B2 -> [[0, 1, 2, 3], [0, 1, 3, 2], [1, 0, 2, 3], [1, 0, 3, 2]]
 
     Args:
-        fragment            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
+        atom_types            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
 
     Returns:
         A list of lists of indices representing permutations of the fragment, created by forming all permutations of

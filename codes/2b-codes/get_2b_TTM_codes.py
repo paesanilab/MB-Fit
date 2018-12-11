@@ -48,6 +48,13 @@ nsites2 = nat2
 
 # Get which monomer should be mb-pol monomer (if any)
 use_mbpol = list([int(i) for i in settings.get("molecule", "use_mbpol").split(",")])
+
+# Update number of sites if using MB-pol
+if use_mbpol[0] != 0:
+    nsites1 += 1
+if use_mbpol[1] != 0:
+    nsites2 += 1
+
 # Obtain the lists with the excluded pairs
 excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12")
 excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13")

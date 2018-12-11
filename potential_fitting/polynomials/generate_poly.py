@@ -7,6 +7,7 @@ from potential_fitting.exceptions import ParsingError, InvalidValueError, Incons
 
 # relative module imports
 from . import filters
+from .molecule_in_parser import MoleculeInParser
 
 def generate_poly(settings_path, input_path, order, output_path):
     """
@@ -30,6 +31,8 @@ def generate_poly(settings_path, input_path, order, output_path):
     # parse declaired fragments and variables from the input-file
     fragments, variables, monomial_filters = parse_input(input_path)
 
+    molecule_in_parser = MoleculeInParser("_".join(fragments))
+
     poly_log_path = "{}/poly.log".format(output_path)
 
     # open output file for polynomials, will automatically be closed by with open as syntax
@@ -45,60 +48,16 @@ def generate_poly(settings_path, input_path, order, output_path):
         poly_log_file.write("\n")
 
         # Parse the fragment names to name the atoms in the system
-
-        # holds list of all atoms
         atom_names = []
-        # number of atoms in each fragment
-        number_per_fragment = []
-        # index of first atom in atom_names of each fragment
         index_each_fragment = []
-        # letter to be part of atom_name, signifies which fragment this atom is a part of starts at 'a', will be
-        # incremented to 'b', etc
-        fragname = 97
-        
-        # loop over each fragment
-        for fragment in fragments:
+        index = 0
 
-            # first check the formatting on this fragment
-            if fragment[0].isdigit():
-                raise InvalidValueError("fragment", fragment,
-                        "formatted such that the first character of every fragment is a letter")
-            for i in range(1, len(fragment), 2):
-                if not fragment[i].isdigit():
-                    raise InvalidValueError("fragment", fragment, "formatted such that every letter is followed by a "
-                            + "single-digit number, even if that number is 1")
-            
-            # counter to count how many atoms are in this fragment
-            number_of_atoms = 0
-
-            # loop thru all the atomic symbols in the fragment (skipping the numbers)
-            for symbol in fragment[::2]:
-
-                # loop once for each atom of this type as signified by the number immediately following the atomic
-                # symbol
-                for k in range(0, int(fragment[fragment.index(symbol) + 1])):
-
-                    # check if there are multiple atoms of this type in this fragment
-                    if int(fragment[fragment.index(symbol) + 1]) > 1:
-
-                        # add to atom_names in form Aa1
-                        atom_names.append(symbol + str(k + 1) + chr(fragname))
-
-                    else:
-
-                        # add to atom_names in form Aa
-                        atom_names.append(symbol + chr(fragname))
-                    # increment number of atoms
-                    number_of_atoms += 1
-
-            # add index of first atom in this fragment to index_each_fragment
-            index_each_fragment.append(sum(number_per_fragment))
-
-            # add number of atoms in this fragment to number_per)fragment
-            number_per_fragment.append(number_of_atoms)
-            
-            # increment fragname ('a' -> 'b', etc)
-            fragname += 1
+        for fragment_parser in molecule_in_parser.get_fragments():
+            index_each_fragment.append(index)
+            for atom_type_parser in fragment_parser.get_atom_types():
+                for atom in atom_type_parser.get_atoms():
+                    atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
+                    index += 1;
 
         # write number of atoms to log
         poly_log_file.write("<> atoms ({}) <>\n".format(len(atom_names)))
@@ -109,14 +68,13 @@ def generate_poly(settings_path, input_path, order, output_path):
         poly_log_file.write("\n")
 
         # build the permutation group for each fragment
-
         fragment_permutations = []
 
         # loop thru each fragment
-        for frag_index, fragment in enumerate(fragments):
+        for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
 
             # generate all permutations for this fragment
-            permutations = list(make_permutations(fragment))
+            permutations = list(make_permutations(fragment_parser.get_atom_types()))
             
             # add to each permutation the index of the first atom in this fragment in the molecule
             for permutation in permutations:
@@ -293,7 +251,7 @@ class Variable(object):
         self.atom1_name, self.atom1_fragment, self.atom2_name, self.atom2_fragment, self.category = line.replace("'",
                 "").replace(" ", "").split(",")
 
-def make_permutations(fragment):
+def make_permutations(atom_types):
     """
     Takes in a fragment and constructs all permutations of that fragment by swapping positions of equivelent atoms.
 
@@ -304,7 +262,7 @@ def make_permutations(fragment):
     A2B2 -> [[0, 1, 2, 3], [0, 1, 3, 2], [1, 0, 2, 3], [1, 0, 3, 2]]
 
     Args:
-        fragment            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
+        atom_types            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
 
     Returns:
         A list of lists of indices representing permutations of the fragment, created by forming all permutations of
@@ -312,13 +270,14 @@ def make_permutations(fragment):
     """
 
     try:
+        atom_type_parser = next(atom_types)
         # read the 2nd letter of the fragment, the atom count. (For instance 2 in A2B3)
-        count = int(fragment[1])
-    except IndexError:
+    except StopIteration:
         # if the fragment string is empty, then this fragment has no permutations
         yield []
         return
 
+    count = atom_type_parser.get_count()
     # get all possible permutations of the number of atoms indicated by count
     permutations = itertools.permutations(range(count))
     
@@ -329,7 +288,7 @@ def make_permutations(fragment):
         # the permutations created by a recursive call on the rest of the fragment
         # increase each item in the lists given by the recursive call equal to the number of atoms of the first type in
         # the fragment
-        yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(fragment[2:]))
+        yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(atom_types))
 
 def combine_permutations(fragments, fragment_permutations):
     """

@@ -8,7 +8,7 @@ from potential_fitting.molecule import Molecule, xyz_to_molecules
 from potential_fitting.utils import files
 
 def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = None):
         
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file.
@@ -36,13 +36,13 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
     
     if progression == False:
         generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
-                max_distance, min_inter_distance, seed)
+                max_distance, min_inter_distance, seed = seed)
     else:
         generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
-                max_distance, min_inter_distance, use_grid = False, step_size = 0.5, seed = randint(-100000, 1000000))
+                max_distance, min_inter_distance, use_grid = False, step_size = 0.5, seed = seed)
 
 def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, seed = randint(-100000, 1000000)):
+        max_distance = 5, min_inter_distance = 0.8, seed = None):
 
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
@@ -62,6 +62,9 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
         None
     """
     
+    if seed is None:
+        seed = randint(-100000, 100000)
+
     #parse the molecules from the input xyz files
     molecules1 = xyz_to_molecules(geo1_path)
     molecules2 = xyz_to_molecules(geo2_path)
@@ -113,9 +116,11 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     print("Generated {} configurations".format(number_of_configs))
     return 
 
+
 def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5,
-        seed = randint(-100000, 1000000)):
+        seed = None):
+
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth
     progression and outputs them to an xyz file.
@@ -137,8 +142,11 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
                 closer configs less likely to generate.
 
     Returns:
-        None
+        None.
     """
+
+    if seed is None:
+        seed = randint(-100000, 100000)
 
     # if use_grid is false, set the step size to even space the configurations
     if not use_grid:
@@ -181,8 +189,8 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
 
                 try:
                     # move the molecules to a valid configuration, making 5 attempts
-                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance,
-                            5)
+
+                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance,5)
 
                 except RanOutOfAttemptsException:
                     # if we didn't find a valid configuration, skip this config
@@ -206,8 +214,8 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
 
 def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, attempts):
     """
-    Moves the given molecules to a configuration with the given distance between their centers of
-    mass. Raises RanOutOfAttemptsException if a configuration is failed to be found.
+    Moves the molecules to a configuration with the given distance between their centers of
+    mass. Raises RanOutOfAttemptsException if a configuration is failed to be found after a certain number of attempts.
 
     Args:
         random              - The Random object used to generate the configuration.
@@ -218,8 +226,7 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
         attempts            - The number of configurations to try before giving up and raising the Exception.
 
     Returns:
-        None
-
+        None.
     """
 
     # put both geoemtries in standard orientation if they are not already
@@ -253,7 +260,7 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
 
         #Returning only valid configurations.             
         if flag:
-            return 
+            return
 
     # if we run out of attempts without generating a valid configuration, raise an exception
     raise RanOutOfAttemptsException

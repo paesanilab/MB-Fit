@@ -128,12 +128,12 @@ t1 = []
 # Monomer 1 parameters
 for i in range(0,len(types_a),2):
     for j in range(int(types_a[i+1])):
-            t1.append(types_a[i])
+        t1.append(types_a[i])
 t2 = []
 # Monomer 2 parameters
 for i in range(0,len(types_b),2):
     for j in range(int(types_b[i+1])):
-            t2.append(types_b[i])
+        t2.append(types_b[i])
 
 
 # In[ ]:

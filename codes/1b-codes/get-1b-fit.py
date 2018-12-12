@@ -83,7 +83,7 @@ npoly = config.getint("fitting", "npoly")
 # 'coul0' is e^(-kd)/d
 # 'exp'  is e^(-kd)
 # 'exp0'  is e^(-k(d-d0))
-var = config.get("fitting", "var")
+var = config.get("fitting", "var_intra")
 
 # Define Energy Range for the fitting
 E_range = config.getfloat("fitting", "energy_range")

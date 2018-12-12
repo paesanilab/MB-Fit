@@ -125,9 +125,9 @@ npoly = config.getint("fitting", "npoly")
 # coul0 [e^-k(d-d0)]/r
 # coul [e^-kd]/r
 # Recomendation is to use exp for intra and inter and coul for lone pairs
-var_intra = config.get("fitting", "var")
-var_lp = config.get("fitting", "var")
-var_inter = config.get("fitting", "var")
+var_intra = config.get("fitting", "var_intra")
+var_lp = config.get("fitting", "var_lonepairs")
+var_inter = config.get("fitting", "var_inter")
 
 # Define Energy Range for the fitting
 E_range = config.getfloat("fitting", "energy_range")

@@ -427,7 +427,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "C6", str(c6_constants))
     configwriter.set("fitting", "d6", str([[0 for x in c6] for c6 in c6_constants]))
 
-    configwriter.set("fitting", "var", "exp")
+    configwriter.set("fitting", "var_intra", "exp")
+    configwriter.set("fitting", "var_inter", "exp")
+    configwriter.set("fitting", "var_lonepairs", "coul")
     configwriter.set("fitting", "energy_range", str(50.0))
     configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 

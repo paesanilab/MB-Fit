@@ -1393,22 +1393,16 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -4265,22 +4259,16 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -4454,22 +4442,16 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -5176,22 +5158,17 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -5381,22 +5358,17 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # inter-molecular variables
         atom1 = variable[0][0]

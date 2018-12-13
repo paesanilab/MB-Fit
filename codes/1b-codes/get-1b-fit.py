@@ -835,20 +835,15 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
-
-            if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
-            else:
-                arguments = '(m_k_' + atom1 + atom2
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
         else:
-            # At some point we might want to use vsites
-            pass   
+            arguments = '(m_k_' + atom1 + atom2
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # Error
         pass
@@ -2383,20 +2378,15 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
-
-            if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
-            else:
-                arguments = '(m_k_' + atom1 + atom2
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
         else:
-            # At some point we might want to use vsites
-            pass   
+            arguments = '(m_k_' + atom1 + atom2
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # Error
         pass
@@ -2472,20 +2462,15 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
-
-            if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
-            else:
-                arguments = '(m_k_' + atom1 + atom2
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
         else:
-            # At some point we might want to use vsites
-            pass   
+            arguments = '(m_k_' + atom1 + atom2
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # Error
         pass
@@ -2547,15 +2532,10 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        ff.write('    vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
 
-            ff.write('    vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
+        nv += 1
             
-        else:
-            # At some point we might want to use vsites
-            pass   
     else:
         # Error
         pass
@@ -3029,20 +3009,15 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
-
-            if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
-            else:
-                arguments = '(m_k_' + atom1 + atom2
-
-            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
         else:
-            # At some point we might want to use vsites
-            pass   
+            arguments = '(m_k_' + atom1 + atom2
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # Error
         pass
@@ -3124,20 +3099,15 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
-
-            if var == 'exp0' or var == 'coul0' or var == 'gau0':
-                arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
-            else:
-                arguments = '(m_k_' + atom1 + atom2
-
-            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var == 'exp0' or var == 'coul0' or var == 'gau0':
+            arguments = '(m_d_' + atom1 + atom2 + ', m_k_' + atom1 + atom2
         else:
-            # At some point we might want to use vsites
-            pass   
+            arguments = '(m_k_' + atom1 + atom2
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # Error
         pass
@@ -3199,15 +3169,10 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        ff.write('        vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
 
-            ff.write('        vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
+        nv += 1
             
-        else:
-            # At some point we might want to use vsites
-            pass   
     else:
         # Error
         pass

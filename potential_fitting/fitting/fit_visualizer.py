@@ -77,12 +77,13 @@ class Dataset_2b(Dataset):
 def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag):
     
     mb = []
+
     with Database(db_name) as database:
 
         energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
         # getting the monomer optimized energies 
-        opt_energy = list(database.get_energies(molecule_name, method, basis, cp, tag))[0][1][0]
+        opt_energy = list(database.get_energies(molecule_name, method, basis, cp, tag, optimized = True))[0][1][0]
 
     # getting the molecules
     molecules = [i[0] for i in energy_molecule_pairs]
@@ -117,15 +118,15 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     mb = []
 
     #creating a dimer
-    molecule_name = "-".join(sorted([monomer1_name, monomer2_name]))
+    molecule_name = monomer1_name + "-" + monomer2_name
 
     with Database(db_name) as database:
 
         energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
 
         #getting the monomer optimized energies 
-        monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag))[0][1][0]
-        monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag))[0][1][0]
+        monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag, optimized = True))[0][1][0]
+        monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag, optimized = True))[0][1][0]
 
         #getting the molecules
         molecules = [i[0] for i in energy_molecule_pairs]
@@ -208,6 +209,7 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
         above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies,
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
 
+
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph
     plt.plot(datasets[0].calc_energies, datasets[0].calc_energies, c = 'orange', alpha = 0.5)
@@ -218,6 +220,8 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
     #Adding axes titles
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy [Kcal/mol]")
+
+    plt.savefig("fit.png", dpi = 300)
 
     # make the graph of the error featuring all info divided into low and high energy datasets
 
@@ -250,6 +254,8 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50):
     #Adding axes titles
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy - Ref. Energy [Kcal/mol]")
+
+    plt.savefig("rmsd.png", dpi = 300)
 
     # make the graph of the error featuring all info divided into low and high energy datasets
 

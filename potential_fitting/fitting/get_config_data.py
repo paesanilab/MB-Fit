@@ -5,6 +5,7 @@ from collections import OrderedDict
 from potential_fitting.utils import constants, SettingsReader
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 from potential_fitting.molecule import Molecule, xyz_to_molecules
+from potential_fitting.polynomials import MoleculeInParser
 
 qchem_template = "qchem_template"
 
@@ -35,6 +36,11 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     settings = SettingsReader(settings_file)
 
     # split the molecule input string into fragments
+
+    parser = MoleculeInParser(molecule_in)
+
+    molecule_in = "_".join(["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_types()]) for frag in parser.get_fragments()])
+
     fragments = molecule_in.split("_")
 
     if len(geo_paths) != len(fragments):
@@ -54,7 +60,6 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         # if there are 0 geometries specified, raise an error
         if len(geo_paths) == 0:
             raise InvalidValueError("number of geometries", len(geo_paths), "at least 1")
-
 
         # if there is at least 1 geometry specified
         else:
@@ -119,6 +124,10 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
         # tells qchem that the molecule has ended
         qchem_in.write("$end\n")
+
+        qchem_in.write("$rem\n")
+        qchem_in.write("method " + settings.get("config", "method", "wb97m-v") + "\n")
+        qchem_in.write("basis " + settings.get("config", "basis", "aug-cc-pvtz") + "\n")
 
         # read the qchem template and append it to the qchem in
         qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
@@ -420,7 +429,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     configwriter.set("fitting", "var", "exp")
     configwriter.set("fitting", "energy_range", str(50.0))
-    configwriter.set("fitting", "virtual_site_labels", str(["X", "Y", "Z"]))
+    configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)

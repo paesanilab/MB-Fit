@@ -1,8 +1,12 @@
 import numpy
+import itertools
 
 from .atom import Atom
 
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError, XYZFormatError
+
+# absolute package imports
+from potential_fitting.polynomials.molecule_in_parser import FragmentParser
 
 class Fragment(object):
     """
@@ -31,6 +35,8 @@ class Fragment(object):
         if spin_multiplicity < 1:
             raise InvalidValueError("spin multiplicity", spin_multiplicity, "1 or greater")
         self.spin_multiplicity = spin_multiplicity
+
+        self.index = -1
 
     def get_name(self):
         """
@@ -74,6 +80,19 @@ class Fragment(object):
         """
 
         return sorted(self.atoms, key=lambda atom: atom.get_symmetry_class())
+
+    def get_index(self):
+        """
+        Gets the index of this fragment in the molecule
+
+        Args:
+            None
+
+        Returns:
+            The index of this framgnet
+        """
+
+        return self.index
 
     def get_symmetry(self):
         """
@@ -311,36 +330,32 @@ class Fragment(object):
         # used to keep track of how many atoms of the current atom symmetry class have been made
         class_counter = 0
 
-        for line in string.splitlines():
+        fragment_parser = FragmentParser(symmetry, "a")
 
-            # if we have made as many atoms of the current symmetry class as indicated by the symmetry string, move on to the next symmetry class
-            if class_counter >= int(symmetry[class_index + 1]):
-                class_index += 2
-                class_counter = 0
+        lines = string.splitlines()
 
-            try:
-                # read one line of the input string into an atom
-                symbol, x, y, z = line.split()
-            except ValueError:
-                # if we cannot parse the line, raise an error                
-                raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
+        for atom_type in fragment_parser.get_atom_types():
 
-            try:
-                symmetry_class = symmetry[class_index]
-            except IndexError:
-                raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
+            for atom in atom_type.get_atoms():
 
-            self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
+                symmetry_class = "".join(itertools.takewhile(str.isupper, atom))
 
-            # update the number of atoms with the current symmetry class that have been read from the input
-            class_counter += 1
+                try:
+                    # read one line of the input string into an atom
+                    symbol, x, y, z = lines[0].split()
+                    lines = lines[1:]
+                except ValueError:
+                    # if we cannot parse the line, raise an error                
+                    raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
+                except IndexError:
+                    # there are no more lines to read but are still symmetries
+                    raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
 
-        try:
-            if class_counter == int(symmetry[class_index + 1]):
-                symmetry[class_index + 2]
+                self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
+
+        # check if there are more lines than atoms in the symmetry
+        if len(lines) != 0:
             raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
-        except IndexError:
-            pass
 
         return self
  

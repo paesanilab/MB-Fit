@@ -3,7 +3,16 @@ import os
 def prepare_2b_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
     
     # get just the "A3B2" part of "path/A3B2.in"
-    molecule = os.path.splitext(in_path)[0].split("/")[-1]
+    molecule = ""
+    with open(in_path) as in_poly:
+        while(True):
+            fragment = in_poly.readline()
+            if not fragment.startswith("add_molecule"):
+                break
+        
+            if molecule is not "":
+                molecule += "_"
+            molecule += fragment[fragment.index("[") + 2:fragment.index("]") - 1]
 
     # copy needed files from poly_path to fit_path
     os.system("cp " + in_path + " " + fit_path + "/")

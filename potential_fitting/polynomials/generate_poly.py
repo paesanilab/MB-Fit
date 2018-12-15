@@ -54,7 +54,7 @@ def generate_poly(settings_path, input_path, order, output_path):
 
         for fragment_parser in molecule_in_parser.get_fragments():
             index_each_fragment.append(index)
-            for atom_type_parser in fragment_parser.get_atom_and_pair_types():
+            for atom_type_parser in fragment_parser.get_atom_and_virtual_site_types():
                 for atom in atom_type_parser.get_atoms():
                     atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
                     index += 1;
@@ -74,7 +74,7 @@ def generate_poly(settings_path, input_path, order, output_path):
         for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
 
             # generate all permutations for this fragment
-            permutations = list(make_permutations(fragment_parser.get_atom_and_pair_types()))
+            permutations = list(make_permutations(fragment_parser.get_atom_and_virtual_site_types()))
             
             # add to each permutation the index of the first atom in this fragment in the molecule
             for permutation in permutations:

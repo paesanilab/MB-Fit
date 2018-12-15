@@ -420,7 +420,6 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
     settings = SettingsReader(settings_path)
 
-
     # init the required files
     files.init_directory(fit_dir_path)
     best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb", "best-fit.log"))
@@ -439,7 +438,7 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     with open(best_fit_log_path, "r") as best_fit_log:
         best_log_lines = best_fit_log.readlines()
 
-    best_rmsd = float(best_log_lines[-7].split()[2])
+    best_rmsd = float(best_log_lines[-6].split()[2])
 
     print("Completed first fit with rmsd {}.\n".format(best_rmsd))
 
@@ -453,11 +452,11 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
             log_lines = fit_log.readlines()
             best_log_lines = best_fit_log.readlines()
 
-        rmsd = float(log_lines[-7].split()[2])
+        rmsd = float(log_lines[-6].split()[2])
 
         print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
 
-        best_rmsd = float(best_log_lines[-7].split()[2])
+        best_rmsd = float(best_log_lines[-6].split()[2])
 
         print("Current best fit has rmsd {}.".format(best_rmsd))
 
@@ -508,14 +507,27 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
         None
     """
 
+    settings = SettingsReader(settings_path)
+
     files.init_directory(fit_dir_path)
 
-    best_fit_log_path = files.init_file(os.path.join(fit_dir_path, "best_fit.log"))
-    fit_log_path = files.init_file(os.path.join(fit_dir_path, "fit.log"))
+    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "best_fit.log"))
+    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "fit.log"))
 
     attempts = 1;
     with open(best_fit_log_path, "w") as best_fit_log:
         system.call(fit_code_path, training_set_path, out_file = best_fit_log)
+        os.rename("individual_terms.dat", "best-individual_terms.dat")
+        os.rename("ttm-params.txt", "best-ttm-params.txt")
+        os.rename("correlation.dat", "best-correlation.dat")
+
+    with open(best_fit_log_path, "r") as best_fit_log:
+        best_log_lines = best_fit_log.readlines()
+
+    best_rmsd = float(best_log_lines[-4].split()[2])
+
+    print("Completed first fit with rmsd {}.\n".format(best_rmsd))
+
     while(attempts < num_fits):
 
         with open(fit_log_path, "w") as fit_log:
@@ -527,28 +539,39 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
 
         rmsd = float(log_lines[-4].split()[2])
 
-        print("completed fit with rmsd {}".format(rmsd))
+        print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
 
         best_rmsd = float(best_log_lines[-4].split()[2])
 
-        print("current best fit has rmsd {}".format(best_rmsd))
+        print("Current best fit has rmsd {}.".format(best_rmsd))
 
         if rmsd < best_rmsd:
+
+            print("Replaced previous best fit with most recent one.")
+
             os.rename(fit_log_path, best_fit_log_path)
+            os.rename("individual_terms.dat", "best-individual_terms.dat")
+            os.rename("ttm-params.txt", "best-ttm-params.txt")
+            os.rename("correlation.dat", "best-correlation.dat")
             
 
         attempts += 1
 
+        print("\n")
+
     # remove the most recent fit file
     try:
         os.remove(fit_log_path)
+        os.remove("individual_terms.dat")
+        os.remove("ttm-params.txt")
+        os.remove("correlation.dat")
     # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
     except FileNotFoundError:
         pass
 
-    os.rename("individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
-    os.rename("ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
-    os.rename("correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
+    os.rename("best-individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
+    os.rename("best-ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
+    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
 
     # read d6 and A constants from ttm output file
     with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
@@ -575,7 +598,7 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
         if not found_A:
             config_file.write("A = {}\n".format([[], [], A]))
 
-def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path):
+def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
     """
     Fits the fit code to a given training set
 
@@ -585,19 +608,80 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
         training_set        - Local path to the training set to fit the code to.
         fit_dir_path        - Local path to the directory where the .cdl and .dat files will end up.
         fitted_nc_path      - Local path to file to write final fitted ".nc" file to.
+        num_fits            - Performs this many fits and then gives only the best one.
 
     Returns:
         None
     """
 
+    settings = SettingsReader(settings_path)
+
+    # init the required files
     files.init_directory(fit_dir_path)
-    files.init_file(fitted_nc_path)
+    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb", "best-fit.log"))
+    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb" "fit.log"))
 
-    system.call(fit_code_path, training_set_path)
+    # keeps tracks of the number of attempts to generate a fit
+    attempts = 1
 
-    system.call("ncgen", "-o", "fit-2b.nc", "fit-2b.cdl")
+    # generate an initial fit
+    with open(best_fit_log_path, "w") as best_fit_log:
+        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
+        os.rename("fit-2b.cdl", "best-fit-2b.cdl")
+        os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
+        os.rename("correlation.dat", "best-correlation.dat")
 
-    os.rename("fit-2b.cdl", os.path.join(fit_dir_path, "fit-2b.cdl"))
-    os.rename("fit-2b-initial.cdl", os.path.join(fit_dir_path, "fit-2b-initial.cdl"))
-    os.rename("correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-    os.rename("fit-2b.nc", fitted_nc_path)
+    with open(best_fit_log_path, "r") as best_fit_log:
+        best_log_lines = best_fit_log.readlines()
+
+    best_rmsd = float(best_log_lines[-6].split()[2])
+
+    print("Completed first fit with rmsd {}.\n".format(best_rmsd))
+
+    while(attempts < num_fits):
+
+        # generate a new fit
+        with open(fit_log_path, "w") as fit_log:
+            system.call(fit_code_path, training_set_path, out_file = fit_log)
+  
+        with open(fit_log_path, "r") as fit_log, open(best_fit_log_path, "r") as best_fit_log:
+            log_lines = fit_log.readlines()
+            best_log_lines = best_fit_log.readlines()
+
+        rmsd = float(log_lines[-6].split()[2])
+
+        print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
+
+        best_rmsd = float(best_log_lines[-6].split()[2])
+
+        print("Current best fit has rmsd {}.".format(best_rmsd))
+
+        # if the new fit is better than the old fit, replace the best log and best cdl files
+        if rmsd < best_rmsd:
+
+            print("Replaced previous best fit with most recent one.")
+
+            os.rename(fit_log_path, best_fit_log_path)
+            os.rename("fit-2b.cdl", "best-fit-2b.cdl")
+            os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
+            os.rename("correlation.dat", "best-correlation.dat")
+            
+        attempts += 1
+
+        print("\n")
+
+    # remove the most recent fit file
+    try:
+        os.remove(fit_log_path)
+        os.remove("fit-2b.cdl")
+        os.remove("fit-2b-initial.cdl")
+        os.remove("correlation.dat")
+    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
+    except FileNotFoundError:
+        pass
+
+    system.call("ncgen", "-o", fitted_nc_path, "best-fit-2b.cdl")
+
+    os.rename("best-fit-2b.cdl", os.path.join(fit_dir_path, "fit-2b.cdl"))
+    os.rename("best-fit-2b-initial.cdl", os.path.join(fit_dir_path, "fit-2b-initial.cdl"))
+    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))

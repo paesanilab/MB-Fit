@@ -128,7 +128,7 @@ def optimize_qchem(settings, molecule, method, basis):
         # write the molecule's xyz format
         qchem_in_file.write(molecule.to_xyz())
         # tells qchem that the molecule ends here
-        qchem_in_file.write("$end\n")
+        qchem_in_file.write("\n$end\n")
 
         qchem_in_file.write("\n")
 
@@ -140,6 +140,7 @@ def optimize_qchem(settings, molecule, method, basis):
         # tells qchem what method and basis to use
         qchem_in_file.write("method " + method + "\n")
         qchem_in_file.write("basis " + basis + "\n")
+        qchem_in_file.write("GEOM_OPT_MAX_CYCLES 200\n")
 
         try:
             qchem_in_file.write("ecp {}\n".format(settings.get("config_generator", "ecp")))

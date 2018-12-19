@@ -38,7 +38,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     config.read(settings)
     config.read(config_file)
 
-
+    vsites = ["X","Y","Z"]
 
     # Number of atoms in monomer
     # Store them in nat1 and nat2
@@ -62,6 +62,9 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     t = 0
 
     for type_index in range(0, len(types_a), 2):
+        if types_a[type_index] in vsites:
+            continue
+
         for atom_index in range(1, int(types_a[type_index + 1]) + 1):
             atom_type_a.append(t)
         t += 1
@@ -72,6 +75,9 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     t = 0
     
     for type_index in range(0, len(types_b), 2):
+        if types_b[type_index] in vsites:
+            continue
+
         for atom_index in range(1, int(types_b[type_index + 1]) + 1):
             atom_type_b.append(t)
         t += 1
@@ -324,13 +330,13 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     os.system("mv software_code.txt " + sofdir)
 
 
-def generate_software_files_2b(settings, in_path, poly_path, poly_order, fit_path, config_file, fit_cdl, mon_name1, mon_name2):
+def generate_software_files_2b(settings, symmetry, poly_path, poly_order, fit_path, config_file, fit_cdl, mon_name1, mon_name2):
     """
     Generates the parts of the C++ code needed to add the PEF to the energy software
 
     Args:
         settings - the file containing all relevent settings information
-        in_path - the A3B2.in type file
+        symmetry - the A3B2.in type file
         poly_path   - directory where polynomial files are
         poly_order - the order of the polynomial in poly_path
         fit_path - directory to generate fit code in
@@ -349,7 +355,7 @@ def generate_software_files_2b(settings, in_path, poly_path, poly_order, fit_pat
     os.system("mkdir -p " + sofdir)
 
     # get just the two A2B3 and C1D2 parts of input.in
-    molecules = os.path.splitext(in_path)[0].split("/")[-1].split(".")[0].split("_")
+    molecules = symmetry.split("_")
     mol1 = molecules[0]
     mol2 = molecules[1]
 

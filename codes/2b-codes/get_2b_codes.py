@@ -5409,6 +5409,9 @@ for index, variable in enumerate(variables):
 a = """     
     
         double g[""" + str(nvars) + """];
+
+        // the switch
+        sw = f_switch(r12, gsw);
         
         energies[j] = sw*polynomial::eval(coefficients.data(), v, g);
         
@@ -5504,10 +5507,6 @@ ff.write(a)
 
 a = """
     
-        // the switch
-        
-        sw = f_switch(r12, gsw);
-        
         for (int i = 0; i < """ + str(3*nat1) + """; ++i) {
             grad1[i + j*""" + str(3*nat1) + """] += sw*xgrd[i];
         }

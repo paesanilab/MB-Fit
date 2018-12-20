@@ -188,7 +188,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
         a = '''
     } else if (m1 == "''' + mon1 + '''" && m2 == "''' + mon2 + '''") {
         x2b_''' + mol1 + "_" + mol2 + "_deg" + str(poly_order) + '''::x2b_''' + mol1 + "_" + mol2 + '''_v1x pot(m1,m2);
-        return pot.eval(xyz2.data(), xyz1.data(), grd2.data(), grd1.data(), nm);
+        energy = pot.eval(xyz2.data(), xyz1.data(), grd2.data(), grd1.data(), nm);
 
 
 '''
@@ -196,7 +196,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
         a = '''
     } else if (m1 == "''' + mon1 + '''" && m2 == "''' + mon2 + '''") {
         x2b_''' + mol1 + "_" + mol2 + "_deg" + str(poly_order) + '''::x2b_''' + mol1 + "_" + mol2 + '''_v1x pot(m1,m2);
-        return pot.eval(xyz1.data(), xyz2.data(), grd1.data(), grd2.data(), nm);
+        energy = pot.eval(xyz1.data(), xyz2.data(), grd1.data(), grd2.data(), nm);
 
 
 '''
@@ -302,15 +302,12 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
         d6_text = []
 
         shift = 0;
-        for i in range(len(atom_label_b)):
-            if mol1 == mol2:
-                shift -= i
+        for j in range(len(atom_label_b)):
+            for i in range(len(atom_label_a)):
+                c6index = shift + len(atom_label_b)*i + j
 
-            for j in range(len(atom_label_a)):
-                c6index = shift + len(atom_label_a)*i + j
-
-                c6_text.append("        C6.push_back(" + C6[c6index] + ");  " + c6_units + " " + atom_label_b[i] + "--" + atom_label_a[j] + "\n")
-                d6_text.append("        d6.push_back(" + d6[c6index] + ");  " + d6_units + " " + atom_label_b[i] + "--" + atom_label_a[j] + "\n")
+                c6_text.append("        C6.push_back(" + C6[c6index] + ");  " + c6_units + " " + atom_label_b[j] + "--" + atom_label_a[i] + "\n")
+                d6_text.append("        d6.push_back(" + d6[c6index] + ");  " + d6_units + " " + atom_label_b[j] + "--" + atom_label_a[i] + "\n")
 
     for i in c6_text:
         cppout.write(i)

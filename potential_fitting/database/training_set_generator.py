@@ -63,11 +63,12 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
 
                 # monomer deformation energy
                 deformation_energy_hartrees = (float(energies[0]) - float(opt_energies[0]))
-                if deformation_energy_hartrees < e_max and deformation_energy_hartrees - e_min > -0.000000000001:
+                deformation_energy_kcalmol = deformation_energy_hartrees * constants.au_to_kcal # covert Hartrees to kcal/mol
+                if deformation_energy_kcalmol < e_max and deformation_energy_kcalmol - e_min > -0.000000000001:
 
                     # write the number of atoms to the output file
                     output.write(str(molecule.get_num_atoms()) + "\n")
-                    output.write(str(deformation_energy_hartrees * constants.au_to_kcal) + " ") # covert Hartrees to kcal/mol
+                    output.write(str(deformation_energy_kcalmol) + " ") 
                     output.write("\n")
 
                     # write the molecule's atoms' coordinates to the xyz file

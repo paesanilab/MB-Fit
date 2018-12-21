@@ -86,7 +86,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
                     
 
 def generate_2b_training_set(settings, database_name, training_set_path, monomer_1_name, monomer_2_name, method, basis,
-        cp, tag):
+        cp, tag, e_bind_max = float('inf'), e_mon_max = float('inf')):
     """"
     Creates a 2b training set file from the calculated energies in a database.
 
@@ -100,6 +100,8 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
         basis               - Use energies calculated with this basis. Use % for any basis.
         cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.
         tag                 - Use energies marked with this tag. Use % for any tag.
+        e_bind_max          - Maximum binding energy allowed
+        e_mon_max           - Maximum monomer deformation energy allowed
 
     Return:
         None.
@@ -145,9 +147,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
                 molecule = molecule_energy_pair[0]
                 energies = molecule_energy_pair[1]
 
-                # write the number of atoms to the output file
-                output.write(str(molecule.get_num_atoms()) + "\n")
-
+                
                 # calculate the interaction energy of the dimer as E01 - E0 - E1 all computed in the dimer basis set
                 # if cp is set to true (otherwise in their own basis set)
                 interaction_energy = (energies[2] - energies[1] - energies[0]) * constants.au_to_kcal
@@ -172,10 +172,15 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
                 # calculate binding energy
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
-                output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation,
-                        monomer2_energy_deformation))
-            
-                output.write("\n")
-
-                # write the molecule's atoms' coordinates to the xyz file
-                output.write(molecule.to_xyz() + "\n")
+                # write the configuration ony if is below the thresholds
+                if (binding_energy > e_bind_max) and (monomer1_energy_deformation < e_mon_max) and (monomer2_energy_deformation < e_mon_max):
+                    # write the number of atoms to the output file 
+                    output.write(str(molecule.get_num_atoms()) + "\n")
+    
+                    output.write("{} {} {} {}".format(binding_energy, interaction_energy, monomer1_energy_deformation,
+                            monomer2_energy_deformation))
+                
+                    output.write("\n")
+    
+                    # write the molecule's atoms' coordinates to the xyz file
+                    output.write(molecule.to_xyz() + "\n")

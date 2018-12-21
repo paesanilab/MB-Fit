@@ -160,7 +160,7 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
             cp, tag, e_min, e_max)
 
 def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
-        method = "%", basis = "%", cp = "%", tag = "%"):
+        method = "%", basis = "%", cp = "%", tag = "%", e_bind_max = float('inf'), e_mon_max = float('inf')):
     """
     Generates a 2b training set from the energies inside a database.
 
@@ -180,13 +180,15 @@ def generate_2b_training_set(settings_path, database_path, training_set_path, mo
         basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp.
         tag                 - Only use energies marked with this tag.
+        e_bind_max          - Maximum binding energy allowed
+        e_mon_max           - Maximum monomer deformation energy allowed
 
     Returns:
         None.
     """
 
     database.generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
-            method, basis, cp, tag)
+            method, basis, cp, tag, e_bind_max, e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path):
     """

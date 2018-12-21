@@ -173,7 +173,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
                 # write the configuration ony if is below the thresholds
-                if (binding_energy > e_bind_max) and (monomer1_energy_deformation < e_mon_max) and (monomer2_energy_deformation < e_mon_max):
+                if (binding_energy < e_bind_max) and (monomer1_energy_deformation < e_mon_max) and (monomer2_energy_deformation < e_mon_max):
                     # write the number of atoms to the output file 
                     output.write(str(molecule.get_num_atoms()) + "\n")
     

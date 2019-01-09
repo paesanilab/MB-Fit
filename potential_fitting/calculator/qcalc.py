@@ -266,13 +266,14 @@ def frequencies_psi4(settings, molecule, method, basis):
 
     num_neg_freqs = 0
     for frequency in frequencies:
-    	if frequency < 0:
-    		num_neg_freqs += 1
+        if frequency < 0:
+            num_neg_freqs += 1
 
-	if num_neg_freqs == 1:
-		print("Single negative frequency detected. This most likely means the given geometry is a transition state.")
+    if num_neg_freqs == 1:
+        print("Single negative frequency detected. This most likely means the given geometry is a transition state.")
+        
     if num_neg_freqs != 0:
-    	print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(num_neg_freqs))
+        print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(num_neg_freqs))
     
     return normal_modes, frequencies, red_masses
 
@@ -392,12 +393,13 @@ def frequencies_qchem(settings, molecule, method, basis):
 
     num_neg_freqs = 0
     for frequency in frequencies:
-    	if frequency < 0:
-    		num_neg_freqs += 1
+        if frequency < 0:
+            num_neg_freqs += 1
 
-	if num_neg_freqs == 1:
-		print("Single negative frequency detected. This most likely means the given geometry is a transition state.")
+    if num_neg_freqs == 1:
+        print("Single negative frequency detected. This most likely means the given geometry is a transition state.")
+    
     if num_neg_freqs != 0:
-    	print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(num_neg_freqs))
-    	
+        print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(num_neg_freqs))
+    
     return normal_modes, frequencies, red_masses

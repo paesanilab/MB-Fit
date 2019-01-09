@@ -54,5 +54,8 @@ class Model:
 
 		return self.cp
 
-	def __equ__(self, other):
+	def __eq__(self, other):
 		return self.method == other.method and self.basis == other.basis and self.cp == other.cp
+
+	def __ne__(self, other):
+		return not self.__eq__(other)

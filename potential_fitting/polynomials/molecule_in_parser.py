@@ -61,15 +61,15 @@ class FragmentParser(object):
         return self.frag_id
 
     def get_intra_molecular_variables(self):
-        for atom_parser in self.get_atom_and_pair_types():
+        for atom_parser in self.get_atom_and_virtual_site_types():
 
             yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id(),
                     "x-intra-{}".format(var_type)] for atom1, atom2, var_type
                     in atom_parser.get_intra_atom_type_variables()]
 
-        for atom_parser_index, atom_parser1 in enumerate(self.get_atom_and_pair_types()):
+        for atom_parser_index, atom_parser1 in enumerate(self.get_atom_and_virtual_site_types()):
 
-            for atom_parser2 in list(self.get_atom_and_pair_types())[atom_parser_index + 1:]:
+            for atom_parser2 in list(self.get_atom_and_virtual_site_types())[atom_parser_index + 1:]:
 
                 yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id(),
                         "x-intra-{}".format(var_type)] for atom1, atom2, var_type
@@ -78,15 +78,15 @@ class FragmentParser(object):
 
 
     def get_inter_molecular_variables(self, other):
-        for atom_parser_self in self.get_atom_and_pair_types():
+        for atom_parser_self in self.get_atom_and_virtual_site_types():
 
-            for atom_parser_other in other.get_atom_and_pair_types():
+            for atom_parser_other in other.get_atom_and_virtual_site_types():
 
                 yield from [[atom1, self.get_fragment_id(), atom2, other.get_fragment_id(),
                         "x-inter-{}".format(var_type)] for atom1, atom2, var_type
                         in atom_parser_self.get_inter_atom_type_variables(atom_parser_other)]
 
-    def get_atom_and_pair_types(self):
+    def get_atom_and_virtual_site_types(self):
 
         for atom_parser in self.atom_parsers:
 

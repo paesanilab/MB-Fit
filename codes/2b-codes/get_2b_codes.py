@@ -47,7 +47,7 @@ nsites2 = nat2
 # Get which monomer should be mb-pol monomer (if any)
 use_mbpol = list([int(i) for i in settings.get("molecule", "use_mbpol").split(",")])
 
-# Define if lone pers are used based on monomer names
+# Define if lone pairs are used based on monomer names
 use_lonepairs = [0,0]
 if "X" in mon1 or "Y" in mon1 or "Z" in mon1:
     use_lonepairs[0] = 1

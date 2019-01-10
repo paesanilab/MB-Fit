@@ -63,7 +63,7 @@ class Dataset_2b(Dataset):
         high_bind = []
 
         for calc_energy, fit_energy, binding_energy in zip(self.calc_energies, self.fit_energies, self.binding_energies):
-            if calc_energy < threshold:
+            if binding_energy < threshold:
                 low_calc.append(calc_energy)
                 low_fit.append(fit_energy)
                 low_bind.append(binding_energy)
@@ -190,7 +190,7 @@ def make_graphs(*datasets, low_threshold = 50):
     make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
     make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
 
-def make_energy_graph(figure_num, *datasets, low_threshold = 50):
+def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = 'plots.data'):
     # make the graph featuring all information divided into low and high energy datasets
 
     # Set figure number
@@ -198,6 +198,17 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
 
     above_plots = []
     below_plots = []
+
+    with open(file_data) as file:
+    	file.write('Reference Energy')
+    	file.write('\t')
+    	for dataset in datasets:
+    		file.write(str(dataset.method))
+    		file.write('\t')
+    	file.close()
+
+
+
 
     # plot each dataset
     for index, dataset in enumerate(datasets):
@@ -209,6 +220,29 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
         above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies,
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
 
+        calc_energies_list = low_dataset.calc_energies + high_dataset.calc_energies
+
+        fit_energies_list = low_dataset.fit_energies + high_dataset.fit_energies
+
+        with open(file_data, 'a+') as file:
+
+        	file.write('Reference Energy - ' + str(dataset.method) + ' [')
+
+        	for calc_energy in calc_energies_list:
+        		file.write(str(calc_energy) + ", ")
+
+        	file.write(']')
+        	file.write('\n')
+
+        	file.write('Fitted Energy - ' + str(dataset.method) + ' [')
+
+        	for fitted_energy in fit_energies_list:
+        		file.write(str(fitted_energy) + ", ")
+
+        	file.write(']')
+        	file.write('\n' * 3)
+
+        	file.write('####################################################')
 
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph

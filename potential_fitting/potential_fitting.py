@@ -62,7 +62,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, seed = random.randint(-1000000, 1000000)):
+        step_size = 0.5, num_attempts = 5, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer.
 
@@ -85,6 +85,8 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                 If True, then configurations are placed at intervals along this distance based on step_size.
         step_size           - If use_grid is True, then this dictates the distance of the spacing interval used to
                 place the centers of masses of the molecules. Otherwise, this parameter has no effect.
+        num_attempts        - The number of tries to generate a config at any given distance before giving up and
+                moving to the next one.
         seed                - The same seed will generate the same configurations.
 
     Returns:

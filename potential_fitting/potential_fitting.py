@@ -404,22 +404,7 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     os.chdir(original_dir)
 
-def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
-    """
-    Fits a given 1b training set using a given 1b fit code.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
-                by compile_fit_code.
-        training_set_path   - Local path to the file to read the training set from.
-        fit_dir_path        - Local path to the directory to write the ".cdl" and ".dat" files created by this fit.
-        fitted_nc_path      - Local path to the file to write the final fitted ".nc" to.
-        num_fits            - Performs this many fits and then gives only the best one.
-
-    Returns:
-        None
-    """
+def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
     settings = SettingsReader(settings_path)
 
@@ -486,28 +471,37 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     except FileNotFoundError:
         pass
 
+def create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
+    
     system.call("ncgen", "-o", fitted_nc_path, "best-fit-1b.cdl")
 
     os.rename("best-fit-1b.cdl", os.path.join(fit_dir_path, "fit-1b.cdl"))
     os.rename("best-fit-1b-initial.cdl", os.path.join(fit_dir_path, "fit-1b-initial.cdl"))
     os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
 
-def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, config_path, num_fits = 10):
+
+def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
     """
-    Fits a given 2b training set using a given 2b ttm fit code
+    Fits a given 1b training set using a given 1b fit code.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
                 by compile_fit_code.
         training_set_path   - Local path to the file to read the training set from.
-        fit_dir_path        - the directory where the fit log and other files created by the fit go
-        config_path         - Local path to the ".ini" file to write A6 and d6 constants to.
+        fit_dir_path        - Local path to the directory to write the ".cdl" and ".dat" files created by this fit.
+        fitted_nc_path      - Local path to the file to write the final fitted ".nc" to.
         num_fits            - Performs this many fits and then gives only the best one.
 
     Returns:
         None
     """
+
+    perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
+    create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
+
+
+def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
     settings = SettingsReader(settings_path)
 
@@ -574,6 +568,8 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
     os.rename("best-ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
     os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
 
+def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
+    
     # read d6 and A constants from ttm output file
     with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
         A = [float(a) for a in ttm_file.readline().split()]
@@ -599,22 +595,29 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
         if not found_A:
             config_file.write("A = {}\n".format([[], [], A]))
 
-def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
+def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, config_path, num_fits = 10):
     """
-    Fits the fit code to a given training set
+    Fits a given 2b training set using a given 2b ttm fit code
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        fit_code            - Local path to the code to fit.
-        training_set        - Local path to the training set to fit the code to.
-        fit_dir_path        - Local path to the directory where the .cdl and .dat files will end up.
-        fitted_nc_path      - Local path to file to write final fitted ".nc" file to.
+        fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
+                by compile_fit_code.
+        training_set_path   - Local path to the file to read the training set from.
+        fit_dir_path        - the directory where the fit log and other files created by the fit go
+        config_path         - Local path to the ".ini" file to write A6 and d6 constants to.
         num_fits            - Performs this many fits and then gives only the best one.
 
     Returns:
         None
     """
 
+    perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
+    add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path)
+
+
+def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
+    
     settings = SettingsReader(settings_path)
 
     # init the required files
@@ -680,8 +683,29 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     except FileNotFoundError:
         pass
 
+def create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
+    
     system.call("ncgen", "-o", fitted_nc_path, "best-fit-2b.cdl")
 
     os.rename("best-fit-2b.cdl", os.path.join(fit_dir_path, "fit-2b.cdl"))
     os.rename("best-fit-2b-initial.cdl", os.path.join(fit_dir_path, "fit-2b-initial.cdl"))
     os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
+
+def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
+    """
+    Fits the fit code to a given training set
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        fit_code            - Local path to the code to fit.
+        training_set        - Local path to the training set to fit the code to.
+        fit_dir_path        - Local path to the directory where the .cdl and .dat files will end up.
+        fitted_nc_path      - Local path to file to write final fitted ".nc" file to.
+        num_fits            - Performs this many fits and then gives only the best one.
+
+    Returns:
+        None
+    """
+
+    perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
+    create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)

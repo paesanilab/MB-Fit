@@ -169,28 +169,28 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     return molecules, calc, mb, ttm, binding_energies
 
 def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
-        low_threshold = 50):
+        low_threshold = 50, file_data = None):
 
     molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag)
 
-    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), low_threshold = low_threshold)
+    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), file_data, low_threshold = low_threshold)
 
 def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
-        monomer2_name, method, basis, cp, tag, low_threshold = 50):
+        monomer2_name, method, basis, cp, tag, low_threshold = 50, file_data = None):
 
     molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag)
 
-    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), low_threshold = low_threshold)
+    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), file_data, low_threshold = low_threshold)
 
 
-def make_graphs(*datasets, low_threshold = 50):
-    make_energy_graph(1, *datasets, low_threshold = low_threshold)
+def make_graphs(*datasets, low_threshold = 50, file_data = None):
+    make_energy_graph(1, *datasets, file_data, low_threshold = low_threshold)
     make_error_graph(2, *datasets, low_threshold = low_threshold)
-    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
+    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), file_data, low_threshold = low_threshold)
     make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
 
-def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = 'plots.data'):
+def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = None):
     # make the graph featuring all information divided into low and high energy datasets
 
     # Set figure number
@@ -198,17 +198,6 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = 'pl
 
     above_plots = []
     below_plots = []
-
-    with open(file_data) as file:
-    	file.write('Reference Energy')
-    	file.write('\t')
-    	for dataset in datasets:
-    		file.write(str(dataset.method))
-    		file.write('\t')
-    	file.close()
-
-
-
 
     # plot each dataset
     for index, dataset in enumerate(datasets):
@@ -224,25 +213,26 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = 'pl
 
         fit_energies_list = low_dataset.fit_energies + high_dataset.fit_energies
 
-        with open(file_data, 'a+') as file:
+        if file_data != None and type(file_data) == str:
+	        with open(file_data, 'a+') as file:
 
-        	file.write('Reference Energy - ' + str(dataset.method) + ' [')
+	        	file.write('Reference Energy - ' + str(dataset.method) + ' [')
 
-        	for calc_energy in calc_energies_list:
-        		file.write(str(calc_energy) + ", ")
+	        	for calc_energy in calc_energies_list:
+	        		file.write(str(calc_energy) + ", ")
 
-        	file.write(']')
-        	file.write('\n')
+	        	file.write(']')
+	        	file.write('\n')
 
-        	file.write('Fitted Energy - ' + str(dataset.method) + ' [')
+	        	file.write('Fitted Energy - ' + str(dataset.method) + ' [')
 
-        	for fitted_energy in fit_energies_list:
-        		file.write(str(fitted_energy) + ", ")
+	        	for fitted_energy in fit_energies_list:
+	        		file.write(str(fitted_energy) + ", ")
 
-        	file.write(']')
-        	file.write('\n' * 3)
+	        	file.write(']')
+	        	file.write('\n' * 3)
 
-        	file.write('####################################################')
+	        	file.write('####################################################')
 
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph

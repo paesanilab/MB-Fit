@@ -62,7 +62,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, num_attempts = 5, seed = random.randint(-1000000, 1000000)):
+        step_size = 0.5, num_attempts = 5, logarithmic = False, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer.
 
@@ -87,6 +87,8 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                 place the centers of masses of the molecules. Otherwise, this parameter has no effect.
         num_attempts        - The number of tries to generate a config at any given distance before giving up and
                 moving to the next one.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
         seed                - The same seed will generate the same configurations.
 
     Returns:
@@ -94,7 +96,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     """
 
     configurations.generate_2b_configurations(geo1_path, geo2_path, number_of_configs, configurations_path,
-            min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, seed)
+            min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
 def init_database(settings_path, database_path, configurations_path, tag = "none"):
     """

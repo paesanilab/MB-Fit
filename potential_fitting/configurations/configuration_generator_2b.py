@@ -9,7 +9,7 @@ from potential_fitting.utils import files
 
 def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5,
-        num_attempts = 5, seed = None):
+        num_attempts = 5, logarithmic = False, seed = None):
         
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file.
@@ -30,6 +30,8 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
         step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
         num_attempts        - The number of attempts to generate a configuration at any given distance before giving
                 up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
         seed                - Seed to use, the same seed will give the same configurations.
 
     Returns:
@@ -38,13 +40,13 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
     
     if progression == False:
         generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
-                max_distance, min_inter_distance, attempts = attemtps, seed = seed)
+                max_distance, min_inter_distance, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
     else:
         generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
-                max_distance, min_inter_distance, use_grid = False, step_size = 0.5, attempts = attempts, seed = seed)
+                max_distance, min_inter_distance, use_grid = use_grid, step_size = step_size, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
 
 def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, num_attempts = 5, seed = None):
+        max_distance = 5, min_inter_distance = 0.8, num_attempts = 5, logarithmic = False, seed = None):
 
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
@@ -61,6 +63,8 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
                 atoms.
         num_attempts        - The number of attempts to generate a configuration at any given distance before giving
                 up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
         seed                - Seed to use, the same seed will give the same configurations.
     Returns:
         None
@@ -86,8 +90,11 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
         while total_configs > 0:
 
             #random distance between min_distance and max_distance
-            
-            random_distance = random.uniform(min_distance, max_distance)
+
+            if logarithmic:
+                random_distance = logarithmic_progression(min_distance, max_distance, number_of_configs, random.uniform(0, number_of_configs - 1))
+            else:
+                random_distance = random.uniform(min_distance, max_distance)
             
             #getting the molecules
             molecule1 = random.choice(molecules1)
@@ -117,10 +124,9 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     print("Generated {} configurations".format(number_of_configs))
     return 
 
-
 def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, num_attempts = 5,
-        seed = None):
+        logarithmic = False, seed = None):
 
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth
@@ -140,6 +146,8 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
         step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
         num_attempts        - The number of attempts to generate a configuration at any given distance before giving
                 up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
         seed                - Seed to use, the same seed will give the same configurations.
 
     Returns:
@@ -186,8 +194,10 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
 
                 try:
                     # move the molecules to a valid configuration, making 5 attempts
-
-                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance,5)
+                    if logarithmic:
+                        move_to_config(random, molecule1, molecule2, logarithmic_progression(min_distance, max_distance, number_of_configs, number_of_configs * step / (num_steps)), min_inter_distance, num_attempts)
+                    else:
+                        move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance, num_attempts)
 
                 except RanOutOfAttemptsException:
                     # if we didn't find a valid configuration, skip this config
@@ -208,6 +218,11 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
                 if total_configs == number_of_configs:
                     print("Generated {} configurations".format(total_configs))
                     return
+
+def logarithmic_progression(min, max, num_configs, config_num):
+
+    dx = (math.log(max) - math.log(min)) / (num_configs - 1)
+    return math.e ** (math.log(min) + config_num * dx)
 
 def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, attempts):
     """

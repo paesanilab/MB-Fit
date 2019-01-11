@@ -66,6 +66,7 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
         logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
                 This means more configs are generated at lower distances.
         seed                - Seed to use, the same seed will give the same configurations.
+
     Returns:
         None
     """
@@ -127,7 +128,6 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
 def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, num_attempts = 5,
         logarithmic = False, seed = None):
-
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth
     progression and outputs them to an xyz file.
@@ -220,6 +220,16 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
                     return
 
 def logarithmic_progression(min, max, num_configs, config_num):
+    """
+    Gives a distance of a point on a logarithmic distribution.
+
+    Args:
+        min                 - The minimun distance.
+        max                 - The maximum distance.
+        num_configs         - The total number of configs in this progression.
+        config_num          - The number of the current config, in range [0, num_configs - 1]
+                Config 0 will be at min distance while config num_configs - 1 will be at max distance.
+    """
 
     dx = (math.log(max) - math.log(min)) / (num_configs - 1)
     return math.e ** (math.log(min) + config_num * dx)

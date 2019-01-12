@@ -288,10 +288,10 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = flo
 
         high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff = min_cutoff, max_cutoff =  max_cutoff)
 
-        below_plots.append(plt.scatter(low_dataset.calc_energies,
+        below_plots.append(plt.scatter(low_dataset_filtered[0],
                 [fit - calc for fit, calc in zip(low_dataset_filtered[1], low_dataset_filtered[0])],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
-        above_plots.append(plt.scatter(high_dataset.calc_energies,
+        above_plots.append(plt.scatter(high_dataset_filtered[0],
                 [fit - calc for fit, calc in zip(high_dataset_filtered[1], high_dataset_filtered[0])],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
     

@@ -183,6 +183,21 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 
     make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), file_data, low_threshold = low_threshold)
 
+def filter_dataset_energies(dataset, min_cutoff = float('-inf'), max_cutoff = float('inf')):
+    
+    if min_cutoff == float('-inf') and max_cutoff == float('inf'):
+        return [dataset.calc_energies_filtered, dataset.fit_energies_filtered]
+
+    calc_energies_filtered = []
+    fit_energies_filtered = []
+
+    for index in range(len(dataset.calc_energies)):
+        if min_cutoff <= dataset.calc_energies[index] <= max_cutoff:
+            calc_energies_filtered += [dataset.calc_energies[index]]
+            fit_energies_filtered += [dataset.fit_energies[index]]
+
+    return [calc_energies_filtered, fit_energies_filtered]
+
 
 def make_graphs(*datasets, low_threshold = 50, file_data = None):
     make_energy_graph(1, *datasets, file_data, low_threshold = low_threshold)
@@ -190,7 +205,10 @@ def make_graphs(*datasets, low_threshold = 50, file_data = None):
     make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), file_data, low_threshold = low_threshold)
     make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
 
-def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = None):
+
+
+def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
+
     # make the graph featuring all information divided into low and high energy datasets
 
     # Set figure number
@@ -204,9 +222,13 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = Non
 
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
-        below_plots.append(plt.scatter(low_dataset.calc_energies, low_dataset.fit_energies,
+        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff, max_cutoff)
+
+        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff, max_cutoff)
+
+        below_plots.append(plt.scatter(low_dataset_filtered[0], low_dataset_filtered[1],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
-        above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies,
+        above_plots.append(plt.scatter(high_dataset_filtered[0], high_dataset_filtered[1],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
 
         calc_energies_list = low_dataset.calc_energies + high_dataset.calc_energies
@@ -249,7 +271,7 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, file_data = Non
 
     # make the graph of the error featuring all info divided into low and high energy datasets
 
-def make_error_graph(figure_num, *datasets, low_threshold = 50):
+def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf')):
     # make the graph featuring all error information high and low
 
     plt.figure(figure_num)
@@ -261,11 +283,15 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50):
 
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
+        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff, max_cutoff)
+
+        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff, max_cutoff)
+
         below_plots.append(plt.scatter(low_dataset.calc_energies,
-                [fit - calc for fit, calc in zip(low_dataset.fit_energies, low_dataset.calc_energies)],
+                [fit - calc for fit, calc in zip(low_dataset_filtered[1], low_dataset_filtered[0])],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
         above_plots.append(plt.scatter(high_dataset.calc_energies,
-                [fit - calc for fit, calc in zip(high_dataset.fit_energies, high_dataset.calc_energies)],
+                [fit - calc for fit, calc in zip(high_dataset_filtered[1], high_dataset_filtered[0])],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
     
     # plotting an idealized prediction using color codes for TTM fit

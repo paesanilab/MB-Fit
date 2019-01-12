@@ -169,19 +169,19 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     return molecules, calc, mb, ttm, binding_energies
 
 def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
-        low_threshold = 50, file_data = None):
+        low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
     molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag)
 
-    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), file_data, low_threshold = low_threshold)
+    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), file_data, min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 
 def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
-        monomer2_name, method, basis, cp, tag, low_threshold = 50, file_data = None):
+        monomer2_name, method, basis, cp, tag, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
     molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag)
 
-    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), file_data, low_threshold = low_threshold)
+    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 
 def filter_dataset_energies(dataset, min_cutoff = float('-inf'), max_cutoff = float('inf')):
     
@@ -199,11 +199,11 @@ def filter_dataset_energies(dataset, min_cutoff = float('-inf'), max_cutoff = fl
     return [calc_energies_filtered, fit_energies_filtered]
 
 
-def make_graphs(*datasets, low_threshold = 50, file_data = None):
-    make_energy_graph(1, *datasets, file_data, low_threshold = low_threshold)
-    make_error_graph(2, *datasets, low_threshold = low_threshold)
-    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), file_data, low_threshold = low_threshold)
-    make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
+def make_graphs(*datasets, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None, low_threshold = 50):
+    make_energy_graph(1, *datasets, file_data, min_cutoff, max_cutoff, low_threshold = low_threshold)
+    make_error_graph(2, *datasets, min_cutoff, max_cutoff, low_threshold = low_threshold)
+    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
+    make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), min_cutoff = min_cutoff, max_cutoff = max_cutoff, low_threshold = low_threshold)
 
 
 
@@ -222,9 +222,9 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
 
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
-        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff, max_cutoff)
+        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
 
-        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff, max_cutoff)
+        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
 
         below_plots.append(plt.scatter(low_dataset_filtered[0], low_dataset_filtered[1],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
@@ -283,9 +283,9 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = flo
 
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
-        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff, max_cutoff)
+        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
 
-        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff, max_cutoff)
+        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff = min_cutoff, max_cutoff =  max_cutoff)
 
         below_plots.append(plt.scatter(low_dataset.calc_energies,
                 [fit - calc for fit, calc in zip(low_dataset_filtered[1], low_dataset_filtered[0])],

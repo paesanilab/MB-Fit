@@ -158,11 +158,11 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
 
     print("Running normal distribution configuration generator...")
 
-    # initialize any directories needed to hold config-path
-    config_path = files.init_file(config_path)
-
     # parse the ".ini" file into a SettingsReader object
     settings = SettingsReader(settings_path)
+
+    # initialize any directories needed to hold config-path
+    config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
 
     # parse the molecule from the input ".xyz" into a Molecule object
     molecule = xyz_to_molecules(geo_path, settings)[0]

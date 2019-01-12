@@ -66,7 +66,7 @@ class SettingsReader(object):
             None.
         """
 
-        self.configparser.write(files.init_file(file))
+        self.configparser.write(files.init_file(file), files.OverwriteMethod.BACKUP)
 
     def get(self, section, prop, default = None):
         """

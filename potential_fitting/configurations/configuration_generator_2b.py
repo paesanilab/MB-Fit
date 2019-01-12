@@ -79,7 +79,7 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     total_configs = number_of_configs
    
     # open the config file to write to
-    with open(files.init_file(config_path), "w") as config_file:
+    with open(files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings)), "w") as config_file:
 
      
         while total_configs > 0:

@@ -1,6 +1,6 @@
 # absolute module imports
 from potential_fitting import calculator
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, files
 from potential_fitting.molecule import xyz_to_molecules
 
 def optimize_geometry(settings_path, unopt_path, opt_path):
@@ -23,6 +23,8 @@ def optimize_geometry(settings_path, unopt_path, opt_path):
 
     # optimize the geometry
     opt_molecule, energy = calculator.optimize(settings, unopt_molecule, settings.get("config_generator", "method"), settings.get("config_generator", "basis"))
+
+    opt_path = files.init_file(opt_path, files.OverwriteMethod.get_from_settings(settings))
 
     # write the optimized geometry to the output file
     with open(opt_path, "w") as opt_file:

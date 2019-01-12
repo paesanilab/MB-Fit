@@ -8,7 +8,8 @@ from potential_fitting.molecule import Molecule, xyz_to_molecules
 from potential_fitting.utils import files
 
 def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5, seed = None):
+        max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5,
+        num_attempts = 5, logarithmic = False, seed = None):
         
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file.
@@ -22,13 +23,16 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
         max_distance        - The maximum distance between the centers of mass of the two monomers.
         min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                 atoms.
-        seed                - Seed to use, the same seed will give the same configurations.
         progression         - If True, use a linear progression for distance between the centers of masses of the
                 two molecules, otherwise use a random progression.
         use_grid            - If True, then distance between the center of mass of the monomers will be on a grid. 
                 Otherwise, it will be smooth.
-        geo1_path           - the first optimized (or series of unoptimized) geometry
-        geo2_path           - the second optimized (or series of unoptimized) geometry
+        step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
+        seed                - Seed to use, the same seed will give the same configurations.
 
     Returns:
         None
@@ -36,13 +40,13 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
     
     if progression == False:
         generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
-                max_distance, min_inter_distance, seed = seed)
+                max_distance, min_inter_distance, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
     else:
         generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
-                max_distance, min_inter_distance, use_grid = False, step_size = 0.5, seed = seed)
+                max_distance, min_inter_distance, use_grid = use_grid, step_size = step_size, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
 
 def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, seed = None):
+        max_distance = 5, min_inter_distance = 0.8, num_attempts = 5, logarithmic = False, seed = None):
 
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
@@ -57,7 +61,12 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
         max_distance        - The maximum distance between the centers of mass of the two monomers.
         min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                 atoms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
         seed                - Seed to use, the same seed will give the same configurations.
+
     Returns:
         None
     """
@@ -72,9 +81,6 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     # construct a psuedo-random number generator
     random = Random(seed)
     
-    #num_attempts is set to five (default)
-    num_attempts = 5
-    
     #setting the total number of configs
     total_configs = number_of_configs
    
@@ -85,8 +91,11 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
         while total_configs > 0:
 
             #random distance between min_distance and max_distance
-            
-            random_distance = random.uniform(min_distance, max_distance)
+
+            if logarithmic:
+                random_distance = logarithmic_progression(min_distance, max_distance, number_of_configs, random.uniform(0, number_of_configs - 1))
+            else:
+                random_distance = random.uniform(min_distance, max_distance)
             
             #getting the molecules
             molecule1 = random.choice(molecules1)
@@ -116,11 +125,9 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     print("Generated {} configurations".format(number_of_configs))
     return 
 
-
 def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5,
-        seed = None):
-
+        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, num_attempts = 5,
+        logarithmic = False, seed = None):
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth
     progression and outputs them to an xyz file.
@@ -134,12 +141,14 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
         max_distance        - The maximum distance between the centers of mass of the two monomers.
         min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                 atoms.
-        seed                - Seed to use, the same seed will give the same configurations.
         use_grid            - If True, then distance between the center of mass of the monomers will be on a grid. 
                 Otherwise, it will be smooth.
         step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
-        num_attempts        - The number of attempts before giving up at any given distance, low values will make
-                closer configs less likely to generate.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
+        seed                - Seed to use, the same seed will give the same configurations.
 
     Returns:
         None.
@@ -168,10 +177,6 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
     # construct a psuedo-random number generator
     random = Random(seed)
     
-    #num_attempts is set to five (default)
-    num_attempts = 5
-    
-    
     # open the config file to write to
     with open(files.init_file(config_path), "w") as config_file:
     
@@ -189,8 +194,10 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
 
                 try:
                     # move the molecules to a valid configuration, making 5 attempts
-
-                    move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance,5)
+                    if logarithmic:
+                        move_to_config(random, molecule1, molecule2, logarithmic_progression(min_distance, max_distance, number_of_configs, number_of_configs * step / (num_steps)), min_inter_distance, num_attempts)
+                    else:
+                        move_to_config(random, molecule1, molecule2, min_distance + step * step_size, min_inter_distance, num_attempts)
 
                 except RanOutOfAttemptsException:
                     # if we didn't find a valid configuration, skip this config
@@ -211,6 +218,21 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
                 if total_configs == number_of_configs:
                     print("Generated {} configurations".format(total_configs))
                     return
+
+def logarithmic_progression(min, max, num_configs, config_num):
+    """
+    Gives a distance of a point on a logarithmic distribution.
+
+    Args:
+        min                 - The minimun distance.
+        max                 - The maximum distance.
+        num_configs         - The total number of configs in this progression.
+        config_num          - The number of the current config, in range [0, num_configs - 1]
+                Config 0 will be at min distance while config num_configs - 1 will be at max distance.
+    """
+
+    dx = (math.log(max) - math.log(min)) / (num_configs - 1)
+    return math.e ** (math.log(min) + config_num * dx)
 
 def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, attempts):
     """

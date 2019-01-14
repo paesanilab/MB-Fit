@@ -3,7 +3,7 @@ import json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../../")
 from potential_fitting.utils import SettingsReader
 
-def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_name, poly_order, molecule):
+def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_name, poly_order, molecule_in):
     # NOTE mon_name is the actual monomer name (h2o, ch4, c2h6...)
 
     # read config
@@ -192,7 +192,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     a = '''
     } else if (mon == "''' + mon_name + '''") {
-        x1b_''' + molecule + '''_deg''' + str(poly_order) + '''::x1b_''' + molecule + '''_v1x pot(mon);
+        x1b_''' + molecule_in + '''_deg''' + str(poly_order) + '''::x1b_''' + molecule_in + '''_v1x pot(mon);
         energies = pot.eval(xyz.data(), nm);
 
 
@@ -206,7 +206,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
 
     a = '''
     } else if (mon == "''' + mon_name + '''") {
-        x1b_''' + molecule + '''_deg''' + str(poly_order) + '''::x1b_''' + molecule + '''_v1x pot(mon);
+        x1b_''' + molecule_in + '''_deg''' + str(poly_order) + '''::x1b_''' + molecule_in + '''_v1x pot(mon);
         energies = pot.eval(xyz.data(), grad.data(), nm);
 
 
@@ -219,7 +219,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
     cppout.write("File: src/potential/1b/energy1b.h\n")
 
-    cppout.write("#include \"potential/1b/x1b_" + molecule + "_deg" + str(poly_order) + "_v1x.h\"\n")
+    cppout.write("#include \"potential/1b/x1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x.h\"\n")
 
     cppout.close()
 
@@ -229,19 +229,19 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     os.system("mv software_code.txt " + sofdir)
 
 
-def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_path, config_file, fit_cdl, mon_name):
+def generate_software_files_1b(settings, molecule_in, poly_path, poly_order, fit_path, config_file, fit_cdl, mon_name):
     """
     Generates the parts of the C++ code needed to add the PEF to the energy software
 
     Args:
-        settings - the file containing all relevent settings information
-        in_path - the A3B2.in type file
-        poly_path   - directory where polynomial files are
-        poly_order - the order of the polynomial in poly_path
-        fit_path - directory to generate fit code in
-        config_file    - monomer config file
-        fit_cdl - the output cdl file of the fit to use
-        mon_name - the human understandable name of the monomer (co2, h2o, no3...)
+        settings     - the file containing all relevent settings information
+        molecule_in  - the A3B2 type molecule
+        poly_path    - directory where polynomial files are
+        poly_order   - the order of the polynomial in poly_path
+        fit_path     - directory to generate fit code in
+        config_file  - monomer config file
+        fit_cdl      - the output cdl file of the fit to use
+        mon_name     - the human understandable name of the monomer (co2, h2o, no3...)
 
     Returns:
         None
@@ -253,17 +253,14 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     # create folder with the files for the software
     os.system("mkdir -p " + sofdir)
 
-    # get just the "A3B2" part of "path/A3B2.in"
-    molecule = os.path.splitext(in_path)[0].split("/")[-1]
-    
     # mv x1b files needed
-    os.system("mv x1b_" + molecule + "_deg" + str(poly_order) +"_v1x.h " + sofdir)
-    os.system("mv x1b_" + molecule + "_deg" + str(poly_order) +"_v1x.cpp " + sofdir)
+    os.system("mv x1b_" + molecule_in + "_deg" + str(poly_order) +"_v1x.h " + sofdir)
+    os.system("mv x1b_" + molecule_in + "_deg" + str(poly_order) +"_v1x.cpp " + sofdir)
 
     # define names for files
-    headerf = sofdir + "/poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x.h"
-    cppgrad = sofdir + "/poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x.cpp"
-    cppnograd = sofdir + "/poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1.cpp"
+    headerf = sofdir + "/poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x.h"
+    cppgrad = sofdir + "/poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x.cpp"
+    cppnograd = sofdir + "/poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1.cpp"
 
     # Copy polynomial files to temporary files
     os.system("cp " + poly_path + "/poly-model.h " + headerf + ".tmp")
@@ -278,7 +275,7 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     line_num = 0
     while line_num < len(lines):
         # go line by line, and replace keywords
-        newline = lines[line_num].replace("POLY_MODEL","POLY_1B_" + molecule + "_DEG" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
+        newline = lines[line_num].replace("POLY_MODEL","POLY_1B_" + molecule_in + "_DEG" + str(poly_order)).replace("mb_system","x1b_" + molecule_in + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x")
 
         # skip eval_direct
         if not "eval_direct" in newline:
@@ -295,7 +292,7 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     line_num = 0
     while line_num < len(lines):
         # go line by line, and replace keywords
-        newline = lines[line_num].replace("poly_1b_" + molecule + "_v1x.h","poly_1b_" + molecule + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
+        newline = lines[line_num].replace("poly_1b_" + molecule_in + "_v1x.h","poly_1b_" + molecule_in + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule_in + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x")
         
         line_num += 1
         grd.write(newline)
@@ -308,7 +305,7 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     line_num = 0
     while line_num < len(lines):
         # go line by line, and replace keywords
-        newline = lines[line_num].replace("poly_1b_" + molecule + "_v1x.h","poly_1b_" + molecule + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule + "_deg" + str(poly_order) + "_v1x")
+        newline = lines[line_num].replace("poly_1b_" + molecule_in + "_v1x.h","poly_1b_" + molecule_in + "_deg" + str(poly_order)).replace("mb_system","x1b_" + molecule_in + "_deg" + str(poly_order)).replace("poly-model","poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x").replace("poly_model","poly_1b_" + molecule_in + "_deg" + str(poly_order) + "_v1x")
 
         line_num += 1
         grd.write(newline)
@@ -319,4 +316,4 @@ def generate_software_files_1b(settings, in_path, poly_path, poly_order, fit_pat
     os.system("rm " + cppgrad + ".tmp " + cppnograd + ".tmp " + headerf + ".tmp")
 
     # Call the function to write the individual pieces of code, defined above
-    write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_name, poly_order, molecule)
+    write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_name, poly_order, molecule_in)

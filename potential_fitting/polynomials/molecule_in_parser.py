@@ -131,7 +131,8 @@ class FragmentParser(object):
                 raise Exception
 
             # if character is a digit
-            if character_code >= 48 and character_code < 58:
+#MRR            if character_code >= 48 and character_code < 58:
+            if fragment_in[end_index].isdigit():
 
                 # if this is the first digit of the number
                 if reading_atom_type:
@@ -147,7 +148,8 @@ class FragmentParser(object):
                 end_index += 1
 
             # if the character is a capital letter
-            elif character_code >= 65 and character_code < 91:
+#MRR            elif character_code >= 65 and character_code < 91:
+            elif fragment_in[end_index].isupper():
 
                 # if this is the first digit of the atom type
                 if not reading_atom_type:

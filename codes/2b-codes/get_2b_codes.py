@@ -4,8 +4,8 @@
 # In[ ]:
 
 import sys, os, json
-import configparser
-
+from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import constants
 # In[ ]:
 
 
@@ -16,7 +16,7 @@ import configparser
 
 
 if len(sys.argv) != 6:
-    print("Usage: ./script <settings.ini> <config.ini> <input.in> <poly-direct.cpp_with_path> <degree>")
+    print("Usage: ./script <settings.ini> <config.ini> <poly-direct.cpp_with_path> <degree>")
     sys.exit()
 else:
     settings_path = sys.argv[1]
@@ -25,74 +25,46 @@ else:
     directcpp = sys.argv[4]
     degree = int(sys.argv[5])
 
+# In[ ]:
+
+settings = SettingsReader(settings_path)
+config = SettingsReader(config_path)
+
+monomers = settings.get("molecule", "symmetry").split(",")
+
+mon1 = monomers[0]
+mon2 = monomers[1]
 
 # In[ ]:
 
-config = configparser.ConfigParser()
-config.read(settings_path)
-config.read(config_path)
-
-def parse_array(string):
-    num_open_brackets = 0
-    elements = []
-    element = ""
-    for character in string:
-        if num_open_brackets == 1 and character == ",":
-            elements.append(element)
-            element = ""
-        elif character == "[":
-            if num_open_brackets != 0:
-                element += "["
-            num_open_brackets += 1
-        elif character == "]":
-            num_open_brackets -= 1
-            if num_open_brackets != 0:
-                element += "]"
-        else:
-            element += character
-
-    if num_open_brackets == 0:
-        elements.append(element)
-    else:
-        print("Something went wrong while parsing a string into a list")
-    return [parse_array(element) if "," in element else element for element in elements]
-
-# This should be the commandline argument
-#name = "A1B2Z2_C1D2.in"
-#name = "A1B2_A1B2.in"
-with open(name, 'r') as f:
-    mon1 = f.readline().split('\'')[1]
-    mon2 = f.readline().split('\'')[1]
-
-
-# In[ ]:
-
-
-# This should be the second command line argument
-#directcpp = 'poly-direct.cpp'
-
-
-# In[ ]:
-
-
-# For Andrea:
-# Find a way to find the number of atoms in each monomer
-# Store them in nat1 and nat2
-nat1, nat2 = (int(num_atoms) for num_atoms in config["molecule"]["fragments"].split(","))
+# Store number of atoms in each monomer in nat1 and nat2
+nat1, nat2 = (int(num_atoms) for num_atoms in settings.get("molecule", "fragments").split(","))
 
 # Find the number of sites
-#nsites1 = 4
 nsites1 = nat1
 nsites2 = nat2
 
-# Is one of the molecules water? 0 = none, 1 = mon1; 2=mon2
-#is_w = 1
-is_w = 0
+# Get which monomer should be mb-pol monomer (if any)
+use_mbpol = list([int(i) for i in settings.get("molecule", "use_mbpol").split(",")])
+
+# Define if lone pairs are used based on monomer names
+use_lonepairs = [0,0]
+if "X" in mon1 or "Y" in mon1 or "Z" in mon1:
+    use_lonepairs[0] = 1
+
+if "X" in mon2 or "Y" in mon2 or "Z" in mon2:
+    use_lonepairs[1] = 1
+
+# Update number of sites if using MB-pol
+if use_mbpol[0] != 0:
+    nsites1 += 1
+if use_mbpol[1] != 0:
+    nsites2 += 1
+
 # Obtain the lists with the excluded pairs
-#excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
-excluded_pairs_12 = parse_array(config["fitting"]["excluded_pairs_12"])
-excluded_pairs_13 = parse_array(config["fitting"]["excluded_pairs_13"])
-excluded_pairs_14 = parse_array(config["fitting"]["excluded_pairs_13"])
+excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12")
+excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13")
+excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14")
 excl12_a = excluded_pairs_12[0]
 excl13_a = excluded_pairs_13[0]
 excl14_a = excluded_pairs_14[0]
@@ -102,10 +74,9 @@ excl13_b = excluded_pairs_13[1]
 excl14_b = excluded_pairs_14[1]
 
 #Obtain charges (in the order of input), pols and polfacs
-charges = parse_array(config["fitting"]["charges"])
-polarizabilities = parse_array(config["fitting"]["polarizabilities"])
-polarizability_fractions = parse_array(config["fitting"]["polarizability_fractions"])
-
+charges = config.getlist("fitting", "charges")
+polarizabilities = config.getlist("fitting", "polarizabilities")
+polarizability_fractions = config.getlist("fitting", "polarizability_fractions")
 chg_a = charges[0]
 chg_b = charges[1]
 pol_a = polarizabilities[0]
@@ -125,30 +96,27 @@ d_max = config.get("fitting", "d_max")
 d_min_intra = d_min
 d_max_intra = d_max
 
-# Obtain C6 and d6 from user in the same order as the given pairs AA, AB ...:
-c6_constants = parse_array(config["fitting"]["c6"])
+# Obtain A, C6 and d6 from user in the same order as the given pairs AA, AB ...:
+c6_constants = config.getlist("fitting", "c6")
+# last element of c6_constants is list of the inter_molecular c6 constants
 C6 = c6_constants[len(c6_constants) - 1]
 
-# last element of c6_constants is list of the inter_molecular c6 constants
-d6_constants = parse_array(config["fitting"]["d6"])
+# last element of d6_constants is list of the inter_molecular d6 constants
+d6_constants = config.getlist("fitting", "d6")
 d6 = d6_constants[len(d6_constants) - 1]
 
-# Obtain A and b of buckingham
-A_constants = parse_array(config["fitting"]["A"])
+# last element of A_constants is list of the inter_molecular A constants
+A_constants = config.getlist("fitting", "A")
 Abuck = A_constants[len(A_constants) - 1]
 
 bbuck = d6 # non-linear params same as d6
 
 # Allow user to define Input and output cutoff
 # Save them 
-# TODO: READ FROM USER
 r2i = 7.0 # polynomials start to decrease
 r2o = 8.0 # polynomials are completely removed
 
-# Find a way to get the number ov variables
-# Find a way to get the size of the polynomial
 npoly = config.getint("fitting", "npoly")
-print("num terms", npoly)
 
 # Define kind of variables for intra, inter and lone pairs
 # Options are:
@@ -157,15 +125,15 @@ print("num terms", npoly)
 # coul0 [e^-k(d-d0)]/r
 # coul [e^-kd]/r
 # Recomendation is to use exp for intra and inter and coul for lone pairs
-var_intra = config.get("fitting", "var")
-var_lp = config.get("fitting", "var")
-var_inter = config.get("fitting", "var")
+var_intra = config.get("fitting", "var_intra")
+var_lp = config.get("fitting", "var_lonepairs")
+var_inter = config.get("fitting", "var_inter")
 
 # Define Energy Range for the fitting
 E_range = config.getfloat("fitting", "energy_range")
 
 # Define list of variables that are fictitious
-vsites = parse_array(config.get("fitting", "virtual_site_labels"))
+vsites = config.getlist("fitting", "virtual_site_labels")
 
 
 # In[ ]:
@@ -636,9 +604,11 @@ ff.close()
 # In[ ]:
 
 
-if is_w != 0:
-    ff = open('mon' + str(is_w) + '.cpp','w')
-    a = """
+for is_water_mbpol in range(len(use_mbpol)):
+    if use_mbpol[is_water_mbpol] != 0:
+        is_w = is_water_mbpol + 1
+        ff = open('mon' + str(is_w) + '.cpp','w')
+        a = """
 #include "mon""" + str(is_w) + """.h"
 
 #include <iostream>
@@ -761,8 +731,8 @@ excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excl
 } // namespace x
 
 """
-    ff.write(a)
-    ff.close()
+        ff.write(a)
+        ff.close()
 
 
 # ## Create training_set.h/cpp files
@@ -1359,20 +1329,16 @@ for i in range(0,len(types_b),2):
             n = n + 1
 ff.write('\n')
 
-if is_w == 0: 
+if use_lonepairs[0] == 0 and use_lonepairs[1] == 0: 
     a = """
-// ##DEFINE HERE## the lone pairs if any. How to make it general?
-    // double Xa1[3], Xa2[3];
-
-    // xpoints(m_in_plane_gamma, m_out_of_plane_gamma, O, Xa1, Xa2);
+    // Not using any lone pair site!
     
     variable vr[""" + str(nvars) + """];
     using x2o::distance;
     
 """
-elif is_w == 1:
+elif use_lonepairs[0] != 0:
     a = """
-//    vsites virt;
     double w12 =     -9.721486914088159e-02;  //from MBpol
     double w13 =     -9.721486914088159e-02;
     double wcross =   9.859272078406150e-02;
@@ -1386,7 +1352,7 @@ elif is_w == 1:
     using x2o::distance;
     
 """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
 //    vsites virt;
     double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -1427,22 +1393,16 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -4239,12 +4199,12 @@ for i in range(0,len(types_b),2):
             n = n + 1
 ff.write('\n')
 
-if is_w == 0: 
+if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
     a = """    
     variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 1:
+elif use_lonepairs[0] != 0:
     a = """
 //    vsites virt;
     double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -4259,7 +4219,7 @@ elif is_w == 1:
     variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
 //    vsites virt;
     double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -4299,22 +4259,16 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -4428,12 +4382,12 @@ for i in range(0,len(types_b),2):
             n = n + 1
 ff.write('\n')
 
-if is_w == 0: 
+if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
     a = """    
     variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 1:
+elif use_lonepairs[0] != 0:
     a = """
     //vsites virt;
     double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -4448,7 +4402,7 @@ elif is_w == 1:
     variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
     //vsites virt;
     double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -4488,22 +4442,16 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -4625,12 +4573,12 @@ a = """
 """
 ff.write(a)
 a = ""
-if is_w == 1:
+if use_lonepairs[0] != 0:
     a = """
     m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g, 
              w12, wcross, """ + types_a[0] + """_1_a_g);
     """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
     m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g, 
              w12, wcross, """ + types_b[0] + """_1_b_g);
@@ -5146,16 +5094,16 @@ for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
         if types_b[i] in vsites:
-            ff.write('        double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            ff.write('        double ' + types_b[i] + '_' + str(n) + '_b[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 
-if is_w == 0: 
+if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
     a = """    
         variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 1:
+elif use_lonepairs[0] != 0:
     a = """
         // vsites virt;
         double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -5170,7 +5118,7 @@ elif is_w == 1:
         variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
         // vsites virt;
         double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -5210,22 +5158,17 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -5351,16 +5294,16 @@ for i in range(0,len(types_b),2):
     n = 1
     for j in range(int(types_b[i+1])):
         if types_b[i] in vsites:
-            ff.write('        double ' + types_a[i] + '_' + str(n) + '_b[3]' + ';\n')
+            ff.write('        double ' + types_b[i] + '_' + str(n) + '_b[3]' + ';\n')
             n = n + 1
 ff.write('\n')
 
-if is_w == 0: 
+if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
     a = """    
         variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 1:
+elif use_lonepairs[0] != 0:
     a = """
         //vsites virt;
         double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -5375,7 +5318,7 @@ elif is_w == 1:
         variable vr[""" + str(nvars) + """];
     
 """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
         //vsites virt;
         double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -5415,22 +5358,17 @@ for index, variable in enumerate(variables):
         atom1_name = "{}_{}_{}".format(atom1, atom1_index, atom1_fragment)
         atom2_name = "{}_{}_{}".format(atom2, atom2_index, atom2_fragment)
 
-        if atom1 not in vsites and atom2 not in vsites:
+        sorted_atoms = "".join(sorted([atom1, atom2]))
 
-            sorted_atoms = "".join(sorted([atom1, atom2]))
-
-            if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
-                arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
-            else:
-                arguments = '(m_k_intra_' + sorted_atoms
-
-            ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
-
-            nv += 1
-            
+        if var_intra == 'exp0' or var_intra == 'coul0' or var_intra == 'gau0':
+            arguments = '(m_d_intra_' + sorted_atoms + ', m_k_intra_' + sorted_atoms
         else:
-            # At some point we might want to use vsites
-            pass
+            arguments = '(m_k_intra_' + sorted_atoms
+
+        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
+
+        nv += 1
+            
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -5552,12 +5490,12 @@ a = """
 """
 ff.write(a)
 a = ""
-if is_w == 1:
+if use_lonepairs[0] != 0:
     a = """
         m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g, 
                  w12, wcross, """ + types_a[0] + """_1_a_g);
     """
-elif is_w == 2:
+elif use_lonepairs[1] != 0:
     a = """
         m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g, 
                  w12, wcross, """ + types_b[0] + """_1_b_g);

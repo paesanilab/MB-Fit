@@ -39,7 +39,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
     return dim_null
 
 def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        seed = random.randint(-1000000, 1000000)):
+        number_of_configs = 100, seed = random.randint(-1000000, 1000000)):
     """
     Generates 1b configurations for a given monomer from a set of normal modes.
 
@@ -49,6 +49,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
         normal_modes_path   - Local path to the file to read normal modes from.
         dim_null            - The null dimension of this molecule, see generate_normal_modes().
         config_path         - Local path to the file to write configurations to.
+        number_of_configs   - Number of configurations to generate
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
 
@@ -57,7 +58,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
     """
 
     configurations.generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-            seed = seed)
+            number_of_configs, seed = seed)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
@@ -448,15 +449,12 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
         with open(fit_log_path, "w") as fit_log:
             system.call(fit_code_path, training_set_path, out_file = fit_log)
   
-        with open(fit_log_path, "r") as fit_log, open(best_fit_log_path, "r") as best_fit_log:
+        with open(fit_log_path, "r") as fit_log:
             log_lines = fit_log.readlines()
-            best_log_lines = best_fit_log.readlines()
 
         rmsd = float(log_lines[-6].split()[2])
 
         print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
-
-        best_rmsd = float(best_log_lines[-6].split()[2])
 
         print("Current best fit has rmsd {}.".format(best_rmsd))
 
@@ -469,6 +467,8 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
             os.rename("fit-1b.cdl", "best-fit-1b.cdl")
             os.rename("fit-1b-initial.cdl", "best-fit-1b-initial.cdl")
             os.rename("correlation.dat", "best-correlation.dat")
+
+            best_rmsd = rmsd
             
         attempts += 1
 
@@ -533,15 +533,12 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
         with open(fit_log_path, "w") as fit_log:
             system.call(fit_code_path, training_set_path, out_file = fit_log)
         
-        with open(fit_log_path, "r") as fit_log, open(best_fit_log_path, "r") as best_fit_log:
+        with open(fit_log_path, "r") as fit_log:
             log_lines = fit_log.readlines()
-            best_log_lines = best_fit_log.readlines()
 
         rmsd = float(log_lines[-4].split()[2])
 
         print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
-
-        best_rmsd = float(best_log_lines[-4].split()[2])
 
         print("Current best fit has rmsd {}.".format(best_rmsd))
 
@@ -553,6 +550,8 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
             os.rename("individual_terms.dat", "best-individual_terms.dat")
             os.rename("ttm-params.txt", "best-ttm-params.txt")
             os.rename("correlation.dat", "best-correlation.dat")
+
+            best_rmsd = rmsd
             
 
         attempts += 1
@@ -644,15 +643,12 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
         with open(fit_log_path, "w") as fit_log:
             system.call(fit_code_path, training_set_path, out_file = fit_log)
   
-        with open(fit_log_path, "r") as fit_log, open(best_fit_log_path, "r") as best_fit_log:
+        with open(fit_log_path, "r") as fit_log:
             log_lines = fit_log.readlines()
-            best_log_lines = best_fit_log.readlines()
 
         rmsd = float(log_lines[-6].split()[2])
 
         print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
-
-        best_rmsd = float(best_log_lines[-6].split()[2])
 
         print("Current best fit has rmsd {}.".format(best_rmsd))
 
@@ -665,6 +661,8 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
             os.rename("fit-2b.cdl", "best-fit-2b.cdl")
             os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
             os.rename("correlation.dat", "best-correlation.dat")
+
+            best_rmsd = rmsd
             
         attempts += 1
 

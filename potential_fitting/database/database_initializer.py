@@ -10,7 +10,7 @@ from potential_fitting.molecule import xyz_to_molecules
 # local module imports
 from .database import Database
 
-def initialize_database(settings_path, database_path, directory_path, tag = "none"):
+def initialize_database(settings_path, database_path, directory_path, *tags):
     """
     Initializes a new database or adds energies to be calculated to an existing one.
 
@@ -20,6 +20,7 @@ def initialize_database(settings_path, database_path, directory_path, tag = "non
                 ".db".
         directory_path      - Local path to the directory of ".xyz" files or a single ".xyz" file to add to the
                 database. If a directory is specified, all non ".xyz" or ".xyz.opt" files will be ignored"
+        tags                - Label this calculation with these tags.
 
     Returns:
         None.
@@ -72,7 +73,7 @@ def initialize_database(settings_path, database_path, directory_path, tag = "non
                 molecule.rotate_on_principal_axes()
 
                 # add this molecule to the database
-                database.add_calculation(molecule, method, basis, cp, tag, optimized)
+                database.add_calculation(molecule, method, basis, cp, *tags, optimized = optimized)
 
         print("Initializing of database {} successful".format(database_path))
 

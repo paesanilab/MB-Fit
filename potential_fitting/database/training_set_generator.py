@@ -8,7 +8,7 @@ from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError
 # local module imports
 from .database import Database
 
-def generate_1b_training_set(settings_file, database_name, training_set_path, molecule_name, method, basis, cp, tag, e_min = 0, e_max = float('inf')):
+def generate_1b_training_set(settings_file, database_name, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
     Creates a 1b training set file from the calculated energies in a database.
 
@@ -20,7 +20,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
         method              - Use energies calculated with this method. Use % for any method.
         basis               - Use energies calculated with this basis. Use % for any basis.
         cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.
-        tag                 - Use energies marked with this tag. Use % for any tag.
+        tags                - Use energies marked with one or more of these tags. Use % for any tag.
         e_min               - The minimum (inclusive) energy of any configuration to include in the training set.
         e_max               - The maximum (exclusive) energy of any configuration to include in the training set.
 
@@ -37,21 +37,21 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
         count_configs = 0
 
         # get list of all [molecule, energies] pairs calculated in the database
-        molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
+        molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, *tags))
 
         # if there are no calculated energies, error and exit
         if len(molecule_energy_pairs) == 0:
-            raise NoEnergiesError(database.file_name, molecule_name, method, basis, cp, tag)
+            raise NoEnergiesError(database.file_name, molecule_name, method, basis, cp, tags)
         
         # find the optimized geometry energy from the database
         try:
-            all_opt_energies = list(database.get_energies(molecule_name, method, basis, cp, tag, True))
+            all_opt_energies = list(database.get_energies(molecule_name, method, basis, cp, *tags, True))
             if len(all_opt_energies) > 1:
-                raise MultipleOptimizedEnergiesError(database.file_name, molecule_name, method, basis, cp, tag, 
+                raise MultipleOptimizedEnergiesError(database.file_name, molecule_name, method, basis, cp, tags, 
                         len(all_opt_energies))
             opt_energies = all_opt_energies[0][1]
         except IndexError:
-            raise NoOptimizedEnergyError(database.file_name, molecule_name, method, basis, cp, tag) from None
+            raise NoOptimizedEnergyError(database.file_name, molecule_name, method, basis, cp, tags) from None
 
         # open output file for writing
         with open(training_set_path, "w") as output:
@@ -86,7 +86,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
                     
 
 def generate_2b_training_set(settings, database_name, training_set_path, monomer_1_name, monomer_2_name, method, basis,
-        cp, tag, e_bind_max = float('inf'), e_mon_max = float('inf')):
+        cp, *tags, e_bind_max = float('inf'), e_mon_max = float('inf')):
     """"
     Creates a 2b training set file from the calculated energies in a database.
 
@@ -99,7 +99,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
         method              - Use energies calculated with this method. Use % for any method.
         basis               - Use energies calculated with this basis. Use % for any basis.
         cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.
-        tag                 - Use energies marked with this tag. Use % for any tag.
+        tags                - Use energies marked with at least one of these tags. Use % for any tag.
         e_bind_max          - Maximum binding energy allowed
         e_mon_max           - Maximum monomer deformation energy allowed
 
@@ -115,30 +115,30 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
         # construct name of molecule from name of monomers
         molecule_name = "-".join([monomer_1_name, monomer_2_name])
         # get list of all [molecule, energies] pairs calculated in the database
-        molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
+        molecule_energy_pairs = list(database.get_energies(molecule_name, method, basis, cp, *tags))
 
         # if there are no calculated energies, error and exit
         if len(molecule_energy_pairs) == 0:
-            raise NoEnergiesError(database.file_name, molecule_name, method, basis, cp, tag)
+            raise NoEnergiesError(database.file_name, molecule_name, method, basis, cp, tags)
         
         # find the optimized geometry energy of the two monomers from the database
         try:
-            all_opt_energies = list(database.get_energies(monomer_1_name, method, basis, cp, tag, True))
+            all_opt_energies = list(database.get_energies(monomer_1_name, method, basis, cp, *tags, True))
             if len(all_opt_energies) > 1:
-                raise MultipleOptimizedEnergiesError(database.file_name, monomer_1_name, method, basis, cp, tag, 
+                raise MultipleOptimizedEnergiesError(database.file_name, monomer_1_name, method, basis, cp, tags, 
                         len(all_opt_energies))
             monomer_1_opt_energy = all_opt_energies[0][1][0]
         except IndexError:
-            raise NoOptimizedEnergyError(database.file_name, monomer_1_name, method, basis, cp, tag)
+            raise NoOptimizedEnergyError(database.file_name, monomer_1_name, method, basis, cp, tags)
 
         try:
-            all_opt_energies = list(database.get_energies(monomer_2_name, method, basis, cp, tag, True))
+            all_opt_energies = list(database.get_energies(monomer_2_name, method, basis, cp, *tags, True))
             if len(all_opt_energies) > 1:
-                raise MultipleOptimizedEnergiesError(database.file_name, monomer_2_name, method, basis, cp, tag,
+                raise MultipleOptimizedEnergiesError(database.file_name, monomer_2_name, method, basis, cp, tags,
                         len(all_opt_energies))
             monomer_2_opt_energy = all_opt_energies[0][1][0]
         except IndexError:
-            raise NoOptimizedEnergyError(database.file_name, monomer_2_name, method, basis, cp, tag)
+            raise NoOptimizedEnergyError(database.file_name, monomer_2_name, method, basis, cp, tags)
 
         # open output file for writing
         with open(training_set_path, "w") as output:

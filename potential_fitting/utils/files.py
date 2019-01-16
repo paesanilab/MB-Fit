@@ -22,7 +22,7 @@ def init_directory(directory_path):
 
     return directory_path
 
-def init_file(file_path, force_override = False):
+def init_file(file_path):
     """
     Creates any directories that are needed to house the given file if they do not already exist.
     
@@ -33,14 +33,7 @@ def init_file(file_path, force_override = False):
         The same file path as was passed in.
     """
 
-    file_path = os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
-
-    if os.isfile(file_path):
-        if force_override:
-            print("File {} already exists, but force_override option is enabled, so it is being overwritten.")
-        else:
-            raise FileExistsError(file_path)
-    return file_path
+    return os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
 
 def get_molecule_log_path(log_path, molecule, suffix):
     """

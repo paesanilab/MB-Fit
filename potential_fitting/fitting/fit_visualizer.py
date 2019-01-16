@@ -9,6 +9,8 @@ from potential_fitting.utils import constants
 
 import numpy as np
 
+import os
+
 class Dataset():
 
     colors = [
@@ -217,7 +219,9 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
     above_plots = []
     below_plots = []
 
-    print(datasets)
+    if file_data != None:
+    	if os.path.exists(file_data):
+    		os.remove(file_data)
    
     # plot each dataset
     for index, dataset in enumerate(datasets):
@@ -256,6 +260,8 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
 	        	file.write('\n' * 3)
 
 	        	file.write('####################################################')
+	        	file.write('\n' * 2)
+
 
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph

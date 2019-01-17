@@ -38,10 +38,10 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
 
     return dim_null
 
-def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
+def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
         number_of_configs = 100, seed = None):
     """
-    Generates 1b configurations for a given monomer from a set of normal modes.
+    Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
@@ -60,7 +60,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
     if seed is None:
         seed = random.randint(-10000000, 10000000)
 
-    configurations.generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
+    configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
             number_of_configs, seed = seed)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 

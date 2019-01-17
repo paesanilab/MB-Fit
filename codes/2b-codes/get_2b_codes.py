@@ -15,15 +15,14 @@ from potential_fitting.utils import constants
 # In[ ]:
 
 
-if len(sys.argv) != 6:
+if len(sys.argv) != 5:
     print("Usage: ./script <settings.ini> <config.ini> <poly-direct.cpp_with_path> <degree>")
     sys.exit()
 else:
     settings_path = sys.argv[1]
     config_path = sys.argv[2]
-    name = sys.argv[3]
-    directcpp = sys.argv[4]
-    degree = int(sys.argv[5])
+    directcpp = sys.argv[3]
+    degree = int(sys.argv[4])
 
 # In[ ]:
 

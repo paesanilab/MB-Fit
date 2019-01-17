@@ -62,7 +62,7 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, num_attempts = 5, logarithmic = False, seed = random.randint(-1000000, 1000000)):
+        step_size = 0.5, num_attempts = 100, logarithmic = False, seed = random.randint(-1000000, 1000000)):
     """
     Generates 2b configurations for a given dimer.
 

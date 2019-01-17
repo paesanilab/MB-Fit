@@ -55,6 +55,7 @@ if "X" in mon2 or "Y" in mon2 or "Z" in mon2:
     use_lonepairs[1] = 1
 
 # Update number of sites if using MB-pol
+# Nsites refers to electrostatics sites.
 if use_mbpol[0] != 0:
     nsites1 += 1
 if use_mbpol[1] != 0:

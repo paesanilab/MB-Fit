@@ -163,8 +163,8 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
         None.
     """
 
-    database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, method, basis,
-            cp, *tags, e_min = e_min, e_max = e_max)
+    database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name,
+            method, basis, cp, *tags, e_min = e_min, e_max = e_max)
 
 def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name, *tags,
         method = "%", basis = "%", cp = "%", e_bind_max = float('inf'), e_mon_max = float('inf')):

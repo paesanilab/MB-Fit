@@ -457,7 +457,11 @@ class Database():
             # loop over all selected models
             for model_id in model_ids:
 
-                tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+                if len(tags) == 0:
+                    tag_like_operation = "TRUE"
+                else:
+                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+                print(tag_like_operation)
 
                 # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
@@ -541,7 +545,10 @@ class Database():
             # loop over all selected models
             for model_id in model_ids:
 
-                tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+                if len(tags) == 0:
+                    tag_like_operation = "TRUE"
+                else:
+                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
 
                 # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
@@ -651,7 +658,10 @@ class Database():
             # loop over all selected models
             for model_id in model_ids:
 
-                tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+                if len(tags) == 0:
+                    tag_like_operation = "TRUE"
+                else:
+                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
 
                 # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
@@ -720,8 +730,10 @@ class Database():
         model_ids = []
         for molecule_id in molecule_ids:
 
-            tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag)
-                    for tag in tags]) + ")"
+            if len(tags) == 0:
+                tag_like_operation = "TRUE"
+            else:
+                tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
 
             model_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
                     "SELECT model_id FROM Calculations WHERE molecule_id=? AND "+ tag_like_operation+" AND optimized=?",
@@ -761,8 +773,10 @@ class Database():
         except TypeError:
             return
 
-        tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag)
-                for tag in tags]) + ")"
+        if len(tags) == 0:
+            tag_like_operation = "TRUE"
+        else:
+            tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
 
         molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
                 "SELECT molecule_id FROM Calculations WHERE model_id=? AND " + tag_like_operation + " AND optimized=?",

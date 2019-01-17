@@ -45,7 +45,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
         
         # find the optimized geometry energy from the database
         try:
-            all_opt_energies = list(database.get_energies(molecule_name, method, basis, cp, *tags, True))
+            all_opt_energies = list(database.get_energies(molecule_name, method, basis, cp, *tags, optimized = True))
             if len(all_opt_energies) > 1:
                 raise MultipleOptimizedEnergiesError(database.file_name, molecule_name, method, basis, cp, tags, 
                         len(all_opt_energies))
@@ -123,7 +123,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
         
         # find the optimized geometry energy of the two monomers from the database
         try:
-            all_opt_energies = list(database.get_energies(monomer_1_name, method, basis, cp, *tags, True))
+            all_opt_energies = list(database.get_energies(monomer_1_name, method, basis, cp, *tags, optimized = True))
             if len(all_opt_energies) > 1:
                 raise MultipleOptimizedEnergiesError(database.file_name, monomer_1_name, method, basis, cp, tags, 
                         len(all_opt_energies))
@@ -132,7 +132,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
             raise NoOptimizedEnergyError(database.file_name, monomer_1_name, method, basis, cp, tags)
 
         try:
-            all_opt_energies = list(database.get_energies(monomer_2_name, method, basis, cp, *tags, True))
+            all_opt_energies = list(database.get_energies(monomer_2_name, method, basis, cp, *tags, optimized = True))
             if len(all_opt_energies) > 1:
                 raise MultipleOptimizedEnergiesError(database.file_name, monomer_2_name, method, basis, cp, tags,
                         len(all_opt_energies))

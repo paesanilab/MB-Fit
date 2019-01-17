@@ -15,15 +15,14 @@ from potential_fitting.utils import constants
 # In[ ]:
 
 
-if len(sys.argv) != 6:
+if len(sys.argv) != 5:
     print("Usage: ./script <settings.ini> <config.ini> <poly-direct.cpp_with_path> <degree>")
     sys.exit()
 else:
     settings_path = sys.argv[1]
     config_path = sys.argv[2]
-    name = sys.argv[3]
-    directcpp = sys.argv[4]
-    degree = int(sys.argv[5])
+    directcpp = sys.argv[3]
+    degree = int(sys.argv[4])
 
 # In[ ]:
 
@@ -56,6 +55,7 @@ if "X" in mon2 or "Y" in mon2 or "Z" in mon2:
     use_lonepairs[1] = 1
 
 # Update number of sites if using MB-pol
+# Nsites refers to electrostatics sites.
 if use_mbpol[0] != 0:
     nsites1 += 1
 if use_mbpol[1] != 0:
@@ -5409,6 +5409,9 @@ for index, variable in enumerate(variables):
 a = """     
     
         double g[""" + str(nvars) + """];
+
+        // the switch
+        sw = f_switch(r12, gsw);
         
         energies[j] = sw*polynomial::eval(coefficients.data(), v, g);
         
@@ -5504,10 +5507,6 @@ ff.write(a)
 
 a = """
     
-        // the switch
-        
-        sw = f_switch(r12, gsw);
-        
         for (int i = 0; i < """ + str(3*nat1) + """; ++i) {
             grad1[i + j*""" + str(3*nat1) + """] += sw*xgrd[i];
         }

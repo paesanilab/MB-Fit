@@ -1,6 +1,9 @@
 # external package imports
 import itertools
 
+# absolute module imports
+from potential_fitting.utils import constants
+
 class MoleculeInParser(object):
 
     def __init__(self, molecule_in):
@@ -58,15 +61,15 @@ class FragmentParser(object):
         return self.frag_id
 
     def get_intra_molecular_variables(self):
-        for atom_parser in self.get_atom_types():
+        for atom_parser in self.get_atom_and_virtual_site_types():
 
             yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id(),
                     "x-intra-{}".format(var_type)] for atom1, atom2, var_type
                     in atom_parser.get_intra_atom_type_variables()]
 
-        for atom_parser_index, atom_parser1 in enumerate(self.get_atom_types()):
+        for atom_parser_index, atom_parser1 in enumerate(self.get_atom_and_virtual_site_types()):
 
-            for atom_parser2 in list(self.get_atom_types())[atom_parser_index + 1:]:
+            for atom_parser2 in list(self.get_atom_and_virtual_site_types())[atom_parser_index + 1:]:
 
                 yield from [[atom1, self.get_fragment_id(), atom2, self.get_fragment_id(),
                         "x-intra-{}".format(var_type)] for atom1, atom2, var_type
@@ -75,20 +78,26 @@ class FragmentParser(object):
 
 
     def get_inter_molecular_variables(self, other):
-        for atom_parser_self in self.get_atom_types():
+        for atom_parser_self in self.get_atom_and_virtual_site_types():
 
-            for atom_parser_other in other.get_atom_types():
+            for atom_parser_other in other.get_atom_and_virtual_site_types():
 
                 yield from [[atom1, self.get_fragment_id(), atom2, other.get_fragment_id(),
                         "x-inter-{}".format(var_type)] for atom1, atom2, var_type
                         in atom_parser_self.get_inter_atom_type_variables(atom_parser_other)]
-                
+
+    def get_atom_and_virtual_site_types(self):
+
+        for atom_parser in self.atom_parsers:
+
+            yield atom_parser
 
     def get_atom_types(self):
 
         for atom_parser in self.atom_parsers:
 
-            yield atom_parser
+            if atom_parser.atom_type not in constants.lone_pairs:
+                yield atom_parser
 
     def split_fragments_in(self, fragment_in):
 
@@ -122,7 +131,8 @@ class FragmentParser(object):
                 raise Exception
 
             # if character is a digit
-            if character_code >= 48 and character_code < 58:
+#MRR            if character_code >= 48 and character_code < 58:
+            if fragment_in[end_index].isdigit():
 
                 # if this is the first digit of the number
                 if reading_atom_type:
@@ -138,7 +148,8 @@ class FragmentParser(object):
                 end_index += 1
 
             # if the character is a capital letter
-            elif character_code >= 65 and character_code < 91:
+#MRR            elif character_code >= 65 and character_code < 91:
+            elif fragment_in[end_index].isupper():
 
                 # if this is the first digit of the atom type
                 if not reading_atom_type:

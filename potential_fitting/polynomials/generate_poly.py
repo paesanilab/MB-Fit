@@ -54,7 +54,7 @@ def generate_poly(settings_path, input_path, order, output_path):
 
         for fragment_parser in molecule_in_parser.get_fragments():
             index_each_fragment.append(index)
-            for atom_type_parser in fragment_parser.get_atom_types():
+            for atom_type_parser in fragment_parser.get_atom_and_virtual_site_types():
                 for atom in atom_type_parser.get_atoms():
                     atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
                     index += 1;
@@ -74,7 +74,7 @@ def generate_poly(settings_path, input_path, order, output_path):
         for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
 
             # generate all permutations for this fragment
-            permutations = list(make_permutations(fragment_parser.get_atom_types()))
+            permutations = list(make_permutations(fragment_parser.get_atom_and_virtual_site_types()))
             
             # add to each permutation the index of the first atom in this fragment in the molecule
             for permutation in permutations:
@@ -84,6 +84,8 @@ def generate_poly(settings_path, input_path, order, output_path):
             fragment_permutations.append(permutations)
 
         # construct total permutations from the fragments, including permutations of like fragments
+
+        print(fragment_permutations)
 
         atom_permutations = list(combine_permutations(fragments, fragment_permutations))
 
@@ -288,7 +290,8 @@ def make_permutations(atom_types):
         # the permutations created by a recursive call on the rest of the fragment
         # increase each item in the lists given by the recursive call equal to the number of atoms of the first type in
         # the fragment
-        yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(atom_types))
+        atom_types, new_gen = itertools.tee(atom_types)
+        yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(new_gen))
 
 def combine_permutations(fragments, fragment_permutations):
     """
@@ -365,6 +368,7 @@ def make_variable_permutations(variables, atom_permutations, atom_names):
             atom2 = variable.atom2_name + variable.atom2_fragment
 
             # get the permutated variable's atoms
+
             new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
             new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
 

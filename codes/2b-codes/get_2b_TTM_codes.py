@@ -7,6 +7,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../")
 from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import constants
 
 # In[ ]:
 
@@ -38,21 +39,23 @@ mon2 = name.split('.')[0].split('_')[1]
 # In[ ]:
 
 
-# For Andrea:
-# Find a way to find the number of atoms in each monomer
-# Store them in nat1 and nat2
+# Store number of atoms in each monomer in nat1 and nat2
 nat1, nat2 = (int(num_atoms) for num_atoms in settings.get("molecule", "fragments").split(","))
 
 # Find the number of sites
-#nsites1 = 4
 nsites1 = nat1
 nsites2 = nat2
 
-# Is one of the molecules water? 0 = none, 1 = mon1; 2=mon2
-#is_w = 1
-is_w = 0
+# Get which monomer should be mb-pol monomer (if any)
+use_mbpol = list([int(i) for i in settings.get("molecule", "use_mbpol").split(",")])
+
+# Update number of sites if using MB-pol
+if use_mbpol[0] != 0:
+    nsites1 += 1
+if use_mbpol[1] != 0:
+    nsites2 += 1
+
 # Obtain the lists with the excluded pairs
-#excl12_a = [[0,1],[0,2],[0,3],[1,3],[2,3]]
 excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12")
 excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13")
 excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14")
@@ -94,6 +97,25 @@ E_range = config.get("fitting", "energy_range")
 
 types_a = list(mon1)
 types_b = list(mon2)
+
+for X in constants.lone_pairs:
+    try:
+        index = types_a.index(X)
+        types_a = types_a[:index]
+    except ValueError:
+        pass
+
+for X in constants.lone_pairs:
+    try:
+        index = types_b.index(X)
+        types_b = types_b[:index]
+    except ValueError:
+        pass
+
+print(types_a)
+print(types_b)
+
+# remove all one pairs from the types
 
 #Concatenating excluded pairs:
 excl_a = excl12_a + excl13_a + excl14_a
@@ -497,9 +519,11 @@ ff.close()
 # In[ ]:
 
 
-if is_w != 0:
-    ff = open('mon' + str(is_w) + '.cpp','w')
-    a = """
+for is_water_mbpol in range(len(use_mbpol)):
+    if use_mbpol[is_water_mbpol] != 0:
+        is_w = is_water_mbpol + 1
+        ff = open('mon' + str(is_w) + '.cpp','w')
+        a = """
 #include "mon""" + str(is_w) + """.h"
 
 #include <iostream>
@@ -622,8 +646,8 @@ excluded_set_type::iterator mon""" + str(is_w) + """::get_end_14() { return excl
 } // namespace x
 
 """
-    ff.write(a)
-    ff.close()
+        ff.write(a)
+        ff.close()
 
 
 # ## Create training_set.h/cpp files

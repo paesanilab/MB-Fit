@@ -1,5 +1,9 @@
 # external package imports
 import os
+import datetime
+
+# absolute package imports
+from potential_fitting.exceptions import FileExistsError
 
 def init_directory(directory_path):
     """
@@ -18,7 +22,7 @@ def init_directory(directory_path):
 
     return directory_path
 
-def init_file(file_path):
+def init_file(file_path, force_override = False):
     """
     Creates any directories that are needed to house the given file if they do not already exist.
     
@@ -29,7 +33,14 @@ def init_file(file_path):
         The same file path as was passed in.
     """
 
-    return os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
+    file_path = os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
+
+    if os.isfile(file_path):
+        if force_override:
+            print("File {} already exists, but force_override option is enabled, so it is being overwritten.")
+        else:
+            raise FileExistsError(file_path)
+    return file_path
 
 def get_molecule_log_path(log_path, molecule, suffix):
     """
@@ -44,7 +55,7 @@ def get_molecule_log_path(log_path, molecule, suffix):
         The log file for the given molecule with the given suffix.
     """
 
-    file_path = os.path.join(log_path, molecule.get_name(), "{}.{}".format(molecule.get_SHA1()[-8:], suffix))
+    file_path = os.path.join(log_path, molecule.get_name(), "{} {}.{}".format(molecule.get_SHA1()[-8:], str(datetime.datetime.now()), suffix))
 
     # make sure the required directories exist
     return init_file(file_path)

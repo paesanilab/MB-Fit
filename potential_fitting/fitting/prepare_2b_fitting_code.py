@@ -94,7 +94,7 @@ def prepare_2b_fitting_code(settings_path, config_path, in_path, poly_path, poly
     print("Executing python generator script")
     
     # Execute the python script that generates the 1b fit code    
-    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/2b-codes/get_2b_codes.py " + settings_path + " " + config_path + " " + in_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order))
+    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/2b-codes/get_2b_codes.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order))
 
     # restore settings
     os.system("mv " + config_path + ".tmp " + config_path)

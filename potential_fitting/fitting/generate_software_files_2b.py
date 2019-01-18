@@ -301,10 +301,9 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
         c6_text = []
         d6_text = []
 
-        shift = 0;
         for j in range(len(atom_label_b)):
             for i in range(len(atom_label_a)):
-                c6index = shift + len(atom_label_b)*i + j
+                c6index = len(atom_label_b)*i + j
 
                 c6_text.append("        C6.push_back(" + C6[c6index] + ");  " + c6_units + " " + atom_label_b[j] + "--" + atom_label_a[i] + "\n")
                 d6_text.append("        d6.push_back(" + d6[c6index] + ");  " + d6_units + " " + atom_label_b[j] + "--" + atom_label_a[i] + "\n")

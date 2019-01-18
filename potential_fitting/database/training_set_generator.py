@@ -65,7 +65,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
 
                 # monomer deformation energy
                 deformation_energy_hartrees = (float(energies[0]) - float(opt_energies[0]))
-                deformation_energy_kcalmol = deformation_energy_hartrees * constants.au_to_kcal # covert Hartrees to kcal/mol
+                deformation_energy_kcalmol = deformation_energy_hartrees * constants.au_to_kcal # Converts Hartree to kcal/mol
                 if deformation_energy_kcalmol < e_max and deformation_energy_kcalmol - e_min > -0.000000000001:
 
                     # write the number of atoms to the output file
@@ -174,7 +174,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
                 # calculate binding energy
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
-                # write the configuration ony if is below the thresholds
+                # write the configuration only if is below the thresholds
                 if (binding_energy < e_bind_max) and (monomer1_energy_deformation < e_mon_max) and (monomer2_energy_deformation < e_mon_max):
                     # write the number of atoms to the output file 
                     output.write(str(molecule.get_num_atoms()) + "\n")

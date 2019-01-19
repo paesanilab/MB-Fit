@@ -39,9 +39,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     parser = MoleculeInParser(molecule_in)
 
-    molecule_in = "_".join(["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_types()]) for frag in parser.get_fragments()])
+    fragments = ["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_types()]) for frag in parser.get_fragments()]
 
-    fragments = molecule_in.split("_")
+    molecule_in = "_".join(fragments)
 
     if len(geo_paths) != len(fragments):
         raise InconsistentValueError("number of geometries", "number of fragments", len(geo_paths), len(fragments), "number of geometries must be equal to the number of fragments in the A3B2_A3B2 type input")
@@ -427,7 +427,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "C6", str(c6_constants))
     configwriter.set("fitting", "d6", str([[0 for x in c6] for c6 in c6_constants]))
 
-    configwriter.set("fitting", "var", "exp")
+    configwriter.set("fitting", "var_intra", "exp")
+    configwriter.set("fitting", "var_inter", "exp")
+    configwriter.set("fitting", "var_lonepairs", "coul")
     configwriter.set("fitting", "energy_range", str(50.0))
     configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 

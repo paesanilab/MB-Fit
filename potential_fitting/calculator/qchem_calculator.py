@@ -236,6 +236,8 @@ class QchemCalculator(Calculator):
 
         print("Normal mode/frequency analysis complete. {} normal modes found".format(len(normal_modes)))
 
+        self.check_neg_freqs(frequencies)
+
         return normal_modes, frequencies, red_masses, qchem_out_path
 
     def find_normal_modes_frequencies_and_reduced_masses_in_frequency_output_file(self, qchem_out_path):

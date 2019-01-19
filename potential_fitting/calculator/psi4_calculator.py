@@ -180,6 +180,8 @@ class Psi4Calclator(Calculator):
 
         print("Normal mode/frequency analysis complete. {} normal modes found.".format(num_modes))
 
+        self.check_neg_freqs(frequencies)
+
         return normal_modes, frequencies, red_masses, log_path
 
     def parse_frequencies_output_object(self, vibration_info):

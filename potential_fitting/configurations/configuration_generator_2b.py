@@ -38,7 +38,10 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     Returns:
         None
     """    
-    
+     
+    if seed is None:
+        seed = randint(-100000, 100000)
+
     if progression == False:
         generate_2b_configurations_random(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance,
                 max_distance, min_inter_distance, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)

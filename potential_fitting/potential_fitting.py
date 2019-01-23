@@ -38,10 +38,10 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
 
     return dim_null
 
-def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs = 100, seed = random.randint(-1000000, 1000000)):
+def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
+        number_of_configs = 100, seed = None):
     """
-    Generates 1b configurations for a given monomer from a set of normal modes.
+    Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
@@ -57,12 +57,15 @@ def generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, c
         None.
     """
 
-    configurations.generate_1b_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
+    if seed is None:
+        seed = random.randint(-10000000, 10000000)
+
+    configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
             number_of_configs, seed = seed)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, num_attempts = 100, logarithmic = False, seed = random.randint(-1000000, 1000000)):
+        step_size = 0.5, num_attempts = 100, logarithmic = False, seed = None):
     """
     Generates 2b configurations for a given dimer.
 
@@ -98,7 +101,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
-def init_database(settings_path, database_path, configurations_path, tag = "none"):
+def init_database(settings_path, database_path, configurations_path, *tags):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
     to create a new database, or an existing database to add more energies to be calculated
@@ -109,12 +112,13 @@ def init_database(settings_path, database_path, configurations_path, tag = "none
                 be added to the end if it does not already end in ".db".
         configurations_path - Local path to a single .xyz file or a directory containing ".xyz" files. If this argument
                 is a directory, any non .xyz files will be ignored.
+        tags                - Mark the new configurations with these tags.
 
     Returns:
         None.
     """
 
-    database.initialize_database(settings_path, database_path, configurations_path, tag)
+    database.initialize_database(settings_path, database_path, configurations_path, *tags)
 
 def fill_database(settings_path, database_path):
     """
@@ -132,8 +136,8 @@ def fill_database(settings_path, database_path):
 
     database.fill_database(settings_path, database_path)
 
-def generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, method = "%", basis = "%",
-            cp = "%", tag = "%", e_min = 0, e_max = float('inf')):
+def generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, *tags, method = "%", basis = "%",
+            cp = "%", e_min = 0, e_max = float('inf')):
     """
     Generates a 1b training set from the energies inside a database.
 
@@ -148,11 +152,11 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
                 will automatically be added to the end if it does not already end in ".db".
         training_set_path   - Local path to the file to write the training set to.
         molecule_name       - The name of the moelcule to generate a training set for.
+        tags                - Only use energies marked with one or more of these tags.
         method              - Only use energies calcualted by this method.
         basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
                 effect on 1b energies.
-        tag                 - Only use energies marked with this tag.
         e_min               - Minimum (inclusive) energy of any config to include in this training set.
         e_max               - Maximum (exclusive) energy of any config to include in this training set.
 
@@ -160,11 +164,11 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
         None.
     """
 
-    database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, method, basis,
-            cp, tag, e_min, e_max)
+    database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name,
+            method, basis, cp, *tags, e_min = e_min, e_max = e_max)
 
-def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
-        method = "%", basis = "%", cp = "%", tag = "%", e_bind_max = float('inf'), e_mon_max = float('inf')):
+def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name, *tags,
+        method = "%", basis = "%", cp = "%", e_bind_max = float('inf'), e_mon_max = float('inf')):
     """
     Generates a 2b training set from the energies inside a database.
 
@@ -180,19 +184,19 @@ def generate_2b_training_set(settings_path, database_path, training_set_path, mo
         training_set_path   - Local path to the file to write the training set to.
         monomer1_name       - The Name of first monomer in the dimer.
         monomer2_name       - The Name of the second monomer in the dimer.
+        tags                - Only use energies marked with one or more of these tags.
         method              - Only use energies calcualted by this method.
         basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp.
-        tag                 - Only use energies marked with this tag.
         e_bind_max          - Maximum binding energy allowed
         e_mon_max           - Maximum monomer deformation energy allowed
 
     Returns:
         None.
     """
-
+    
     database.generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
-            method, basis, cp, tag, e_bind_max, e_mon_max)
+            method, basis, cp, *tags, e_bind_max = e_bind_max, e_mon_max = e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path):
     """

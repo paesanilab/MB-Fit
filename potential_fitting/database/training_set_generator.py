@@ -2,7 +2,7 @@
 import math, sqlite3
 
 # absolute module imports
-from potential_fitting.utils import constants
+from potential_fitting.utils import constants, SettingsReader, files
 from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError, NoEnergyInRangeError
 
 # local module imports
@@ -27,6 +27,8 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
     Return:
         None.
     """
+
+    settings = SettingsReader(settings_file)
     
     # open the database
     with Database(database_name) as database:
@@ -54,7 +56,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
             raise NoOptimizedEnergyError(database.file_name, molecule_name, method, basis, cp, tag) from None
 
         # open output file for writing
-        with open(training_set_path, "w") as output:
+        with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
 
             # loop thru each molecule, energy pair
             for molecule_energy_pair in molecule_energy_pairs:
@@ -141,7 +143,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
             raise NoOptimizedEnergyError(database.file_name, monomer_2_name, method, basis, cp, tag)
 
         # open output file for writing
-        with open(training_set_path, "w") as output:
+        with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
 
             for molecule_energy_pair in molecule_energy_pairs:
                 molecule = molecule_energy_pair[0]

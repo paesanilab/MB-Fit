@@ -5,9 +5,9 @@ from random import Random, randint
 # Absolute module impots
 from potential_fitting.utils import Quaternion
 from potential_fitting.molecule import Molecule, xyz_to_molecules
-from potential_fitting.utils import files
+from potential_fitting.utils import files, SettingsReader
 
-def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
+def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5,
         num_attempts = 100, logarithmic = False, seed = None):
         
@@ -15,6 +15,7 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file.
 
     Args:
+        settings_path       - Local path to the file containing all relevent settings information.
         geo1_path           - Local path to the first optimized (or series of unoptimized) geometry.
         geo2_path           - Local path to the second optimized (or series of unoptimized) geometry.
         number_of_configs   - Number of configurations to generate.
@@ -39,20 +40,20 @@ def generate_2b_configurations(geo1_path, geo2_path, number_of_configs, config_p
     """    
     
     if progression == False:
-        generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
+        generate_2b_configurations_random(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance,
                 max_distance, min_inter_distance, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
     else:
-        generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance,
+        generate_2b_configurations_smooth(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance,
                 max_distance, min_inter_distance, use_grid = use_grid, step_size = step_size, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
 
-def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
+def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, num_attempts = 100, logarithmic = False, seed = None):
-
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
     outputs them to an xyz file.
 
     Args:
+        settings_path       - Local path to the file containing all relevent settings information.
         geo1_path           - Local path to the first optimized (or series of unoptimized) geometry.
         geo2_path           - Local path to the second optimized (or series of unoptimized) geometry.
         number_of_configs   - Number of configurations to generate.
@@ -70,6 +71,8 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     Returns:
         None
     """
+
+    settings = SettingsReader(settings_path)
     
     if seed is None:
         seed = randint(-100000, 100000)
@@ -85,7 +88,7 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     total_configs = number_of_configs
    
     # open the config file to write to
-    with open(files.init_file(config_path), "w") as config_file:
+    with open(files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings)), "w") as config_file:
 
      
         while total_configs > 0:
@@ -125,7 +128,7 @@ def generate_2b_configurations_random(geo1_path, geo2_path, number_of_configs, c
     print("Generated {} configurations".format(number_of_configs))
     return 
 
-def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
+def generate_2b_configurations_smooth(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, num_attempts = 100,
         logarithmic = False, seed = None):
     """
@@ -133,6 +136,7 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
     progression and outputs them to an xyz file.
 
     Args:
+        settings_path       - Local path to the file containing all relevent settings information.
         geo1_path           - Local path to the first optimized (or series of unoptimized) geometry.
         geo2_path           - Local path to the second optimized (or series of unoptimized) geometry.
         number_of_configs   - Number of configurations to generate.
@@ -153,6 +157,8 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
     Returns:
         None.
     """
+
+    settings = SettingsReader(settings_path)
 
     if seed is None:
         seed = randint(-100000, 100000)
@@ -178,7 +184,7 @@ def generate_2b_configurations_smooth(geo1_path, geo2_path, number_of_configs, c
     random = Random(seed)
     
     # open the config file to write to
-    with open(files.init_file(config_path), "w") as config_file:
+    with open(files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings)), "w") as config_file:
     
         # loop over each step on our grid
         for step in range(num_steps):

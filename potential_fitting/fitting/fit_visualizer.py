@@ -9,6 +9,8 @@ from potential_fitting.utils import constants
 
 import numpy as np
 
+import os
+
 class Dataset():
 
     colors = [
@@ -28,6 +30,17 @@ class Dataset():
 class Dataset_1b(Dataset):
 
     def split_at_threshold(self, threshold):
+
+        '''
+        Splits the data, with the help of a threshold splitting interaction energy
+        and then returns 2 database objects with interaction energies higher than 
+        the threshold and lower than the threshold.
+
+        Args:
+            threshold - The threshold interaction energy to split the data.
+
+        '''
+
         low_calc = []
         high_calc = []
 
@@ -53,6 +66,16 @@ class Dataset_2b(Dataset):
         self.binding_energies = binding_energies
 
     def split_at_threshold(self, threshold):
+        '''
+        Splits the data, with the help of a threshold splitting binding energy
+        and then returns 2 database objects with interaction energies higher than 
+        the threshold and lower than the threshold.
+
+        Args:
+            threshold - The threshold interaction energy to split the data.
+
+        '''
+
         low_calc = []
         high_calc = []
 
@@ -63,7 +86,7 @@ class Dataset_2b(Dataset):
         high_bind = []
 
         for calc_energy, fit_energy, binding_energy in zip(self.calc_energies, self.fit_energies, self.binding_energies):
-            if calc_energy < threshold:
+            if binding_energy < threshold:
                 low_calc.append(calc_energy)
                 low_fit.append(fit_energy)
                 low_bind.append(binding_energy)
@@ -75,6 +98,19 @@ class Dataset_2b(Dataset):
         return Dataset_2b(low_calc, low_fit, self.method + " below {} kcal/mol".format(threshold), low_bind), Dataset_2b(high_calc, high_fit, self.method + " above {} kcal/mol".format(threshold), high_bind)
 
 def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag):
+    '''
+    This method returns the molecules, the required calculated energies, and the list of mb_data points 
+    using the provided parameters, method, basis, cp and tag. 
+
+    Args:
+        file_path_MB - The location, on memory, of the MB data
+        file_path_MB_params - The file path containing the list of MB parameters.
+        db_name - The name of the database from which calculations must be made.
+        molecule_name - The name of the molecule for which the calculations must be made,
+        method - The specified basis for the calculations/fit.
+        cp - The specified cp for the calculations/fit.
+        tag - A set of tags associated with the data during the calculations/fit.
+    '''
     
     mb = []
 
@@ -113,6 +149,24 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, me
 
 def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag):
+
+    '''
+    This method returns the molecules, the required calculated energies, list of mb_data points, 
+    list of ttm_data points, and the list of binding energies using the provided parameters, method, 
+    basis, cp and tag. 
+
+    Args:
+        file_path_TTM - The location, on memory, of the TTM data
+        file_path_TTM_params - The file path containing the list of TTM parameters.
+        file_path_MB - The location, on memory, of the MB data
+        file_path_MB_params - The file path containing the list of MB parameters.
+        db_name - The name of the database from which calculations must be made.
+        monomer1_name - The name of the first monomer from which the calculations must be made,
+        monomer2_name - The name of the second monomer from which the calculations must be made,
+        method - The specified basis for the calculations/fit.
+        cp - The specified cp for the calculations/fit.
+        tag - A set of tags associated with the data during the calculations/fit.
+    '''
 
     ttm = []
     mb = []
@@ -169,28 +223,118 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     return molecules, calc, mb, ttm, binding_energies
 
 def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
-        low_threshold = 50):
+        low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
+
+    '''
+    This method creates the plots for 1-body fits.  
+
+    Args:
+        file_path_TTM - The location, on memory, of the TTM data
+        file_path_TTM_params - The file path containing the list of TTM parameters.
+        file_path_MB - The location, on memory, of the MB data
+        file_path_MB_params - The file path containing the list of MB parameters.
+        db_name - The name of the database from which calculations must be made.
+        molecule_name - The name of the first monomer from which the calculations must be made. 
+        method - The specified basis for the calculations/fit.
+        cp - The specified cp for the calculations/fit.
+        tag - A set of tags associated with the data during the calculations/fit.
+        low_threshold - The binding energy to seperate the "low values" from the high ones. 
+        min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
+        max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
+        file_data - The file to which data can be written during a plot. 
+    '''
+
 
     molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag)
 
-    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), low_threshold = low_threshold)
+    make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 
 def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
-        monomer2_name, method, basis, cp, tag, low_threshold = 50):
+        monomer2_name, method, basis, cp, tag, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
+
+   '''
+    This method creates the plots for 2-body fits.  
+
+    Args:
+        file_path_TTM - The location, on memory, of the TTM data
+        file_path_TTM_params - The file path containing the list of TTM parameters.
+        file_path_MB - The location, on memory, of the MB data
+        file_path_MB_params - The file path containing the list of MB parameters.
+        db_name - The name of the database from which calculations must be made.
+        monomer1_name - The name of the first monomer from which the calculations must be made.
+        monomer2_name - The name of the second monomer from which the calculations must be made.
+        method - The specified basis for the calculations/fit.
+        cp - The specified cp for the calculations/fit.
+        tag - A set of tags associated with the data during the calculations/fit.
+        low_threshold - The binding energy to seperate the "low values" from the high ones. 
+        min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
+        max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
+        file_data - The file to which data can be written during a plot. 
+    '''
+
 
     molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag)
 
-    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), low_threshold = low_threshold)
+    make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
+
+def filter_dataset_energies(dataset, min_cutoff = float('-inf'), max_cutoff = float('inf')):
+    '''
+    This method filters the dataset with given energies bounds, which may be upper-bounded or lower-bounded. 
+
+      Args:
+        dataset - The name of the dataset for which filtering energies must be done.  
+        min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
+        max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
+    '''
+    
+    if min_cutoff == float('-inf') and max_cutoff == float('inf'):
+        return [dataset.calc_energies, dataset.fit_energies]
+
+    calc_energies_filtered = []
+    fit_energies_filtered = []
+
+    for index in range(len(dataset.calc_energies)):
+        if min_cutoff <= dataset.calc_energies[index] <= max_cutoff:
+            calc_energies_filtered += [dataset.calc_energies[index]]
+            fit_energies_filtered += [dataset.fit_energies[index]]
+
+    return [calc_energies_filtered, fit_energies_filtered]
 
 
-def make_graphs(*datasets, low_threshold = 50):
-    make_energy_graph(1, *datasets, low_threshold = low_threshold)
-    make_error_graph(2, *datasets, low_threshold = low_threshold)
-    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
-    make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), low_threshold = low_threshold)
+def make_graphs(*datasets, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None, low_threshold = 50):
 
-def make_energy_graph(figure_num, *datasets, low_threshold = 50):
+    '''
+    This method actually plots all the data to be plotted.  
+
+    Args:
+        *datasets - the dataset/s whose data must be visualized
+        min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
+        max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
+        file_data - The file to which data can be written during a plot. 
+        low_threshold - The binding energy to seperate the "low values" from the high ones. 
+    '''
+
+    make_energy_graph(1, *datasets, min_cutoff = min_cutoff, max_cutoff = max_cutoff, low_threshold = low_threshold, file_data = file_data)
+    make_error_graph(2, *datasets, min_cutoff = min_cutoff, max_cutoff = max_cutoff, low_threshold = low_threshold)
+    make_energy_graph(3, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), min_cutoff = min_cutoff, max_cutoff = max_cutoff, low_threshold = low_threshold, file_data = file_data)
+    make_error_graph(4, *(dataset.split_at_threshold(low_threshold)[0] for dataset in datasets), min_cutoff = min_cutoff, max_cutoff = max_cutoff, low_threshold = low_threshold)
+
+
+
+def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
+    '''
+    This method makes the graph featuring all information divided into low and high energy datasets.
+
+    Args:
+        figure_nums - the figure number of the associated plot.
+        *datasets - the dataset/s whose data must be visualized
+        low_threshold - The binding energy to seperate the "low values" from the high ones. 
+        min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
+        max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
+        file_data - The file to which data can be written during a plot. 
+    '''
+
     # make the graph featuring all information divided into low and high energy datasets
 
     # Set figure number
@@ -199,15 +343,48 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
     above_plots = []
     below_plots = []
 
+    if file_data != None:
+    	if os.path.exists(file_data):
+    		os.remove(file_data)
+   
     # plot each dataset
     for index, dataset in enumerate(datasets):
-
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
-        below_plots.append(plt.scatter(low_dataset.calc_energies, low_dataset.fit_energies,
+        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
+
+        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
+
+        below_plots.append(plt.scatter(low_dataset_filtered[0], low_dataset_filtered[1],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
-        above_plots.append(plt.scatter(high_dataset.calc_energies, high_dataset.fit_energies,
+        above_plots.append(plt.scatter(high_dataset_filtered[0], high_dataset_filtered[1],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
+
+        calc_energies_list = low_dataset.calc_energies + high_dataset.calc_energies
+
+        fit_energies_list = low_dataset.fit_energies + high_dataset.fit_energies
+
+        if file_data != None and type(file_data) == str:
+	        with open(file_data, 'a+') as file:
+
+	        	file.write('Reference Energy - ' + str(dataset.method) + ' [')
+
+	        	for calc_energy in calc_energies_list:
+	        		file.write(str(calc_energy) + ", ")
+
+	        	file.write(']')
+	        	file.write('\n')
+
+	        	file.write('Fitted Energy - ' + str(dataset.method) + ' [')
+
+	        	for fitted_energy in fit_energies_list:
+	        		file.write(str(fitted_energy) + ", ")
+
+	        	file.write(']')
+	        	file.write('\n' * 3)
+
+	        	file.write('####################################################')
+	        	file.write('\n' * 2)
 
 
     # plotting an idealized prediction using color codes for TTM fit
@@ -225,7 +402,18 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50):
 
     # make the graph of the error featuring all info divided into low and high energy datasets
 
-def make_error_graph(figure_num, *datasets, low_threshold = 50):
+def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf')):
+    '''
+    This method makes the graph featuring all error information divided into low and high energy datasets.
+
+    Args:
+        figure_nums - the figure number of the associated plot.
+        *datasets - the dataset/s whose data must be visualized
+        low_threshold - The binding energy to seperate the "low values" from the high ones. 
+        min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
+        max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
+        file_data - The file to which data can be written during a plot. 
+    '''
     # make the graph featuring all error information high and low
 
     plt.figure(figure_num)
@@ -237,11 +425,15 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50):
 
         low_dataset, high_dataset = dataset.split_at_threshold(low_threshold)
 
-        below_plots.append(plt.scatter(low_dataset.calc_energies,
-                [fit - calc for fit, calc in zip(low_dataset.fit_energies, low_dataset.calc_energies)],
+        low_dataset_filtered = filter_dataset_energies(low_dataset, min_cutoff = min_cutoff, max_cutoff = max_cutoff)
+
+        high_dataset_filtered = filter_dataset_energies(high_dataset, min_cutoff = min_cutoff, max_cutoff =  max_cutoff)
+
+        below_plots.append(plt.scatter(low_dataset_filtered[0],
+                [fit - calc for fit, calc in zip(low_dataset_filtered[1], low_dataset_filtered[0])],
                 c = Dataset.colors[index][0], s = 5, alpha = 0.5))
-        above_plots.append(plt.scatter(high_dataset.calc_energies,
-                [fit - calc for fit, calc in zip(high_dataset.fit_energies, high_dataset.calc_energies)],
+        above_plots.append(plt.scatter(high_dataset_filtered[0],
+                [fit - calc for fit, calc in zip(high_dataset_filtered[1], high_dataset_filtered[0])],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
     
     # plotting an idealized prediction using color codes for TTM fit

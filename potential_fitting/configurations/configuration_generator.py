@@ -158,6 +158,17 @@ def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduce
 
     print("Running normal distribution configuration generator...")
 
+    num_neg_freqs = 0
+    for frequency in frequencies:
+        if frequency < 0:
+            num_neg_freqs += 1
+
+    if num_neg_freqs == 1:
+        print("Single negative frequency detected in input. This most likely means the given geometry is a transition state.")
+    
+    elif num_neg_freqs > 1:
+        print("Multiple ({}) negative frequencies detected in input. Proceed with caution.".format(num_neg_freqs))
+
     # initialize any directories needed to hold config-path
     config_path = files.init_file(config_path)
 

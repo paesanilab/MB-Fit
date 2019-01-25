@@ -95,7 +95,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
         None.
     """
 
-    configurations.generate_2b_configurations(geo1_path, geo2_path, number_of_configs, configurations_path,
+    configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
 def init_database(settings_path, database_path, configurations_path, tag = "none"):

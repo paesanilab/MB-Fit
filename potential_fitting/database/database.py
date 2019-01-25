@@ -30,7 +30,7 @@ class Database():
         self.file_name = file_path
         
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = sqlite3.connect(files.init_file(file_path))
+        self.connection = sqlite3.connect(files.init_file(file_path, files.OverwriteMethod.NONE))
         
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()

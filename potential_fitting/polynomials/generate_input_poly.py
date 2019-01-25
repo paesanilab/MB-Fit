@@ -21,7 +21,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
     settings = SettingsReader(settings_file)
 
     # file will be automatically closed after block by with open as ... syntax
-    with open(files.init_file(in_file_path), "w") as poly_in_file:
+    with open(files.init_file(in_file_path, files.OverwriteMethod.NONE), "w") as poly_in_file:
 
         molecule_in_parser = MoleculeInParser(molecule_in)
 

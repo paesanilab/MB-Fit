@@ -2,7 +2,7 @@
 import math, sqlite3
 
 # absolute module imports
-from potential_fitting.utils import constants
+from potential_fitting.utils import constants, SettingsReader, files
 from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError, NoEnergyInRangeError
 
 # local module imports
@@ -27,6 +27,8 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
     Return:
         None.
     """
+
+    settings = SettingsReader(settings_file)
     
     # open the database
     with Database(database_name) as database:
@@ -54,7 +56,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
             raise NoOptimizedEnergyError(database.file_name, molecule_name, method, basis, cp, tag) from None
 
         # open output file for writing
-        with open(training_set_path, "w") as output:
+        with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
 
             # loop thru each molecule, energy pair
             for molecule_energy_pair in molecule_energy_pairs:
@@ -63,7 +65,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
 
                 # monomer deformation energy
                 deformation_energy_hartrees = (float(energies[0]) - float(opt_energies[0]))
-                deformation_energy_kcalmol = deformation_energy_hartrees * constants.au_to_kcal # covert Hartrees to kcal/mol
+                deformation_energy_kcalmol = deformation_energy_hartrees * constants.au_to_kcal # Converts Hartree to kcal/mol
                 if deformation_energy_kcalmol < e_max and deformation_energy_kcalmol - e_min > -0.000000000001:
 
                     # write the number of atoms to the output file
@@ -141,7 +143,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
             raise NoOptimizedEnergyError(database.file_name, monomer_2_name, method, basis, cp, tag)
 
         # open output file for writing
-        with open(training_set_path, "w") as output:
+        with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
 
             for molecule_energy_pair in molecule_energy_pairs:
                 molecule = molecule_energy_pair[0]
@@ -172,7 +174,7 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
                 # calculate binding energy
                 binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
 
-                # write the configuration ony if is below the thresholds
+                # write the configuration only if is below the thresholds
                 if (binding_energy < e_bind_max) and (monomer1_energy_deformation < e_mon_max) and (monomer2_energy_deformation < e_mon_max):
                     # write the number of atoms to the output file 
                     output.write(str(molecule.get_num_atoms()) + "\n")

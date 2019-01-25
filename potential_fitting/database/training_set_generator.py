@@ -8,12 +8,12 @@ from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError
 # local module imports
 from .database import Database
 
-def generate_1b_training_set(settings_file, database_name, training_set_path, molecule_name, method, basis, cp, tag, e_min = 0, e_max = float('inf')):
+def generate_1b_training_set(settings_path, database_name, training_set_path, molecule_name, method, basis, cp, tag, e_min = 0, e_max = float('inf')):
     """
     Creates a 1b training set file from the calculated energies in a database.
 
     Args:
-        settings_file       - Local path to the ".ini" file with all relevent settings information.
+        settings_path       - Local path to the ".ini" file with all relevent settings information.
         database_name       - Local path to the database file. ".db" will be added if it does not already end in ".db".
         training_set_path   - Local path to file to write training set to.
         molecule_name       - The name of the molecule to generate a training set for.
@@ -28,7 +28,7 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
         None.
     """
 
-    settings = SettingsReader(settings_file)
+    settings = SettingsReader(settings_path)
     
     # open the database
     with Database(database_name) as database:
@@ -87,13 +87,13 @@ def generate_1b_training_set(settings_file, database_name, training_set_path, mo
 
                     
 
-def generate_2b_training_set(settings, database_name, training_set_path, monomer_1_name, monomer_2_name, method, basis,
+def generate_2b_training_set(settings_path, database_name, training_set_path, monomer_1_name, monomer_2_name, method, basis,
         cp, tag, e_bind_max = float('inf'), e_mon_max = float('inf')):
     """"
     Creates a 2b training set file from the calculated energies in a database.
 
     Args:
-        settings_file       - Local path to the ".ini" file with all relevent settings information.
+        settings_path       - Local path to the ".ini" file with all relevent settings information.
         database_name       - Local path to the database file. ".db" will be added if it does not already end in ".db".
         training_set_path   - Local path to file to write training set to.
         monomer_1_name      - The name of the first monomer in the dimer.
@@ -108,6 +108,8 @@ def generate_2b_training_set(settings, database_name, training_set_path, monomer
     Return:
         None.
     """
+
+    settings = SettingsReader(settings_path)
     
     # open the database
     with Database(database_name) as database:

@@ -1,7 +1,7 @@
 # absolute module imports
 from potential_fitting import calculator
 from potential_fitting.molecule import xyz_to_molecules
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, files
 
 def generate_normal_modes(settings_path, opt_path, normal_modes_path):
     """
@@ -28,21 +28,24 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path):
     dim_null = 3 * molecule.get_num_atoms() - len(normal_modes)
     
     # write the normal modes to the output file
-    write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path)
+    write_normal_modes(settings_path, normal_modes, frequencies, red_masses, normal_modes_path)
 
     # return dim null so it can be used as input to configuration_generator
     return dim_null
 
-def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path):
+def write_normal_modes(settings_path, normal_modes, frequencies, red_masses, normal_modes_path):
     """
     Writes the info returned by calculator.frequencies() to the file normal_modes_path.
 
     Args:
+        settings_path       - Local path to the ".ini" file containing all relevant settings.
         normal_modes        - The normal modes to write.
         frequencies         - The frequencies to write.
         red_masses          - The reduced_masses to write.
         normal_modes_path   - Local path to the file to write the normal modes to.
     """
+
+    settings = SettingsReader(settings_path)
 
     # formatter strings
     norm_formatter = "{:> 12.4f}"
@@ -72,6 +75,8 @@ def write_normal_modes(normal_modes, frequencies, red_masses, normal_modes_path)
             normal_out += norm_formatter.format(0.0 if abs(float(geo[atom][2])) < 1e-6 else float(geo[atom][2])) + "\n"
         
         normal_out += "\n"
+
+    normal_modes_path = files.init_file(normal_modes_path, files.OverwriteMethod.get_from_settings(settings))
 
     # write the normal modes to the output file
     with open(normal_modes_path, 'w') as norm_file:

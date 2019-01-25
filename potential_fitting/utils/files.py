@@ -1,9 +1,10 @@
 # external package imports
 import os
 import datetime
+from enum import Enum
 
 # absolute package imports
-from potential_fitting.exceptions import FileExistsError
+from potential_fitting.exceptions import FileExistsError, InvalidValueError
 
 def init_directory(directory_path):
     """
@@ -22,7 +23,31 @@ def init_directory(directory_path):
 
     return directory_path
 
-def init_file(file_path):
+class OverwriteMethod(Enum):
+    OVERWRITE = 1
+    BACKUP = 2
+    CRASH = 3
+    NONE = 4 # special overwrite method for when desired behavior is modification of an existing file or silent
+             # silent overwritting of the file.
+
+    def get_from_settings(settings):
+        overwrite_method = settings.get("files", "overwrite_method", "backup")
+        if overwrite_method.lower() == "overwrite":
+            return OverwriteMethod.OVERWRITE
+        if overwrite_method.lower() == "backup":
+            return OverwriteMethod.BACKUP
+        if overwrite_method.lower() == "crash":
+            return OverwriteMethod.CRASH
+        if overwrite_method.lower() == "none":
+            raise InvalidValueError("overwrite_method", overwrite_method, "none is a special overwrite method and "
+                    + "should not be used by the user.")
+
+        raise InvalidValueError("overwrite_method", overwrite_method, "overwrite_method must be a valid "
+                + "OverwriteMethod. See files.OverwriteMethod")
+        
+
+
+def init_file(file_path, overwrite_method = OverwriteMethod.BACKUP):
     """
     Creates any directories that are needed to house the given file if they do not already exist.
     
@@ -33,7 +58,37 @@ def init_file(file_path):
         The same file path as was passed in.
     """
 
-    return os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
+    file_path = os.path.join(init_directory(os.path.dirname(file_path)), os.path.basename(file_path))
+
+    if os.path.isfile(file_path):
+        if overwrite_method == OverwriteMethod.OVERWRITE:
+            print("File {} already exists, but overwrite_method is set to OVERWRITE, so it is being overwritten.".format(file_path))
+
+        elif overwrite_method == OverwriteMethod.BACKUP:
+            i = 1
+
+            backup_path = file_path + ".backup-{}".format(i)
+            while os.path.isfile(backup_path):
+                i += 1
+                backup_path = file_path + ".backup-{}".format(i)
+
+            print("File {0} already exists, moving existing {0} to {1} to make way for new file.".format(file_path,
+                    backup_path))
+
+            backup_path = init_file(backup_path)
+
+            os.rename(file_path, backup_path)
+
+        elif overwrite_method == OverwriteMethod.CRASH:
+            raise FileExistsError(file_path)
+
+        elif overwrite_method == OverwriteMethod.NONE:
+            pass
+
+        else:
+            raise InvalidValueError("overwrite_method", overwrite_method, "must be a valid OverwriteMethod. "
+                    + "See files.OverwriteMethod")
+    return file_path
 
 def get_molecule_log_path(log_path, molecule, suffix):
     """

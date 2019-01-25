@@ -263,6 +263,17 @@ def frequencies_psi4(settings, molecule, method, basis):
         normal_modes.append(normal_mode)
 
     print("Normal mode/frequency analysis complete. {} normal modes found.".format(num_modes))
+
+    num_neg_freqs = 0
+    for frequency in frequencies:
+        if frequency < 0:
+            num_neg_freqs += 1
+
+    if num_neg_freqs == 1:
+        print("Single negative frequency detected. This most likely means the given geometry is a transition state.")
+        
+    elif num_neg_freqs > 1:
+        print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(num_neg_freqs))
     
     return normal_modes, frequencies, red_masses
 
@@ -380,4 +391,15 @@ def frequencies_qchem(settings, molecule, method, basis):
 
     print("Normal mode/frequency analysis complete. {} normal modes found".format(len(normal_modes)))
 
+    num_neg_freqs = 0
+    for frequency in frequencies:
+        if frequency < 0:
+            num_neg_freqs += 1
+
+    if num_neg_freqs == 1:
+        print("Single negative frequency detected. This most likely means the given geometry is a transition state.")
+    
+    elif num_neg_freqs > 1:
+        print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(num_neg_freqs))
+    
     return normal_modes, frequencies, red_masses

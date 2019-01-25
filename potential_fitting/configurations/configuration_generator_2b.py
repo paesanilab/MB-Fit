@@ -9,7 +9,7 @@ from potential_fitting.utils import files, SettingsReader
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, step_size = 0.5,
-        num_attempts = 5, logarithmic = False, seed = None):
+        num_attempts = 100, logarithmic = False, seed = None):
         
     """
     Generates a set of 2 body configurations of the two optimized geometries and outputs them to an xyz file.
@@ -47,7 +47,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                 max_distance, min_inter_distance, use_grid = use_grid, step_size = step_size, num_attempts = num_attempts, logarithmic = logarithmic, seed = seed)
 
 def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, num_attempts = 5, logarithmic = False, seed = None):
+        max_distance = 5, min_inter_distance = 0.8, num_attempts = 100, logarithmic = False, seed = None):
 
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
@@ -130,7 +130,7 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
     return 
 
 def generate_2b_configurations_smooth(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
-        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, num_attempts = 5,
+        max_distance = 5, min_inter_distance = 0.8, use_grid = False, step_size = 0.5, num_attempts = 100,
         logarithmic = False, seed = None):
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth

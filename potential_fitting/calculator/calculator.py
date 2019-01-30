@@ -19,6 +19,9 @@ class Calculator:
 
         self.settings = SettingsReader(settings_path)
         self.logging = logging
+
+    def setLogging(self, logging):
+        self.logging = logging
     
     def calculate_energy(self, molecule, model, fragment_indicies):
         """
@@ -76,3 +79,5 @@ class Calculator:
             print("Single negative frequency detected. This means the inputted geometry is probably a transition state.")
         elif number_of_negative_frequencies > 1:
             print("Multiple ({}) negative frequencies detected. Proceed with caution.")
+
+        return number_of_negative_frequencies

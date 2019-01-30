@@ -3,57 +3,64 @@ import unittest
 from potential_fitting.calculator import Model
 
 class TestModel(unittest.TestCase):
-	
-	def test_get_method(self):
-		model = Model("HF", "STO-3G", True)
 
-		self.assertEqaul(model.get_method(), "HF")
+    # set up before the first test case
+    def setUpClass():
+        pass
 
-		model = Model("wb97-mv", "cc-pvdz", False)
+    # clean up after the last test case
+    def tearDownClass():
+        pass
 
-		self.assertEqaul(model.get_method(), "wb97-mv")
+    # set up before each test case
+    def setUp(self):
 
-		model = Model("Nagic", "Wand", True)
+        self.HF_STO3G_True = Model("HF", "STO-3G", True)
+        self.wb97mv_ccpvdz_False = Model("wb97m-v", "cc-pvdz", False)
+        self.magic_wand = Model("Magic", "Wand", True)
 
-		self.assertEqaul(model.get_method(), "Magic")
+    # clean up after each test case
+    def tearDown(self):
+        pass
+    
+    def test_get_method(self):
 
-	def test_get_basis(self):
-		model = Model("HF", "STO-3G", True)
+        self.assertEqaul(self.HF_STO3G_True.get_method(), "HF")
+        self.assertEqaul(self.wb97mv_ccpvdz_false.get_method(), "wb97m-v")
+        self.assertEqaul(self.magic_wand.get_method(), "Magic")
 
-		self.assertEqaul(model.get_basis(), "STO-3G")
+    def test_get_basis(self):
+        
+        self.assertEqaul(self.HF_STO3G_True.get_basis(), "HF")
+        self.assertEqaul(self.wb97mv_ccpvdz_false.get_basis(), "cc-pvdz")
+        self.assertEqaul(self.magic_wand.get_basis(), "Wand")
 
-		model = Model("wb97-mv", "cc-pvdz", False)
+    def test_get_cp(self):
+        
+        self.assertEqaul(self.HF_STO3G_True.get_cp(), True)
+        self.assertEqaul(self.wb97mv_ccpvdz_false.get_cp(), False)
+        self.assertEqaul(self.magic_wand.get_cp(), True)
 
-		self.assertEqaul(model.get_basis(), "cc-pvdz")
+    def test_eq(self):
 
-		model = Model("Magic", "Wand", True)
+        model1 = Model("HF", "STO-3G", True)
+        self.assertTrue(model1 == self.HF_STO3G_True)
 
-		self.assertEqaul(model.get_basis(), "Wand")
+        model2 = Model("hf", "sto-3g", True)
+        self.assertFalse(model2 == self.HF_STO3G_True)
 
-	def test_get_cp(self):
-		model = Model("HF", "STO-3G", True)
+        model3 = Model("wb97", "m-vcc-pvdz", False)
+        self.assertFalse(model3 == self.wb97mv_ccpvdz_False)
 
-		self.assertEqaul(model.get_cp(), True)
+    def test_ne(self):
 
-		model = Model("wb97-mv", "cc-pvdz", False)
+        model1 = Model("HF", "STO-3G", True)
+        self.assertFalse(model1 != self.HF_STO3G_True)
 
-		self.assertEqaul(model.get_cp(), False)
+        model2 = Model("hf", "sto-3g", True)
+        self.assertTrue(model2 != self.HF_STO3G_True)
 
-		model = Model("Magic", "Wand", True)
+        model3 = Model("wb97", "m-vcc-pvdz", False)
+        self.assertTrue(model3 != self.wb97mv_ccpvdz_False)
 
-		self.assertEqaul(model.get_cp(), True)
-
-	def test_equ(self):
-		model1 = Model("HF", "STO-3G", True)
-		
-		model2 = Model("HF", "STO-3G", True)
-
-		self.assertTrue(model1 == model2)
-
-		model1 = Model("hf", "sto-3g", True)
-
-		model2 = Model("HF", "STO-3G", True)
-
-		self.assertFalse(model1 == model2)	
-
-suite = unittest.TestLoader().loadTestsFromTestCase(TestAtom)
+suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)

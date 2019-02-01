@@ -211,13 +211,13 @@ class TestMolecule(unittest.TestCase):
 
         molecule.add_fragment(fragment1)
         
-        self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment0.to_xyz()[:-1])
+        self.assertEqual(molecule.to_xyz(), fragment0.to_xyz() + fragment1.to_xyz()[:-1])
 
         fragment2 = Fragment("XeBr", 0, 2)
         fragment2.add_atom(Atom("Xe", "E", 0, 0, 0))
         fragment2.add_atom(Atom("Br", "F", 62, 5, 0.001))
 
         molecule.add_fragment(fragment2)
-        self.assertEqual(molecule.to_xyz(), fragment1.to_xyz() + fragment0.to_xyz() + fragment2.to_xyz()[:-1])
+        self.assertEqual(molecule.to_xyz(), fragment0.to_xyz() + fragment1.to_xyz() + fragment2.to_xyz()[:-1])
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestMolecule)

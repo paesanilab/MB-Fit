@@ -72,7 +72,7 @@ class Psi4Calculator(Calculator):
         
         # Creats the psi4 input string of the molecule by combining the xyz file output with an additional line containing
         # charge and spin multiplicity
-        psi4_string = "{}\n{} {}".format(molecule.to_xyz(fragment_indicies, model.get_cp()), molecule.get_charge(fragment_indicies),
+        psi4_string = "{}\n{} {}\n".format(molecule.to_xyz(fragment_indicies, model.get_cp()), molecule.get_charge(fragment_indicies),
                 molecule.get_spin_multiplicity(fragment_indicies))
 
         try:
@@ -161,9 +161,10 @@ class Psi4Calculator(Calculator):
             (normal modes, frequencies, reduced masses, path to log file)
         """
 
-        print("Beginning normal modes calculation of {} with {}/{}.".format(molecule.get_name(), method, basis))
+        if self.logging:
+            print("Beginning normal modes calculation of {} with {}/{}.".format(molecule.get_name(), model.get_method(), model.get_basis()))
 
-        log_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "log")
+        log_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "log")
 
         self.initialize_calculation(log_path)
 
@@ -171,22 +172,23 @@ class Psi4Calculator(Calculator):
 
         # use psi4 to perform a frequency calculation
         try:
-            total_energy, wavefunction = psi4.frequency("{}/{}".format(method, basis), molecule=psi4_mol, return_wfn=True)
+            total_energy, wavefunction = psi4.frequency("{}/{}".format(model.get_method(), model.get_basis()), molecule=psi4_mol, return_wfn=True)
         except QcdbException as e:
             raise LibraryCallError("psi4", "frequency", str(e))
 
         # retrieve the normal modes, frequencies, and reduced masses from the psi4 output object
         vibration_info = psi4.qcdb.vib.filter_nonvib(wavefunction.frequency_analysis)
 
-        normal_modes, frequencies, red_masses = self.parse_psi4_output(vibration_info)
+        normal_modes, frequencies, red_masses = self.parse_frequencies_output_object(wavefunction, vibration_info, molecule.get_num_atoms())
 
-        print("Normal mode/frequency analysis complete. {} normal modes found.".format(num_modes))
+        if self.logging:
+            print("Normal mode/frequency analysis complete. {} normal modes found.".format(len(frequencies)))
 
         self.check_neg_freqs(frequencies)
 
         return normal_modes, frequencies, red_masses, log_path
 
-    def parse_frequencies_output_object(self, vibration_info):
+    def parse_frequencies_output_object(self, wavefunction, vibration_info, num_atoms):
         """
         Parses the Psi4 output of a frequency calculation into lists of
         normal_modes, frequencies, and reduced masses
@@ -199,13 +201,12 @@ class Psi4Calculator(Calculator):
         """
 
         frequencies = wavefunction.frequencies().to_array()
-        red_masses = vib_info["mu"].data
+        red_masses = vibration_info["mu"].data
         
-        normal_modes_raw = vib_info['x'].data
+        normal_modes_raw = vibration_info['x'].data
         normal_modes = []
         
         num_modes = len(frequencies)
-        num_atoms = molecule.get_num_atoms()
 
         for normal_mode_index in range(num_modes):
             normal_mode = [[0, 0, 0] for atom_index in range(num_atoms)]

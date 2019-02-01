@@ -25,21 +25,21 @@ class TestModel(unittest.TestCase):
     
     def test_get_method(self):
 
-        self.assertEqaul(self.HF_STO3G_True.get_method(), "HF")
-        self.assertEqaul(self.wb97mv_ccpvdz_false.get_method(), "wb97m-v")
-        self.assertEqaul(self.magic_wand.get_method(), "Magic")
+        self.assertEqual(self.HF_STO3G_True.get_method(), "HF")
+        self.assertEqual(self.wb97mv_ccpvdz_False.get_method(), "wb97m-v")
+        self.assertEqual(self.magic_wand.get_method(), "Magic")
 
     def test_get_basis(self):
         
-        self.assertEqaul(self.HF_STO3G_True.get_basis(), "HF")
-        self.assertEqaul(self.wb97mv_ccpvdz_false.get_basis(), "cc-pvdz")
-        self.assertEqaul(self.magic_wand.get_basis(), "Wand")
+        self.assertEqual(self.HF_STO3G_True.get_basis(), "STO-3G")
+        self.assertEqual(self.wb97mv_ccpvdz_False.get_basis(), "cc-pvdz")
+        self.assertEqual(self.magic_wand.get_basis(), "Wand")
 
     def test_get_cp(self):
         
-        self.assertEqaul(self.HF_STO3G_True.get_cp(), True)
-        self.assertEqaul(self.wb97mv_ccpvdz_false.get_cp(), False)
-        self.assertEqaul(self.magic_wand.get_cp(), True)
+        self.assertEqual(self.HF_STO3G_True.get_cp(), True)
+        self.assertEqual(self.wb97mv_ccpvdz_False.get_cp(), False)
+        self.assertEqual(self.magic_wand.get_cp(), True)
 
     def test_eq(self):
 

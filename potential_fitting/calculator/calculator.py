@@ -73,11 +73,11 @@ class Calculator:
         number_of_negative_frequencies = 0
         for frequency in frequencies:
             if frequency < 0:
-                number_of_negative_frequencues += 1
+                number_of_negative_frequencies += 1
 
         if number_of_negative_frequencies == 1:
             print("Single negative frequency detected. This means the inputted geometry is probably a transition state.")
         elif number_of_negative_frequencies > 1:
-            print("Multiple ({}) negative frequencies detected. Proceed with caution.")
+            print("Multiple ({}) negative frequencies detected. Proceed with caution.".format(number_of_negative_frequencies))
 
         return number_of_negative_frequencies

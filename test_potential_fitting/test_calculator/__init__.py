@@ -1,4 +1,4 @@
 import unittest
-from . import test_model
+from . import test_model, test_calculator
 
-suite = unittest.TestSuite([test_model.suite])
+suite = unittest.TestSuite([test_model.suite, test_calculator.suite])

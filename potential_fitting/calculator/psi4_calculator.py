@@ -1,7 +1,9 @@
 # absolute module imports
-from from potential_fitting.utils import files
+from potential_fitting.utils import files
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError)
+
+from .calculator import Calculator
 
 try:
     import psi4
@@ -11,7 +13,7 @@ except ImportError:
 else:
     has_psi4 = True
 
-class Psi4Calclator(Calculator):
+class Psi4Calculator(Calculator):
     
     def __init__(self, settings_path, logging = True):
         """

@@ -1,8 +1,10 @@
 # absolute module imports
-from from potential_fitting.utils import files, system
+from potential_fitting.utils import files, system
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError,
         ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError)
+
+from .calculator import Calculator
 
 class QchemCalculator(Calculator):
 
@@ -166,7 +168,7 @@ class QchemCalculator(Calculator):
         except CommandExecutionError as e:
             raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code") from e
 
-        geometry, energy = *find_optimized_geometry_in_optimization_output_file(qchem_out_path)
+        geometry, energy = find_optimized_geometry_in_optimization_output_file(qchem_out_path)
 
         if self.logging:
             print("Completed geometry optimization.")

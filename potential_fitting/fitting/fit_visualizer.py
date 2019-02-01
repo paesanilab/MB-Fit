@@ -252,7 +252,7 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
 def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
-   '''
+    '''
     This method creates the plots for 2-body fits.  
 
     Args:
@@ -344,8 +344,8 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
     below_plots = []
 
     if file_data != None:
-    	if os.path.exists(file_data):
-    		os.remove(file_data)
+        if os.path.exists(file_data):
+            os.remove(file_data)
    
     # plot each dataset
     for index, dataset in enumerate(datasets):
@@ -365,26 +365,26 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
         fit_energies_list = low_dataset.fit_energies + high_dataset.fit_energies
 
         if file_data != None and type(file_data) == str:
-	        with open(file_data, 'a+') as file:
+            with open(file_data, 'a+') as file:
 
-	        	file.write('Reference Energy - ' + str(dataset.method) + ' [')
+                file.write('Reference Energy - ' + str(dataset.method) + ' [')
 
-	        	for calc_energy in calc_energies_list:
-	        		file.write(str(calc_energy) + ", ")
+                for calc_energy in calc_energies_list:
+                    file.write(str(calc_energy) + ", ")
 
-	        	file.write(']')
-	        	file.write('\n')
+                file.write(']')
+                file.write('\n')
 
-	        	file.write('Fitted Energy - ' + str(dataset.method) + ' [')
+                file.write('Fitted Energy - ' + str(dataset.method) + ' [')
 
-	        	for fitted_energy in fit_energies_list:
-	        		file.write(str(fitted_energy) + ", ")
+                for fitted_energy in fit_energies_list:
+                    file.write(str(fitted_energy) + ", ")
 
-	        	file.write(']')
-	        	file.write('\n' * 3)
+                file.write(']')
+                file.write('\n' * 3)
 
-	        	file.write('####################################################')
-	        	file.write('\n' * 2)
+                file.write('####################################################')
+                file.write('\n' * 2)
 
 
     # plotting an idealized prediction using color codes for TTM fit

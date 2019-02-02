@@ -1,20 +1,32 @@
 import unittest
 import os
 
-from potential_fitting.calculator import Psi4Calculator, Model
+from potential_fitting.calculator import QchemCalculator, Model
+from potential_fitting.utils import system
+from potential_fitting.exceptions import CommandExecutionError
 
 from .test_calculator import TestCalculator
 
-class TestPsi4Calculator(TestCalculator):
+def hasQchem():
+
+    try:
+        system.call("which", "qchem")
+    except CommandExecutionError:
+        return False
+    return True
+
+@unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
+class TestQchemCalculator(TestCalculator):
 
     # set up before each test case
     def setUp(self):
-        self.calculator1 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
-        self.calculator2 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.ini"), True)
-        self.calculator3 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
-        self.calculator4 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.ini"), True)
+        self.calculator1 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
+        self.calculator2 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.ini"), True)
+        self.calculator3 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
+        self.calculator4 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.ini"), True)
 
     def test_calculate_energy(self):
+
         
         self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
@@ -44,4 +56,4 @@ class TestPsi4Calculator(TestCalculator):
 
         self.calculator4.find_frequencies(TestCalculator.SCN, TestCalculator.model2)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(TestPsi4Calculator)
+suite = unittest.TestLoader().loadTestsFromTestCase(TestQchemCalculator)

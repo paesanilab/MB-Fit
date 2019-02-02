@@ -1,10 +1,11 @@
 # external package imports
-import itertools, datetime, sqlite3
+import itertools, datetime, psycopg2
 
 # absolute module imports
 from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError
+
 
 class Database():
     """
@@ -23,17 +24,10 @@ class Database():
             A new Database object.
         """
 
-        if file_path[-3:] != ".db":
-            print("Automatically ending '.db' suffix to database name {}.".format(file_path))
-            file_path += ".db"
-
-        self.file_name = file_path
-        
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = sqlite3.connect(files.init_file(file_path, files.OverwriteMethod.NONE))
-        
+        self.connection = psycopg2.connect("dbname=mytestdb user=ebullvul password=qwerty")
         # the cursor is used to execute operations on the database
-        self.cursor = self.connection.cursor()
+        self.cursor = connection.cursor()
 
         # this checks to make sure the file specified by file_path is a valid database file. The sqlite3 command will
         # throw an error if the file is exists but is not a database
@@ -41,11 +35,11 @@ class Database():
             self.cursor.execute("PRAGMA table_info('schema_version')");
         except:
             self.close()
-            raise InconsistentDatabaseError(file_path, "File exists but is not a valid database file.") from None
-    
+            raise InconsistentDatabaseError(file_path, "Database is corrupted!!! (Not really sure why, thats your job to figure out. :)") from None
 
     # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use
     # with ... as ... syntax on it
+
     def __enter__(self):
         """
         Simply returns self.
@@ -117,55 +111,6 @@ class Database():
         Returns:
             None.
         """
-        
-        # create the Models table 
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Models(method TEXT, basis TEXT, cp INT)
-            """
-        )
-
-        # create the Molecules table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Molecules(name TEXT, hash TEXT)
-            """
-        )
-
-        # create the Fragments table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, frag_index INT, name TEXT, charge INT, spin INT)
-            """
-        )
-
-        # create the Atoms table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Atoms(fragment_id INT, symbol TEXT, symmetry_class TEST, x REAL, y REAL, z REAL)
-            """
-        )
-
-        # create the Calculations table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Calculations(molecule_id INT, model_id INT, tag TEXT, optimized INT)
-            """
-        )
-
-        # create the Energies table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Energies(calculation_id INT, job_id INT, energy_index INT, energy REAL)
-            """
-        )
-
-        # create the Jobs table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Jobs(status TEXT, log_file TEXT, start_date TEXT, end_date TEXT)
-            """
-        )
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         """
@@ -277,7 +222,6 @@ class Database():
 
             self.cursor.execute("UPDATE Calculations SET tag=? WHERE ROWID=?", (tag_string, calc_id))
 
-
     def get_missing_energy(self):
         """
         Returns a single Job object, which contains the info a user needs to calculate a pending energy in the table.
@@ -350,7 +294,6 @@ class Database():
                 return
 
             yield calculation
-        
 
     def set_energy(self, job_id, energy, log_file):
         """

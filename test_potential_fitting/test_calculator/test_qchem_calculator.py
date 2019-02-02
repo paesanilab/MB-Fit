@@ -15,6 +15,7 @@ def hasQchem():
         return False
     return True
 
+# this skips this entire test class if qchem is not isntalled.
 @unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
 class TestQchemCalculator(TestCalculator):
 

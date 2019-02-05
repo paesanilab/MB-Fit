@@ -2,7 +2,7 @@ import os
 import math, configparser
 from collections import OrderedDict
 
-from potential_fitting.utils import constants, SettingsReader
+from potential_fitting.utils import constants, SettingsReader, files
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 from potential_fitting.molecule import Molecule, xyz_to_molecules
 from potential_fitting.polynomials import MoleculeInParser

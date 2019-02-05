@@ -56,6 +56,20 @@ def calculate_energy(molecule, fragment_indicies, model, cp, settings):
         raise NoSuchLibraryError(code)
 
 def generate_input(molecule, fragment_indicies, model, cp, settings):
+    """
+    Generates input for energy of a subset of the fragments of a molecule.
+
+    Args:
+        molecule            - The Molecule object to calculate the energy of.
+        fragment_indicies   - List of indicies of fragments to include in the calculation.
+        model               - The model to use for this calculation, should be specified as method/basis.
+        cp                  - Whether to use counterpoise correction, True means that fragments not included in
+                fragment_indicies will be added as ghost atoms to the calculation.
+        settings            - SettingsReader object with all relevent settings.
+
+    Returns:
+        Nothing
+    """
     
     code = settings.get("energy_calculator", "code")
     method, basis = model.split("/")
@@ -71,6 +85,20 @@ def generate_input(molecule, fragment_indicies, model, cp, settings):
             qchem_in_file.write(qchem_input)
 
 def run_calculation(molecule, fragment_indicies, model, cp, settings):
+    """
+    Calculates the energy of a subset of the fragments of a molecule. Assumes generate_input has been run.
+
+    Args:
+        molecule            - The Molecule object to calculate the energy of.
+        fragment_indicies   - List of indicies of fragments to include in the calculation.
+        model               - The model to use for this calculation, should be specified as method/basis.
+        cp                  - Whether to use counterpoise correction, True means that fragments not included in
+                fragment_indicies will be added as ghost atoms to the calculation.
+        settings            - SettingsReader object with all relevent settings.
+
+    Returns:
+        Nothing
+    """
     code = settings.get("energy_calculator", "code")
     method, basis = model.split("/")
     if code == "qchem":
@@ -90,6 +118,20 @@ def run_calculation(molecule, fragment_indicies, model, cp, settings):
             raise LibraryCallError("qchem", "energy calculation", "process returned non-zero exit code") from e
 
 def retrieve_energy(molecule, fragment_indicies, model, cp, settings):
+    """
+    Retrieves the energy of a subset of the fragments of a molecule. Assumes run_calculation has been run.
+
+    Args:
+        molecule            - The Molecule object to calculate the energy of.
+        fragment_indicies   - List of indicies of fragments to include in the calculation.
+        model               - The model to use for this calculation, should be specified as method/basis.
+        cp                  - Whether to use counterpoise correction, True means that fragments not included in
+                fragment_indicies will be added as ghost atoms to the calculation.
+        settings            - SettingsReader object with all relevent settings.
+
+    Returns:
+        The calculated energy of the subset of fragments in this molecule.
+    """
     code = settings.get("energy_calculator", "code")
     method, basis = model.split("/")
     if code == "qchem":
@@ -210,36 +252,6 @@ def calc_qchem_energy(molecule, fragment_indicies, model, cp, settings):
         system.call("which", "qchem")
     except CommandExecutionError:
         raise LibraryNotAvailableError("qchem")
-
-#    # initialize qchem input string
-#    qchem_input = "";
-#    
-#    # molecule format
-#    qchem_input += "$molecule\n"
-#
-#    # charge and spin multiplicity
-#    qchem_input += "{} {}\n".format(molecule.get_charge(fragment_indicies),
-#            molecule.get_spin_multiplicity(fragment_indicies))
-#
-#    # atoms in the molecule
-#    # might need to add whitespace before each line?
-#    qchem_input += molecule.to_xyz(fragment_indicies, cp) + "\n"
-#
-#    qchem_input += "$end\n"
-#
-#    # Q-chem settings
-#    qchem_input += "$rem\n"
-#
-#    qchem_input += "jobtype " + "sp" + "\n"
-#    qchem_input += "method " + model.split('/')[0] + "\n"
-#    qchem_input += "basis " + model.split('/')[1] + "\n"
-#
-#    try:
-#        qchem_input += "ecp " + settings.get("qchem", "ecp") + "\n"
-#    except (ConfigMissingSectionError, ConfigMissingPropertyError):
-#        pass
-#
-#    qchem_input += "$end"
 
     qchem_input = files.get_qchem_input_string(molecule, fragment_indicies, model, cp, settings)
 

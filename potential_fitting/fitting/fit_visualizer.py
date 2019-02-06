@@ -64,6 +64,7 @@ class Dataset_2b(Dataset):
         super(Dataset_2b, self).__init__(calc_energies, fit_energies, method)
 
         self.binding_energies = binding_energies
+        
 
     def split_at_threshold(self, threshold):
         '''
@@ -246,7 +247,7 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
 
 
     molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag)
-
+    if file_data == None: file_data = "correlation_2b_" + "METHOD" + str(tag) + ".dat"
     make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 
 def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
@@ -272,7 +273,8 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
         file_data - The file to which data can be written during a plot. 
     '''
 
-
+    if file_data == None: file_data = "correlation_1b_" + "METHOD" + str(tag) + ".dat"
+    
     molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
         monomer2_name, method, basis, cp, tag)
 
@@ -364,6 +366,9 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
 
         fit_energies_list = low_dataset.fit_energies + high_dataset.fit_energies
 
+        if "METHOD" in file_data:
+        	file_data = file_data.replace("METHOD", str(dataset.method) + "_")
+        	
         if file_data != None and type(file_data) == str:
             with open(file_data, 'a+') as file:
 
@@ -387,6 +392,10 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
                 file.write('\n' * 2)
 
 
+
+
+        
+  
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph
     plt.plot(datasets[0].calc_energies, datasets[0].calc_energies, c = 'orange', alpha = 0.5)

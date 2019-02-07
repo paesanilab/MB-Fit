@@ -28,7 +28,7 @@ class Dataset():
         raise NotImplementedError
 
 class Dataset_1b(Dataset):
-	num_bodies = 1
+    num_bodies = 1
 
     def split_at_threshold(self, threshold):
 
@@ -60,8 +60,8 @@ class Dataset_1b(Dataset):
 
 
 class Dataset_2b(Dataset):
-
-	num_bodies = 2
+    
+    num_bodies = 2
 
     def __init__(self, calc_energies, fit_energies, method, binding_energies):
         super(Dataset_2b, self).__init__(calc_energies, fit_energies, method)

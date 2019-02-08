@@ -370,7 +370,10 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
         fit_energies_list = low_dataset.fit_energies + high_dataset.fit_energies
 
         if "METHOD" in file_data:
-        	file_data = file_data.replace("METHOD", str(dataset.method) + "_")
+        	method_dataset = dataset.method.split('/')
+        	method_dataset = "_".join(method_dataset)
+        	file_data = file_data.replace("METHOD", str(method_dataset) + "_")
+        	
         	
         if file_data != None and type(file_data) == str:
             with open(file_data, 'a+') as file:

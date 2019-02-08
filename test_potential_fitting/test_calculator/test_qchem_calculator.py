@@ -2,7 +2,7 @@ import unittest
 import os
 
 from potential_fitting.calculator import QchemCalculator, Model
-from potential_fitting.utils import system
+from potential_fitting.utils import system, math
 from potential_fitting.exceptions import CommandExecutionError
 
 from .test_calculator import TestCalculator
@@ -29,13 +29,29 @@ class TestQchemCalculator(TestCalculator):
     def test_calculate_energy(self):
 
         
-        self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
+        energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
-        self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
+        ref_energy = -184.8257490397
 
-        self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
 
-        self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
+        energy, log_path = self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
+
+        ref_energy = -90.8322075633
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
+
+        energy, log_path = self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
+
+        ref_energy = -188.3943871832
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
+
+        energy, log_path = self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
+
+        ref_energy = -92.713071121
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
 
     def test_optimize_geometry(self):
         

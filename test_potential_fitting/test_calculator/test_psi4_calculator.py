@@ -2,6 +2,7 @@ import unittest
 import os
 
 from potential_fitting.calculator import Psi4Calculator, Model
+from potential_fitting.utils import math, files
 
 from .test_calculator import TestCalculator
 
@@ -16,13 +17,29 @@ class TestPsi4Calculator(TestCalculator):
 
     def test_calculate_energy(self):
         
-        self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
+        energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
-        self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
+        ref_energy = -184.825948265526
 
-        self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
 
-        self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
+        energy, log_path = self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
+
+        ref_energy = -90.8324300259072
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
+
+        energy, log_path = self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
+
+        ref_energy = -188.398728493588
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
+
+        energy, log_path = self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
+
+        ref_energy = -92.7149022432186
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1/10000))
 
     def test_optimize_geometry(self):
         

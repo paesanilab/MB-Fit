@@ -94,12 +94,12 @@ class QchemCalculator(Calculator):
             print("Beginning energy calculation of {} with model {}/{} and cp = {}".format(molecule.get_name(), model.get_method(), model.get_basis(), model.get_cp()))
 
         # file to write qchem input in
-        qchem_in_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, molecule.get_method(), molecule.get_basis(), molecule.get_cp(), "in")
+        qchem_in_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), model.get_cp(), "in")
         
         self.create_input_file(qchem_in_path, molecule, model, "sp", fragment_indicies)
 
         # file to write qchem output in
-        qchem_out_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, molecule.get_method(), molecule.get_basis(), molecule.get_cp(), "out")
+        qchem_out_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), model.get_cp(), "out")
 
         # get number of threads
         num_threads = self.settings.getint("qchem", "num_threads", 1)
@@ -152,13 +152,13 @@ class QchemCalculator(Calculator):
 
         # Check if the user has qchem isntalled
 
-        print("Beginning geometry optimization using qchem of {} with {}/{}.".format(molecule.get_name(), method, basis))
+        print("Beginning geometry optimization using qchem of {} with {}/{}.".format(molecule.get_name(), model.get_method(), model.get_basis()))
 
-        qchem_in_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, method, basis, "in")
+        qchem_in_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "in")
 
         self.create_input_file(qchem_in_path, molecule, model, "opt")
 
-        qchem_out_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, method, basis, "out")
+        qchem_out_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "out")
 
         num_threads = self.settings.getint("qchem", "num_threads", 1)
 
@@ -168,14 +168,14 @@ class QchemCalculator(Calculator):
         except CommandExecutionError as e:
             raise LibraryCallError("qchem", "optimize", "process returned non-zero exit code") from e
 
-        geometry, energy = find_optimized_geometry_in_optimization_output_file(qchem_out_path)
+        geometry, energy = self.find_optimized_geometry_and_energy_in_optimization_output_file(qchem_out_path, molecule.get_num_atoms(), molecule.get_charge(), molecule.get_spin_multiplicity())
 
         if self.logging:
             print("Completed geometry optimization.")
 
         return geometry, energy, qchem_out_path
         
-    def find_optimized_geometry_and_energy_in_optimization_output_file(self, qchem_out_path):
+    def find_optimized_geometry_and_energy_in_optimization_output_file(self, qchem_out_path, num_atoms, charge, spin_multiplicity):
         """
         Parses the output file of a Qchem geometry optimization and retrieves the optimized
         geometry and optimized energy that resulted from the calculation.
@@ -196,10 +196,10 @@ class QchemCalculator(Calculator):
             for line in qchem_out_file:
                 if found:
                     if "ATOM" in line:
-                        for atom_index in range(molecule.get_num_atoms()):
+                        for atom_index in range(num_atoms):
                             qchem_out_string += " ".join(qchem_out_file.readline().split()[1:]) + "\n"
-                        return Molecule().read_psi4_string("{} {}\n{}".format(molecule.get_charge(),
-                                molecule.get_spin_multiplicity(), qchem_out_string)), energy
+                        return Molecule().read_psi4_string("{} {}\n{}".format(charge,
+                                spin_multiplicity, qchem_out_string)), energy
                 elif "Final energy is" in line:
                     energy = float(line.split()[3])
                     found = True
@@ -219,14 +219,14 @@ class QchemCalculator(Calculator):
             (normal modes, frequencies, reduced masses, path to log file)
         """
 
-        print("Beginning normal modes calculation of {} with {}/{}.".format(molecule.get_name(), method,
-            basis))
+        print("Beginning normal modes calculation of {} with {}/{}.".format(molecule.get_name(), model.get_method(),
+            model.get_basis()))
 
-        qchem_in_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "in")
+        qchem_in_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "in")
 
         self.create_input_file(qchem_in_path, molecule, model, "freq")
 
-        qchem_out_path = files.get_frequencies_log_path(settings.get("files", "log_path"), molecule, method, basis, "out")
+        qchem_out_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "out")
 
         num_threads = self.settings.getint("qchem", "num_threads", 1)
 
@@ -236,7 +236,7 @@ class QchemCalculator(Calculator):
             raise LibraryCallError("qchem", "frequency", "process returned non-zero exit code")
 
 
-        normal_modes, frequencies, red_masses = self.find_normal_modes_frequencies_and_reduced_masses_in_frequency_output_file(qchem_out_path)
+        normal_modes, frequencies, red_masses = self.find_normal_modes_frequencies_and_reduced_masses_in_frequency_output_file(qchem_out_path, molecule.get_num_atoms())
 
         print("Normal mode/frequency analysis complete. {} normal modes found".format(len(normal_modes)))
 
@@ -244,7 +244,7 @@ class QchemCalculator(Calculator):
 
         return normal_modes, frequencies, red_masses, qchem_out_path
 
-    def find_normal_modes_frequencies_and_reduced_masses_in_frequency_output_file(self, qchem_out_path):
+    def find_normal_modes_frequencies_and_reduced_masses_in_frequency_output_file(self, qchem_out_path, num_atoms):
         """
         Parses the output file of a Qchem frequency calculation and retrieves the normal modes, frequencies,
         and reduced masses
@@ -255,8 +255,6 @@ class QchemCalculator(Calculator):
         Returns:
             (normal modes, frequencies, reduced masses) from the output file.
         """
-
-        num_atoms = molecule.get_num_atoms()
 
         # now parse the qchem output file to read the normal modes, frequencies, and reduced masses
         with open(qchem_out_path, "r") as qchem_out_file:

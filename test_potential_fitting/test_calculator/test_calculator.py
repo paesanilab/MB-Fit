@@ -11,7 +11,7 @@ class TestCalculator(unittest.TestCase):
     def setUpClass():
 
         TestCalculator.CO2 = Molecule().read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.xyz"), [3], ["CO2"], [0], [1], ["A1B2"])
-        TestCalculator.SCN = Molecule().read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.xyz"), [2], ["CN"], [-1], [1], ["A1B1"])
+        TestCalculator.CN = Molecule().read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.xyz"), [2], ["CN"], [-1], [1], ["A1B1"])
 
         TestCalculator.model1 = Model("HF", "STO-3G", True)
         TestCalculator.model2 = Model("wb97", "cc-pvdz", False)
@@ -24,9 +24,9 @@ class TestCalculator(unittest.TestCase):
     # set up before each test case
     def setUp(self):
         self.calculator1 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), False)
-        self.calculator2 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.ini"), False)
+        self.calculator2 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), False)
         self.calculator3 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), False)
-        self.calculator4 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "SCN-monomer.ini"), False)
+        self.calculator4 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), False)
 
     # clean up after each test case
     def tearDown(self):
@@ -41,13 +41,13 @@ class TestCalculator(unittest.TestCase):
             self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
         with self.assertRaises(NotImplementedError):
-            self.calculator2.calculate_energy(TestCalculator.SCN, TestCalculator.model1, [0])
+            self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
 
         with self.assertRaises(NotImplementedError):
             self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
 
         with self.assertRaises(NotImplementedError):
-            self.calculator4.calculate_energy(TestCalculator.SCN, TestCalculator.model2, [0])
+            self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
 
     def test_optimize_geometry(self):
         
@@ -55,13 +55,13 @@ class TestCalculator(unittest.TestCase):
             self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator2.optimize_geometry(TestCalculator.SCN, TestCalculator.model1)
+            self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
 
         with self.assertRaises(NotImplementedError):
             self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator4.optimize_geometry(TestCalculator.SCN, TestCalculator.model2)
+            self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
 
     def test_find_frequencies(self):
         
@@ -69,13 +69,13 @@ class TestCalculator(unittest.TestCase):
             self.calculator1.find_frequencies(TestCalculator.CO2, TestCalculator.model1)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator2.find_frequencies(TestCalculator.SCN, TestCalculator.model1)
+            self.calculator2.find_frequencies(TestCalculator.CN, TestCalculator.model1)
 
         with self.assertRaises(NotImplementedError):
             self.calculator3.find_frequencies(TestCalculator.CO2, TestCalculator.model2)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator4.find_frequencies(TestCalculator.SCN, TestCalculator.model2)
+            self.calculator4.find_frequencies(TestCalculator.CN, TestCalculator.model2)
 
     def test_check_neg_freqs(self):
         

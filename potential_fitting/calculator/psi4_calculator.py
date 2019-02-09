@@ -9,9 +9,7 @@ try:
     import psi4
     from psi4.driver.qcdb.exceptions import QcdbException
 except ImportError:
-    has_psi4 = False
-else:
-    has_psi4 = True
+    pass
 
 class Psi4Calculator(Calculator):
     
@@ -32,8 +30,18 @@ class Psi4Calculator(Calculator):
 
         super(Psi4Calculator, self).__init__(settings_path, logging)
 
-        if not has_psi4:
+        if not self.is_installed:
             raise LibraryNotAvailableError("psi4")
+
+    def is_installed(self):
+        try:
+            import psi4
+            return True
+        except ImportError:
+            return False
+
+    def is_valid_model(self, model):
+        return 
 
     def initialize_calculation(self, log_path):
         """

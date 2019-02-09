@@ -25,10 +25,15 @@ class QchemCalculator(Calculator):
         
         super(QchemCalculator, self).__init__(settings_path, logging)
 
+        if not self.is_installed:
+            raise LibraryNotAvailableError("qchem")
+
+    def is_installed(self):
         try:
             system.call("which", "qchem")
+            return True
         except CommandExecutionError:
-            raise LibraryNotAvailableError("qchem")
+            return False
 
     def create_input_file(self, file_path, molecule, model, job, fragment_indicies = None):
         """

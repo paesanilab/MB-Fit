@@ -35,6 +35,19 @@ class TestCalculator(unittest.TestCase):
     def test_set_logging(self):
         pass
 
+    def test_is_installed(self):
+        with self.assertRaises(NotImplementedError):
+            self.calculator1.is_installed()
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator2.is_installed()
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator2.is_installed()
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator2.is_installed()
+
     def test_calculate_energy(self):
 
         with self.assertRaises(NotImplementedError):

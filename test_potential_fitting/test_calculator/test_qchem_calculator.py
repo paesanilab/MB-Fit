@@ -26,8 +26,22 @@ class TestQchemCalculator(TestCalculator):
         self.calculator3 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
         self.calculator4 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), True)
 
+    def test_is_installed(self):
+        try:
+            system.call("which", "qchem")
+            self.assertTrue(self.calculator1.is_installed())
+            self.assertTrue(self.calculator2.is_installed())
+            self.assertTrue(self.calculator3.is_installed())
+            self.assertTrue(self.calculator4.is_installed())
+        except CommandExecutionError:
+            self.assertFalse(self.calculator1.is_installed())
+            self.assertFalse(self.calculator2.is_installed())
+            self.assertFalse(self.calculator3.is_installed())
+            self.assertFalse(self.calculator4.is_installed())
+
     def test_calculate_energy(self):
 
+        # include log files from reference calculations
         
         energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 

@@ -22,6 +22,12 @@ class Calculator:
 
     def setLogging(self, logging):
         self.logging = logging
+
+    def is_installed(self):
+        raise NotImplementedError
+
+    def is_valid_model(self, model):
+        raise NotImplementedError
     
     def calculate_energy(self, molecule, model, fragment_indicies):
         """

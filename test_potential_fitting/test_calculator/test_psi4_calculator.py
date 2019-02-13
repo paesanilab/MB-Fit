@@ -42,25 +42,25 @@ class TestPsi4Calculator(TestCalculator):
 
         ref_energy, ref_log_path = -184.825948265526, "869cbba7_2019-02-12_17-02-55.820866.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
 
-        ref_energy = -90.8324300259070, "36c6e9c4_2019-02-12_17-27-48.298430.out"
+        ref_energy, ref_log_path = -90.8324300259070, "36c6e9c4_2019-02-12_17-27-48.298430.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
 
         ref_energy, ref_log_path = -188.398728493588, "869cbba7_2019-02-12_16-57-06.189857.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
 
         ref_energy, ref_log_path = -92.7149022432185, "36c6e9c4_2019-02-12_17-25-30.184407.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
     def test_optimize_geometry(self):
 

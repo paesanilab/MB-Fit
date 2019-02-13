@@ -40,27 +40,27 @@ class TestPsi4Calculator(TestCalculator):
     def test_calculate_energy(self):
         energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
-        ref_energy = -184.825948265526
+        ref_energy, ref_log_path = -184.825948265526, "869cbba7_2019-02-12_17-02-55.820866.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5))
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
 
         energy, log_path = self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
 
-        ref_energy = -90.8324300259072
+        ref_energy = -90.8324300259070, "36c6e9c4_2019-02-12_17-27-48.298430.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5))
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
 
         energy, log_path = self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
 
-        ref_energy = -188.398728493588
+        ref_energy, ref_log_path = -188.398728493588, "869cbba7_2019-02-12_16-57-06.189857.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5))
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
 
         energy, log_path = self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
 
-        ref_energy = -92.7149022432186
+        ref_energy, ref_log_path = -92.7149022432185, "36c6e9c4_2019-02-12_17-25-30.184407.out"
 
-        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5))
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.")
 
     def test_optimize_geometry(self):
 

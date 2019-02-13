@@ -51,31 +51,59 @@ class TestQchemCalculator(TestCalculator):
 
         energy, log_path = self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
 
-        ref_energy, ref_log_path = -90.8322075633, "36c6e9c4_2019-02-12_17-14-46.767262.out"
+        ref_energy, ref_log_path = -90.8322075633, "reference/36c6e9c4_2019-02-12_17-14-46.767262.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
 
-        ref_energy, ref_log_path = -188.3943871832, "869cbba7_2019-02-12_16-54-55.906360.out"
+        ref_energy, ref_log_path = -188.3943871832, "reference/869cbba7_2019-02-12_16-54-55.906360.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
 
-        ref_energy, ref_log_path = -92.7130711210, "36c6e9c4_2019-02-12_17-18-21.567344.out"
+        ref_energy, ref_log_path = -92.7130711210, "reference/36c6e9c4_2019-02-12_17-18-21.567344.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
     def test_optimize_geometry(self):
         
-        self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
+        geometry, energy, log_path = self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
 
-        self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
+        ref_geometry, ref_energy, log_path = Molecule().read_xyz(
+                "3\n" +
+                "comment line\n" + 
+                "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
+                "O    0.00000000000000e+00   0.00000000000000e+00   1.18790715320000e+00\n" + 
+                "O    0.00000000000000e+00   0.00000000000000e+00  -1.18790715320000e+00",
+                [3], ["CO2"], [0], [1], ["A1B2"]
+                ), -185.068390561172, "reference/87d98bce_2019-02-12_17-36-57.640340.out"
 
-        self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
+        self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
 
-        self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
+
+        geometry, energy, log_path = self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
+
+        
+
+        geometry, energy, log_path = self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
+
+        ref_geometry, ref_energy, log_path = Molecule().read_xyz(
+                "3\n" +
+                "comment line\n" + 
+                "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
+                "O    0.00000000000000e+00   0.00000000000000e+00   1.16576119960000e+00\n" + 
+                "O    0.00000000000000e+00   0.00000000000000e+00  -1.16576119960000e+00",
+                [3], ["CO2"], [0], [1], ["A1B2"]
+                ), -188.565745055677, "reference/87d98bce_2019-02-12_17-54-18.734011.out"
+
+        self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
+
+        geometry, energy, log_path = self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
 
     def test_find_frequencies(self):
         

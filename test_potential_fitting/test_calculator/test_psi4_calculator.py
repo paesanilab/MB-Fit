@@ -40,25 +40,25 @@ class TestPsi4Calculator(TestCalculator):
     def test_calculate_energy(self):
         energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
-        ref_energy, ref_log_path = -184.825948265526, "869cbba7_2019-02-12_17-02-55.820866.out"
+        ref_energy, ref_log_path = -184.825948265526, "reference/869cbba7_2019-02-12_17-02-55.820866.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator2.calculate_energy(TestCalculator.CN, TestCalculator.model1, [0])
 
-        ref_energy, ref_log_path = -90.8324300259070, "36c6e9c4_2019-02-12_17-27-48.298430.out"
+        ref_energy, ref_log_path = -90.8324300259070, "reference/36c6e9c4_2019-02-12_17-27-48.298430.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator3.calculate_energy(TestCalculator.CO2, TestCalculator.model2, [0])
 
-        ref_energy, ref_log_path = -188.398728493588, "869cbba7_2019-02-12_16-57-06.189857.out"
+        ref_energy, ref_log_path = -188.398728493588, "reference/869cbba7_2019-02-12_16-57-06.189857.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
         energy, log_path = self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
 
-        ref_energy, ref_log_path = -92.7149022432185, "36c6e9c4_2019-02-12_17-25-30.184407.out"
+        ref_energy, ref_log_path = -92.7149022432185, "reference/36c6e9c4_2019-02-12_17-25-30.184407.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
@@ -66,13 +66,26 @@ class TestPsi4Calculator(TestCalculator):
 
         # compare energy and geomtery in standard orientation
         
-        self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
+        geometry, energy, log_path = self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
 
-        self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
+        ref_geometry, ref_energy, log_path = Molecule().read_xyz(
+                "3\n" +
+                "comment line\n" + 
+                "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
+                "O    1.18792281660400e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
+                "O   -1.18792281660400e+00  -0.00000000000000e+00   0.00000000000000e+00",
+                [3], ["CO2"], [0], [1], ["A1B2"]
+                ), -185.0686096209073, "reference/87d98bce_2019-02-12_18-05-57.011827.log"
 
-        self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
+        self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
 
-        self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
+
+        geometry, energy, log_path = self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
+
+        geometry, energy, log_path = self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
+
+        geometry, energy, log_path = self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
 
     def test_find_frequencies(self):
 

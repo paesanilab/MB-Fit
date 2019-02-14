@@ -1,5 +1,5 @@
 # external package imports
-import itertools, datetime, psycopg2
+import itertools, datetime, psycopg2, numpy as np, pandas as pd
 
 # absolute module imports
 from potential_fitting.utils import files
@@ -12,30 +12,20 @@ class Database():
     Database class. Allows one to access a database and perform operations on it.
     """
     
-    def __init__(self, file_path):
+    def __init__(self):
         """
         Initializes the database, sets up connection, and cursor.
 
         Args:
-            file_path       - Local path to the database file. ".db" will be appended if it does not already end in
-                    ".db".
 
         Returns:
             A new Database object.
         """
 
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = psycopg2.connect("dbname=mytestdb user=ebullvul password=qwerty")
+        self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
         # the cursor is used to execute operations on the database
         self.cursor = connection.cursor()
-
-        # this checks to make sure the file specified by file_path is a valid database file. The sqlite3 command will
-        # throw an error if the file is exists but is not a database
-        try:
-            self.cursor.execute("PRAGMA table_info('schema_version')");
-        except:
-            self.close()
-            raise InconsistentDatabaseError(file_path, "Database is corrupted!!! (Not really sure why, thats your job to figure out. :)") from None
 
     # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use
     # with ... as ... syntax on it
@@ -111,6 +101,34 @@ class Database():
         Returns:
             None.
         """
+
+    def add_atom_info(self, atom):
+    	"""
+    	Adds a single atom type's info to the atom_info table if it does not already exist
+    	"""
+
+    	self.cursor.execute("INSERT INTO atom_info VALUES (?) IF NOT EXISTS(SELECT * FROM atom_info WHERE atomic_symbol=?)", (atom.get_name(), atom.get_name()))
+
+    def add_fragment_info(self, fragment):
+
+    	# use transactions
+
+    	"""
+    	Adds a single fragment type's info to the fragment_info table if it does not already exist
+    	"""
+    	if self.cursor.execute("SELECT NOT EXISTS(SELECT * FROM fragment_info WHERE name=? AND charge=? AND spin=?)"):
+
+    		self.cursor.execute("INSERT INTO fragment_info VALUES (?, ?, ?)", (fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
+
+    		for atom in fragment.get_atoms():
+    			self.add_atom_info(atom)
+
+    		atoms = [(atom.get_name(), atom.get_symmetry_class()) for atom in fragment.get_atoms()]
+
+    		symbols, counts = np.unique(atomic_symbols, return_counts = True)
+
+    		for symbol, count in zip(symbols, counts):
+    			self.cursor.execute("INSERT INTO fragment_contents VALUES (?, ?, ? ,?)", (fragment.get_name(), symbol, count, symmetry))
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         """

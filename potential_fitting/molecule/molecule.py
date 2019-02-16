@@ -314,12 +314,14 @@ class Molecule(object):
 
         # get the moments and principle axis as eigen values and eigen vectors
         (moments, principle_axes) = numpy.linalg.eig(inertia_tensor)
+        print(principle_axes)
 
-        # reorder the principle axes from largest eigen value to smallest
-        idx = moments.argsort()[::-1]
-        moments = moments[idx]
-        principle_axes = principle_axes[:,idx]
+        A = sorted(numpy.array(principle_axes.T).tolist())
 
+        principle_axes = numpy.matrix(A).T
+        print(principle_axes)
+
+        principle_axes.sort(axis = 1)
         # update the position of each atom
         for atom in self.get_atoms():
             x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()

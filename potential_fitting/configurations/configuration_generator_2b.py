@@ -82,6 +82,19 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
     molecules1 = xyz_to_molecules(geo1_path)
     molecules2 = xyz_to_molecules(geo2_path)
 
+    import copy
+
+    molecule_init = copy.deepcopy(molecules1[0])
+
+    molecule_init.move_to_center_of_mass()
+    molecule_init.rotate_on_principal_axes()
+
+    molecule_rotated = copy.deepcopy(molecules1[0])
+    molecule_rotated.move_to_center_of_mass()
+    molecule_rotated.rotate_on_principal_axes()
+    
+    print("BASE_RMSD:", molecule_init.rmsd2(molecule_rotated))
+
     # construct a psuedo-random number generator
     random = Random(seed)
     
@@ -104,7 +117,7 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
             #getting the molecules
             molecule1 = random.choice(molecules1)
             molecule2 = random.choice(molecules2)
-            
+
             #generating one confiugration at that random distance
         
             try:
@@ -112,6 +125,12 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
             except RanOutOfAttemptsException:
                 # if we didn't find a valid configuration, skip this config
                 continue
+
+            molecule_rotated = copy.deepcopy(molecule1)
+            molecule_rotated.move_to_center_of_mass()
+            molecule_rotated.rotate_on_principal_axes()
+            
+            print("AFTER RMSD:", molecule_init.rmsd2(molecule_rotated))
             # write total number of atoms to config file
             config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
 
@@ -270,8 +289,8 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
     for attempt in range(attempts):
 
         # rotate each molecule a random amount
-        molecule1.rotate(Quaternion.get_random_rotation_quaternion(random), 0, 0, 0)
-        molecule2.rotate(Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
+        #molecule1.rotate(Quaternion.get_random_rotation_quaternion(random), 0, 0, 0)
+        #molecule2.rotate(Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
 
         # setting a flag variable to keep track of a valid configuration
         flag = True

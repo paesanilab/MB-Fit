@@ -1,4 +1,4 @@
-import numpy, math
+import numpy, math, itertools
 
 from hashlib import sha1
 
@@ -358,6 +358,24 @@ class Molecule(object):
 
         # compute rmsd as sqrt of mean squared distance
         return math.sqrt(squared_distance / self.get_num_atoms())
+
+    def rmsd2(self, other):
+        self_atoms = self.get_atoms()
+        other_atoms = other.get_atoms()
+
+        rmsds = []
+
+        for order in itertools.permutations(other_atoms):
+            squared_distance = 0
+            # loop thru every pair of atoms in the two molecules
+            for this_atom, other_atom in zip(self.get_atoms(), order):
+
+                # add this atom pair's contribution to the squared distance
+                squared_distance += this_atom.distance(other_atom) ** 2
+
+            rmsds.append(math.sqrt(squared_distance / self.get_num_atoms()))
+
+        return min(rmsds)
 
     def distancermsd(self, other_molecule):
         """

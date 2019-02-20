@@ -316,12 +316,9 @@ class Molecule(object):
         (moments, principle_axes) = numpy.linalg.eig(inertia_tensor)
         print(principle_axes)
 
-        A = sorted(numpy.array(principle_axes.T).tolist())
+        principle_axes = numpy.matrix(sorted(numpy.array(principle_axes.T).tolist())).T
 
-        principle_axes = numpy.matrix(A).T
         print(principle_axes)
-
-        principle_axes.sort(axis = 1)
         # update the position of each atom
         for atom in self.get_atoms():
             x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()

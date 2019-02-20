@@ -284,8 +284,9 @@ class Molecule(object):
         # [ Ixx Ixy Ixz ]
         # [ Iyx Iyy Iyz ]
         # [ Izx Izy Izz ]
+        
         I = [[0, 0, 0] for i in range(3)]
-
+        
         # loop over every atom and add their contributions to the moment of inertia tensor
         for atom in self.get_atoms():
             # Ixx
@@ -309,15 +310,40 @@ class Molecule(object):
             # Izz
             I[2][2] += (atom.get_x() ** 2 + atom.get_y() ** 2) * atom.get_mass()
 
-        # get numpy matrix from the matrix of principle moments
         inertia_tensor = numpy.matrix(I)
 
+        # get numpy matrix from the matrix of principle moments
+
         # get the moments and principle axis as eigen values and eigen vectors
-        (moments, principle_axes) = numpy.linalg.eig(inertia_tensor)
+        (moments, principle_axes) = numpy.linalg.eigh(inertia_tensor)
         print(principle_axes)
 
-        principle_axes = numpy.matrix(sorted(numpy.array(principle_axes.T).tolist())).T
+        print(moments)
 
+        idx = numpy.argsort(moments)
+        principle_axes = principle_axes[:,idx]
+        
+        for i in range(3):
+
+            if principle_axes[0, i] < -1e-6:
+                principle_axes[0, i] *= -1
+                principle_axes[1, i] *= -1
+                principle_axes[2, i] *= -1
+
+            elif principle_axes[0, i] < 1e-6:
+
+                if principle_axes[1, i] < -1e-6:
+                    principle_axes[0, i] *= -1
+                    principle_axes[1, i] *= -1
+                    principle_axes[2, i] *= -1
+
+                elif principle_axes[1, i] < 1e-6:
+
+                    if principle_axes[2, i] < -1e-6:
+                        principle_axes[0, i] *= -1
+                        principle_axes[1, i] *= -1
+                        principle_axes[2, i] *= -1
+        
         print(principle_axes)
         # update the position of each atom
         for atom in self.get_atoms():

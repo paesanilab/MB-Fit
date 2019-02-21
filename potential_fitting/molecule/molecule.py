@@ -271,7 +271,7 @@ class Molecule(object):
 
     def rotate_on_principal_axes(self):
         """
-        Rotates a molecule on to its principle axis
+        Rotates a molecule on to its principal axis
 
         Args:
             None
@@ -312,42 +312,39 @@ class Molecule(object):
 
         inertia_tensor = numpy.matrix(I)
 
-        # get numpy matrix from the matrix of principle moments
+        # get numpy matrix from the matrix of principal moments
 
-        # get the moments and principle axis as eigen values and eigen vectors
-        (moments, principle_axes) = numpy.linalg.eigh(inertia_tensor)
-        print(principle_axes)
-
-        print(moments)
+        # get the moments and principal axis as eigen values and eigen vectors
+        (moments, principal_axes) = numpy.linalg.eigh(inertia_tensor)
+        print("Initial Vectors:", principal_axes)
 
         idx = numpy.argsort(moments)
-        principle_axes = principle_axes[:,idx]
+        principal_axes = principal_axes[:,idx]
         
-        for i in range(3):
+        print("Sorted Vectors:", principal_axes)
 
-            if principle_axes[0, i] < -1e-6:
-                principle_axes[0, i] *= -1
-                principle_axes[1, i] *= -1
-                principle_axes[2, i] *= -1
+        thirdmoment = numpy.zeros(3)
 
-            elif principle_axes[0, i] < 1e-6:
+        # only works for molecules with no symmetry
+        for atom in self.get_atoms():
+        	thirdmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
 
-                if principle_axes[1, i] < -1e-6:
-                    principle_axes[0, i] *= -1
-                    principle_axes[1, i] *= -1
-                    principle_axes[2, i] *= -1
+        print("Third Moment", thirdmoment)
 
-                elif principle_axes[1, i] < 1e-6:
+        if thirdmoment[0] < 1e-6:
+        	principal_axes[:, 0] *= -1
 
-                    if principle_axes[2, i] < -1e-6:
-                        principle_axes[0, i] *= -1
-                        principle_axes[1, i] *= -1
-                        principle_axes[2, i] *= -1
-        
-        print(principle_axes)
+       	if thirdmoment[1] < 1e-6:
+       		principal_axes[:, 1] *= -1
+
+       	if numpy.linalg.det(principal_axes) < 0:
+       		principal_axes[:, 2] *= -1
+
+       	print("Standardized Vectors:", principal_axes)
+
         # update the position of each atom
         for atom in self.get_atoms():
-            x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
+            x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1()
             atom.set_xyz(float(x), float(y), float(z))
 
     def rmsd(self, other):

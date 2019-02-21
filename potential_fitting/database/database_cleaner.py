@@ -17,3 +17,9 @@ def clean_database(settings_path, database_path):
     with Database(database_path) as database:
 
         database.clean()
+
+def reset_database(settings_path, database_path):
+    with Database(database_path) as database:
+
+        database.reset()
+

@@ -779,6 +779,9 @@ class Database():
 
         return molecule
     
+    def reset(self):
+        self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "failed"))
+
 
     def clean(self):
         """

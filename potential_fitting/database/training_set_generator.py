@@ -174,7 +174,7 @@ def generate_2b_training_set(settings_path, database_name, training_set_path, mo
                     monomer2_energy_deformation = (energies[1] - monomer_2_opt_energy) * constants.au_to_kcal
 
                 # calculate binding energy
-                binding_energy = interaction_energy - monomer1_energy_deformation - monomer2_energy_deformation
+                binding_energy = interaction_energy + monomer1_energy_deformation + monomer2_energy_deformation
 
                 # write the configuration only if is below the thresholds
                 if (binding_energy < e_bind_max) and (monomer1_energy_deformation < e_mon_max) and (monomer2_energy_deformation < e_mon_max):

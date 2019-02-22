@@ -93,7 +93,7 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
     molecule_rotated.move_to_center_of_mass()
     molecule_rotated.rotate_on_principal_axes()
     
-    print("BASE_RMSD:", molecule_init.rmsd2(molecule_rotated))
+    #print("BASE_RMSD:", molecule_init.rmsd2(molecule_rotated))
 
     # construct a psuedo-random number generator
     random = Random(seed)
@@ -130,7 +130,7 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
             molecule_rotated.move_to_center_of_mass()
             molecule_rotated.rotate_on_principal_axes()
             
-            print("AFTER RMSD:", molecule_init.rmsd2(molecule_rotated))
+            #print("AFTER RMSD:", molecule_init.rmsd2(molecule_rotated))
             # write total number of atoms to config file
             config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
 
@@ -289,8 +289,8 @@ def move_to_config(random, molecule1, molecule2, distance, min_inter_distance, a
     for attempt in range(attempts):
 
         # rotate each molecule a random amount
-        #molecule1.rotate(Quaternion.get_random_rotation_quaternion(random), 0, 0, 0)
-        #molecule2.rotate(Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
+        molecule1.rotate(Quaternion.get_random_rotation_quaternion(random), 0, 0, 0)
+        molecule2.rotate(Quaternion.get_random_rotation_quaternion(random), distance, 0, 0)
 
         # setting a flag variable to keep track of a valid configuration
         flag = True

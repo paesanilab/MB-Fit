@@ -312,24 +312,26 @@ class Molecule(object):
 
         inertia_tensor = numpy.matrix(I)
 
+        # print("Inertia Tensor:", inertia_tensor)
+
         # get numpy matrix from the matrix of principal moments
 
         # get the moments and principal axis as eigen values and eigen vectors
         (moments, principal_axes) = numpy.linalg.eigh(inertia_tensor)
-        print("Initial Vectors:", principal_axes)
+        # print("Initial Vectors:", principal_axes)
 
         idx = numpy.argsort(moments)
         principal_axes = principal_axes[:,idx]
         
-        print("Sorted Vectors:", principal_axes)
+        # print("Sorted Vectors:", principal_axes)
 
         thirdmoment = numpy.zeros(3)
 
         # only works for molecules with no symmetry
         for atom in self.get_atoms():
-        	thirdmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
+            thirdmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
 
-        print("Third Moment", thirdmoment)
+        # print("Third Moment", thirdmoment)
 
         if thirdmoment[0] < 1e-6:
         	principal_axes[:, 0] *= -1
@@ -340,7 +342,7 @@ class Molecule(object):
        	if numpy.linalg.det(principal_axes) < 0:
        		principal_axes[:, 2] *= -1
 
-       	print("Standardized Vectors:", principal_axes)
+       	# print("Standardized Vectors:", principal_axes)
 
         # update the position of each atom
         for atom in self.get_atoms():

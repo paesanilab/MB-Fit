@@ -324,16 +324,16 @@ class Molecule(object):
         moments = moments[idx]
         principal_axes = principal_axes[:,idx]
 
-        thirdmoment = numpy.zeros(3)
+        fifthmoment = numpy.zeros(3)
 
         # only works for molecules with no symmetry
         for atom in self.get_atoms():
-            thirdmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
+            fifthmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
 
-        if thirdmoment[0] < 1e-6:
+        if fifthmoment[0] < 1e-6:
         	principal_axes[:, 0] *= -1
 
-       	if thirdmoment[1] < 1e-6:
+       	if fifthmoment[1] < 1e-6:
        		principal_axes[:, 1] *= -1
 
        	if numpy.linalg.det(principal_axes) < 0:

@@ -1,4 +1,4 @@
-import numpy, math
+import numpy, math, itertools
 
 from hashlib import sha1
 
@@ -271,7 +271,7 @@ class Molecule(object):
 
     def rotate_on_principal_axes(self):
         """
-        Rotates a molecule on to its principle axis
+        Rotates a molecule on to its principal axis
 
         Args:
             None
@@ -284,8 +284,9 @@ class Molecule(object):
         # [ Ixx Ixy Ixz ]
         # [ Iyx Iyy Iyz ]
         # [ Izx Izy Izz ]
+        
         I = [[0, 0, 0] for i in range(3)]
-
+        
         # loop over every atom and add their contributions to the moment of inertia tensor
         for atom in self.get_atoms():
             # Ixx
@@ -309,20 +310,38 @@ class Molecule(object):
             # Izz
             I[2][2] += (atom.get_x() ** 2 + atom.get_y() ** 2) * atom.get_mass()
 
-        # get numpy matrix from the matrix of principle moments
         inertia_tensor = numpy.matrix(I)
 
-        # get the moments and principle axis as eigen values and eigen vectors
-        (moments, principle_axes) = numpy.linalg.eig(inertia_tensor)
+        # print("Inertia Tensor:", inertia_tensor)
 
-        # reorder the principle axes from largest eigen value to smallest
-        idx = moments.argsort()[::-1]
+        # get numpy matrix from the matrix of principal moments
+
+        # get the moments and principal axis as eigen values and eigen vectors
+        (moments, principal_axes) = numpy.linalg.eigh(inertia_tensor)
+
+        idx = numpy.argsort(moments)[::-1]
+
         moments = moments[idx]
-        principle_axes = principle_axes[:,idx]
+        principal_axes = principal_axes[:,idx]
+
+        fifthmoment = numpy.zeros(3)
+
+        # only works for molecules with no symmetry
+        for atom in self.get_atoms():
+            fifthmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
+
+        if fifthmoment[0] < 1e-6:
+        	principal_axes[:, 0] *= -1
+
+       	if fifthmoment[1] < 1e-6:
+       		principal_axes[:, 1] *= -1
+
+       	if numpy.linalg.det(principal_axes) < 0:
+       		principal_axes[:, 2] *= -1
 
         # update the position of each atom
         for atom in self.get_atoms():
-            x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principle_axes).getA1()
+            x, y, z = (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1()
             atom.set_xyz(float(x), float(y), float(z))
 
     def rmsd(self, other):
@@ -358,6 +377,24 @@ class Molecule(object):
 
         # compute rmsd as sqrt of mean squared distance
         return math.sqrt(squared_distance / self.get_num_atoms())
+
+    def rmsd2(self, other):
+        self_atoms = self.get_atoms()
+        other_atoms = other.get_atoms()
+
+        rmsds = []
+
+        for order in itertools.permutations(other_atoms):
+            squared_distance = 0
+            # loop thru every pair of atoms in the two molecules
+            for this_atom, other_atom in zip(self.get_atoms(), order):
+
+                # add this atom pair's contribution to the squared distance
+                squared_distance += this_atom.distance(other_atom) ** 2
+
+            rmsds.append(math.sqrt(squared_distance / self.get_num_atoms()))
+
+        return min(rmsds)
 
     def distancermsd(self, other_molecule):
         """

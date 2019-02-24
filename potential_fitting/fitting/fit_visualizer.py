@@ -194,8 +194,8 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 
 
         #getting the binding energies
-        binding_energies = [interaction - 
-                ((energies[1][0] if len(energies[1]) == 3 else energies[1][3]) - monomer1_opt) - 
+        binding_energies = [interaction + 
+                ((energies[1][0] if len(energies[1]) == 3 else energies[1][3]) - monomer1_opt) +
                 ((energies[1][1] if len(energies[1]) == 3 else energies[1][4]) - monomer2_opt) 
                 for interaction, energies in zip(calc, energy_molecule_pairs)]
 

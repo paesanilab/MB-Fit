@@ -167,7 +167,7 @@ class Database():
             """
         )
 
-    def add_calculation(self, molecule, method, basis, cp, tag, optimized = False):
+    def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         """
         Adds a calculation to the database. A calculation consists of pending nmer energies to be calculated in a given
         method, basis, and cp.
@@ -181,7 +181,7 @@ class Database():
             method          - The method to use to calculate the energies.
             basis           - The basis to use to calculate the energies.
             cp              - Whether to use counterpoise correction for this calculation.
-            tag             - A special tag to be able to identify this calculation at a later date.
+            tags            - A set of tags to be able to identify this calculation at a later date.
             optimized       - A special flag which indicates whether this calculation uses an optimized geometry.
 
         Returns:
@@ -241,13 +241,16 @@ class Database():
 
         # check if the calculation is not already in the Calculations table
 
+        # alphabetize the tags
+        tag_string = " ".join(sorted(set(tags)))
+
         if not self.cursor.execute(
-                "SELECT EXISTS(SELECT * FROM Calculations WHERE molecule_id=? AND model_id=? AND tag=? AND "
-                + "optimized=?)", (molecule_id, model_id, tag, optimized)).fetchone()[0]:
+                "SELECT EXISTS(SELECT * FROM Calculations WHERE molecule_id=? AND model_id=? AND tag LIKE ? AND "
+                + "optimized=?)", (molecule_id, model_id, "%", optimized)).fetchone()[0]:
             
             # create entry in Calculations table
             self.cursor.execute("INSERT INTO Calculations (molecule_id, model_id, tag, optimized) VALUES (?, ?, ?, ?)",
-                    (molecule_id, model_id, tag, optimized))
+                    (molecule_id, model_id, tag_string, optimized))
 
             # get id of this calculation
             calculation_id = self.cursor.lastrowid
@@ -263,6 +266,17 @@ class Database():
                 # insert row into Energies table for this energy
                 self.cursor.execute("INSERT INTO Energies (calculation_id, energy_index, job_id) VALUES (?, ?, ?)",
                         (calculation_id, energy_index, job_id))
+
+        else:
+            calc_id, existing_tags = self.cursor.execute(
+                    "SELECT ROWID, TAG FROM Calculations WHERE molecule_id=? AND model_id=? AND tag LIKE ? AND "
+                    + "optimized=?", (molecule_id, model_id, "%", optimized)).fetchone()
+
+            tags = tags + tuple(existing_tags.split(" "))
+            tag_string = " ".join(sorted(set(tags)))
+
+            self.cursor.execute("UPDATE Calculations SET tag=? WHERE ROWID=?", (tag_string, calc_id))
+
 
     def get_missing_energy(self):
         """
@@ -293,7 +307,7 @@ class Database():
                 "SELECT calculation_id, energy_index FROM Energies WHERE job_id=?", (job_id,)).fetchone()
 
         # retrieve the molecule and model from the Calculations table
-        molecule_id, model_id, tag, optimized = self.cursor.execute(
+        molecule_id, model_id, tags, optimized = self.cursor.execute(
                 "SELECT molecule_id, model_id, tag, optimized FROM Calculations WHERE ROWID=?",
                 (calculation_id,)).fetchone()
 
@@ -400,11 +414,12 @@ class Database():
 
         yield from self.get_energies(molecule_name, "%", "%", "%", "%", optimized)
 
-    def get_energies(self, molecule_name, method, basis, cp, tag, optimized = False):
+    def get_energies(self, molecule_name, method, basis, cp, *tags, optimized = False):
         """
         Generates pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, ...].
 
-        Only gets those energies computed using the given method, basis, cp, and marked with the given tag.
+        Only gets those energies computed using the given method, basis, cp, and marked with at least 1 of the given
+        tags.
 
         If optimized is true, this will only generate pairs corresponding to optimized geometries. Otherwise, it will
         generate all pairs, including those with optimized geometries.
@@ -415,13 +430,13 @@ class Database():
             method          - Retrieve only energies computed with this method.
             basis           - Retrieve only energies computed with this basis.
             cp              - Retrieve only energies computed with this coutnerpoise correction.
-            tag             - Retrieve only energies marked with this tag.
+            tags            - Retrieve only energies marked with at least one of the given tags.
             optimized       - If True, then only retrieve those energies that are associated with an optimized
                     geometry.
 
         Returns:
             Yields [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database using the
-            given method, basis, cp, and marked with the given tag.
+            given method, basis, cp, and marked with at least one of the given tags.
         """
         
         # get a list of all molecules with the given name
@@ -442,17 +457,23 @@ class Database():
             # loop over all selected models
             for model_id in model_ids:
 
+                if len(tags) == 0:
+                    tag_like_operation = "TRUE"
+                else:
+                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+                print(tag_like_operation)
+
                 # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
                     calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND "
-                            + "optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND " 
+                            + tag_like_operation + " AND optimized=?", (model_id, molecule_id, 1)).fetchall()]
 
                 # otherwise, get all energies (even those marked as optimized)
                 else:
                     calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?",
-                            (model_id, molecule_id, tag)).fetchall()]
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND "
+                            + tag_like_operation, (model_id, molecule_id)).fetchall()]
         
         # loop over all the selected calculations
         for calculation_id in calculation_ids:
@@ -483,10 +504,11 @@ class Database():
             
             yield molecule, energies
 
-    def count_calculations(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tag = "%",
+    def count_calculations(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tags = ["%"],
             optimized = False):
         """
-        Counts the number of calculations in the database with the given molecule, method, basis, and tag.
+        Counts the number of calculations in the database with the given molecule, method, basis, and at least one of
+        the given tags.
 
         % can be used as a wildcard to stand in for any molecule name, method, basis, cp, or tag. 
 
@@ -495,7 +517,7 @@ class Database():
             method          - Count only calculations with this method.
             basis           - Count only calculations with this basis.
             cp              - Count only calculations iwth this cp.
-            tag             - Count only calculations marked with this tag.
+            tags            - Count only calculations marked with at least one of these tags.
             optimized       - If True, then only count calculations for optimized geometries. Otherwise, counts
                     calculations for both optimized and unoptimized geometries.
 
@@ -523,18 +545,23 @@ class Database():
             # loop over all selected models
             for model_id in model_ids:
 
-                # if optimized is True, only get calculations that use optimized geometries
+                if len(tags) == 0:
+                    tag_like_operation = "TRUE"
+                else:
+                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+
+                # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
                     calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND "
-                            + "optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND " 
+                            + tag_like_operation + " AND optimized=?", (model_id, molecule_id, 1)).fetchall()]
 
-                # if optimized is False, get all calculations (even those with optimized geometries)
+                # otherwise, get all energies (even those marked as optimized)
                 else:
                     calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?",
-                            (model_id, molecule_id, tag)).fetchall()]
-
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND "
+                            + tag_like_operation, (model_id, molecule_id)).fetchall()]
+        
         # count the number of calculations with each status
         pending = 0
         partly = 0
@@ -588,9 +615,11 @@ class Database():
 
         return pending, partly, completed, failed
 
-    def count_energies(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tag = "%", optimized = False):
+    def count_energies(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tags = ["%"],
+            optimized = False):
         """
-        Counts the number of energies in the database with the given molecule, method, basis, and tag.
+        Counts the number of energies in the database with the given molecule, method, basis, and at least one of the
+        give tags.
 
         % can be used as a wildcard to stand in for any molecule name, method, basis, cp, or tag.
 
@@ -602,7 +631,7 @@ class Database():
             method          - Count only eneriges with this method.
             basis           - Count only energies with this basis.
             cp              - Count only energies with this cp.
-            tag             - Count only calculations marked with this tag.
+            tags            - Count only calculations marked with at least one of these tags.
             optimized       - If True, then only count energies for optimized geometries. Otherwise, counts
                     energies for both optimized and unoptimized geometries.
 
@@ -629,18 +658,23 @@ class Database():
             # loop over all selected models
             for model_id in model_ids:
 
-                # if optimized is True, only get calculations that use optimized geometries
+                if len(tags) == 0:
+                    tag_like_operation = "TRUE"
+                else:
+                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+
+                # if optimized is true, get only those calculations which are marked as optimized in the database
                 if optimized:
                     calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ? AND "
-                            + "optimized=?", (model_id, molecule_id, tag, 1)).fetchall()]
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND " 
+                            + tag_like_operation + " AND optimized=?", (model_id, molecule_id, 1)).fetchall()]
 
-                # if optimized is False, get all calculations (even those with optimized geometries)
+                # otherwise, get all energies (even those marked as optimized)
                 else:
                     calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND tag LIKE ?",
-                            (model_id, molecule_id, tag)).fetchall()]
-
+                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND "
+                            + tag_like_operation, (model_id, molecule_id)).fetchall()]
+        
         # count the number of energies with each status
         pending = 0
         running = 0
@@ -672,14 +706,14 @@ class Database():
 
         return pending, running, completed, failed
 
-    def what_models(self, molecule_name = "%", tag = "%", optimized = False):
+    def what_models(self, molecule_name = "%", tags = ["%"], optimized = False):
         """
         Given a molecule name, yields information about the models that exist for that molecule and how many
         calculations are associated with each of them.
 
         Args:
             molecule_name   - The name of the molecule to get information about.
-            tag             - Only look at calculations with this tag, '%' serves as a wild-card
+            tags            - Only look at calculations with at least one of these tags, '%' serves as a wild-card
             optimized       - If True, only consider calculations which are marked as optimized. Otherwise, consider
                     both optimized and unoptimized calculations.
 
@@ -695,20 +729,26 @@ class Database():
 
         model_ids = []
         for molecule_id in molecule_ids:
+
+            if len(tags) == 0:
+                tag_like_operation = "TRUE"
+            else:
+                tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+
             model_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                    "SELECT model_id FROM Calculations WHERE molecule_id=? AND tag LIKE ? AND optimized=?",
-                    (molecule_id, tag, optimized)).fetchall()]
+                    "SELECT model_id FROM Calculations WHERE molecule_id=? AND "+ tag_like_operation+" AND optimized=?",
+                    (molecule_id, optimized)).fetchall()]
 
         model_ids = set(model_ids)
 
         for model_id in model_ids:
             method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?",
                     (model_id,)).fetchone()
-            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tag, optimized)
+            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tags, optimized)
 
             yield method, basis, True if cp == 1 else False, calculation_count
 
-    def what_molecules(self, method = "%", basis = "%", cp = "%", tag = "%", optimized = False):
+    def what_molecules(self, method = "%", basis = "%", cp = "%", tags = ["%"], optimized = False):
         """
         Given a model, yields information about the molecules that exist for that model and how many calculations are 
         associated with each of them.
@@ -717,7 +757,7 @@ class Database():
             method          - The model's method.
             basis           - The model's basis.
             cp              - The model's cp.
-            tag             - Only consier calculations with this tag.
+            tags            - Only consier calculations with at least one of these tags.
             optimized       - If True, only consider calculations marked as optimized geometries. Otherwise, consider
                     both optimized and unoptimized calculations.
 
@@ -733,9 +773,14 @@ class Database():
         except TypeError:
             return
 
+        if len(tags) == 0:
+            tag_like_operation = "TRUE"
+        else:
+            tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+
         molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT molecule_id FROM Calculations WHERE model_id=? AND tag LIKE ? AND optimized=?", (model_id, tag,
-                optimized)).fetchall()]
+                "SELECT molecule_id FROM Calculations WHERE model_id=? AND " + tag_like_operation + " AND optimized=?",
+                (model_id, optimized)).fetchall()]
 
         molecule_names = []
 
@@ -746,7 +791,7 @@ class Database():
         molecule_names = set(molecule_names)
 
         for molecule_name in molecule_names:
-            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tag, optimized)
+            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tags, optimized)
 
             yield molecule_name, calculation_count
             
@@ -828,7 +873,7 @@ class Calculation(object):
     """
     Contains all the information pertaining to a single completed Calculation.
     """
-    def __init__(self, molecule, method, basis, cp, tag, energies):
+    def __init__(self, molecule, method, basis, cp, tags, energies):
         """
         Creates a new Calculation with the given arguments.
 
@@ -837,7 +882,7 @@ class Calculation(object):
             method          - The method used to calculate the energies in this Calculation.
             basis           - The basis used to calculate the energies in this Calculation.
             cp              - Whether counterpoise correction was used to calculated the energies in this Calculation.
-            tag             - This Calculation's tag.
+            tags            - This Calculation's tags.
             energies        - The nmer energies of this calculation as a list [E0, E1, E2, E01, ...].
 
         Returns:
@@ -848,7 +893,7 @@ class Calculation(object):
         self.method = method
         self.basis = basis
         self.cp = cp
-        self.tag = tag
+        self.tags = tags
         self.energies = energies
 
 def number_of_energies(number_of_fragments, cp):

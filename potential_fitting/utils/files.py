@@ -103,7 +103,7 @@ def get_molecule_log_path(log_path, molecule, suffix):
         The log file for the given molecule with the given suffix.
     """
 
-    file_path = os.path.join(log_path, molecule.get_name(), "{} {}.{}".format(molecule.get_SHA1()[-8:], str(datetime.datetime.now()), suffix))
+    file_path = os.path.join(log_path, molecule.get_name(), "{}_{}.{}".format(molecule.get_SHA1()[-8:], str(datetime.datetime.now()).replace(" ", "_").replace(":", "-"), suffix))
 
     # make sure the required directories exist
     return init_file(file_path)

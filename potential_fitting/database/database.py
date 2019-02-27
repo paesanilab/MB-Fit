@@ -25,7 +25,7 @@ class Database():
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
         # the cursor is used to execute operations on the database
-        self.cursor = connection.cursor()
+        self.cursor = self.connection.cursor()
 
     # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use
     # with ... as ... syntax on it
@@ -103,32 +103,48 @@ class Database():
         """
 
     def add_atom_info(self, atom):
-    	"""
-    	Adds a single atom type's info to the atom_info table if it does not already exist
-    	"""
-
-    	self.cursor.execute("INSERT INTO atom_info VALUES (?) IF NOT EXISTS(SELECT * FROM atom_info WHERE atomic_symbol=?)", (atom.get_name(), atom.get_name()))
+        """
+        Adds a single atom type's info to the atom_info table if it does not already exist
+        """
+        self.cursor.execute("SELECT EXISTS(SELECT * FROM atom_info WHERE atomic_symbol=%s)", (atom.get_name(),))
+        if not self.cursor.fetchone()[0]:
+            self.cursor.execute("INSERT INTO atom_info VALUES (%s)", (atom.get_name(),))
 
     def add_fragment_info(self, fragment):
 
-    	# use transactions
+        # use transactions
 
-    	"""
-    	Adds a single fragment type's info to the fragment_info table if it does not already exist
-    	"""
-    	if self.cursor.execute("SELECT NOT EXISTS(SELECT * FROM fragment_info WHERE name=? AND charge=? AND spin=?)"):
+        """
+        Adds a single fragment type's info to the fragment_info table if it does not already exist
+        """
+        self.cursor.execute("SELECT EXISTS(SELECT * FROM fragment_info WHERE name=%s AND charge=%s AND spin=%s)", (fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
 
-    		self.cursor.execute("INSERT INTO fragment_info VALUES (?, ?, ?)", (fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
+        if not self.cursor.fetchone()[0]:
+            # updates fragment_info table
+            self.cursor.execute("INSERT INTO fragment_info VALUES (%s, %s, %s)", (fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
 
-    		for atom in fragment.get_atoms():
-    			self.add_atom_info(atom)
+            # updates atom_info table
+            for atom in fragment.get_atoms():
+                self.add_atom_info(atom)
 
-    		atoms = [(atom.get_name(), atom.get_symmetry_class()) for atom in fragment.get_atoms()]
+            # updates fragment_contents
+            atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
 
-    		symbols, counts = np.unique(atomic_symbols, return_counts = True)
+            symbol_symmetry_pairs, counts = np.unique(atoms, return_counts = True, axis = 0)
+            counts = [int(i) for i in counts]
+            print(symbol_symmetry_pairs)
 
-    		for symbol, count in zip(symbols, counts):
-    			self.cursor.execute("INSERT INTO fragment_contents VALUES (?, ?, ? ,?)", (fragment.get_name(), symbol, count, symmetry))
+            for symbol_symmetry_pair, count in zip(symbol_symmetry_pairs, counts):
+                atomic_symbol = symbol_symmetry_pair[0]
+                symmetry_symbol = symbol_symmetry_pair[1]
+                self.cursor.execute("INSERT INTO fragment_contents VALUES (%s, %s, %s ,%s)", (fragment.get_name(), atomic_symbol, count, symmetry_symbol))
+
+    def add_molecule_info(self, molecule):
+
+        """
+        Adds a single molecule type's info to the molecule_info table if it does not already exist
+        """
+        pass
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         """

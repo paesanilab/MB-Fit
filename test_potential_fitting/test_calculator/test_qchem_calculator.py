@@ -4,6 +4,7 @@ import os
 from potential_fitting.calculator import QchemCalculator, Model
 from potential_fitting.utils import system, math
 from potential_fitting.exceptions import CommandExecutionError
+from potential_fitting.molecule import Molecule
 
 from .test_calculator import TestCalculator
 
@@ -71,7 +72,7 @@ class TestQchemCalculator(TestCalculator):
         
         geometry, energy, log_path = self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
 
-        ref_geometry, ref_energy, log_path = Molecule().read_xyz(
+        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
                 "3\n" +
                 "comment line\n" + 
                 "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
@@ -84,13 +85,27 @@ class TestQchemCalculator(TestCalculator):
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
+
+
         geometry, energy, log_path = self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
 
-        
+        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
+                "2\n" + 
+                "comment line\n" + 
+                "C    0.00000000000000e+00   0.00000000000000e+00  -6.19578775600000e-01\n" + 
+                "N    0.00000000000000e+00   0.00000000000000e+00   5.42655698700000e-01\n",
+                [2], ["CN-"], [-1], [1], ["A1B1"]
+                ), -90.9376700608474, "reference/59bb6335_2019-02-26_16-43-16.263184.out"
+
+        self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
+
+
 
         geometry, energy, log_path = self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
 
-        ref_geometry, ref_energy, log_path = Molecule().read_xyz(
+        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
                 "3\n" +
                 "comment line\n" + 
                 "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
@@ -103,7 +118,21 @@ class TestQchemCalculator(TestCalculator):
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
+
+
         geometry, energy, log_path = self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
+
+        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
+                "2\n" +
+                "comment line\n" + 
+                "C    0.00000000000000e+00   0.00000000000000e+00  -6.30033057000000e-01\n" + 
+                "N    0.00000000000000e+00   0.00000000000000e+00   5.53109980100000e-01\n" + 
+                [2], ["CN-"], [-1], [1], ["A1B1"]
+                ), -92.8181450462365, "reference/59bb6335_2019-02-26_16-47-33.759389.out"
+
+        self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
+
+        self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
     def test_find_frequencies(self):
         

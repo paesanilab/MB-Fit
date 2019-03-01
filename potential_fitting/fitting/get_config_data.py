@@ -19,7 +19,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         config_path - path to file to write config file to, should end in .ini
         geo_paths - paths to each geometry to include in the config, should be 1 to 3 of them (inclusive)
         distance_between - the distance between each geometry, in angstroms
-        use_published_polarizabilities - use the polarizabilities from the 2018 Schwerdtfeger & Nagle paper; otherwise, use those calculated by us
+        use_published_polarizabilities - use the polarizabilities from the 2018 Schwerdtfeger & Nagle paper; otherwise, use those calculated using MolPRO with ccsd(t)
     """
 
     settings = SettingsReader(settings_file)
@@ -130,7 +130,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     num_threads = settings.getint("qchem", "num_threads")
 
     # perform qchem system call
-    os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+    # os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
 
     # parse the output file
     with open(qchem_out_path, "r") as qchem_out:
@@ -173,7 +173,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                     if use_published_polarizabilities:
                         free_polarizability = constants.symbol_to_free_polarizability(atomic_symbols[atom_count])
                     else:
-                        free_polarizability = symbol_to_ccsdt_free_polarizability[atomic_symbols[atom_count]]
+                        free_polarizability = constants.symbol_to_ccsdt_free_polarizability(atomic_symbols[atom_count])
                     
                     # calculate the effective polarizability
                     effective_polarizability = free_polarizability * effective_volume / free_volume

@@ -7,7 +7,7 @@ from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader, files, constants
 from potential_fitting.exceptions import ParsingError, LineFormatError, InvalidValueError
 
-def generate_1b_configurations(settings_path, geo_path, normal_modes_path, config_path, num_configs, 
+def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_path, config_path, num_configs, 
         seed = None):
     """
     Generates a set of 1b configurations for a molecule given its optimized geometry and normal modes.
@@ -120,10 +120,10 @@ def generate_1b_configurations(settings_path, geo_path, normal_modes_path, confi
 
     print("Completed parsing normal modes input file.")
 
-    generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
+    generate_normal_mode_distribution_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
             num_configs, seed = seed)
 
-def generate_1b_normal_mode_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
+def generate_normal_mode_distribution_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
         num_configs, seed = None):
     """
     Generates 1b configurations based on a geometry (should usually be optimized) and the normal modes corresponding

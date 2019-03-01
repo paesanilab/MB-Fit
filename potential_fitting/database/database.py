@@ -102,13 +102,37 @@ class Database():
             None.
         """
 
+    def exists(self, table, **property_value_pairs):
+        if len(property_value_pairs) < 1:
+            # must specify at least one property
+            raise Exception
+        properties = tuple(property_value_pairs)
+        properties_string = properties[0] + "=%s"
+        for property in properties[1:]:
+            properties_string += " AND "
+            properties_string += property + "=%s"
+
+        values = tuple(property_value_pairs.values())
+
+        self.cursor.execute("SELECT EXISTS(SELECT * FROM {} WHERE {})".format(table, properties_string), values)
+
+        return self.cursor.fetchone()[0]
+
+    def insert(self, table, *values):
+
+        values_string = "(%s"
+        for value in values[1:]:
+            values_string += ", %s"
+        values_string += ")"
+
+        self.cursor.execute("INSERT INTO {} VALUES {}".format(table, values_string), values)
+
     def add_atom_info(self, atom):
         """
         Adds a single atom type's info to the atom_info table if it does not already exist
         """
-        self.cursor.execute("SELECT EXISTS(SELECT * FROM atom_info WHERE atomic_symbol=%s)", (atom.get_name(),))
-        if not self.cursor.fetchone()[0]:
-            self.cursor.execute("INSERT INTO atom_info VALUES (%s)", (atom.get_name(),))
+        if not self.exists("atom_info", atomic_symbol = atom.get_name()):
+            self.insert("atom_info", atom.get_name())
 
     def add_fragment_info(self, fragment):
 
@@ -117,11 +141,9 @@ class Database():
         """
         Adds a single fragment type's info to the fragment_info table if it does not already exist
         """
-        self.cursor.execute("SELECT EXISTS(SELECT * FROM fragment_info WHERE name=%s AND charge=%s AND spin=%s)", (fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
-
-        if not self.cursor.fetchone()[0]:
+        if not self.exists("fragment_info", name = fragment.get_name(), charge = fragment.get_charge(), spin = fragment.get_spin_multiplicity()):
             # updates fragment_info table
-            self.cursor.execute("INSERT INTO fragment_info VALUES (%s, %s, %s)", (fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
+            self.insert("fragment_info", fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity())
 
             # updates atom_info table
             for atom in fragment.get_atoms():
@@ -132,19 +154,35 @@ class Database():
 
             symbol_symmetry_pairs, counts = np.unique(atoms, return_counts = True, axis = 0)
             counts = [int(i) for i in counts]
-            print(symbol_symmetry_pairs)
 
             for symbol_symmetry_pair, count in zip(symbol_symmetry_pairs, counts):
                 atomic_symbol = symbol_symmetry_pair[0]
                 symmetry_symbol = symbol_symmetry_pair[1]
-                self.cursor.execute("INSERT INTO fragment_contents VALUES (%s, %s, %s ,%s)", (fragment.get_name(), atomic_symbol, count, symmetry_symbol))
+                self.insert("fragment_contents", fragment.get_name(), atomic_symbol, count, symmetry_symbol)
 
     def add_molecule_info(self, molecule):
 
         """
         Adds a single molecule type's info to the molecule_info table if it does not already exist
         """
-        pass
+
+        if not self.exists("molecule_info", name = molecule.get_name()):
+            self.insert("molecule_info", molecule.get_name())
+
+            for fragment in molecule.get_fragments():
+                self.add_fragment_info(fragment)
+
+            fragments, counts = np.unique([fragment.get_name() for fragment in molecule.get_fragments()], return_counts = True)
+            counts = [int(i) for i in counts]
+
+            for fragment, count in zip(fragments, counts):
+                self.insert("molecule_contents", molecule.get_name(), fragment, count)
+
+    def add_
+
+    #------------------------------------------------------------------------------------#
+    #------------------------------------------OLD DATABASE CODE BELOW THIS LINE---------#
+    #------------------------------------------------------------------------------------#
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         """

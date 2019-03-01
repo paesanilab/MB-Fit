@@ -130,7 +130,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     num_threads = settings.getint("qchem", "num_threads")
 
     # perform qchem system call
-    # os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+    os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
 
     # parse the output file
     with open(qchem_out_path, "r") as qchem_out:

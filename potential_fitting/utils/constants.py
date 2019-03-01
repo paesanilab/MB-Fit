@@ -58,7 +58,7 @@ covalent_radii = [ # Source ptable.com
     1.96,   1.74,   1.44,   1.36,   1.25,   1.27,   1.39,   1.25,   1.26,   1.21,   1.38,   1.31,   1.26,   1.22,   1.19,   1.16,   1.14,   1.10,
 ]
 
-#list of van der Waals radii (vdw) (angstroms) in order of atomic number
+# list of van der Waals radii (vdw) (angstroms) in order of atomic number
 vdw_radii = [ # Source: ptable.com for elements unless in list below.
 			  # Be, B, Al, Ca (Source: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3658832/)
 			  # vdw_radius is -1.0, if a definite value cannot be found. 
@@ -69,6 +69,29 @@ vdw_radii = [ # Source: ptable.com for elements unless in list below.
     -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   -1.0,   1.63,   1.72,   1.58,   1.93,   2.17,   -1.0,   2.06,   1.98,   2.16
 ]
 
+# list of free atomic polarizabilities (bohr^3) in order of atomic number
+free_polarizabilities = [ # Source: 2018 Table of static dipole polarizabilities of the neutral elements in the periodic table (Peter Schwerdtfeger & Jeffrey K. Nagle)
+                          # DOI: 10.1080/00268976.2018.1535143
+                          # https://www.tandfonline.com/doi/pdf/10.1080/00268976.2018.1535143?needAccess=true
+     4.50711,                                                                                                              1.38375,
+    164.1125, 37.74,                                                                        20.5, 11.3,  7.4,   5.3, 3.74, 2.66110,
+       162.7,  71.2,                                                                        57.8, 37.3,   25,  19.4, 14.6,  11.083,
+       289.8, 160.8,    97,   100,    87,    83,    68,    62,    55,    49,  46.5, 38.67,    50,   40,   30,  28.9,   21,   16.78,
+       319.8, 197.2,   162,   112,    98,    87,    79,    72,    66, 26.14,    55,    46,    65,   53,   43,    38, 32.9,   27.32
+]
+
+# list of free atomic polarizabilities (angstrom^3) in order of atomic number
+# Source: calculated using ccsd(t) with MolPRO (might not be accurately sourced, defer to Marc Riera)
+ccsdt_free_polarizabilities = {
+    "H":    0.66582,
+    "B":    3.64084,
+    "C":    1.84613,
+    "N":    1.08053,
+    "O":    0.86381,
+    "F":    0.50682,
+    "P":    3.72507,
+    "S":    3.24768
+}
 
 def symbol_to_number(symbol):
     """
@@ -183,4 +206,35 @@ def symbol_to_vdw_radius(symbol):
         return vdw_radius
     else:
         raise InvalidValueError("Element", symbol, "has no valid van der Waals radius defined!") 
+
+
+def symbol_to_free_polarizability(symbol):
+    """
+    Finds the free polarizability, taken from the published reference, of the atom with a given atomic symbol in angstrom^3.
+
+    Args:
+        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+
+    Returns:
+        The free polarizability of the given atom in angstrom^3.
+    """
+
+    #the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    return bohr_to_ang**3 * free_polarizabilities[symbol_to_number(symbol) - 1]
+
+def symbol_to_ccsdt_free_polarizability(symbol):
+    """
+    Finds the free polarizability, calculated using MolPRO with ccsd(t), of the atom with a given atomic symbol in angstrom^3.
+
+    Args:
+        symbol - The 1 or 2 letter atomic symbol to find the radius of. For example: "He", "F". Case non-sensitive.
+
+    Returns:
+        The free polarizability of the given atom in angstrom^3, if calculated. Otherwise, throws an Exception. 
+    """
+
+    try:
+        return ccsdt_free_polarizabilities[symbol]
+    except KeyError:
+        raise InvalidValueError("Atom name", symbol, "free polarizability not calcualted for this atom; must be one of {}".format(", ".join(ccsdt_free_polarizabilities.keys())))
 

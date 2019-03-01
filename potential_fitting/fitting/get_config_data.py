@@ -9,19 +9,7 @@ from potential_fitting.polynomials import MoleculeInParser
 
 qchem_template = "qchem_template"
 
-# table of free polarizabilities for each atom
-free_polarizabilities = {
-    "H":    0.66582,
-    "B":    3.64084,
-    "C":    1.84613,
-    "N":    1.08053,
-    "O":    0.86381,
-    "F":    0.50682,
-    "P":    3.72507,
-    "S":    3.24768
-}
-
-def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_between = 20):
+def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_between = 20, use_published_polarizabilities = True):
     """
     Generates the config file for the fitcode for the given geometries
 
@@ -31,6 +19,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         config_path - path to file to write config file to, should end in .ini
         geo_paths - paths to each geometry to include in the config, should be 1 to 3 of them (inclusive)
         distance_between - the distance between each geometry, in angstroms
+        use_published_polarizabilities - use the polarizabilities from the 2018 Schwerdtfeger & Nagle paper; otherwise, use those calculated by us
     """
 
     settings = SettingsReader(settings_file)
@@ -180,10 +169,12 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                     # parse the volumes from the next line of the qchem output file
                     effective_volume, free_volume = (float(volume) for volume in qchem_out.readline().split()[1:3])
                     # look up the free polarizability in the dictionary define at top of file
-                    try:
-                        free_polarizability = free_polarizabilities[atomic_symbols[atom_count]]
-                    except KeyError:
-                        raise InvalidValueError("Atom name", atomic_symbols[atom_count], "no free polarizability known for this atom; must be one of {}".format(", ".join(free_polarizabilities.keys())))
+
+                    if use_published_polarizabilities:
+                        free_polarizability = constants.symbol_to_free_polarizability(atomic_symbols[atom_count])
+                    else:
+                        free_polarizability = symbol_to_ccsdt_free_polarizability[atomic_symbols[atom_count]]
+                    
                     # calculate the effective polarizability
                     effective_polarizability = free_polarizability * effective_volume / free_volume
 

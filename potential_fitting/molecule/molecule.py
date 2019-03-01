@@ -116,7 +116,7 @@ class Molecule(object):
             List of fragments in this molecule in standard order
         """
 
-        return sorted(self.fragments, key=lambda fragment: fragment.get_index())
+        return sorted(self.fragments, key=lambda fragment: fragment.get_name())
 
     def get_atoms(self):
         """

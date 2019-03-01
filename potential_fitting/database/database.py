@@ -118,14 +118,19 @@ class Database():
 
         return self.cursor.fetchone()[0]
 
-    def insert(self, table, *values):
+    def insert(self, table, *values, returns = None):
 
         values_string = "(%s"
         for value in values[1:]:
             values_string += ", %s"
         values_string += ")"
 
-        self.cursor.execute("INSERT INTO {} VALUES {}".format(table, values_string), values)
+        if returns:
+            self.cursor.execute("INSERT INTO {} VALUES {} RETURNING {}".format(table, values_string, returns), values)
+            return self.cursor.fetchone()[0]
+        else:
+            self.cursor.execute("INSERT INTO {} VALUES {}".format(table, values_string), values)
+            return None
 
     def add_atom_info(self, atom):
         """
@@ -178,11 +183,57 @@ class Database():
             for fragment, count in zip(fragments, counts):
                 self.insert("molecule_contents", molecule.get_name(), fragment, count)
 
-    def add_
+    def add_model_info(self, method, basis, cp):
+        model ="{}/{}/{}".format(method, basis, cp)
+        if not self.exists("model_info", name = model):
+            self.insert("model_info", model)
+
+    def add_molecule(self, molecule):
+        # should always be at COM and Principle axes before calling!!!!
+
+        if not self.exists("molecule_list", mol_hash = molecule.get_SHA1()):
+
+            coordinates = []
+
+            for fragment in molecule.get_fragments():
+                for atom in fragment.get_atoms():
+                    coordinates.append(atom.get_x())
+                    coordinates.append(atom.get_y())
+                    coordinates.append(atom.get_z())
+
+            self.insert("molecule_list", molecule.get_SHA1(), molecule.get_name(), coordinates)
+
+            self.add_molecule_info(molecule)
+
+    def add_calculation(self, molecule, method, basis, cp, *tags):
+        model ="{}/{}/{}".format(method, basis, cp)
+        if not self.exists("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model):
+
+            self.add_molecule(molecule)
+            self.add_model_info(method, basis, cp)
+
+            for n in range(1, molecule.get_num_fragments() + 1):
+                for fragment_indicies in itertools.combinations(range(molecule.get_num_fragments()), n):
+                    self.insert("molecule_properties", molecule.get_SHA1(), model, list(fragment_indicies), [], [], "pending", [], None)
+            
+            if not self.exists("tags", mol_hash = molecule.get_SHA1(), model_name = model):
+                self.insert("tags", molecule.get_SHA1(), model, [])
+
+
+        for tag in tags:
+            self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (molecule.get_SHA1(), model, tag))
+            if not self.cursor.fetchone()[0]:
+
+                tag_string = "{" + tag + "}"
+
+                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (tag_string, molecule.get_SHA1(), model))
+
+
 
     #------------------------------------------------------------------------------------#
     #------------------------------------------OLD DATABASE CODE BELOW THIS LINE---------#
     #------------------------------------------------------------------------------------#
+    '''
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         """
@@ -853,6 +904,7 @@ class Database():
         """
 
         self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "running"))
+    '''
 
 class Job(object):
     """

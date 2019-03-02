@@ -164,7 +164,7 @@ def symbol_to_radius(symbol):
         The atomic radius of the given atom in angstroms.
     """
 
-    # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    # the atomic radius is indexed in the list atomic_radii as the symbol's atomic number minus 1
     return atomic_radii[symbol_to_number(symbol) - 1]
 
 def symbol_to_covalent_radius(symbol):
@@ -181,7 +181,7 @@ def symbol_to_covalent_radius(symbol):
         The covalent radius of the given atom in angstroms.
     """
 
-    # the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    # the atomic covalent radius is indexed in the list covalent_radii as the symbol's atomic number minus 1
     return covalent_radii[symbol_to_number(symbol) - 1]
 
 
@@ -199,7 +199,7 @@ def symbol_to_vdw_radius(symbol):
         The van der Waals radius of the given atom in angstroms, if defined. Otherwise, throws an Exception. 
     """
 
-    #the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    #the van der waals radius is indexed in the list vdw_radii as the symbol's atomic number minus 1
     vdw_radius = vdw_radii[symbol_to_number(symbol) - 1]
 
     if vdw_radius != -1.0:
@@ -219,7 +219,7 @@ def symbol_to_free_polarizability(symbol):
         The free polarizability of the given atom in angstrom^3.
     """
 
-    #the atomic mass is indexed in the list atomic_radii as the symbol's atomic number minus 1
+    #the free polarizability is indexed in the list free_polarizabilities as the symbol's atomic number minus 1
     return bohr_to_ang**3 * free_polarizabilities[symbol_to_number(symbol) - 1]
 
 def symbol_to_ccsdt_free_polarizability(symbol):

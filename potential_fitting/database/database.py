@@ -1,5 +1,5 @@
 # external package imports
-import itertools, datetime, psycopg2, numpy as np, pandas as pd
+import itertools, time, datetime, psycopg2, numpy as np, pandas as pd
 
 # absolute module imports
 from potential_fitting.utils import files
@@ -118,26 +118,75 @@ class Database():
 
         return self.cursor.fetchone()[0]
 
-    def insert(self, table, *values, returns = None):
+    def insert(self, table, **property_value_pairs):
+
+        properties = tuple(property_value_pairs)
+
+        property_string = "(" + properties[0]
+        for prop in properties[1:]:
+            property_string += ", " + prop
+        property_string += ")"
+
+        values = tuple(property_value_pairs.values())
 
         values_string = "(%s"
         for value in values[1:]:
             values_string += ", %s"
         values_string += ")"
 
-        if returns:
-            self.cursor.execute("INSERT INTO {} VALUES {} RETURNING {}".format(table, values_string, returns), values)
-            return self.cursor.fetchone()[0]
+        self.cursor.execute("INSERT INTO {}{} VALUES {}".format(table, property_string, values_string), values)
+        return None
+
+    def select(self, table, fetch_all, *values, **property_value_pairs):
+        if len(property_value_pairs) < 1:
+            # must specify at least one property
+            raise Exception
+        if len(values) < 1:
+            # must specify at least one value
+            raise Exception
+
+        properties = tuple(property_value_pairs)
+        properties_string = properties[0] + "=%s"
+        for property in properties[1:]:
+            properties_string += " AND "
+            properties_string += property + "=%s"
+
+        query_vals = tuple(property_value_pairs.values())
+
+        if values == ("*",):
+            values_string = "*"
+            values = ()
         else:
-            self.cursor.execute("INSERT INTO {} VALUES {}".format(table, values_string), values)
-            return None
+            values_string = values[0]
+            for value in values[1:]:
+                values_string += ", " + value
+            values_string += ""
+
+        self.cursor.execute("SELECT {} FROM {} WHERE {}".format(values_string, table, properties_string), query_vals)
+
+        if fetch_all:
+            return self.cursor.fetchall()
+
+        return self.cursor.fetchone()
+
+    def update(self, table, values, **property_value_pairs):
+        pass
+
+    def create_postgres_array(self, *values):
+        return "{" + ",".join([str(i) for i in values]) + "}"
+
+    def create_current_postgres_time(self):
+        offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
+        offset = offset / 60 / 60 * -1
+
+        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(int(offset))
 
     def add_atom_info(self, atom):
         """
         Adds a single atom type's info to the atom_info table if it does not already exist
         """
         if not self.exists("atom_info", atomic_symbol = atom.get_name()):
-            self.insert("atom_info", atom.get_name())
+            self.insert("atom_info", atomic_symbol = atom.get_name())
 
     def add_fragment_info(self, fragment):
 
@@ -148,7 +197,7 @@ class Database():
         """
         if not self.exists("fragment_info", name = fragment.get_name(), charge = fragment.get_charge(), spin = fragment.get_spin_multiplicity()):
             # updates fragment_info table
-            self.insert("fragment_info", fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity())
+            self.insert("fragment_info", name = fragment.get_name(), charge = fragment.get_charge(), spin = fragment.get_spin_multiplicity())
 
             # updates atom_info table
             for atom in fragment.get_atoms():
@@ -163,7 +212,7 @@ class Database():
             for symbol_symmetry_pair, count in zip(symbol_symmetry_pairs, counts):
                 atomic_symbol = symbol_symmetry_pair[0]
                 symmetry_symbol = symbol_symmetry_pair[1]
-                self.insert("fragment_contents", fragment.get_name(), atomic_symbol, count, symmetry_symbol)
+                self.insert("fragment_contents", frag_name = fragment.get_name(), atom_symbol = atomic_symbol, count = count, symmetry = symmetry_symbol)
 
     def add_molecule_info(self, molecule):
 
@@ -172,7 +221,7 @@ class Database():
         """
 
         if not self.exists("molecule_info", name = molecule.get_name()):
-            self.insert("molecule_info", molecule.get_name())
+            self.insert("molecule_info", name = molecule.get_name())
 
             for fragment in molecule.get_fragments():
                 self.add_fragment_info(fragment)
@@ -181,12 +230,12 @@ class Database():
             counts = [int(i) for i in counts]
 
             for fragment, count in zip(fragments, counts):
-                self.insert("molecule_contents", molecule.get_name(), fragment, count)
+                self.insert("molecule_contents", mol_name = molecule.get_name(), frag_name = fragment, count = count)
 
     def add_model_info(self, method, basis, cp):
         model ="{}/{}/{}".format(method, basis, cp)
         if not self.exists("model_info", name = model):
-            self.insert("model_info", model)
+            self.insert("model_info", name = model)
 
     def add_molecule(self, molecule):
         # should always be at COM and Principle axes before calling!!!!
@@ -213,8 +262,8 @@ class Database():
             self.add_model_info(method, basis, cp)
 
             for n in range(1, molecule.get_num_fragments() + 1):
-                for fragment_indicies in itertools.combinations(range(molecule.get_num_fragments()), n):
-                    self.insert("molecule_properties", molecule.get_SHA1(), model, list(fragment_indicies), [], [], "pending", [], None)
+                for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
+                    self.insert("molecule_properties", molecule.get_SHA1(), model, list(fragment_indices), [], [], "pending", [], None)
             
             if not self.exists("tags", mol_hash = molecule.get_SHA1(), model_name = model):
                 self.insert("tags", molecule.get_SHA1(), model, [])
@@ -224,11 +273,67 @@ class Database():
             self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (molecule.get_SHA1(), model, tag))
             if not self.cursor.fetchone()[0]:
 
-                tag_string = "{" + tag + "}"
+                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (self.create_postgres_array(tag), molecule.get_SHA1(), model))
 
-                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (tag_string, molecule.get_SHA1(), model))
+    def get_molecule(self, mol_hash):
+        mol_name, atom_coordinates = self.select("molecule_list", False, "mol_name", "atom_coordinates", mol_hash = mol_hash)
+
+        molecule = Molecule()
+
+        molecule_contents = self.select("molecule_contents", True, "frag_name", "count", mol_name = mol_name)
+
+        for frag_name, frag_count in molecule_contents:
+            for i in range(frag_count):
+                charge, spin = self.select("fragment_info", False, "charge", "spin", name = frag_name)
+
+                fragment = Fragment(frag_name, charge, spin)
+
+                fragment_contents = self.select("fragment_contents", True, "atom_symbol", "symmetry", "count", frag_name = frag_name)
+                for atom_symbol, atom_symmetry, atom_count in fragment_contents:
+                    for k in range(atom_count):
+                        atom = Atom(atom_symbol, atom_symmetry, 0, 0, 0)
+
+                        fragment.add_atom(atom)
+
+                molecule.add_fragment(fragment)
+
+        for atom in molecule.get_atoms():
+            atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+            atom_coordinates = atom_coordinates[3:]
+
+        return molecule
+
+    def get_calculation(self, client_name, *tags):
+        try:
+            mol_hash, model_name, frag_indices = self.select("molecule_properties", False, "mol_hash", "model_name", "frag_indices", status = "pending")
+        except TypeError:
+            raise Exception
+
+        self.insert("log_files", start_time = self.create_current_postgres_time() ,client_name = client_name)
+
+        self.cursor.execute("SELECT last_value FROM log_files_log_id_seq")
+        log_id = self.cursor.fetchone()[0]
+
+        self.cursor.execute("UPDATE molecule_properties SET status=%s, most_recent_log_id=%s WHERE mol_hash=%s AND model_name=%s AND frag_indices=%s", ("dispatched", log_id, mol_hash, model_name, self.create_postgres_array(*frag_indices)))
+        molecule = self.get_molecule(mol_hash)
 
 
+        return molecule, model_name, frag_indices
+
+    def set_properties(self, molecule, model_name, frag_indices, energy, log_file):
+        # possibly check to make sure molecule is not morphed
+
+        self.cursor.execute("UPDATE molecule_properties SET energies=%s, status=%s WHERE mol_hash=%s AND model_name=%s AND frag_indices=%s", (self.create_postgres_array(energy), "complete", molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices)))
+        log_id = self.select("molecule_properties", False, "most_recent_log_id", mol_hash = molecule.get_SHA1(), model_name = model_name, frag_indices = self.create_postgres_array(*frag_indices))
+
+        # make sure to push previous log id to past_log_ids
+
+        self.cursor.execute("UPDATE log_files SET end_time=%s, log_text=%s WHERE log_id=%s", (self.create_current_postgres_time(), log_file, log_id))
+
+    def reset_all_calculations(self, *tag):
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))
+        #temporary
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "complete"))
 
     #------------------------------------------------------------------------------------#
     #------------------------------------------OLD DATABASE CODE BELOW THIS LINE---------#
@@ -385,8 +490,8 @@ class Database():
         # Reconstruct the molecule from the information in this database
         molecule = self.get_molecule(molecule_id)
 
-        # get the indicies of the fragments to include in this calculation
-        fragment_indicies = energy_index_to_fragment_indicies(energy_index, molecule.get_num_fragments(),
+        # get the indices of the fragments to include in this calculation
+        fragment_indices = energy_index_to_fragment_indices(energy_index, molecule.get_num_fragments(),
                 True if cp == 1 else False)
 
         # update the job with its start date and running status
@@ -394,7 +499,7 @@ class Database():
                 datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
         
         return Job(molecule, method, basis, True if cp == 1 and energy_index <
-                number_of_energies(molecule.get_num_fragments(), False) else False, fragment_indicies, job_id)
+                number_of_energies(molecule.get_num_fragments(), False) else False, fragment_indices, job_id)
 
     def missing_energies(self):
         """
@@ -919,7 +1024,7 @@ class Job(object):
             method          - Method to use to run the energy calculation.
             basis           - Basis to use to run the energy calculation.
             cp              - Whether to use cointerpoise correction for this energy calculation.
-            fragments       - Fragments to include in this energy calculation, specified as an array of indicies.
+            fragments       - Fragments to include in this energy calculation, specified as an array of indices.
             job_id          - Id of the job corresponding to this energy. Will be needed to call set_energy().
 
         Returns:
@@ -982,9 +1087,9 @@ def number_of_energies(number_of_fragments, cp):
 
     return 2 ** number_of_fragments - 1  + (number_of_fragments if cp and number_of_fragments > 1 else 0)
 
-def energy_index_to_fragment_indicies(energy_index, number_of_fragments, cp):
+def energy_index_to_fragment_indices(energy_index, number_of_fragments, cp):
     """
-    Returns an array of fragment indicies that should be included in a energy calculation with energy_index index in a
+    Returns an array of fragment indices that should be included in a energy calculation with energy_index index in a
     molecule with number_of_fragments fragments.
 
     The order is first all monomers, then dimers, then trimers, etc. Finally, if cp is set to True, the the non-cp
@@ -997,7 +1102,7 @@ def energy_index_to_fragment_indicies(energy_index, number_of_fragments, cp):
                 non-cp enabled calculations.
 
     Returns:
-        List of the indicies of the fragments included in this energy.
+        List of the indices of the fragments included in this energy.
     """
 
     if energy_index < 0 or energy_index >= number_of_energies(number_of_fragments, cp):

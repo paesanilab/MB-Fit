@@ -102,6 +102,27 @@ class Database():
             None.
         """
 
+        pass
+
+    def annihilate(self, confirm = "no way"):
+        """
+        DELETES ALL CONTENT IN ALL TABLES IN THE DATABASE.
+
+        In order to protect users, confirm must be specified as
+        "confirm" or the content will not be deleted.
+
+        Args:
+            confirm         - set to "confirm" if deletion of all content in the database is desired.
+
+        Returns:
+            None
+        """
+
+        if confirm == "confirm":
+            self.cursor.execute("TRUNCATE atom_info, fragment_contents, fragment_info, log_files, model_info, molecule_contents, molecule_info, molecule_list, molecule_properties, optimized_geometries, tags")
+        else:
+            print("annihilate failed. specify confirm = \"confirm\" if deletion of all content in the database is desired.")
+
     def exists(self, table, **property_value_pairs):
         if len(property_value_pairs) < 1:
             # must specify at least one property

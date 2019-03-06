@@ -109,6 +109,11 @@ class NoEnergyInRangeError(DatabaseError):
     def __init__(self, database, molecule_name, method, basis, cp, tag, e_min, e_max):
         super().__init__(database, "Unable to generate training set for molecule'{}' with the model '{}/{}' with e_min = '{}' and e_max = '{}'".format(molecule_name, method, basis, e_min, e_max))
 
+class NoPendingCalculationsError(DatabaseError):
+    """Raised when a user asks for a new calculation to run but all calculations in the database are either running, completed, or failed"""
+
+    def __init__(self, database):
+        super().__init__(database, "No more pending calculations in the database.")
 """
 --------------------------- InputException
 """

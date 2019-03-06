@@ -4,7 +4,7 @@ import itertools, time, datetime, psycopg2, numpy as np, pandas as pd
 # absolute module imports
 from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError
+from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
 
 
 class Database():
@@ -105,7 +105,7 @@ class Database():
     def exists(self, table, **property_value_pairs):
         if len(property_value_pairs) < 1:
             # must specify at least one property
-            raise Exception
+            raise InvalidValueError("property_value_pairs", property_value_pairs, "Must specify at least one pair.")
         properties = tuple(property_value_pairs)
         properties_string = properties[0] + "=%s"
         for property in properties[1:]:
@@ -140,10 +140,10 @@ class Database():
     def select(self, table, fetch_all, *values, **property_value_pairs):
         if len(property_value_pairs) < 1:
             # must specify at least one property
-            raise Exception
+            raise InvalidValueError("property_value_pairs", property_value_pairs, "Must specify at least one pair.")
         if len(values) < 1:
             # must specify at least one value
-            raise Exception
+            raise InvalidValueError("values", values, "Must specify at least one pair.")
 
         properties = tuple(property_value_pairs)
         properties_string = properties[0] + "=%s"
@@ -242,6 +242,8 @@ class Database():
 
         if not self.exists("molecule_list", mol_hash = molecule.get_SHA1()):
 
+            self.add_molecule_info(molecule)
+
             coordinates = []
 
             for fragment in molecule.get_fragments():
@@ -250,30 +252,31 @@ class Database():
                     coordinates.append(atom.get_y())
                     coordinates.append(atom.get_z())
 
-            self.insert("molecule_list", molecule.get_SHA1(), molecule.get_name(), coordinates)
+            self.insert("molecule_list", mol_hash = molecule.get_SHA1(), mol_name = molecule.get_name(), atom_coordinates = coordinates)
 
-            self.add_molecule_info(molecule)
 
-    def add_calculation(self, molecule, method, basis, cp, *tags):
-        model ="{}/{}/{}".format(method, basis, cp)
-        if not self.exists("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model):
+    def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
+        model_name ="{}/{}/{}".format(method, basis, cp)
+        if not self.exists("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model_name):
 
             self.add_molecule(molecule)
             self.add_model_info(method, basis, cp)
 
             for n in range(1, molecule.get_num_fragments() + 1):
                 for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
-                    self.insert("molecule_properties", molecule.get_SHA1(), model, list(fragment_indices), [], [], "pending", [], None)
+                    self.insert("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model_name, frag_indices = list(fragment_indices), energies = [], atomic_charges = [], status = "pending", past_log_ids = [])
             
-            if not self.exists("tags", mol_hash = molecule.get_SHA1(), model_name = model):
-                self.insert("tags", molecule.get_SHA1(), model, [])
-
+            if not self.exists("tags", mol_hash = molecule.get_SHA1(), model_name = model_name):
+                self.insert("tags", mol_hash = molecule.get_SHA1(), model_name = model_name, tag_names = [])
 
         for tag in tags:
-            self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (molecule.get_SHA1(), model, tag))
+            self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (molecule.get_SHA1(), model_name, tag))
             if not self.cursor.fetchone()[0]:
 
-                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (self.create_postgres_array(tag), molecule.get_SHA1(), model))
+                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (self.create_postgres_array(tag), molecule.get_SHA1(), model_name))
+
+        if optimized and not self.exists("optimized_geometries", mol_name = molecule.get_name(), mol_hash = molecule.get_SHA1(), model_name = model_name):
+            self.insert("optimized_geometries", mol_name = molecule.get_name(), mol_hash = molecule.get_SHA1(), model_name = model_name)
 
     def get_molecule(self, mol_hash):
         mol_name, atom_coordinates = self.select("molecule_list", False, "mol_name", "atom_coordinates", mol_hash = mol_hash)
@@ -307,9 +310,9 @@ class Database():
         try:
             mol_hash, model_name, frag_indices = self.select("molecule_properties", False, "mol_hash", "model_name", "frag_indices", status = "pending")
         except TypeError:
-            raise Exception
+            raise NoPendingCalculationsError("Database")
 
-        self.insert("log_files", start_time = self.create_current_postgres_time() ,client_name = client_name)
+        self.insert("log_files", start_time = self.create_current_postgres_time(), client_name = client_name)
 
         self.cursor.execute("SELECT last_value FROM log_files_log_id_seq")
         log_id = self.cursor.fetchone()[0]
@@ -320,7 +323,14 @@ class Database():
 
         return molecule, model_name, frag_indices
 
-    def set_properties(self, molecule, model_name, frag_indices, energy, log_file):
+    def get_all_calculations(self, client_name, *tags):
+        while True:
+            try:
+                yield self.get_calculation(client_name, *tags)
+            except NoPendingCalculationsError:
+                break
+
+    def set_properties(self, molecule, model_name, frag_indices, energy, log_text):
         # possibly check to make sure molecule is not morphed
 
         self.cursor.execute("UPDATE molecule_properties SET energies=%s, status=%s WHERE mol_hash=%s AND model_name=%s AND frag_indices=%s", (self.create_postgres_array(energy), "complete", molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices)))
@@ -328,7 +338,58 @@ class Database():
 
         # make sure to push previous log id to past_log_ids
 
-        self.cursor.execute("UPDATE log_files SET end_time=%s, log_text=%s WHERE log_id=%s", (self.create_current_postgres_time(), log_file, log_id))
+        self.cursor.execute("UPDATE log_files SET end_time=%s, log_text=%s WHERE log_id=%s", (self.create_current_postgres_time(), log_text, log_id))
+
+    def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
+        model_name ="{}/{}/{}".format(method, basis, cp)
+        # get optimized geometry.
+        optimized_hashes = [i[0] for i in self.select("optimized_geometries", True, "mol_hash", mol_name = molecule_name, model_name = model_name)]
+
+        optimized_energy = None
+
+        for optimized_hash in optimized_hashes:
+            valid_tags = True
+            optimized_tags = self.select("tags", False, "tag_names", mol_hash = optimized_hash, model_name = model_name)[0]
+
+            for tag in tags:
+                if not tag in optimized_tags:
+                    valid_tags = False
+
+            if valid_tags:
+                if optimized_energy is None:
+                    try:
+                        optimized_energy = self.select("molecule_properties", False, "energies", mol_hash = optimized_hash, model_name = model_name, frag_indices = [0], status = "complete")[0][0]
+                    except TypeError:
+                        raise Exception
+                else:
+                    raise Exception
+
+        if optimized_energy is None:
+            raise Exception
+
+        molecule_hashes = [i[0] for i in self.select("molecule_list", True, "mol_hash", mol_name = molecule_name)]
+
+        tagged_molecule_hashes = []
+
+        for molecule_hash in molecule_hashes:
+            valid_tags = True
+
+            molecule_tags = self.select("tags", False, "tag_names", mol_hash = molecule_hash, model_name = model_name)[0]
+
+            for tag in tags:
+                if not tag in molecule_tags:
+                    valid_tags = False
+
+            if valid_tags:
+                tagged_molecule_hashes.append(molecule_hash)
+
+        for molecule_hash in tagged_molecule_hashes:
+            try:
+                energy = self.select("molecule_properties", False, "energies", mol_hash = molecule_hash, model_name = model_name, frag_indices = [0], status = "complete")[0][0]
+            except TypeError:
+                raise Exception
+
+            yield (self.get_molecule(molecule_hash), energy - optimized_energy)
 
     def reset_all_calculations(self, *tag):
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))

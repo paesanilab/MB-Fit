@@ -190,9 +190,16 @@ class Database():
 
         return self.cursor.fetchone()
 
-    def update(self, table, values, **property_value_pairs):
-        pass
+    def update(self, table, values, set_property_value_pairs, where_property_value_pairs):
+        if len(set_property_value_pairs) < 1:
+            # must specify at least one property
+            raise InvalidValueError("set_property_value_pairs", set_property_value_pairs, "Must specify at least one pair.")
+        if len(where_property_value_pairs) < 1:
+            # must specify at least one property
+            raise InvalidValueError("where_property_value_pairs", where_property_value_pairs, "Must specify at least one pair.")
 
+        raise NotImplementedError
+        
     def create_postgres_array(self, *values):
         return "{" + ",".join([str(i) for i in values]) + "}"
 
@@ -274,7 +281,6 @@ class Database():
                     coordinates.append(atom.get_z())
 
             self.insert("molecule_list", mol_hash = molecule.get_SHA1(), mol_name = molecule.get_name(), atom_coordinates = coordinates)
-
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
         model_name ="{}/{}/{}".format(method, basis, cp)

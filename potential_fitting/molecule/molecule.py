@@ -82,15 +82,39 @@ class Molecule(object):
 
         # make sure the symmetry class of the atoms in this fragment doesn't violate the 1 symmetry class -> 1 atom type rule
         for existing_fragment in self.get_fragments():
-            for atom1 in existing_fragment.get_atoms():
-                for atom2 in fragment.get_atoms():
-                    if atom1.get_symmetry_class() == atom2.get_symmetry_class() and atom1.get_name() != atom2.get_name():
-                        raise InconsistentValueError("symmetry class of {}".format(atom1.get_name()), "symmetry class of {}".format(atom2.get_name()), atom1.get_symmetry_class(), atom2.get_symmetry_class(), "atoms with a different atomic symbol in the same molecule (even if different fragments) cannot have the same symmetry class.")
+            if fragment.get_name() == existing_fragment.get_name():
 
-        fragment.index = self.get_num_fragments()
+                new_prev_sym = "None"
+                old_prev_sym = "None"
+
+                for atom_new, atom_old in zip(fragment.get_atoms(), existing_fragment.get_atoms()):
+                    if atom_new.get_name() != atom_old.get_name():
+                        raise Exception
+
+                    if (atom_new.get_symmetry_class() != new_prev_sym) ^ (atom_old.get_symmetry_class() != old_prev_sym):
+                        raise Exception
+
+                    new_prev_sym = atom_new.get_symmetry_class()
+                    old_prev_sym = atom_old.get_symmetry_class()
+
+                    atom_new.set_symmetry_class(atom_old.get_symmetry_class())
+
+                self.fragments.append(fragment)
+                return
+
+        try:
+            next_symmetry = self.get_atoms()[-1].get_symmetry_class()
+        except IndexError:
+            next_symmetry = "A"
+        prev_sym = "None"
+
+        for atom in fragment.get_atoms():
+            if atom.get_symmetry_class() != prev_sym:
+                next_symmetry = chr(ord(next_symmetry) + 1)
+            prev_sym = atom.get_symmetry_class()
+            atom.set_symmetry_class(next_symmetry)
 
         self.fragments.append(fragment)
-
 
         # adjust the symmetry class of atoms to be in the right order
         next_symmetry = 65

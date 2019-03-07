@@ -1,5 +1,5 @@
 # external package imports
-import itertools, time, datetime, psycopg2, numpy as np, pandas as pd
+import itertools, time, datetime, psycopg2, numpy as np, pandas as pd, copy
 
 # absolute module imports
 from potential_fitting.utils import files
@@ -8,6 +8,8 @@ from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValue
 
 
 class Database():
+
+
     """
     Database class. Allows one to access a database and perform operations on it.
     """
@@ -21,9 +23,11 @@ class Database():
         Returns:
             A new Database object.
         """
+        self.commands = []
 
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
+        #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='postgres' user='postgres' password='Motzu will explode'")
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
@@ -71,7 +75,6 @@ class Database():
         Returns:
             None.
         """
-
         self.connection.commit()
 
     def close(self):
@@ -134,7 +137,7 @@ class Database():
             properties_string += property + "=%s"
 
         values = tuple(property_value_pairs.values())
-
+        self.commands.append("")
         self.cursor.execute("SELECT EXISTS(SELECT * FROM {} WHERE {})".format(table, properties_string), values)
 
         return self.cursor.fetchone()[0]
@@ -213,8 +216,18 @@ class Database():
         """
         Adds a single atom type's info to the atom_info table if it does not already exist
         """
+        self.commands += self.cursor.mogrify("""
+        DO $$
+            BEGIN
+            IF NOT EXISTS(SELECT * FROM atom_info WHERE atomic_symbol=%s) THEN
+                INSERT INTO atom_info VALUES (%s);
+            END IF;
+        END $$
+        """, atom.get_name(), atom.get_name())
+
         if not self.exists("atom_info", atomic_symbol = atom.get_name()):
             self.insert("atom_info", atomic_symbol = atom.get_name())
+        #self.cursor.execute("INSERT INTO atom_info VALUES (%s) ON CONFLICT DO NOTHING", (atom.get_name()))
 
     def add_fragment_info(self, fragment):
 
@@ -283,7 +296,9 @@ class Database():
             self.insert("molecule_list", mol_hash = molecule.get_SHA1(), mol_name = molecule.get_name(), atom_coordinates = coordinates)
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
+
         model_name ="{}/{}/{}".format(method, basis, cp)
+
         if not self.exists("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model_name):
 
             self.add_molecule(molecule)
@@ -293,32 +308,45 @@ class Database():
                 for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
                     self.insert("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model_name, frag_indices = list(fragment_indices), energies = [], atomic_charges = [], status = "pending", past_log_ids = [])
             
-            if not self.exists("tags", mol_hash = molecule.get_SHA1(), model_name = model_name):
-                self.insert("tags", mol_hash = molecule.get_SHA1(), model_name = model_name, tag_names = [])
+            self.insert("tags", mol_hash = molecule.get_SHA1(), model_name = model_name, tag_names = [])
 
-        for tag in tags:
-            self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (molecule.get_SHA1(), model_name, tag))
-            if not self.cursor.fetchone()[0]:
-
-                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (self.create_postgres_array(tag), molecule.get_SHA1(), model_name))
+        self.update_tags(molecule.get_SHA1(), model_name, *tags)
 
         if optimized and not self.exists("optimized_geometries", mol_name = molecule.get_name(), mol_hash = molecule.get_SHA1(), model_name = model_name):
             self.insert("optimized_geometries", mol_name = molecule.get_name(), mol_hash = molecule.get_SHA1(), model_name = model_name)
 
-    def get_molecule(self, mol_hash):
+    def update_tags(self, mol_hash, model_name, *tags):
+        for tag in tags:
+            self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (mol_hash, model_name, tag))
+            if not self.cursor.fetchone()[0]:
+
+                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (self.create_postgres_array(tag), mol_hash, model_name))
+
+    def get_molecule(self, mol_hash, molecule = None):
         mol_name, atom_coordinates = self.select("molecule_list", False, "mol_name", "atom_coordinates", mol_hash = mol_hash)
 
+        if molecule is None:
+            molecule = self.build_empty_molecule(mol_name)
+
+        for atom in molecule.get_atoms():
+            atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+            atom_coordinates = atom_coordinates[3:]
+
+        return molecule
+
+    def build_empty_molecule(self, mol_name):
         molecule = Molecule()
 
-        molecule_contents = self.select("molecule_contents", True, "frag_name", "count", mol_name = mol_name)
+        self.cursor.execute("SELECT frag_name, count, charge, spin FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name where mol_name=%s", (mol_name,))
 
-        for frag_name, frag_count in molecule_contents:
+        molecule_contents = self.cursor.fetchall()
+
+        for frag_name, frag_count, charge, spin in molecule_contents:
             for i in range(frag_count):
-                charge, spin = self.select("fragment_info", False, "charge", "spin", name = frag_name)
-
                 fragment = Fragment(frag_name, charge, spin)
 
                 fragment_contents = self.select("fragment_contents", True, "atom_symbol", "symmetry", "count", frag_name = frag_name)
+
                 for atom_symbol, atom_symmetry, atom_count in fragment_contents:
                     for k in range(atom_count):
                         atom = Atom(atom_symbol, atom_symmetry, 0, 0, 0)
@@ -326,10 +354,6 @@ class Database():
                         fragment.add_atom(atom)
 
                 molecule.add_fragment(fragment)
-
-        for atom in molecule.get_atoms():
-            atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
-            atom_coordinates = atom_coordinates[3:]
 
         return molecule
 
@@ -374,6 +398,8 @@ class Database():
 
         optimized_energy = None
 
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
         for optimized_hash in optimized_hashes:
             valid_tags = True
             optimized_tags = self.select("tags", False, "tag_names", mol_hash = optimized_hash, model_name = model_name)[0]
@@ -416,7 +442,7 @@ class Database():
             except TypeError:
                 raise Exception
 
-            yield (self.get_molecule(molecule_hash), energy - optimized_energy)
+            yield (self.get_molecule(molecule_hash, molecule = copy.deepcopy(empty_molecule)), energy - optimized_energy)
 
     def reset_all_calculations(self, *tag):
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))

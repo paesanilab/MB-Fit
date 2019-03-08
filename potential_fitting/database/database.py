@@ -23,7 +23,9 @@ class Database():
         Returns:
             A new Database object.
         """
-        self.commands = []
+        self.command_string = ""
+        self.params = []
+        self.command_count = 0
 
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
@@ -75,6 +77,12 @@ class Database():
         Returns:
             None.
         """
+        
+        self.execute(self.command_string, self.params)
+        self.command_string = ""
+        self.params = []
+        self.command_count = 0
+
         self.connection.commit()
 
     def close(self):
@@ -125,6 +133,14 @@ class Database():
             self.cursor.execute("TRUNCATE atom_info, fragment_contents, fragment_info, log_files, model_info, molecule_contents, molecule_info, molecule_list, molecule_properties, optimized_geometries, tags")
         else:
             print("annihilate failed. specify confirm = \"confirm\" if deletion of all content in the database is desired.")
+
+    def execute(self, command, params):
+        self.cursor.execute(
+            "DO $$" + 
+            "   BEGIN " + 
+            command + 
+            "END $$",
+            params)
 
     def exists(self, table, **property_value_pairs):
         if len(property_value_pairs) < 1:
@@ -216,19 +232,15 @@ class Database():
         """
         Adds a single atom type's info to the atom_info table if it does not already exist
         """
-        self.commands += self.cursor.mogrify("""
-        DO $$
-            BEGIN
-            IF NOT EXISTS(SELECT * FROM atom_info WHERE atomic_symbol=%s) THEN
-                INSERT INTO atom_info VALUES (%s);
-            END IF;
-        END $$
-        """, atom.get_name(), atom.get_name())
+        command_string = \
+            "IF NOT EXISTS(SELECT atomic_symbol FROM atom_info WHERE atomic_symbol=%s) THEN " + \
+            "    INSERT INTO atom_info VALUES (%s);" + \
+            "END IF;"
 
-        if not self.exists("atom_info", atomic_symbol = atom.get_name()):
-            self.insert("atom_info", atomic_symbol = atom.get_name())
-        #self.cursor.execute("INSERT INTO atom_info VALUES (%s) ON CONFLICT DO NOTHING", (atom.get_name()))
+        params = [atom.get_name(), atom.get_name()]
 
+        return command_string, params
+            
     def add_fragment_info(self, fragment):
 
         # use transactions
@@ -236,24 +248,36 @@ class Database():
         """
         Adds a single fragment type's info to the fragment_info table if it does not already exist
         """
-        if not self.exists("fragment_info", name = fragment.get_name(), charge = fragment.get_charge(), spin = fragment.get_spin_multiplicity()):
-            # updates fragment_info table
-            self.insert("fragment_info", name = fragment.get_name(), charge = fragment.get_charge(), spin = fragment.get_spin_multiplicity())
 
-            # updates atom_info table
-            for atom in fragment.get_atoms():
-                self.add_atom_info(atom)
+        command_string = ""
+        params = []
 
-            # updates fragment_contents
-            atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
+        command_string += \
+            "IF NOT EXISTS(SELECT name FROM fragment_info WHERE name=%s AND charge=%s AND spin=%s) THEN " + \
+            "    INSERT INTO fragment_info VALUES(%s, %s, %s);"
 
-            symbol_symmetry_pairs, counts = np.unique(atoms, return_counts = True, axis = 0)
-            counts = [int(i) for i in counts]
+        params += [fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()]
 
-            for symbol_symmetry_pair, count in zip(symbol_symmetry_pairs, counts):
-                atomic_symbol = symbol_symmetry_pair[0]
-                symmetry_symbol = symbol_symmetry_pair[1]
-                self.insert("fragment_contents", frag_name = fragment.get_name(), atom_symbol = atomic_symbol, count = count, symmetry = symmetry_symbol)
+        for atom in fragment.get_atoms():
+            new_command_string, new_params = self.add_atom_info(atom)
+            command_string += new_command_string
+            params += new_params
+
+        # updates fragment_contents
+        atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
+
+        symbol_symmetry_pairs, counts = np.unique(atoms, return_counts = True, axis = 0)
+        counts = [int(i) for i in counts]
+
+        for symbol_symmetry_pair, count in zip(symbol_symmetry_pairs, counts):
+            atomic_symbol = symbol_symmetry_pair[0]
+            symmetry_symbol = symbol_symmetry_pair[1]
+            command_string += "    INSERT INTO fragment_contents VALUES (%s, %s, %s, %s);"
+            params += [fragment.get_name(), atomic_symbol, count, symmetry_symbol]
+
+        command_string += "END IF;"
+
+        return command_string, params
 
     def add_molecule_info(self, molecule):
 
@@ -261,66 +285,143 @@ class Database():
         Adds a single molecule type's info to the molecule_info table if it does not already exist
         """
 
-        if not self.exists("molecule_info", name = molecule.get_name()):
-            self.insert("molecule_info", name = molecule.get_name())
+        command_string = ""
+        params = []
 
-            for fragment in molecule.get_fragments():
-                self.add_fragment_info(fragment)
+        command_string += \
+            "IF NOT EXISTS(SELECT name FROM molecule_info WHERE name=%s) THEN " + \
+            "   INSERT INTO molecule_info VALUES(%s);"
+        params += [molecule.get_name(), molecule.get_name()]
 
-            fragments, counts = np.unique([fragment.get_name() for fragment in molecule.get_fragments()], return_counts = True)
-            counts = [int(i) for i in counts]
+        for fragment in molecule.get_fragments():
+            new_command_string, new_params = self.add_fragment_info(fragment)
+            command_string += new_command_string
+            params += new_params
 
-            for fragment, count in zip(fragments, counts):
-                self.insert("molecule_contents", mol_name = molecule.get_name(), frag_name = fragment, count = count)
+
+
+        fragments, counts = np.unique([fragment.get_name() for fragment in molecule.get_fragments()], return_counts = True)
+        counts = [int(i) for i in counts]
+
+        for fragment, count in zip(fragments, counts):
+            command_string += "    INSERT INTO molecule_contents VALUES (%s, %s, %s);"
+            params += [molecule.get_name(), fragment, count]
+
+        command_string += "END IF;"
+
+        return command_string, params
 
     def add_model_info(self, method, basis, cp):
-        model ="{}/{}/{}".format(method, basis, cp)
-        if not self.exists("model_info", name = model):
-            self.insert("model_info", name = model)
+        model_name ="{}/{}/{}".format(method, basis, cp)
+
+        command_string = \
+            "IF NOT EXISTS(SELECT name FROM model_info WHERE name=%s) THEN" + \
+            "   INSERT INTO model_info VALUES (%s);" + \
+            "END IF;"
+
+        params = [model_name, model_name]
+
+        return command_string, params
 
     def add_molecule(self, molecule):
         # should always be at COM and Principle axes before calling!!!!
 
-        if not self.exists("molecule_list", mol_hash = molecule.get_SHA1()):
+        command_string = ""
+        params = []
 
-            self.add_molecule_info(molecule)
+        command_string += \
+            "IF NOT EXISTS(SELECT mol_hash FROM molecule_list WHERE mol_hash=%s) THEN "
 
-            coordinates = []
+        params += [molecule.get_SHA1()]
 
-            for fragment in molecule.get_fragments():
-                for atom in fragment.get_atoms():
-                    coordinates.append(atom.get_x())
-                    coordinates.append(atom.get_y())
-                    coordinates.append(atom.get_z())
+        new_command_string, new_params = self.add_molecule_info(molecule)
+        command_string += new_command_string
+        params += new_params
 
-            self.insert("molecule_list", mol_hash = molecule.get_SHA1(), mol_name = molecule.get_name(), atom_coordinates = coordinates)
+
+
+        coordinates = []
+        for fragment in molecule.get_fragments():
+            for atom in fragment.get_atoms():
+                coordinates.append(atom.get_x())
+                coordinates.append(atom.get_y())
+                coordinates.append(atom.get_z())
+
+        command_string += \
+            "   INSERT INTO molecule_list VALUES(%s, %s, %s);" + \
+            "END IF;"
+
+        params += [molecule.get_SHA1(), molecule.get_name(), coordinates]
+
+        return command_string, params
 
     def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
 
         model_name ="{}/{}/{}".format(method, basis, cp)
 
-        if not self.exists("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model_name):
+        command_string = ""
+        params = []
 
-            self.add_molecule(molecule)
-            self.add_model_info(method, basis, cp)
+        command_string += \
+            "IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=%s AND model_name=%s) THEN "
 
-            for n in range(1, molecule.get_num_fragments() + 1):
-                for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
-                    self.insert("molecule_properties", mol_hash = molecule.get_SHA1(), model_name = model_name, frag_indices = list(fragment_indices), energies = [], atomic_charges = [], status = "pending", past_log_ids = [])
-            
-            self.insert("tags", mol_hash = molecule.get_SHA1(), model_name = model_name, tag_names = [])
+        params += [molecule.get_SHA1(), model_name]
 
-        self.update_tags(molecule.get_SHA1(), model_name, *tags)
+        new_command_string, new_params = self.add_molecule(molecule)
+        command_string += new_command_string
+        params += new_params
 
-        if optimized and not self.exists("optimized_geometries", mol_name = molecule.get_name(), mol_hash = molecule.get_SHA1(), model_name = model_name):
-            self.insert("optimized_geometries", mol_name = molecule.get_name(), mol_hash = molecule.get_SHA1(), model_name = model_name)
+        new_command_string, new_params = self.add_model_info(method, basis, cp)
+        command_string += new_command_string
+        params += new_params
+
+        for n in range(1, molecule.get_num_fragments() + 1):
+            for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
+                command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids) VALUES (%s, %s, %s, %s, %s, %s, %s);"
+                params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", []]
+
+        command_string += "INSERT INTO tags VALUES (%s, %s, %s);"
+        params += [molecule.get_SHA1(), model_name, []]
+
+        command_string += "END IF;"
+
+        new_command_string, new_params = self.update_tags(molecule.get_SHA1(), model_name, *tags)
+        command_string += new_command_string
+        params += new_params
+        
+        command_string += \
+            "IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=%s AND mol_hash=%s AND model_name=%s) THEN " + \
+            "   INSERT INTO optimized_geometries VALUES (%s, %s, %s);" + \
+            "END IF;"
+
+        params += [molecule.get_name(), molecule.get_SHA1(), model_name, molecule.get_name(), molecule.get_SHA1(), model_name]
+
+
+        self.command_string += command_string
+        self.params += params
+
+        self.command_count += 1
+
+        if self.command_count == 100:
+            self.execute(self.command_string, self.params)
+            self.command_string = ""
+            self.params = []
+            self.command_count = 0
 
     def update_tags(self, mol_hash, model_name, *tags):
-        for tag in tags:
-            self.cursor.execute("SELECT EXISTS(SELECT * FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names))", (mol_hash, model_name, tag))
-            if not self.cursor.fetchone()[0]:
 
-                self.cursor.execute("UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s", (self.create_postgres_array(tag), mol_hash, model_name))
+        command_string = ""
+        params = []
+
+        for tag in tags:
+            command_string += \
+                "IF NOT EXISTS(SELECT mol_hash FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names)) THEN " + \
+                "   UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s;" + \
+                "END IF;"
+
+            params += [mol_hash, model_name, tag, self.create_postgres_array(tag), mol_hash, model_name]
+
+        return command_string, params
 
     def get_molecule(self, mol_hash, molecule = None):
         mol_name, atom_coordinates = self.select("molecule_list", False, "mol_name", "atom_coordinates", mol_hash = mol_hash)

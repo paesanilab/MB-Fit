@@ -29,7 +29,7 @@ class Database():
 
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
-        #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='postgres' user='postgres' password='Motzu will explode'")
+        #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='potential_fitting' user='USER' password='password'")
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
@@ -77,7 +77,7 @@ class Database():
         Returns:
             None.
         """
-        
+
         self.execute(self.command_string, self.params)
         self.command_string = ""
         self.params = []

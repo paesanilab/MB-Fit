@@ -113,6 +113,36 @@ class Database():
             None.
         """
 
+        """
+        DROP TYPE training_set_1B CASCADE;
+CREATE TYPE training_set_1B AS (atom_coordiantes INTEGER[], energy INTEGER, tags VARCHAR[]);
+
+CREATE OR REPLACE FUNCTION get_1B_training_set(molecule_name VARCHAR, model_name VARCHAR) RETURNS training_set_1B[]
+    AS $$
+
+      DECLARE
+        training_set training_set_1B;
+        optimized_energy INTEGER;
+        optimized_hash VARCHAR;
+        optimized_tag VARCHAR;
+      BEGIN
+
+        FOR optimized_hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = molecule_name AND model_name = model_name
+        LOOP
+
+          FOR optimized_tag IN SELECT tag_names FROM tags WHERE mol_hash = optimized_hash AND model_name = model_name
+          LOOP
+
+
+
+          END LOOP;
+
+        END LOOP;
+      END;
+
+  $$ LANGUAGE plpgsql;
+  """
+
         pass
 
     def annihilate(self, confirm = "no way"):
@@ -424,6 +454,7 @@ class Database():
         return command_string, params
 
     def get_molecule(self, mol_hash, molecule = None):
+
         mol_name, atom_coordinates = self.select("molecule_list", False, "mol_name", "atom_coordinates", mol_hash = mol_hash)
 
         if molecule is None:
@@ -455,6 +486,8 @@ class Database():
                         fragment.add_atom(atom)
 
                 molecule.add_fragment(fragment)
+
+
 
         return molecule
 

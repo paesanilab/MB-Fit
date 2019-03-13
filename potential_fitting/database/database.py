@@ -113,35 +113,95 @@ class Database():
             None.
         """
 
-        """
-        DROP TYPE training_set_1B CASCADE;
-CREATE TYPE training_set_1B AS (atom_coordiantes INTEGER[], energy INTEGER, tags VARCHAR[]);
+        self.cursor.execute("""
+            CREATE OR REPLACE FUNCTION get_1B_training_set(molecule_name VARCHAR, model VARCHAR, input_tags VARCHAR[])
+              RETURNS TABLE(coords FLOAT[], energy FLOAT) AS $$
+                  DECLARE
+                    optimized_energy FLOAT = NULL;
+                    hash VARCHAR;
+                    mol_tags VARCHAR[];
+                    mol_tag VARCHAR;
+                    valid_tags BOOL;
+                    optimized_properties molecule_properties;
+                    mol_properties molecule_properties;
+                    coordinates FLOAT[];
+                  BEGIN
 
-CREATE OR REPLACE FUNCTION get_1B_training_set(molecule_name VARCHAR, model_name VARCHAR) RETURNS training_set_1B[]
-    AS $$
+                    FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = molecule_name AND model_name = model
+                    LOOP
 
-      DECLARE
-        training_set training_set_1B;
-        optimized_energy INTEGER;
-        optimized_hash VARCHAR;
-        optimized_tag VARCHAR;
-      BEGIN
-
-        FOR optimized_hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = molecule_name AND model_name = model_name
-        LOOP
-
-          FOR optimized_tag IN SELECT tag_names FROM tags WHERE mol_hash = optimized_hash AND model_name = model_name
-          LOOP
-
+                      valid_tags := FALSE;
 
 
-          END LOOP;
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
 
-        END LOOP;
-      END;
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
 
-  $$ LANGUAGE plpgsql;
-  """
+
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+
+                      IF (SELECT valid_tags) THEN
+                        IF (SELECT optimized_energy ISNULL) THEN
+                          SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO optimized_properties;
+                          IF optimized_properties.status = 'complete' THEN
+                            optimized_energy = optimized_properties.energies[1];
+                          ELSE
+                            RAISE EXCEPTION 'Optimized energy uncalculated in database.';
+                          END IF;
+                        ELSE
+                          RAISE EXCEPTION 'Multiple optimized geometries in database.';
+                        END IF;
+                      END IF;
+
+                    END LOOP;
+
+
+                    IF (SELECT optimized_energy ISNULL) THEN
+                      RAISE EXCEPTION 'No optimized energy in database.';
+                    END IF;
+
+                    FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name
+                    LOOP
+                      valid_tags := FALSE;
+
+
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
+
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
+
+
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+                      IF (SELECT valid_tags) THEN
+                        SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO mol_properties;
+                          IF mol_properties.status = 'complete' THEN
+                            SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
+                              INTO coords;
+                            energy := mol_properties.energies[1] - optimized_energy;
+                            RETURN NEXT;
+                          END IF;
+                      END IF;
+
+                    END LOOP;
+                  END;
+
+              $$ LANGUAGE plpgsql;
+            """)
 
         pass
 
@@ -419,12 +479,13 @@ CREATE OR REPLACE FUNCTION get_1B_training_set(molecule_name VARCHAR, model_name
         command_string += new_command_string
         params += new_params
         
-        command_string += \
-            "IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=%s AND mol_hash=%s AND model_name=%s) THEN " + \
-            "   INSERT INTO optimized_geometries VALUES (%s, %s, %s);" + \
-            "END IF;"
+        if optimized:
+            command_string += \
+                "IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=%s AND mol_hash=%s AND model_name=%s) THEN " + \
+                "   INSERT INTO optimized_geometries VALUES (%s, %s, %s);" + \
+                "END IF;"
 
-        params += [molecule.get_name(), molecule.get_SHA1(), model_name, molecule.get_name(), molecule.get_SHA1(), model_name]
+            params += [molecule.get_name(), molecule.get_SHA1(), model_name, molecule.get_name(), molecule.get_SHA1(), model_name]
 
 
         self.command_string += command_string
@@ -527,56 +588,20 @@ CREATE OR REPLACE FUNCTION get_1B_training_set(molecule_name VARCHAR, model_name
 
     def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
         model_name ="{}/{}/{}".format(method, basis, cp)
-        # get optimized geometry.
-        optimized_hashes = [i[0] for i in self.select("optimized_geometries", True, "mol_hash", mol_name = molecule_name, model_name = model_name)]
-
-        optimized_energy = None
+        self.cursor.execute("SELECT * FROM get_1B_training_set(%s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags)))
+        #self.cursor.callproc("get_1B_training_set", (molecule_name, model_name, self.create_postgres_array(*tags)))
+        training_set = self.cursor.fetchall()
 
         empty_molecule = self.build_empty_molecule(molecule_name)
 
-        for optimized_hash in optimized_hashes:
-            valid_tags = True
-            optimized_tags = self.select("tags", False, "tag_names", mol_hash = optimized_hash, model_name = model_name)[0]
+        for atom_coordinates, energy in training_set:
+            molecule = copy.deepcopy(empty_molecule)
 
-            for tag in tags:
-                if not tag in optimized_tags:
-                    valid_tags = False
+            for atom in molecule.get_atoms():
+                atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                atom_coordinates = atom_coordinates[3:]
 
-            if valid_tags:
-                if optimized_energy is None:
-                    try:
-                        optimized_energy = self.select("molecule_properties", False, "energies", mol_hash = optimized_hash, model_name = model_name, frag_indices = [0], status = "complete")[0][0]
-                    except TypeError:
-                        raise Exception
-                else:
-                    raise Exception
-
-        if optimized_energy is None:
-            raise Exception
-
-        molecule_hashes = [i[0] for i in self.select("molecule_list", True, "mol_hash", mol_name = molecule_name)]
-
-        tagged_molecule_hashes = []
-
-        for molecule_hash in molecule_hashes:
-            valid_tags = True
-
-            molecule_tags = self.select("tags", False, "tag_names", mol_hash = molecule_hash, model_name = model_name)[0]
-
-            for tag in tags:
-                if not tag in molecule_tags:
-                    valid_tags = False
-
-            if valid_tags:
-                tagged_molecule_hashes.append(molecule_hash)
-
-        for molecule_hash in tagged_molecule_hashes:
-            try:
-                energy = self.select("molecule_properties", False, "energies", mol_hash = molecule_hash, model_name = model_name, frag_indices = [0], status = "complete")[0][0]
-            except TypeError:
-                raise Exception
-
-            yield (self.get_molecule(molecule_hash, molecule = copy.deepcopy(empty_molecule)), energy - optimized_energy)
+            yield molecule, energy
 
     def reset_all_calculations(self, *tag):
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))
@@ -1258,7 +1283,6 @@ CREATE OR REPLACE FUNCTION get_1B_training_set(molecule_name VARCHAR, model_name
 
         self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "running"))
     '''
-
 class Job(object):
     """
     Contains all the information the user needs to be able to calculate a single energy.

@@ -210,7 +210,7 @@ class Database():
 
             $$;
             alter function get_1b_training_set(varchar, varchar, character varying[], integer, integer) owner to potential;
-            """)
+        """)
 
         self.cursor.execute("""
             create or replace function get_pending_calculations(input_client_name VARCHAR, input_tags character varying[], batch_size INTEGER) returns TABLE(coords double precision[], energy double precision)
@@ -274,7 +274,28 @@ class Database():
 
             alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
         """)
-        pass
+        
+        self.cursor.execute("""
+            create or replace function set_properties(hash VARCHAR, model VARCHAR, indices INTEGER[], energy FLOAT, log_txt VARCHAR) RETURNS VOID
+                language plpgsql
+            as $$
+              DECLARE
+                id INTEGER;
+
+              BEGIN
+
+                UPDATE molecule_properties SET energies = energies || energy, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices;
+
+                SELECT most_recent_log_id FROM molecule_properties WHERE mol_hash = hash AND model_name = model and frag_indices = indices INTO id;
+
+                UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
+
+              END;
+
+            $$;
+
+            alter function set_properties(varchar, varchar, integer[], float, varchar) owner to ebullvul;
+        """)
 
     def annihilate(self, confirm = "no way"):
         """
@@ -564,7 +585,7 @@ class Database():
 
         self.command_count += 1
 
-        if self.command_count == 100:
+        if self.command_count == self.batch_size:
             self.execute(self.command_string, self.params)
             self.command_string = ""
             self.params = []
@@ -623,23 +644,6 @@ class Database():
 
         return molecule
 
-    def get_calculation(self, client_name, *tags):
-        try:
-            mol_hash, model_name, frag_indices = self.select("molecule_properties", False, "mol_hash", "model_name", "frag_indices", status = "pending")
-        except TypeError:
-            raise NoPendingCalculationsError("Database")
-
-        self.insert("log_files", start_time = self.create_current_postgres_time(), client_name = client_name)
-
-        self.cursor.execute("SELECT last_value FROM log_files_log_id_seq")
-        log_id = self.cursor.fetchone()[0]
-
-        self.cursor.execute("UPDATE molecule_properties SET status=%s, most_recent_log_id=%s WHERE mol_hash=%s AND model_name=%s AND frag_indices=%s", ("dispatched", log_id, mol_hash, model_name, self.create_postgres_array(*frag_indices)))
-        molecule = self.get_molecule(mol_hash)
-
-
-        return molecule, model_name, frag_indices
-
     def get_all_calculations(self, client_name, *tags):
 
         while True:
@@ -669,12 +673,19 @@ class Database():
     def set_properties(self, molecule, model_name, frag_indices, energy, log_text):
         # possibly check to make sure molecule is not morphed
 
-        self.cursor.execute("UPDATE molecule_properties SET energies=%s, status=%s WHERE mol_hash=%s AND model_name=%s AND frag_indices=%s", (self.create_postgres_array(energy), "complete", molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices)))
-        log_id = self.select("molecule_properties", False, "most_recent_log_id", mol_hash = molecule.get_SHA1(), model_name = model_name, frag_indices = self.create_postgres_array(*frag_indices))
+        command_string = "PERFORM set_properties(%s, %s, %s, %s, %s);"
+        params = [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), energy, log_text]
 
-        # make sure to push previous log id to past_log_ids
+        self.command_string += command_string
+        self.params += params
 
-        self.cursor.execute("UPDATE log_files SET end_time=%s, log_text=%s WHERE log_id=%s", (self.create_current_postgres_time(), log_text, log_id))
+        self.command_count += 1
+
+        if self.command_count == self.batch_size:
+            self.execute(self.command_string, self.params)
+            self.command_string = ""
+            self.params = []
+            self.command_count = 0
 
     def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
         model_name ="{}/{}/{}".format(method, basis, cp)

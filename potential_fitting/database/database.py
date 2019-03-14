@@ -26,6 +26,7 @@ class Database():
         self.command_string = ""
         self.params = []
         self.command_count = 0
+        self.batch_size = 100
 
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
@@ -101,6 +102,12 @@ class Database():
         """
 
         self.connection.close()
+
+    def set_batch_size(self, batch_size):
+        self.batch_size = batch_size
+
+    def get_batch_size(self):
+        return self.batch_size
 
     def create(self):
         """
@@ -231,7 +238,42 @@ class Database():
             $$;
 
             alter function get_pending_calculations(varchar, character varying[], integer) owner to ebullvul;
-""")
+        """)
+
+        self.cursor.execute("""
+            create or replace function get_pending_calculations(molecule_name VARCHAR, input_client_name VARCHAR, input_tags character varying[], batch_size INTEGER) returns TABLE(coords FLOAT[], model VARCHAR, indices INTEGER[])
+                language plpgsql
+            as $$
+              DECLARE
+                molecule_hash VARCHAR;
+                log_id INTEGER;
+
+              BEGIN
+
+                FOR molecule_hash, model, indices IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices FROM molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE molecule_properties.status = 'pending' AND molecule_list.mol_name = molecule_name LIMIT batch_size
+                LOOP
+
+
+                  INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name);
+
+                  SELECT last_value FROM log_files_log_id_seq INTO
+                    log_id;
+
+                  UPDATE molecule_properties SET status='dispatched', most_recent_log_id=log_id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices;
+
+                  SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
+                    INTO coords;
+
+                  RETURN NEXT;
+
+                END LOOP;
+
+              END;
+
+            $$;
+
+            alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
+        """)
         pass
 
     def annihilate(self, confirm = "no way"):
@@ -599,11 +641,30 @@ class Database():
         return molecule, model_name, frag_indices
 
     def get_all_calculations(self, client_name, *tags):
+
         while True:
+
+            self.cursor.execute("SELECT molecule_list.mol_name from molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE molecule_properties.status = %s", ("pending",))
+
             try:
-                yield self.get_calculation(client_name, *tags)
-            except NoPendingCalculationsError:
+                molecule_name = self.cursor.fetchone()[0]
+            except TypeError:
                 break
+
+            self.cursor.execute("SELECT * FROM get_pending_calculations(%s, %s, %s, %s)", (molecule_name, client_name, self.create_postgres_array(*tags), self.batch_size))
+
+            pending_calcs = self.cursor.fetchall()
+
+            empty_molecule = self.build_empty_molecule(molecule_name)
+
+            for atom_coordinates, model, frag_indices in pending_calcs:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                yield molecule, model, frag_indices
 
     def set_properties(self, molecule, model_name, frag_indices, energy, log_text):
         # possibly check to make sure molecule is not morphed
@@ -618,12 +679,11 @@ class Database():
     def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
-        batch_size = 100
 
         empty_molecule = self.build_empty_molecule(molecule_name)
         
         while True:
-            self.cursor.execute("SELECT * FROM get_1B_training_set(%s, %s, %s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, batch_size))
+            self.cursor.execute("SELECT * FROM get_1B_training_set(%s, %s, %s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
             #self.cursor.callproc("get_1B_training_set", (molecule_name, model_name, self.create_postgres_array(*tags)))
             training_set = self.cursor.fetchall()
 
@@ -640,7 +700,7 @@ class Database():
 
                 yield molecule, energy
 
-            batch_offset += batch_size
+            batch_offset += self.batch_size
 
     def reset_all_calculations(self, *tag):
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))

@@ -1,11 +1,12 @@
 # external package imports
-import itertools, time, datetime, psycopg2, numpy as np, pandas as pd, copy
+import itertools, time, datetime, psycopg2, numpy as np, pandas as pd, copy, os
 
 # absolute module imports
 from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
 
+import script
 
 class Database():
 
@@ -23,13 +24,14 @@ class Database():
         Returns:
             A new Database object.
         """
-        self.command_string = ""
-        self.params = []
-        self.command_count = 0
         self.batch_size = 100
 
+        script.start()
+        password = os.environ['password']
+
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
+        #self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='" + password + "'")
+        self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='" + password + "'")
         #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='potential_fitting' user='USER' password='password'")
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
@@ -78,11 +80,6 @@ class Database():
         Returns:
             None.
         """
-
-        self.execute(self.command_string, self.params)
-        self.command_string = ""
-        self.params = []
-        self.command_count = 0
 
         self.connection.commit()
 
@@ -213,23 +210,30 @@ class Database():
         """)
 
         self.cursor.execute("""
-            create or replace function get_pending_calculations(input_client_name VARCHAR, input_tags character varying[], batch_size INTEGER) returns TABLE(coords double precision[], energy double precision)
-                language plpgsql
-            as $$
-              DECLARE
-                mol_hash VARCHAR;
-                model_name VARCHAR;
-                frag_indices INTEGER[];
-
+            create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[])
+              language plpgsql
+            as
+            $$
+            DECLARE
+                molecule_hash VARCHAR;
+                id INTEGER;
 
               BEGIN
 
-                FOR mol_hash, model_name, frag_indices IN SELECT mol_hash, model_name, frag_indices FROM molecule_properties WHERE status = 'pending'
+                FOR molecule_hash, model, indices IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices FROM
+                  molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE
+                  molecule_properties.status = 'pending' AND molecule_list.mol_name = molecule_name LIMIT batch_size
                 LOOP
 
-                  INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name);
+                  INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name) RETURNING log_id
+                    INTO id;
 
+                  UPDATE molecule_properties SET status='dispatched', most_recent_log_id=id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices;
 
+                  SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
+                    INTO coords;
+
+                  RETURN NEXT;
 
                 END LOOP;
 
@@ -237,7 +241,9 @@ class Database():
 
             $$;
 
-            alter function get_pending_calculations(varchar, character varying[], integer) owner to ebullvul;
+            alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
+
+
         """)
 
         self.cursor.execute("""
@@ -537,59 +543,63 @@ class Database():
 
         return command_string, params
 
-    def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
-
-        model_name ="{}/{}/{}".format(method, basis, cp)
+    def add_calculations(self, molecule_list, method, basis, cp, *tags, optimized = False):
 
         command_string = ""
         params = []
 
-        command_string += \
-            "IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=%s AND model_name=%s) THEN "
+        batch_count = 0
 
-        params += [molecule.get_SHA1(), model_name]
+        for molecule in molecule_list:
 
-        new_command_string, new_params = self.add_molecule(molecule)
-        command_string += new_command_string
-        params += new_params
+            model_name ="{}/{}/{}".format(method, basis, cp)
 
-        new_command_string, new_params = self.add_model_info(method, basis, cp)
-        command_string += new_command_string
-        params += new_params
 
-        for n in range(1, molecule.get_num_fragments() + 1):
-            for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
-                command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids) VALUES (%s, %s, %s, %s, %s, %s, %s);"
-                params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", []]
-
-        command_string += "INSERT INTO tags VALUES (%s, %s, %s);"
-        params += [molecule.get_SHA1(), model_name, []]
-
-        command_string += "END IF;"
-
-        new_command_string, new_params = self.update_tags(molecule.get_SHA1(), model_name, *tags)
-        command_string += new_command_string
-        params += new_params
-        
-        if optimized:
             command_string += \
-                "IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=%s AND mol_hash=%s AND model_name=%s) THEN " + \
-                "   INSERT INTO optimized_geometries VALUES (%s, %s, %s);" + \
-                "END IF;"
+                "IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=%s AND model_name=%s) THEN "
 
-            params += [molecule.get_name(), molecule.get_SHA1(), model_name, molecule.get_name(), molecule.get_SHA1(), model_name]
+            params += [molecule.get_SHA1(), model_name]
 
+            new_command_string, new_params = self.add_molecule(molecule)
+            command_string += new_command_string
+            params += new_params
 
-        self.command_string += command_string
-        self.params += params
+            new_command_string, new_params = self.add_model_info(method, basis, cp)
+            command_string += new_command_string
+            params += new_params
 
-        self.command_count += 1
+            for n in range(1, molecule.get_num_fragments() + 1):
+                for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
+                    command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids) VALUES (%s, %s, %s, %s, %s, %s, %s);"
+                    params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", []]
 
-        if self.command_count == self.batch_size:
-            self.execute(self.command_string, self.params)
-            self.command_string = ""
-            self.params = []
-            self.command_count = 0
+            command_string += "INSERT INTO tags VALUES (%s, %s, %s);"
+            params += [molecule.get_SHA1(), model_name, []]
+
+            command_string += "END IF;"
+
+            new_command_string, new_params = self.update_tags(molecule.get_SHA1(), model_name, *tags)
+            command_string += new_command_string
+            params += new_params
+            
+            if optimized:
+                command_string += \
+                    "IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=%s AND mol_hash=%s AND model_name=%s) THEN " + \
+                    "   INSERT INTO optimized_geometries VALUES (%s, %s, %s);" + \
+                    "END IF;"
+
+                params += [molecule.get_name(), molecule.get_SHA1(), model_name, molecule.get_name(), molecule.get_SHA1(), model_name]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+                self.execute(command_string, params)
 
     def update_tags(self, mol_hash, model_name, *tags):
 
@@ -670,22 +680,29 @@ class Database():
 
                 yield molecule, model, frag_indices
 
-    def set_properties(self, molecule, model_name, frag_indices, energy, log_text):
+    def set_properties(self, calculation_results):
         # possibly check to make sure molecule is not morphed
 
-        command_string = "PERFORM set_properties(%s, %s, %s, %s, %s);"
-        params = [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), energy, log_text]
+        command_string = ""
+        params = []
 
-        self.command_string += command_string
-        self.params += params
+        batch_count = 0
 
-        self.command_count += 1
+        for molecule, model_name, frag_indices, energy, log_text in calculation_results:
 
-        if self.command_count == self.batch_size:
-            self.execute(self.command_string, self.params)
-            self.command_string = ""
-            self.params = []
-            self.command_count = 0
+            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), energy, log_text]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
 
     def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
         model_name ="{}/{}/{}".format(method, basis, cp)

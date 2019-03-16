@@ -9,7 +9,7 @@ from potential_fitting.utils import SettingsReader
 # local module imports
 from .database import Database
 
-def fill_database(settings_path, database_path):
+def fill_database(settings_path, client_name):
     """
     Loops over all the uncalculated energies in a database and calculates them.
 
@@ -26,22 +26,23 @@ def fill_database(settings_path, database_path):
     """
 
     # open the database
-    with Database(database_path) as database:
+    with Database() as database:
 
-        print("Filling database {}".format(database_path))
+        print("Filling database.")
+
         # parse settings file
         settings = SettingsReader(settings_path)
 
         counter = 0
         
-        for calculation in database.missing_energies():
+        for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name):
             
             counter += 1
             print_progress(counter)
 
             try:
                 # calculate the missing energy
-                energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, calculation.cp, settings)
+                energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, cp, settings)
                 # update the energy in the database
                 database.set_energy(calculation.job_id, energy, "some/log/path")
             except LibraryCallError:

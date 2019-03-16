@@ -10,21 +10,23 @@ import script
 
 class Database():
 
-
     """
     Database class. Allows one to access a database and perform operations on it.
     """
     
-    def __init__(self):
+    def __init__(self, batch_size = 100):
         """
         Initializes the database, sets up connection, and cursor.
 
         Args:
+            batch_size      - number of operations to perfrom on the database per roundtrip to the server.
+                    larger numbers will be more efficient, but you should not exceed a couple thousand.
 
         Returns:
             A new Database object.
         """
-        self.batch_size = 100
+
+        self.batch_size = batch_size
 
         script.start()
         password = os.environ['password']
@@ -46,7 +48,7 @@ class Database():
         Args:
             None.
 
-        Returms:
+        Returns:
             self.
         """
 
@@ -54,7 +56,7 @@ class Database():
 
     def __exit__(self, type, value, traceback):
         """
-        Automatically saves and closes the database.
+        Saves and closes the database.
 
         Args:
             None.
@@ -71,8 +73,9 @@ class Database():
 
     def save(self):
         """
-        Save any Changes to the database.
-        Changes will not be perminent untill this function is called.
+        Commits changes to the database.
+
+        Changes will not be permanent until this function is called.
 
         Args:
             None.
@@ -85,11 +88,13 @@ class Database():
 
     def close(self):
         """
-        Close the database.
+        Closes the database.
 
         Always close the database after you are done using it.
 
         Closing the database does NOT automatically save it.
+
+        Any non-saved changes will be lost.
 
         Args:
             None.
@@ -101,14 +106,36 @@ class Database():
         self.connection.close()
 
     def set_batch_size(self, batch_size):
+        """
+        Sets the number of operations to do on the database per server roundtrip.
+        Larger numbers will be more efficient, but you should not exceed a couple thousand.
+
+        Args:
+            batch_size      - The number of operations to do per server roundtrip.
+
+        Returns:
+            None.
+        """
+
         self.batch_size = batch_size
 
     def get_batch_size(self):
+        """
+        Gets the batch size, the number of operations performed per server round trip.
+
+        Args:
+            None.
+
+        Returns:
+            batch_size
+        """
         return self.batch_size
 
     def create(self):
         """
         Creates all the tables in the database, if they do not exist already.
+
+        Also creates procedures and sequences.
 
         Args:
             None.
@@ -118,102 +145,391 @@ class Database():
         """
 
         self.cursor.execute("""
-            create or replace function get_1b_training_set(molecule_name character varying, model character varying, input_tags character varying[], batch_offset INTEGER, batch_size INTEGER) returns TABLE(coords double precision[], energy double precision)
+
+            create schema public;
+
+            comment on schema public is 'standard public schema';
+
+            alter schema public owner to postgres;
+
+            create type dup_result as
+            (
+                f1 integer,
+                f2 text
+            );
+
+            alter type dup_result owner to ebullvul;
+
+            create type empty_mol as
+            (
+                mol_name varchar,
+                frag_names character varying[],
+                frag_counts integer[],
+                frag_charges integer[],
+                frag_spins integer[]
+            );
+
+            alter type empty_mol owner to ebullvul;
+
+            create table molecule_info
+            (
+                name varchar not null
+                    constraint "molecule_Name_index"
+                        primary key
+            );
+
+            alter table molecule_info owner to "paesanilab-pgadmins";
+
+            create index molecule_info_name_uindex
+                on molecule_info (name);
+
+            create table molecule_list
+            (
+                mol_hash varchar not null
+                    constraint molecule_list_hash_key
+                        primary key,
+                mol_name varchar not null
+                    constraint molecule_list_molecule_name_fk
+                        references molecule_info,
+                atom_coordinates double precision[] not null
+            );
+
+            alter table molecule_list owner to "paesanilab-pgadmins";
+
+            create unique index molecule_list_mol_hash_uindex
+                on molecule_list (mol_hash);
+
+            create index molecule_list_mol_name_index
+                on molecule_list (mol_name);
+
+            create table atom_info
+            (
+                atomic_symbol varchar not null
+                    constraint atom_info_atomic_symbol_key
+                        primary key
+            );
+
+            comment on table atom_info is 'Holds immutable information that is universal to all instances of a specific Atom.';
+
+            alter table atom_info owner to "paesanilab-pgadmins";
+
+            create unique index atom_info_atomic_symbol_uindex
+                on atom_info (atomic_symbol);
+
+            create table fragment_info
+            (
+                name varchar not null
+                    constraint fragment_info_name_key
+                        primary key,
+                charge integer not null,
+                spin integer not null
+            );
+
+            comment on table fragment_info is 'This table holds all immutable information shared by all fragments of a type';
+
+            alter table fragment_info owner to "paesanilab-pgadmins";
+
+            create unique index fragment_info_name_uindex
+                on fragment_info (name);
+
+            create table molecule_contents
+            (
+                mol_name varchar not null
+                    constraint molecule_contents_molecule_info_name_fk
+                        references molecule_info,
+                frag_name varchar not null
+                    constraint molecule_contents_fragment_info_name_fk
+                        references fragment_info,
+                count integer not null
+            );
+
+            alter table molecule_contents owner to "paesanilab-pgadmins";
+
+            create index molecule_contents_mol_name_index
+                on molecule_contents (mol_name);
+
+            create table fragment_contents
+            (
+                frag_name varchar not null
+                    constraint fragment_contents_fragment_info_name_fk
+                        references fragment_info,
+                atom_symbol varchar not null
+                    constraint fragment_contents_atom_info_atomic_symbol_fk
+                        references atom_info,
+                count integer not null,
+                symmetry varchar not null
+            );
+
+            comment on table fragment_contents is 'This table describes fragments found in fragment_info table as built by atoms in atom_info table.';
+
+            alter table fragment_contents owner to "paesanilab-pgadmins";
+
+            create index fragment_contents_frag_name_index
+                on fragment_contents (frag_name);
+
+            create table model_info
+            (
+                name varchar not null
+                    constraint models_info_name_key
+                        primary key
+            );
+
+            alter table model_info owner to "paesanilab-pgadmins";
+
+            create unique index models_info_name_uindex
+                on model_info (name);
+
+            create table log_files
+            (
+                log_id serial not null
+                    constraint log_files_log_id_key
+                        primary key,
+                start_time timestamp with time zone not null,
+                end_time timestamp with time zone,
+                log_text varchar,
+                client_name varchar not null
+            );
+
+            alter table log_files owner to "paesanilab-pgadmins";
+
+            create table molecule_properties
+            (
+                mol_hash varchar not null
+                    constraint energies_list_molecule_list_mol_hash_fk
+                        references molecule_list,
+                model_name varchar not null
+                    constraint energies_list_models_info_name_fk
+                        references model_info,
+                frag_indices integer[] not null,
+                energies double precision[] not null,
+                atomic_charges double precision[] not null,
+                status varchar not null,
+                past_log_ids integer[] not null,
+                most_recent_log_id integer
+                    constraint energies_list_log_files_log_id_fk
+                        references log_files
+            );
+
+            alter table molecule_properties owner to "paesanilab-pgadmins";
+
+            create index energies_list_mol_hash_model_name_index
+                on molecule_properties (mol_hash, model_name);
+
+            create unique index energies_list_most_recent_log_id_uindex
+                on molecule_properties (most_recent_log_id);
+
+            create index molecule_properties_status_index
+                on molecule_properties (status);
+
+            create index molecule_properties_mol_hash_index
+                on molecule_properties (mol_hash);
+
+            create index molecule_properties_frag_indices_index
+                on molecule_properties (frag_indices);
+
+            create index molecule_properties_mol_hash_model_name_frag_indices_index
+                on molecule_properties (mol_hash, model_name, frag_indices);
+
+            create unique index log_files_log_id_uindex
+                on log_files (log_id);
+
+            create table tags
+            (
+                mol_hash varchar not null
+                    constraint tags_molecule_list_mol_hash_fk
+                        references molecule_list,
+                model_name varchar not null
+                    constraint tags_models_info_name_fk
+                        references model_info,
+                tag_names character varying[] not null
+            );
+
+            alter table tags owner to "paesanilab-pgadmins";
+
+            create unique index tags_mol_hash_model_name_uindex
+                on tags (mol_hash, model_name);
+
+            create table optimized_geometries
+            (
+                mol_name varchar not null
+                    constraint optimized_geometries_molecule_info_name_fk
+                        references molecule_info,
+                mol_hash varchar not null
+                    constraint optimized_geometries_molecule_list_mol_hash_fk
+                        references molecule_list,
+                model_name varchar
+                    constraint optimized_geometries_models_info_name_fk
+                        references model_info
+            );
+
+            alter table optimized_geometries owner to "paesanilab-pgadmins";
+
+            create index optimized_geometries_mol_name_model_name_index
+                on optimized_geometries (mol_name, model_name);
+
+            create function get_empty_molecule(molecule_name character varying) returns empty_mol
                 language plpgsql
             as $$
             DECLARE
-                optimized_energy FLOAT = NULL;
-                hash VARCHAR;
-                mol_tags VARCHAR[];
-                mol_tag VARCHAR;
-                valid_tags BOOL;
-                optimized_properties molecule_properties;
-                mol_properties molecule_properties;
-                coordinates FLOAT[];
+                mol empty_mol;
+                fragment_desc RECORD;
+              BEGIN
+              mol.mol_name := molecule_name;
+              FOR fragment_desc IN SELECT frag_name, count, charge, spin
+                  FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name
+                  where molecule_contents.mol_name=molecule_name LOOP
+
+                  mol.frag_names := mol.frag_names || fragment_desc.frag_name;
+                  mol.frag_counts := mol.frag_counts || fragment_desc.count;
+                  mol.frag_charges := mol.frag_charges || fragment_desc.charge;
+                  mol.frag_spins := mol.frag_spins || fragment_desc.spin;
+
+                  --SELECT atom_symbol, symmetry, count FROM fragment_contents WHERE frag_name = fragment_desc.name INTO fragment_cont;
+
+              END LOOP;
+              RETURN mol;
+              END;
+            $$;
+
+            alter function get_empty_molecule(varchar) owner to ebullvul;
+
+            create function get_molecule(molecule_hash character varying) returns molecule_list
+                language plpgsql
+            as $$
+            DECLARE
+                mol empty_mol;
+                fragment_desc RECORD;
+              BEGIN
+              mol.mol_name := molecule_name;
+              FOR fragment_desc IN SELECT frag_name, count, charge, spin
+                  FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name
+                  where molecule_contents.mol_name=molecule_name LOOP
+
+                  mol.frag_names := mol.frag_names || fragment_desc.frag_name;
+                  mol.frag_counts := mol.frag_counts || fragment_desc.count;
+                  mol.frag_charges := mol.frag_charges || fragment_desc.charge;
+                  mol.frag_spins := mol.frag_spins || fragment_desc.spin;
+
+                  --SELECT atom_symbol, symmetry, count FROM fragment_contents WHERE frag_name = fragment_desc.name INTO fragment_cont;
+
+              END LOOP;
+              RETURN mol;
+              END;
+            $$;
+
+            alter function get_molecule(varchar) owner to ebullvul;
+
+            create function get_1b_training_set(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], energy double precision)
+                language plpgsql
+            as $$
+            DECLARE
+                    optimized_energy FLOAT = NULL;
+                    hash VARCHAR;
+                    mol_tags VARCHAR[];
+                    mol_tag VARCHAR;
+                    valid_tags BOOL;
+                    optimized_properties molecule_properties;
+                    mol_properties molecule_properties;
+                  BEGIN
+
+                    FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = molecule_name AND model_name = model
+                    LOOP
+
+                      valid_tags := FALSE;
+
+
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
+
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
+
+
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+
+                      IF (SELECT valid_tags) THEN
+                        IF (SELECT optimized_energy ISNULL) THEN
+                          SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO optimized_properties;
+                          IF optimized_properties.status = 'complete' THEN
+                            optimized_energy = optimized_properties.energies[1];
+                          ELSE
+                            RAISE EXCEPTION 'Optimized energy uncalculated in database.';
+                          END IF;
+                        ELSE
+                          RAISE EXCEPTION 'Multiple optimized geometries in database.';
+                        END IF;
+                      END IF;
+
+                    END LOOP;
+
+
+                    IF (SELECT optimized_energy ISNULL) THEN
+                      RAISE EXCEPTION 'No optimized energy in database.';
+                    END IF;
+
+                    FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
+                    LOOP
+                      valid_tags := FALSE;
+
+
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
+
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
+
+
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+                      IF (SELECT valid_tags) THEN
+                        SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO mol_properties;
+                          IF mol_properties.status = 'complete' THEN
+                            SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
+                              INTO coords;
+                            energy := mol_properties.energies[1] - optimized_energy;
+                            RETURN NEXT;
+                          END IF;
+                      END IF;
+
+                    END LOOP;
+                  END;
+
+            $$;
+
+            alter function get_1b_training_set(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
+
+            create function set_properties(hash character varying, model character varying, indices integer[], energy double precision, log_txt character varying) returns void
+                language plpgsql
+            as $$
+            DECLARE
+                id INTEGER;
+
               BEGIN
 
-                FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = molecule_name AND model_name = model
-                LOOP
+                UPDATE molecule_properties SET energies = energies || energy, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices RETURNING most_recent_log_id
+                  INTO id;
+                UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
 
-                  valid_tags := FALSE;
-
-
-                  SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
-                    INTO mol_tags;
-
-                  FOREACH mol_tag IN ARRAY mol_tags
-                  LOOP
-
-
-                    IF (SELECT mol_tag = ANY(input_tags)) THEN
-                      valid_tags := TRUE;
-                    END IF;
-
-                  END LOOP;
-
-
-                  IF (SELECT valid_tags) THEN
-                    IF (SELECT optimized_energy ISNULL) THEN
-                      SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
-                        INTO optimized_properties;
-                      IF optimized_properties.status = 'complete' THEN
-                        optimized_energy = optimized_properties.energies[1];
-                      ELSE
-                        RAISE EXCEPTION 'Optimized energy uncalculated in database.';
-                      END IF;
-                    ELSE
-                      RAISE EXCEPTION 'Multiple optimized geometries in database.';
-                    END IF;
-                  END IF;
-
-                END LOOP;
-
-
-                IF (SELECT optimized_energy ISNULL) THEN
-                  RAISE EXCEPTION 'No optimized energy in database.';
-                END IF;
-
-                FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
-                LOOP
-                  valid_tags := FALSE;
-
-
-                  SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
-                    INTO mol_tags;
-
-                  FOREACH mol_tag IN ARRAY mol_tags
-                  LOOP
-
-
-                    IF (SELECT mol_tag = ANY(input_tags)) THEN
-                      valid_tags := TRUE;
-                    END IF;
-
-                  END LOOP;
-
-                  IF (SELECT valid_tags) THEN
-                    SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
-                        INTO mol_properties;
-                      IF mol_properties.status = 'complete' THEN
-                        SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
-                          INTO coords;
-                        energy := mol_properties.energies[1] - optimized_energy;
-                        RETURN NEXT;
-                      END IF;
-                  END IF;
-
-                END LOOP;
               END;
 
             $$;
-            alter function get_1b_training_set(varchar, varchar, character varying[], integer, integer) owner to potential;
-        """)
 
-        self.cursor.execute("""
+            alter function set_properties(varchar, varchar, integer[], double precision, varchar) owner to ebullvul;
+
             create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[])
-              language plpgsql
-            as
-            $$
+                language plpgsql
+            as $$
             DECLARE
                 molecule_hash VARCHAR;
                 id INTEGER;
@@ -243,216 +559,158 @@ class Database():
 
             alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
 
-
-        """)
-
-        self.cursor.execute("""
-            create or replace function get_pending_calculations(molecule_name VARCHAR, input_client_name VARCHAR, input_tags character varying[], batch_size INTEGER) returns TABLE(coords FLOAT[], model VARCHAR, indices INTEGER[])
-                language plpgsql
-            as $$
-              DECLARE
-                molecule_hash VARCHAR;
-                log_id INTEGER;
-
-              BEGIN
-
-                FOR molecule_hash, model, indices IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices FROM molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE molecule_properties.status = 'pending' AND molecule_list.mol_name = molecule_name LIMIT batch_size
-                LOOP
-
-
-                  INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name);
-
-                  SELECT last_value FROM log_files_log_id_seq INTO
-                    log_id;
-
-                  UPDATE molecule_properties SET status='dispatched', most_recent_log_id=log_id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices;
-
-                  SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
-                    INTO coords;
-
-                  RETURN NEXT;
-
-                END LOOP;
-
-              END;
-
-            $$;
-
-            alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
-        """)
-        
-        self.cursor.execute("""
-            create or replace function set_properties(hash VARCHAR, model VARCHAR, indices INTEGER[], energy FLOAT, log_txt VARCHAR) RETURNS VOID
-                language plpgsql
-            as $$
-              DECLARE
-                id INTEGER;
-
-              BEGIN
-
-                UPDATE molecule_properties SET energies = energies || energy, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices;
-
-                SELECT most_recent_log_id FROM molecule_properties WHERE mol_hash = hash AND model_name = model and frag_indices = indices INTO id;
-
-                UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
-
-              END;
-
-            $$;
-
-            alter function set_properties(varchar, varchar, integer[], float, varchar) owner to ebullvul;
-        """)
-
-        self.cursor.execute("""
             create function get_2b_training_set(molecule_name character varying, monomer1_name character varying, monomer2_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], binding_energy double precision, interaction_energy double precision, monomer1_deformation_energy double precision, monomer2_deformation_energy double precision)
-              language plpgsql
-            as
-            $$
-        DECLARE
-                optimized_monomer1_energy FLOAT = NULL;
-                optimized_monomer2_energy FLOAT = NULL;
-                hash VARCHAR;
-                mol_tags VARCHAR[];
-                mol_tag VARCHAR;
-                valid_tags BOOL;
-                optimized_properties molecule_properties;
-                dimer_status VARCHAR;
-                dimer_energies FLOAT[];
-                monomer1_energies FLOAT[];
-                monomer2_energies FLOAT[];
-                coordinates FLOAT[];
-              BEGIN
+                language plpgsql
+            as $$
+            DECLARE
+                    optimized_monomer1_energy FLOAT = NULL;
+                    optimized_monomer2_energy FLOAT = NULL;
+                    hash VARCHAR;
+                    mol_tags VARCHAR[];
+                    mol_tag VARCHAR;
+                    valid_tags BOOL;
+                    optimized_properties molecule_properties;
+                    dimer_status VARCHAR;
+                    dimer_energies FLOAT[];
+                    monomer1_energies FLOAT[];
+                    monomer2_energies FLOAT[];
+                    coordinates FLOAT[];
+                  BEGIN
 
-                FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = monomer1_name AND model_name = model
-                LOOP
+                    FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = monomer1_name AND model_name = model
+                    LOOP
 
-                  valid_tags := FALSE;
-
-
-                  SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
-                    INTO mol_tags;
-
-                  FOREACH mol_tag IN ARRAY mol_tags
-                  LOOP
+                      valid_tags := FALSE;
 
 
-                    IF (SELECT mol_tag = ANY(input_tags)) THEN
-                      valid_tags := TRUE;
-                    END IF;
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
 
-                  END LOOP;
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
 
 
-                  IF (SELECT valid_tags) THEN
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+
+                      IF (SELECT valid_tags) THEN
+                        IF (SELECT optimized_monomer1_energy ISNULL) THEN
+                          SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO optimized_properties;
+                          IF optimized_properties.status = 'complete' THEN
+                            optimized_monomer1_energy = optimized_properties.energies[1];
+                          ELSE
+                            RAISE EXCEPTION 'Optimized energy uncalculated in database.';
+                          END IF;
+                        ELSE
+                          RAISE EXCEPTION 'Multiple optimized geometries in database.';
+                        END IF;
+                      END IF;
+
+                    END LOOP;
+
                     IF (SELECT optimized_monomer1_energy ISNULL) THEN
-                      SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
-                        INTO optimized_properties;
-                      IF optimized_properties.status = 'complete' THEN
-                        optimized_monomer1_energy = optimized_properties.energies[1];
-                      ELSE
-                        RAISE EXCEPTION 'Optimized energy uncalculated in database.';
+                      RAISE EXCEPTION 'No monomer1 optimized energy in database.';
+                    END IF;
+
+                    FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = monomer2_name AND model_name = model
+                    LOOP
+
+                      valid_tags := FALSE;
+
+
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
+
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
+
+
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+
+                      IF (SELECT valid_tags) THEN
+                        IF (SELECT optimized_monomer2_energy ISNULL) THEN
+                          SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO optimized_properties;
+                          IF optimized_properties.status = 'complete' THEN
+                            optimized_monomer2_energy = optimized_properties.energies[1];
+                          ELSE
+                            RAISE EXCEPTION 'Optimized energy uncalculated in database.';
+                          END IF;
+                        ELSE
+                          RAISE EXCEPTION 'Multiple optimized geometries in database.';
+                        END IF;
                       END IF;
-                    ELSE
-                      RAISE EXCEPTION 'Multiple optimized geometries in database.';
-                    END IF;
-                  END IF;
 
-                END LOOP;
+                    END LOOP;
 
-                IF (SELECT optimized_monomer1_energy ISNULL) THEN
-                  RAISE EXCEPTION 'No monomer1 optimized energy in database.';
-                END IF;
-
-                FOR hash IN SELECT mol_hash FROM optimized_geometries WHERE mol_name = monomer2_name AND model_name = model
-                LOOP
-
-                  valid_tags := FALSE;
-
-
-                  SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
-                    INTO mol_tags;
-
-                  FOREACH mol_tag IN ARRAY mol_tags
-                  LOOP
-
-
-                    IF (SELECT mol_tag = ANY(input_tags)) THEN
-                      valid_tags := TRUE;
-                    END IF;
-
-                  END LOOP;
-
-
-                  IF (SELECT valid_tags) THEN
                     IF (SELECT optimized_monomer2_energy ISNULL) THEN
-                      SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
-                        INTO optimized_properties;
-                      IF optimized_properties.status = 'complete' THEN
-                        optimized_monomer2_energy = optimized_properties.energies[1];
-                      ELSE
-                        RAISE EXCEPTION 'Optimized energy uncalculated in database.';
+                      RAISE EXCEPTION 'No monomer2 optimized energy in database.';
+                    END IF;
+
+                    FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
+                    LOOP
+                      valid_tags := FALSE;
+
+                      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+                        INTO mol_tags;
+
+                      FOREACH mol_tag IN ARRAY mol_tags
+                      LOOP
+
+
+                        IF (SELECT mol_tag = ANY(input_tags)) THEN
+                          valid_tags := TRUE;
+                        END IF;
+
+                      END LOOP;
+
+                      IF (SELECT valid_tags) THEN
+                        SELECT energies, status FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0, 1}'
+                            INTO dimer_energies, dimer_status;
+
+                        IF dimer_status = 'complete' THEN
+                          SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
+                            INTO coords;
+
+                          SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                            INTO monomer1_energies;
+                          SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}'
+                            INTO monomer2_energies;
+
+                          interaction_energy := dimer_energies[1] - monomer1_energies[1] - monomer2_energies[1];
+                          monomer1_deformation_energy := monomer1_energies[1] - optimized_monomer1_energy;
+                          monomer2_deformation_energy := monomer2_energies[1] - optimized_monomer2_energy;
+                          binding_energy := interaction_energy - monomer1_deformation_energy - monomer2_deformation_energy;
+                          RETURN NEXT;
+                        END IF;
                       END IF;
-                    ELSE
-                      RAISE EXCEPTION 'Multiple optimized geometries in database.';
-                    END IF;
-                  END IF;
 
-                END LOOP;
+                    END LOOP;
+                  END;
 
-                IF (SELECT optimized_monomer2_energy ISNULL) THEN
-                  RAISE EXCEPTION 'No monomer2 optimized energy in database.';
-                END IF;
+            $$;
 
-                FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
-                LOOP
-                  valid_tags := FALSE;
-
-                  SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
-                    INTO mol_tags;
-
-                  FOREACH mol_tag IN ARRAY mol_tags
-                  LOOP
-
-
-                    IF (SELECT mol_tag = ANY(input_tags)) THEN
-                      valid_tags := TRUE;
-                    END IF;
-
-                  END LOOP;
-
-                  IF (SELECT valid_tags) THEN
-                    SELECT energies, status FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0, 1}'
-                        INTO dimer_energies, dimer_status;
-
-                    IF dimer_status = 'complete' THEN
-                      SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
-                        INTO coords;
-
-                      SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
-                        INTO monomer1_energies;
-                      SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}'
-                        INTO monomer2_energies;
-
-                      interaction_energy := dimer_energies[1] - monomer1_energies[1] - monomer2_energies[1];
-                      monomer1_deformation_energy := monomer1_energies[1] - optimized_monomer1_energy;
-                      monomer2_deformation_energy := monomer2_energies[1] - optimized_monomer2_energy;
-                      binding_energy := interaction_energy - monomer1_deformation_energy - monomer2_deformation_energy;
-                      RETURN NEXT;
-                    END IF;
-                  END IF;
-
-                END LOOP;
-              END;
-    $$;
-
-    alter function get_2b_training_set(varchar, varchar, varchar, varchar, character varying[], integer, integer) owner to ebullvul;
-
+            alter function get_2b_training_set(varchar, varchar, varchar, varchar, character varying[], integer, integer) owner to ebullvul;
 
         """)
 
     def annihilate(self, confirm = "no way"):
         """
         DELETES ALL CONTENT IN ALL TABLES IN THE DATABASE.
+
+        Don't EVER do this for databases you share with others unless you ask them first.
+
+        TODO: Make this method require administrator priveleges on the database.
 
         In order to protect users, confirm must be specified as
         "confirm" or the content will not be deleted.
@@ -470,6 +728,21 @@ class Database():
             print("annihilate failed. specify confirm = \"confirm\" if deletion of all content in the database is desired.")
 
     def execute(self, command, params):
+        """
+        Executes a PostgreSQL command in the database.
+
+        The String command can contain '%s' substrings, each %s
+        will be substituted for an item in params. Order of the '%s's
+        matches the order in which the params will be substituted.
+        One param per '%s'
+
+        Args:
+            command         - The command to run.
+            params          - Parameters for the command.
+
+        Returns:
+            None.
+        """
         self.cursor.execute(
             "DO $$" + 
             "   BEGIN " + 
@@ -555,17 +828,29 @@ class Database():
         raise NotImplementedError
         
     def create_postgres_array(self, *values):
+        """
+        Creates a postgres array with an arbitrary number of values
+
+        Args:
+            *values: Set of abritrary number of values which firm the lements of the postgres array.
+
+        Returns:
+            The Postgres Array as a python string 
+        """
+
         return "{" + ",".join([str(i) for i in values]) + "}"
-
-    def create_current_postgres_time(self):
-        offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
-        offset = offset / 60 / 60 * -1
-
-        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + str(int(offset))
 
     def add_atom_info(self, atom):
         """
-        Adds a single atom type's info to the atom_info table if it does not already exist
+        Adds a single atom type's info to the atom_info table if it does not already exist.
+
+        Args:
+            atom: The atom to insert (Object of the Atom class)
+
+        Returns:
+            command_string: The postgres command which inserts the atom into the atom_info table as a Python String.
+            params: A 2 element list containing the name of the atom twice.   
+
         """
         command_string = \
             "IF NOT EXISTS(SELECT atomic_symbol FROM atom_info WHERE atomic_symbol=%s) THEN " + \
@@ -581,7 +866,15 @@ class Database():
         # use transactions
 
         """
-        Adds a single fragment type's info to the fragment_info table if it does not already exist
+        Adds a single fragment type's info to the fragment_info table if it does not already exist.
+
+        Args:
+            fragment: The fragment to insert (Object of the Fragment class)
+
+        Returns:
+            command_string: The postgres command which inserts the fragment into the fragment_contents table as a Python String.
+            params: A list of the name of the fragment, the atom symbol of tthe first symmetry pair, the count associated with the fragment, and the symmetry symbol.  
+
         """
 
         command_string = ""
@@ -803,6 +1096,8 @@ class Database():
 
     def get_all_calculations(self, client_name, *tags):
 
+        # TODO: make tags work with this!
+
         while True:
 
             self.cursor.execute("SELECT molecule_list.mol_name from molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE molecule_properties.status = %s", ("pending",))
@@ -825,7 +1120,12 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule, model, frag_indices
+                method = model[:model.index("/")]
+                model = model[model.index("/") + 1:]
+                basis = model[:model.index("/")]
+                cp = model[model.index("/") + 1:]
+
+                yield molecule, method, basis, cp, frag_indices
 
     def set_properties(self, calculation_results):
         # possibly check to make sure molecule is not morphed

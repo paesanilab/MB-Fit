@@ -4,22 +4,23 @@ import sys, os, sqlite3
 # absolute module imports
 from potential_fitting import calculator
 from potential_fitting.exceptions import LibraryCallError
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, files
 
 # local module imports
 from .database import Database
 
-def fill_database(settings_path, client_name):
+def fill_database(settings_path, client_name, calculation_count = -1):
     """
     Loops over all the uncalculated energies in a database and calculates them.
 
-    Can be interrupted, however the energy running when the interrupt occured will be stuck set to running. Call
-    clean_database() to reset it to pending.
+    Results are submitted to the database in batches of 1000. If interrupted
+    all results since the last batch will be stuck on "running".
+    call clean_database() to set them back to pending.
 
     Args:
         settings_path       - Local path to the file with all relevant settings information.
-        database_path       - Local path to the database file. ".db" will be appending if it does not already end in
-                ".db".
+        client_name         - Name of the client performing these calculations.
+        calculation_count   - Maximum number of calculations to perform. -1 for infinity.
 
     Returns:
         None.
@@ -34,6 +35,8 @@ def fill_database(settings_path, client_name):
         settings = SettingsReader(settings_path)
 
         counter = 0
+
+        calculation_results = []
         
         for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name):
             
@@ -43,15 +46,33 @@ def fill_database(settings_path, client_name):
             try:
                 # calculate the missing energy
                 energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, cp, settings)
-                # update the energy in the database
-                database.set_energy(calculation.job_id, energy, "some/log/path")
-            except LibraryCallError:
-                database.set_failed(calculation.job_id, "some/log/path")
+                
+                log_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
+                
+                with open(log_path) as log_file:
+                    log_text = log_file.read()
+                
+                calculation_results.append((molecule, method, basis, cp, frag_indices, True, energy, log_text))
             
-            # save changes to the database
-            database.save()
+            except LibraryCallError:
+                log_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
 
-        print("\nFilling of database {} successful".format(database_path))
+                calculation_results.append((molecule, method, basis, cp, frag_indices, False, 0, log_text))
+            
+            print_progress(counter)
+            counter += 1;
+
+            if len(calculation_results) > 1000:
+                database.set_properties(calculation_results)
+                # save changes to the database
+                database.save()
+
+            if counter == calculation_count:
+                break
+
+        database.set_properties(calculation_results)
+
+        print("\nFilling of database successful")
 
 def print_progress(counter):
     """

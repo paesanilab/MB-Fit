@@ -98,40 +98,40 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
-def init_database(settings_path, database_path, configurations_path, *tags):
+def init_database(settings_path, configurations_path, method, basis, cp, *tags):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
     to create a new database, or an existing database to add more energies to be calculated
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file to add the configurations to. ".db" will automatically
-                be added to the end if it does not already end in ".db".
-        configurations_path - Local path to a single .xyz file or a directory containing ".xyz" files. If this argument
-                is a directory, any non .xyz files will be ignored.
+        configurations_path - Local path to a single .xyz file.
+        method              - QM method to use to calculate the energy of these configurations.
+        basis               - QM basis to use to calculate the energy of these configurations.
+        cp                  - Use counterpoise correction for these configurations?
         tags                - Mark the new configurations with these tags.
 
     Returns:
         None.
     """
 
-    database.initialize_database(settings_path, database_path, configurations_path, *tags)
+    database.initialize_database(settings_path, configurations_path, method, basis, cp, *tags)
 
-def fill_database(settings_path, database_path):
+def fill_database(settings_path, client_name, calculation_count = -1):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
     
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing uncaculated energies. ".db" will
-                automatically be added to the end if it does not already end in ".db".
+        client_name         - Name of the client performing these calculations.
+        calculation_count   - Maximum number of calculations to perform. -1 for infinity.
 
     Returns:
         None.
     """
 
-    database.fill_database(settings_path, database_path)
+    database.fill_database(settings_path, client_name, calculation_count)
 
 def generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, *tags, method = "%", basis = "%",
             cp = "%", e_min = 0, e_max = float('inf')):

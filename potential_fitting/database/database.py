@@ -1135,10 +1135,11 @@ class Database():
 
         batch_count = 0
 
-        for molecule, model_name, frag_indices, energy, log_text in calculation_results:
+        for molecule, method, basis, cp, frag_indices, result, energy, log_text in calculation_results:
+        	model_name = method + "/" + basis + "/" + cp
 
-            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s);"
-            params += [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), energy, log_text]
+            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), result, energy, log_text]
 
             batch_count += 1
 

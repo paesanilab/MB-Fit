@@ -6,8 +6,6 @@ from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
 
-import script
-
 class Database():
 
     """
@@ -28,12 +26,9 @@ class Database():
 
         self.batch_size = batch_size
 
-        script.start()
-        password = os.environ['password']
-
         # connection is used to get the cursor, commit to the database, and close the database
-        #self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='" + password + "'")
-        self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='" + password + "'")
+        #self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
+        self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
         #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='potential_fitting' user='USER' password='password'")
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
@@ -1125,6 +1120,7 @@ class Database():
                 basis = model[:model.index("/")]
                 cp = model[model.index("/") + 1:]
 
+
                 yield molecule, method, basis, cp, frag_indices
 
     def set_properties(self, calculation_results):
@@ -1136,7 +1132,7 @@ class Database():
         batch_count = 0
 
         for molecule, method, basis, cp, frag_indices, result, energy, log_text in calculation_results:
-        	model_name = method + "/" + basis + "/" + cp
+            model_name = method + "/" + basis + "/" + cp
 
             command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s);"
             params += [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), result, energy, log_text]

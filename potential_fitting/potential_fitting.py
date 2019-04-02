@@ -98,7 +98,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
-def init_database(settings_path, configurations_path, method, basis, cp, *tags):
+def init_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
     to create a new database, or an existing database to add more energies to be calculated
@@ -110,12 +110,13 @@ def init_database(settings_path, configurations_path, method, basis, cp, *tags):
         basis               - QM basis to use to calculate the energy of these configurations.
         cp                  - Use counterpoise correction for these configurations?
         tags                - Mark the new configurations with these tags.
+        optimized           - Are these configurations optimized geometries?
 
     Returns:
         None.
     """
 
-    database.initialize_database(settings_path, configurations_path, method, basis, cp, *tags)
+    database.initialize_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 def fill_database(settings_path, client_name, calculation_count = -1):
     """

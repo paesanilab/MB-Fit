@@ -47,20 +47,11 @@ def fill_database(settings_path, client_name, calculation_count = -1):
                 # calculate the missing energy
                 energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, cp, settings)
                 
-                log_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
-                
-                with open(log_path) as log_file:
-                    log_text = log_file.read()
-                
-                calculation_results.append((molecule, method, basis, cp, frag_indices, True, energy, log_text))
+                calculation_results.append((molecule, method, basis, cp, frag_indices, True, energy, "log_text"))
             
             except LibraryCallError:
-                log_path = files.get_energy_log_path(settings.get("files", "log_path"), molecule, method, basis, cp, "out")
 
-                calculation_results.append((molecule, method, basis, cp, frag_indices, False, 0, log_text))
-            
-            print_progress(counter)
-            counter += 1;
+                calculation_results.append((molecule, method, basis, cp, frag_indices, False, 0, "log_text"))
 
             if len(calculation_results) > 1000:
                 database.set_properties(calculation_results)

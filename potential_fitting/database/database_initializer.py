@@ -1,10 +1,11 @@
 # absolute module imports
 from potential_fitting.molecule import parse_training_set_file
+from potential_fitting.utils import SettingsReader
 
 # local module imports
 from .database import Database
 
-def initialize_database(settings_path, training_set_path, method, basis, cp, *tags):
+def initialize_database(settings_path, training_set_path, method, basis, cp, *tags, optimized = False):
     """
     Adds energies to be calculated to an existing database.
 
@@ -15,6 +16,7 @@ def initialize_database(settings_path, training_set_path, method, basis, cp, *ta
         basis               - QM basis to use to calculate the energy of these configurations.
         cp                  - Use counterpoise correction for these configurations?
         tags                - Label this calculation with these tags.
+        optimized 			- Are these configurations optimized geometries?
 
     Returns:
         None.
@@ -22,10 +24,9 @@ def initialize_database(settings_path, training_set_path, method, basis, cp, *ta
     
     print("Initializing database from xyz file {} directory into database.".format(training_set_path))
 
-    with open(training_set_path, "r") as training_set_file:
-        molecules = parse_training_set_file(filename, settings)
+    molecules = parse_training_set_file(training_set_path, SettingsReader(settings_path))
 
     with Database() as database:
-        database.add_calculations(molecules, method, basis, cp, *tags)
+        database.add_calculations(molecules, method, basis, cp, *tags, optimized = optimized)
 
     print("Initializing of database successful.")

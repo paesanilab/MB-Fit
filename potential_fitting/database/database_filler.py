@@ -1,5 +1,5 @@
 # external package imports
-import sys, os, sqlite3
+import sys
 
 # absolute module imports
 from potential_fitting import calculator
@@ -9,7 +9,7 @@ from potential_fitting.utils import SettingsReader, files
 # local module imports
 from .database import Database
 
-def fill_database(settings_path, client_name, calculation_count = -1):
+def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
     """
     Loops over all the uncalculated energies in a database and calculates them.
 
@@ -20,7 +20,7 @@ def fill_database(settings_path, client_name, calculation_count = -1):
     Args:
         settings_path       - Local path to the file with all relevant settings information.
         client_name         - Name of the client performing these calculations.
-        calculation_count   - Maximum number of calculations to perform. -1 for infinity.
+        calculation_count   - Maximum number of calculations to perform.
 
     Returns:
         None.
@@ -38,7 +38,7 @@ def fill_database(settings_path, client_name, calculation_count = -1):
 
         calculation_results = []
         
-        for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name):
+        for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=calculation_count):
             
             counter += 1
             print_progress(counter)
@@ -58,9 +58,6 @@ def fill_database(settings_path, client_name, calculation_count = -1):
                 database.set_properties(calculation_results)
                 # save changes to the database
                 database.save()
-
-            if counter == calculation_count:
-                break
 
         database.set_properties(calculation_results)
 

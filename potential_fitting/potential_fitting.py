@@ -1,5 +1,5 @@
 # external package imports
-import os, subprocess, contextlib, random
+import os, sys, contextlib
 
 # local module imports
 from .utils import SettingsReader, files, system
@@ -118,7 +118,7 @@ def init_database(settings_path, configurations_path, method, basis, cp, *tags, 
 
     database.initialize_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
-def fill_database(settings_path, client_name, calculation_count = -1):
+def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
@@ -126,7 +126,7 @@ def fill_database(settings_path, client_name, calculation_count = -1):
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         client_name         - Name of the client performing these calculations.
-        calculation_count   - Maximum number of calculations to perform. -1 for infinity.
+        calculation_count   - Maximum number of calculations to perform.
 
     Returns:
         None.

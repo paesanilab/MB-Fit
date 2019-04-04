@@ -8,7 +8,6 @@ It is a template that database_job_maker.py uses to make psi4 jobs
 """
 
 def execute_job():
-    job_id = {job_id}
     molecule = "{molecule}"
     method = "{method}"
     basis = "{basis}"
@@ -33,7 +32,7 @@ def execute_job():
     print("Threads {format}".format(number_of_threads))
     print("Memory: {format}".format(memory))
 
-    psi4.core.set_output_file("job_{format}.log".format(job_id), False)
+    psi4.core.set_output_file("job.log", False)
     psi4.set_memory(memory)
     psi4.geometry(molecule)
     psi4.set_num_threads(number_of_threads)

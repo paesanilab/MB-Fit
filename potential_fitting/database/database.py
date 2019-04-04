@@ -1,8 +1,7 @@
 # external package imports
-import itertools, time, datetime, psycopg2, numpy as np, pandas as pd, copy, os
+import itertools, psycopg2, numpy as np, copy, os
 
 # absolute module imports
-from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
 
@@ -1152,15 +1151,14 @@ class Database():
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
         empty_molecule = self.build_empty_molecule(molecule_name)
-        
+
         while True:
             self.cursor.execute("SELECT * FROM get_1B_training_set(%s, %s, %s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
             training_set = self.cursor.fetchall()
-
-            if training_set == []:
-                return
-
 
             for atom_coordinates, energy in training_set:
                 molecule = copy.deepcopy(empty_molecule)
@@ -1173,6 +1171,8 @@ class Database():
 
             batch_offset += self.batch_size
 
+            if batch_offset > max_count:
+                return;
 
     def get_2B_training_set(self, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags):
         model_name ="{}/{}/{}".format(method, basis, cp)
@@ -1188,7 +1188,6 @@ class Database():
 
             if training_set == []:
                 return
-
 
             for atom_coordinates, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in training_set:
                 molecule = copy.deepcopy(empty_molecule)

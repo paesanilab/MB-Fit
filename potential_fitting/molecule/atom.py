@@ -22,9 +22,7 @@ class Atom(object):
 
         self.name = name
         self.symmetry_class = symmetry_class
-        self.x = x
-        self.y = y
-        self.z = z
+        self.set_xyz(x, y, z)
 
     def get_name(self):
         """
@@ -180,6 +178,8 @@ class Atom(object):
             None
         """
 
+        if x == -0.0:
+            x = 0.0
         self.x = x
 
     def set_y(self, y):
@@ -193,6 +193,8 @@ class Atom(object):
             None
         """
 
+        if y == -0.0:
+            y = 0.0
         self.y = y
 
     def set_z(self, z):
@@ -206,6 +208,8 @@ class Atom(object):
             None
         """
 
+        if z == -0.0:
+            z = 0.0
         self.z = z
 
     def set_xyz(self, x, y, z):
@@ -221,9 +225,9 @@ class Atom(object):
             None
         """
 
-        self.x = x
-        self.y = y
-        self.z = z
+        self.set_x(x)
+        self.set_y(y)
+        self.set_z(z)
 
     def translate(self, x, y, z):
         """

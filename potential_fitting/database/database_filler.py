@@ -44,6 +44,7 @@ def fill_database(settings_path, client_name, calculation_count = -1):
             print_progress(counter)
 
             try:
+
                 # calculate the missing energy
                 energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, cp, settings)
                 

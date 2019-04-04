@@ -134,8 +134,7 @@ def fill_database(settings_path, client_name, calculation_count = -1):
 
     database.fill_database(settings_path, client_name, calculation_count)
 
-def generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, *tags, method = "%", basis = "%",
-            cp = "%", e_min = 0, e_max = float('inf')):
+def generate_1b_training_set(settings_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
     Generates a 1b training set from the energies inside a database.
 
@@ -146,15 +145,13 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing energies to put in the training set. ".db"
-                will automatically be added to the end if it does not already end in ".db".
         training_set_path   - Local path to the file to write the training set to.
         molecule_name       - The name of the moelcule to generate a training set for.
-        tags                - Only use energies marked with one or more of these tags.
         method              - Only use energies calcualted by this method.
         basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
                 effect on 1b energies.
+        tags                - Only use energies marked with one or more of these tags.
         e_min               - Minimum (inclusive) energy of any config to include in this training set.
         e_max               - Maximum (exclusive) energy of any config to include in this training set.
 
@@ -162,7 +159,7 @@ def generate_1b_training_set(settings_path, database_path, training_set_path, mo
         None.
     """
 
-    database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name,
+    database.generate_1b_training_set(settings_path, training_set_path, molecule_name,
             method, basis, cp, *tags, e_min = e_min, e_max = e_max)
 
 def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name, *tags,

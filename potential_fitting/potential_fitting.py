@@ -162,8 +162,8 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
     database.generate_1b_training_set(settings_path, training_set_path, molecule_name,
             method, basis, cp, *tags, e_min = e_min, e_max = e_max)
 
-def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name, *tags,
-        method = "%", basis = "%", cp = "%", e_bind_max = float('inf'), e_mon_max = float('inf')):
+def generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags,
+            e_bind_max = float('inf'), e_mon_max = float('inf')):
     """
     Generates a 2b training set from the energies inside a database.
 
@@ -174,15 +174,14 @@ def generate_2b_training_set(settings_path, database_path, training_set_path, mo
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing energies to put in the training set. ".db"
-                will automatically be added to the end if it does not already end in ".db".
         training_set_path   - Local path to the file to write the training set to.
-        monomer1_name       - The Name of first monomer in the dimer.
-        monomer2_name       - The Name of the second monomer in the dimer.
-        tags                - Only use energies marked with one or more of these tags.
+        molecule_name       - The name of the dimer.
+        monomer1_name       - The name of first monomer in the dimer.
+        monomer2_name       - The name of the second monomer in the dimer.
         method              - Only use energies calcualted by this method.
         basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp.
+        tags                - Only use energies marked with one or more of these tags.
         e_bind_max          - Maximum binding energy allowed
         e_mon_max           - Maximum monomer deformation energy allowed
 
@@ -190,7 +189,7 @@ def generate_2b_training_set(settings_path, database_path, training_set_path, mo
         None.
     """
     
-    database.generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
+    database.generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name,
             method, basis, cp, *tags, e_bind_max = e_bind_max, e_mon_max = e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path):

@@ -1,10 +1,35 @@
 # absolute module imports
-from potential_fitting.molecule import Molecule
+from potential_fitting.molecule import Molecule, os
+from glob import glob
 
 # local module imports
-from .database import Database, Calculation
+from .database import Database
 
-def read_job(database_path, job_path, job_log_path):
+def read_all_jobs(job_dir):
+    calculation_results = []
+    for directory in glob("job_[0-9]+"):
+        calculation_results.append(read_job(directory + "/output.dat", directory + "/output.log"))
+
+        i = 1
+
+        job_dir = "job_{format}_done".format(i)
+
+        while os.path.isfile(job_dir):
+            i += 1
+
+            job_dir = "job_{format}_done".format(i)
+
+        os.rename(directory, job_dir)
+
+        if len(calculation_results) > 1000:
+            with Database() as db:
+                db.set_properties(calculation_results)
+
+    with Database() as db:
+        db.set_properties(calculation_results)
+
+
+def read_job(job_dat_path, job_log_path):
     """
     Reads a completed job from its output file and enters the result into a database.
     
@@ -18,12 +43,9 @@ def read_job(database_path, job_path, job_log_path):
         None
     """
 
-    with open(job_path, "r") as job_file:
+    with open(job_dat_path, "r") as job_file:
 
-        # parse the job id
-        job_id = int(job_file.readline().split()[1])
-        
-        output_line = job_file.readline()[:-1]
+        molecule =
 
         if output_line == "Failure":
             success = False
@@ -31,11 +53,7 @@ def read_job(database_path, job_path, job_log_path):
             # parse the energy2
             energy = float(output_line.split()[1])
             success = True
-    
-    # open the database
-    with Database(database_path) as database:
 
-        if success:
-            database.set_energy(job_id, energy, job_log_path)
-        else:
-            database.set_failed(job_id, "failed", job_log_path)
+
+    return molecule, method, basis, cp, frag_indices, True, energy, "log_text"
+

@@ -1123,7 +1123,7 @@ class Database():
 
                 yield molecule, method, basis, cp, frag_indices
 
-            if calculations_to_do == 0:
+            if calculations_to_do < 1:
                 return
 
     def set_properties(self, calculation_results):

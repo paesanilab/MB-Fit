@@ -1,5 +1,5 @@
 import psi4
-import subprocess
+import subprocess, os
 
 """
 This is not a runnable python file.
@@ -8,9 +8,12 @@ It is a template that database_job_maker.py uses to make psi4 jobs
 """
 
 def execute_job():
+    whole_molecule = "{whole_molecule}"
     molecule = "{molecule}"
+    frag_indices = "{frag_indices}"
     method = "{method}"
     basis = "{basis}"
+    cp = "{cp}"
     number_of_threads = {num_threads}
     memory = "{memory}"
 
@@ -32,10 +35,25 @@ def execute_job():
     print("Threads {format}".format(number_of_threads))
     print("Memory: {format}".format(memory))
 
-    psi4.core.set_output_file("job.log", False)
+    i = 1
+
+    job_dir =  "job_{format}".format(i)
+
+    while os.path.isfile(job_dir):
+
+        i += 1
+
+        job_dir = "job_{format}".format(i)
+
+    os.mkdir(job_dir)
+    output_file = job_dir + "/output.dat"
+    log_file = job_dir + "/output.log"
+
+    psi4.core.set_output_file(log_file, False)
     psi4.set_memory(memory)
     psi4.geometry(molecule)
     psi4.set_num_threads(number_of_threads)
+
     try:
         energy = psi4.energy("{format}/{format}".format(method, basis))
         print("Energy: {format}".format(energy))
@@ -44,12 +62,19 @@ def execute_job():
         success = False
         print("Iterations failed to Converge")
 
-    with open("job_{format}.out".format(job_id), "w") as out_file:
-        out_file.write("Job: {format}\n".format(job_id))
+
+    with open(output_file, "w") as out_file:
+        out_file.writelines(["Molecule: {format}".format(whole_molecule),
+                             "\nMethod: {format}".format(method),
+                             "\nBasis: {format}".format(basis),
+                             "\nCp: {format}".format(cp),
+                             "\nfrag_indices: {format}".format(frag_indices)
+                             ])
+
         if success:
-            out_file.write("Energy: {format}".format(energy))
+            out_file.write("\nSuccess: {format}".format(energy))
         else:
-            out_file.write("Failure")
+            out_file.write("\nFailure")
 
 if __name__ == "__main__":
     execute_job()

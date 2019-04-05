@@ -2,7 +2,7 @@
 import os
 
 # absolute module imports
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, files
 from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
 
 # local module imports
@@ -26,8 +26,6 @@ def make_all_jobs(settings_path, client_name, job_dir, num_jobs):
     with Database() as database:
         for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=num_jobs):
             write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
-        for calculation in database.missing_energies():
-            write_job(settings_path, calculation, job_dir)
 
 def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir):
     """
@@ -48,21 +46,25 @@ def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
 
     i = 1
 
-    file_path = job_dir + "/job_{}".format(i)
+    file_path = job_dir + "/job_{}.py".format(i)
 
     while os.path.isfile(file_path):
         i += 1
 
-        file_path = job_dir + "/job_{}".format(i)
+        file_path = job_dir + "/job_{}.py".format(i)
 
+    files.init_file(file_path)
 
-    with open(job_dir + "/job_{}.py".format("some Unique ID"), "w") as job_file, open("job_template.py", "r") as job_template:
+    with open(file_path, "w") as job_file, open(os.path.dirname(os.path.abspath(__file__)) + "/job_template.py", "r") as job_template:
         job_string = "".join(job_template.readlines())
 
         job_file.write(job_string.format(**{
+            "whole_molecule": molecule.to_xyz().replace("\n", "\\n"),
             "molecule":     molecule.to_xyz(frag_indices, cp).replace("\n", "\\n"),
+            "frag_indices": frag_indices,
             "method":       method,
             "basis":        basis,
+            "cp":           cp,
             "num_threads":  settings.get("psi4", "num_threads"),
             "memory":       settings.get("psi4", "memory"),
             "format":       "{}"

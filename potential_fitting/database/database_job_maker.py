@@ -48,7 +48,7 @@ def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
 
     file_path = job_dir + "/job_{}.py".format(i)
 
-    while os.path.isfile(file_path):
+    while os.path.exists(file_path):
         i += 1
 
         file_path = job_dir + "/job_{}.py".format(i)
@@ -59,7 +59,11 @@ def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
         job_string = "".join(job_template.readlines())
 
         job_file.write(job_string.format(**{
-            "whole_molecule": molecule.to_xyz().replace("\n", "\\n"),
+            # TODO
+            "fragments": [],
+            "charges": [],
+            "spins": [],
+            "symmetries": [],
             "molecule":     molecule.to_xyz(frag_indices, cp).replace("\n", "\\n"),
             "frag_indices": frag_indices,
             "method":       method,

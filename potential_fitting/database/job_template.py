@@ -39,7 +39,7 @@ def execute_job():
 
     job_dir =  "job_{format}".format(i)
 
-    while os.path.isfile(job_dir):
+    while os.path.exists(job_dir):
 
         i += 1
 

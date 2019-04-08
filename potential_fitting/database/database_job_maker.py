@@ -60,10 +60,13 @@ def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
 
         job_file.write(job_string.format(**{
             # TODO
-            "fragments": [],
-            "charges": [],
-            "spins": [],
-            "symmetries": [],
+            "whole_molecule": molecule.to_xyz().replace("\n", "\\n"),
+            "charges": [frag.get_charge() for frag in molecule.get_fragments()],
+            "spins": [frag.get_spin_multiplicity() for frag in molecule.get_fragments()],
+            "symmetries": [frag.get_symmetry() for frag in molecule.get_fragments()],
+            "atom_counts": [frag.get_num_atoms() for frag in molecule.get_fragments()],
+            "names": [frag.get_name() for frag in molecule.get_fragments()],
+            "total_atoms": molecule.get_num_atoms(),
             "molecule":     molecule.to_xyz(frag_indices, cp).replace("\n", "\\n"),
             "frag_indices": frag_indices,
             "method":       method,

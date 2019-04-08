@@ -9,6 +9,12 @@ It is a template that database_job_maker.py uses to make psi4 jobs
 
 def execute_job():
     whole_molecule = "{whole_molecule}"
+    charges = "{charges}"
+    spins = "{spins}"
+    symmetries = "{symmetries}"
+    names = "{names}"
+    atom_counts = "{atom_counts}"
+    total_atoms = "{total_atoms}"
     molecule = "{molecule}"
     frag_indices = "{frag_indices}"
     method = "{method}"
@@ -46,7 +52,7 @@ def execute_job():
         job_dir = "job_{format}".format(i)
 
     os.mkdir(job_dir)
-    output_file = job_dir + "/output.dat"
+    output_file = job_dir + "/output.ini"
     log_file = job_dir + "/output.log"
 
     psi4.core.set_output_file(log_file, False)
@@ -64,17 +70,21 @@ def execute_job():
 
 
     with open(output_file, "w") as out_file:
-        out_file.writelines(["Molecule: {format}".format(whole_molecule),
-                             "\nMethod: {format}".format(method),
-                             "\nBasis: {format}".format(basis),
-                             "\nCp: {format}".format(cp),
-                             "\nfrag_indices: {format}".format(frag_indices)
-                             ])
+        out_file.write("[molecule]\n")
+        out_file.write("xyz = {format}\n\n{format}".format(total_atoms, whole_molecule).replace("\n", "\n ") + "\n")
+        out_file.write("atom_counts = {format}\n".format(atom_counts))
+        out_file.write("charges = {format}\n".format(charges))
+        out_file.write("spins = {format}\n".format(spins))
+        out_file.write("symmetries = {format}\n".format(symmetries).replace("'", ""))
+        out_file.write("names = {format}\n".format(names).replace("'",""))
+        out_file.write("method = {format}\n".format(method))
+        out_file.write("basis = {format}\n".format(basis))
+        out_file.write("cp = {format}\n".format(cp))
+        out_file.write("frag_indices = {format}\n".format(frag_indices))
 
         if success:
-            out_file.write("\nSuccess: {format}".format(energy))
-        else:
-            out_file.write("\nFailure")
+            out_file.write("energy = {format}\n".format(energy))
+
 
 if __name__ == "__main__":
     execute_job()

@@ -18,6 +18,18 @@ def read_all_jobs(job_dir):
             continue
         calculation_results.append(read_job(directory + "/output.ini", directory + "/output.log"))
 
+        if len(calculation_results) > 1000:
+            with Database() as db:
+                db.set_properties(calculation_results)
+
+    with Database() as db:
+        db.set_properties(calculation_results)
+
+    for directory in glob(job_dir + "/job_*"):
+        print(directory)
+        if directory.endswith("done"):
+            continue
+
         i = 1
 
         job_dir = "job_{}_done".format(i)
@@ -28,13 +40,6 @@ def read_all_jobs(job_dir):
             job_dir = "job_{}_done".format(i)
 
         os.rename(directory, job_dir)
-
-        if len(calculation_results) > 1000:
-            with Database() as db:
-                db.set_properties(calculation_results)
-
-    with Database() as db:
-        db.set_properties(calculation_results)
 
 
 def read_job(job_dat_path, job_log_path):

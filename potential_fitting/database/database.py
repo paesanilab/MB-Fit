@@ -519,7 +519,7 @@ class Database():
             mol_name        - The name of the molecule to construct.
 
         Returns:
-            A Molecule object with all coordinates set to 0.
+            a Molecule object with all coordinates set to 0.
         """
 
         molecule = Molecule()

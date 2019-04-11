@@ -292,135 +292,16 @@ class Database():
 
         return "{" + ",".join([str(i) for i in values]) + "}"
 
-    #TODO: all the add methods need slight tweeks to use postgres routines.
+    def add_model_info(self, method, basis, cp):\
 
-    def add_atom_info(self, atom):
-        """
-        Adds a single atom type's info to the atom_info table if it does not already exist.
+        command_string = "PERFORM add_model_info(%s, %s, %s);"
 
-        Args:
-            atom: The atom to insert (Object of the Atom class)
-
-        Returns:
-            command_string: The postgres command which inserts the atom into the atom_info table as a Python String.
-            params: A 2 element list containing the name of the atom twice.   
-
-        """
-        command_string = \
-            "IF NOT EXISTS(SELECT atomic_symbol FROM atom_info WHERE atomic_symbol=%s) THEN " + \
-            "    INSERT INTO atom_info VALUES (%s);" + \
-            "END IF;"
-
-        params = [atom.get_name(), atom.get_name()]
-
-        return command_string, params
-            
-    def add_fragment_info(self, fragment):
-
-        # use transactions
-
-        """
-        Adds a single fragment type's info to the fragment_info table if it does not already exist.
-
-        Args:
-            fragment: The fragment to insert (Object of the Fragment class)
-
-        Returns:
-            command_string: The postgres command which inserts the fragment into the fragment_contents table as a Python String.
-            params: A list of the name of the fragment, the atom symbol of tthe first symmetry pair, the count associated with the fragment, and the symmetry symbol.  
-
-        """
-
-        command_string = ""
-        params = []
-
-        command_string += \
-            "IF NOT EXISTS(SELECT name FROM fragment_info WHERE name=%s AND charge=%s AND spin=%s) THEN " + \
-            "    INSERT INTO fragment_info VALUES(%s, %s, %s);"
-
-        params += [fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()]
-
-        for atom in fragment.get_atoms():
-            new_command_string, new_params = self.add_atom_info(atom)
-            command_string += new_command_string
-            params += new_params
-
-        # updates fragment_contents
-        atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
-
-        symbol_symmetry_pairs, counts = np.unique(atoms, return_counts = True, axis = 0)
-        counts = [int(i) for i in counts]
-
-        for symbol_symmetry_pair, count in zip(symbol_symmetry_pairs, counts):
-            atomic_symbol = symbol_symmetry_pair[0]
-            symmetry_symbol = symbol_symmetry_pair[1]
-            command_string += "    INSERT INTO fragment_contents VALUES (%s, %s, %s, %s);"
-            params += [fragment.get_name(), atomic_symbol, count, symmetry_symbol]
-
-        command_string += "END IF;"
-
-        return command_string, params
-
-    def add_molecule_info(self, molecule):
-
-        """
-        Adds a single molecule type's info to the molecule_info table if it does not already exist
-        """
-
-        command_string = ""
-        params = []
-
-        command_string += \
-            "IF NOT EXISTS(SELECT name FROM molecule_info WHERE name=%s) THEN " + \
-            "   INSERT INTO molecule_info VALUES(%s);"
-        params += [molecule.get_name(), molecule.get_name()]
-
-        for fragment in molecule.get_fragments():
-            new_command_string, new_params = self.add_fragment_info(fragment)
-            command_string += new_command_string
-            params += new_params
-
-
-
-        fragments, counts = np.unique([fragment.get_name() for fragment in molecule.get_fragments()], return_counts = True)
-        counts = [int(i) for i in counts]
-
-        for fragment, count in zip(fragments, counts):
-            command_string += "    INSERT INTO molecule_contents VALUES (%s, %s, %s);"
-            params += [molecule.get_name(), fragment, count]
-
-        command_string += "END IF;"
-
-        return command_string, params
-
-    def add_model_info(self, method, basis, cp):
-        model_name ="{}/{}/{}".format(method, basis, cp)
-
-        command_string = \
-            "IF NOT EXISTS(SELECT name FROM model_info WHERE name=%s) THEN" + \
-            "   INSERT INTO model_info VALUES (%s);" + \
-            "END IF;"
-
-        params = [model_name, model_name]
+        params = [method, basis, cp]
 
         return command_string, params
 
     def add_molecule(self, molecule):
         # should always be at COM and Principle axes before calling!!!!
-
-        command_string = ""
-        params = []
-
-        command_string += \
-            "IF NOT EXISTS(SELECT mol_hash FROM molecule_list WHERE mol_hash=%s) THEN "
-
-        params += [molecule.get_SHA1()]
-
-        new_command_string, new_params = self.add_molecule_info(molecule)
-        command_string += new_command_string
-        params += new_params
-
-
 
         coordinates = []
         for fragment in molecule.get_fragments():
@@ -429,11 +310,37 @@ class Database():
                 coordinates.append(atom.get_y())
                 coordinates.append(atom.get_z())
 
-        command_string += \
-            "   INSERT INTO molecule_list VALUES(%s, %s, %s);" + \
-            "END IF;"
 
-        params += [molecule.get_SHA1(), molecule.get_name(), coordinates]
+        command_string = "PERFORM add_molecule(%s, %s, ARRAY["
+        params = (molecule.get_SHA1(), molecule.get_name())
+
+        fragments = [fragment.get_name() for fragment in molecule.get_fragments()]
+
+        frag_names, counts = np.unique(fragments, return_counts=True, axis=0)
+        fragment_counts = [int(i) for i in counts]
+
+        for frag_name in frag_names:
+
+            for frag in molecule.get_fragments():
+                if frag.get_name() == frag_name:
+                    fragment = frag
+
+            atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
+
+            symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
+            atom_counts = [int(i) for i in counts]
+
+            symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
+            symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
+
+            command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
+            if not frag_name == frag_names[-1]:
+                command_string += ", "
+            params += (frag_name, frag.get_charge(), frag.get_spin_multiplicity(), self.create_postgres_array(*symbols),
+                    self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
+
+        command_string += "], %s, %s);"
+        params += (fragment_counts, coordinates)
 
         return command_string, params
 

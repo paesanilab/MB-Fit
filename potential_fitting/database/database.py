@@ -321,6 +321,8 @@ class Database():
 
         for frag_name in frag_names:
 
+            fragment = None
+
             for frag in molecule.get_fragments():
                 if frag.get_name() == frag_name:
                     fragment = frag
@@ -336,7 +338,7 @@ class Database():
             command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
             if not frag_name == frag_names[-1]:
                 command_string += ", "
-            params += (frag_name, frag.get_charge(), frag.get_spin_multiplicity(), self.create_postgres_array(*symbols),
+            params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), self.create_postgres_array(*symbols),
                     self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
 
         command_string += "], %s, %s);"
@@ -371,8 +373,12 @@ class Database():
 
             for n in range(1, molecule.get_num_fragments() + 1):
                 for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
-                    command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids) VALUES (%s, %s, %s, %s, %s, %s, %s);"
-                    params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", []]
+                    if cp and len(fragment_indices) != molecule.get_num_fragments():
+                        command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+                        params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", [], True]
+
+                    command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+                    params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", [], False]
 
             command_string += "INSERT INTO tags VALUES (%s, %s, %s);"
             params += [molecule.get_SHA1(), model_name, []]
@@ -472,7 +478,7 @@ class Database():
 
             empty_molecule = self.build_empty_molecule(molecule_name)
 
-            for atom_coordinates, model, frag_indices in pending_calcs:
+            for atom_coordinates, model, frag_indices, use_cp in pending_calcs:
                 molecule = copy.deepcopy(empty_molecule)
 
                 for atom in molecule.get_atoms():
@@ -484,7 +490,7 @@ class Database():
                 basis = model[:model.index("/")]
                 cp = model[model.index("/") + 1:]
 
-                yield molecule, method, basis, cp, frag_indices
+                yield molecule, method, basis, cp, use_cp, frag_indices
 
             if calculations_to_do < 1:
                 return
@@ -497,11 +503,11 @@ class Database():
 
         batch_count = 0
 
-        for molecule, method, basis, cp, frag_indices, result, energy, log_text in calculation_results:
+        for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
             model_name = method + "/" + basis + "/" + cp
 
-            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s);"
-            params += [molecule.get_SHA1(), model_name, self.create_postgres_array(*frag_indices), result, energy, log_text]
+            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), model_name, use_cp, self.create_postgres_array(*frag_indices), result, energy, log_text]
 
             batch_count += 1
 

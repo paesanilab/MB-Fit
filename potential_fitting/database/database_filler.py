@@ -38,7 +38,7 @@ def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
 
         calculation_results = []
         
-        for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=calculation_count):
+        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=calculation_count):
             
             counter += 1
             print_progress(counter)
@@ -46,13 +46,12 @@ def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
             try:
 
                 # calculate the missing energy
-                energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, cp, settings)
-                
-                calculation_results.append((molecule, method, basis, cp, frag_indices, True, energy, "log_text"))
+                energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, use_cp, settings)
+                calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, True, energy, "log_text"))
             
             except LibraryCallError:
 
-                calculation_results.append((molecule, method, basis, cp, frag_indices, False, 0, "log_text"))
+                calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, "log_text"))
 
             if len(calculation_results) > 1000:
                 database.set_properties(calculation_results)

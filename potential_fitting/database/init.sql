@@ -171,7 +171,8 @@ create table molecule_properties
 	past_log_ids integer[] not null,
 	most_recent_log_id integer
 		constraint energies_list_log_files_log_id_fk
-			references log_files
+			references log_files,
+	use_cp boolean not null
 );
 
 alter table molecule_properties owner to "paesanilab-pgadmins";
@@ -373,38 +374,6 @@ $$;
 
 alter function get_1b_training_set(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
 
-create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[])
-	language plpgsql
-as $$
-DECLARE
-    molecule_hash VARCHAR;
-    id INTEGER;
-
-  BEGIN
-
-    FOR molecule_hash, model, indices IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices FROM
-      molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE
-      molecule_properties.status = 'pending' AND molecule_list.mol_name = molecule_name LIMIT batch_size
-    LOOP
-
-      INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name) RETURNING log_id
-        INTO id;
-
-      UPDATE molecule_properties SET status='dispatched', most_recent_log_id=id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices;
-
-      SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
-        INTO coords;
-
-      RETURN NEXT;
-
-    END LOOP;
-
-  END;
-
-$$;
-
-alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
-
 create function get_2b_training_set(molecule_name character varying, monomer1_name character varying, monomer2_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], binding_energy double precision, interaction_energy double precision, monomer1_deformation_energy double precision, monomer2_deformation_energy double precision)
 	language plpgsql
 as $$
@@ -420,6 +389,8 @@ DECLARE
         dimer_energies FLOAT[];
         monomer1_energies FLOAT[];
         monomer2_energies FLOAT[];
+        monomer1_cp_energies FLOAT[];
+        monomer2_cp_energies FLOAT[];
         coordinates FLOAT[];
       BEGIN
 
@@ -521,21 +492,26 @@ DECLARE
           END LOOP;
 
           IF (SELECT valid_tags) THEN
-            SELECT energies, status FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0, 1}'
+            SELECT energies, status FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0, 1}' AND use_cp = False
                 INTO dimer_energies, dimer_status;
 
             IF dimer_status = 'complete' THEN
               SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
                 INTO coords;
 
-              SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+              SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}' AND use_cp = False
                 INTO monomer1_energies;
-              SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}'
+              SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}' AND use_cp = False
                 INTO monomer2_energies;
 
+              SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}' AND use_cp = True
+                INTO monomer1_cp_energies;
+              SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}' AND use_cp = True
+                INTO monomer2_cp_energies;
+
               interaction_energy := dimer_energies[1] - monomer1_energies[1] - monomer2_energies[1];
-              monomer1_deformation_energy := monomer1_energies[1] - optimized_monomer1_energy;
-              monomer2_deformation_energy := monomer2_energies[1] - optimized_monomer2_energy;
+              monomer1_deformation_energy := monomer1_cp_energies[1] - optimized_monomer1_energy;
+              monomer2_deformation_energy := monomer2_cp_energies[1] - optimized_monomer2_energy;
               binding_energy := interaction_energy - monomer1_deformation_energy - monomer2_deformation_energy;
               RETURN NEXT;
             END IF;
@@ -547,37 +523,6 @@ DECLARE
 $$;
 
 alter function get_2b_training_set(varchar, varchar, varchar, varchar, character varying[], integer, integer) owner to ebullvul;
-
-create function set_properties(hash character varying, model character varying, indices integer[], result boolean, energy double precision, log_txt character varying) returns void
-	language plpgsql
-as $$
-DECLARE
-    id INTEGER;
-    cur_status VARCHAR;
-  BEGIN
-
-    SELECT status FROM molecule_properties WHERE  mol_hash=hash AND model_name=model AND frag_indices=indices
-      INTO cur_status;
-    IF NOT cur_status = 'dispatched' THEN
-      RAISE EXCEPTION 'Trying to set energy of calculation that does not have status = "dispatched"';
-    END IF;
-
-    IF result THEN
-      UPDATE molecule_properties SET energies = energies || energy, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices RETURNING most_recent_log_id
-        INTO id;
-      UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
-    ELSE
-      UPDATE molecule_properties SET energies = energies || energy, status='failed' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices RETURNING most_recent_log_id
-        INTO id;
-      UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
-    END IF;
-
-
-  END;
-
-$$;
-
-alter function set_properties(varchar, varchar, integer[], boolean, double precision, varchar) owner to ebullvul;
 
 create function count_entries(molecule_name character varying) returns integer
 	language plpgsql
@@ -753,4 +698,67 @@ DECLARE
 $$;
 
 alter function add_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean) owner to ebullvul;
+
+create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[], use_cp boolean)
+	language plpgsql
+as $$
+DECLARE
+    molecule_hash VARCHAR;
+    id INTEGER;
+
+  BEGIN
+
+    FOR molecule_hash, model, indices, get_pending_calculations.use_cp IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices, molecule_properties.use_cp FROM
+      molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE
+      molecule_properties.status = 'pending' AND molecule_list.mol_name = molecule_name LIMIT batch_size
+    LOOP
+
+      INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name) RETURNING log_id
+        INTO id;
+
+      UPDATE molecule_properties SET status='dispatched', most_recent_log_id=id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices AND molecule_properties.use_cp = get_pending_calculations.use_cp;
+
+      SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
+        INTO coords;
+
+      RETURN NEXT;
+
+    END LOOP;
+
+  END;
+
+$$;
+
+alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
+
+create function set_properties(hash character varying, model character varying, use_cp boolean, indices integer[], result boolean, energy double precision, log_txt character varying) returns void
+	language plpgsql
+as $$
+DECLARE
+    id INTEGER;
+    cur_status VARCHAR;
+  BEGIN
+
+    SELECT status FROM molecule_properties WHERE  mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp
+      INTO cur_status;
+    IF NOT cur_status = 'dispatched' THEN
+      RAISE EXCEPTION 'Trying to set energy of calculation that does not have status = "dispatched"';
+    END IF;
+
+    IF result THEN
+      UPDATE molecule_properties SET energies = energies || energy, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp RETURNING most_recent_log_id
+        INTO id;
+      UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
+    ELSE
+      UPDATE molecule_properties SET energies = energies || energy, status='failed' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp RETURNING most_recent_log_id
+        INTO id;
+      UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
+    END IF;
+
+
+  END;
+
+$$;
+
+alter function set_properties(varchar, varchar, boolean, integer[], boolean, double precision, varchar) owner to ebullvul;
 

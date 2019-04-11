@@ -23,6 +23,18 @@ create type empty_mol as
 
 alter type empty_mol owner to ebullvul;
 
+create type fragment as
+(
+	name varchar,
+	charge integer,
+	spin integer,
+	atomic_symbols character varying[],
+	symmetries character varying[],
+	counts integer[]
+);
+
+alter type fragment owner to ebullvul;
+
 create table molecule_info
 (
 	name varchar not null
@@ -581,3 +593,164 @@ DECLARE
 $$;
 
 alter function count_entries(varchar) owner to potential_fitting;
+
+create function add_atom_info(atomic_symbol character varying) returns boolean
+	language plpgsql
+as $$
+DECLARE
+
+  BEGIN
+    IF NOT EXISTS(SELECT atom_info.atomic_symbol FROM atom_info WHERE atom_info.atomic_symbol=add_atom_info.atomic_symbol) THEN
+      INSERT INTO atom_info VALUES (add_atom_info.atomic_symbol);
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_atom_info(varchar) owner to ebullvul;
+
+create function add_fragment_info(name character varying, charge integer, spin integer, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  atomic_symbol character varying;
+  index integer;
+  BEGIN
+    IF NOT EXISTS(SELECT fragment_info.name FROM fragment_info WHERE fragment_info.name=add_fragment_info.name AND fragment_info.charge=add_fragment_info.charge AND fragment_info.spin=add_fragment_info.spin) THEN
+      INSERT INTO fragment_info VALUES(add_fragment_info.name, add_fragment_info.charge, add_fragment_info.spin);
+
+      FOREACH atomic_symbol IN ARRAY atomic_symbols LOOP
+        PERFORM add_atom_info(atomic_symbol);
+      END LOOP;
+
+      FOR index IN 1..array_length(atomic_symbols, 1) LOOP
+        INSERT INTO fragment_contents VALUES (name, atomic_symbols[index], counts[index], symmetries[index]);
+      END LOOP;
+
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_fragment_info(varchar, integer, integer, character varying[], character varying[], integer[]) owner to ebullvul;
+
+create function add_molecule_info(name character varying, fragments fragment[], counts integer[]) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  index integer;
+
+  BEGIN
+    IF NOT EXISTS(SELECT molecule_info.name FROM molecule_info WHERE molecule_info.name=add_molecule_info.name) THEN
+      INSERT INTO molecule_info VALUES(add_molecule_info.name);
+
+      FOR index IN 1..array_length(fragments, 1) LOOP
+        PERFORM add_fragment_info(fragments[index].name, fragments[index].charge, fragments[index].spin, fragments[index].atomic_symbols, fragments[index].symmetries, fragments[index].counts);
+        INSERT INTO molecule_contents VALUES (add_molecule_info.name, fragments[index].name, counts[index]);
+      END LOOP;
+
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_molecule_info(varchar, fragment[], integer[]) owner to ebullvul;
+
+create function construct_fragment(name character varying, charge integer, spin integer, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns fragment
+	language plpgsql
+as $$
+DECLARE
+  frag fragment;
+
+  BEGIN
+    frag.name = name;
+    frag.charge = charge;
+    frag.spin = spin;
+    frag.atomic_symbols = atomic_symbols;
+    frag.symmetries = symmetries;
+    frag.counts = counts;
+    RETURN frag;
+  END;
+
+$$;
+
+alter function construct_fragment(varchar, integer, integer, character varying[], character varying[], integer[]) owner to ebullvul;
+
+create function add_model_info(method character varying, basis character varying, cp boolean) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  model_name varchar;
+  BEGIN
+    model_name := concat(method, '/', basis, '/');
+    IF cp THEN
+      model_name := concat(model_name, 'True');
+    ELSE
+      model_name := concat(model_name, 'False');
+    end if;
+
+    IF NOT EXISTS(SELECT name FROM model_info WHERE name=model_name) THEN
+      INSERT INTO model_info VALUES (model_name);
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_model_info(varchar, varchar, boolean) owner to ebullvul;
+
+create function add_molecule(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[]) returns boolean
+	language plpgsql
+as $$
+DECLARE
+
+  BEGIN
+    IF NOT EXISTS(SELECT mol_hash from molecule_list WHERE mol_hash=hash) THEN
+      PERFORM add_molecule_info(name, fragments, counts);
+      INSERT INTO molecule_list VALUES(hash, name, coordinates);
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_molecule(varchar, varchar, fragment[], integer[], double precision[]) owner to ebullvul;
+
+create function add_calculation(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[], method character varying, basis character varying, cp boolean) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  model varchar;
+  BEGIN
+    model := concat(method, '/', basis, '/');
+    IF cp THEN
+      model := concat(model, 'True');
+    ELSE
+      model := concat(model, 'False');
+    end if;
+    IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=hash AND model_name=model) THEN
+      PERFORM add_molecule(hash, name, fragments, counts);
+      PERFORM add_model_info(method, basis, cp);
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean) owner to ebullvul;
+

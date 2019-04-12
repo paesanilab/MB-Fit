@@ -25,12 +25,14 @@ class Database():
 
         self.batch_size = batch_size
 
+        host = "piggy.pl.ucsd.edu"
+        port = "5432"
+        database = "potential_fitting"
+        username = "potential_fitting"
+        password = "9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId"
+
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
-
-        # this line can be modified to connect to a local database.
-
-        #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='potential_fitting' user='USER' password='password'")
+        self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))
 
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()

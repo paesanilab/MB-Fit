@@ -99,13 +99,15 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
 
-def init_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = False):
+def init_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
     to create a new database, or an existing database to add more energies to be calculated
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         configurations_path - Local path to a single .xyz file.
         method              - QM method to use to calculate the energy of these configurations.
         basis               - QM basis to use to calculate the energy of these configurations.
@@ -117,16 +119,18 @@ def init_database(settings_path, configurations_path, method, basis, cp, *tags, 
         None.
     """
 
-    database.initialize_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
+    database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 
-def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, calculation_count = sys.maxsize):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
     
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
         calculation_count   - Maximum number of calculations to perform. Default is unlimited.
 
@@ -134,10 +138,10 @@ def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
         None.
     """
 
-    database.fill_database(settings_path, client_name, calculation_count)
+    database.fill_database(settings_path, database_config_path, client_name, calculation_count)
 
 
-def generate_1b_training_set(settings_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
+def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
     Generates a 1b training set from the energies inside a database.
 
@@ -148,6 +152,8 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         training_set_path   - Local path to the file to write the training set to.
         molecule_name       - The name of the moelcule to generate a training set for.
         method              - Only use energies calcualted by this method.
@@ -162,11 +168,11 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
         None.
     """
 
-    database.generate_1b_training_set(settings_path, training_set_path, molecule_name,
+    database.generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name,
             method, basis, cp, *tags, e_min = e_min, e_max = e_max)
 
 
-def generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags,
+def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags,
             e_bind_max = float('inf'), e_mon_max = float('inf')):
     """
     Generates a 2b training set from the energies inside a database.
@@ -178,6 +184,8 @@ def generate_2b_training_set(settings_path, training_set_path, molecule_name, mo
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         training_set_path   - Local path to the file to write the training set to.
         molecule_name       - The name of the dimer.
         monomer1_name       - The name of one monomer in this dimer.
@@ -193,7 +201,7 @@ def generate_2b_training_set(settings_path, training_set_path, molecule_name, mo
         None.
     """
     
-    database.generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name,
+    database.generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, monomer1_name, monomer2_name,
             method, basis, cp, *tags, e_bind_max = e_bind_max, e_mon_max = e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path):

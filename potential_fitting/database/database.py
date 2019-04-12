@@ -4,6 +4,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
 from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
+from potential_fitting.utils import SettingsReader
 
 class Database():
 
@@ -11,13 +12,16 @@ class Database():
     Database class. Allows one to access a database and perform operations on it.
     """
     
-    def __init__(self, batch_size = 100):
+    def __init__(self, config_file, batch_size=100):
         """
         Initializer for database object. Opens connection and sets up cursor.
 
         Args:
+            config_file     - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
             batch_size      - number of operations to perfrom on the database per round trip to the server.
                     larger numbers will be more efficient, but you should not exceed a couple thousand.
+                    Default is 100.
 
         Returns:
             A new Database object.
@@ -25,11 +29,21 @@ class Database():
 
         self.batch_size = batch_size
 
+        config = SettingsReader(config_file)
+
+        host = config.get("database", "host")
+        port = config.get("database", "port")
+        database = config.get("database", "database")
+        username = config.get("database", "username")
+        password = config.get("database", "password")
+
+        """
         host = "piggy.pl.ucsd.edu"
         port = "5432"
         database = "potential_fitting"
         username = "potential_fitting"
         password = "9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId"
+        """
 
         # connection is used to get the cursor, commit to the database, and close the database
         self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))

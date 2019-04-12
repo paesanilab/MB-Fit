@@ -6,12 +6,14 @@ from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError
 from .database import Database
 
 
-def generate_1b_training_set(settings_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min=0, e_max=float('inf')):
+def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min=0, e_max=float('inf')):
     """
     Writes a 1b training set to the given file from the calculated energies in a database.
 
     Args:
         settings_path       - Local path to the ".ini" file with all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         training_set_path   - Local path to file to write training set to.
         molecule_name       - The name of the molecule to generate a training set for.
         method              - Use energies calculated with this method. Use % for any method.
@@ -28,7 +30,7 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
     settings = SettingsReader(settings_path)
     
     # open the database
-    with Database() as database:
+    with Database(database_config_path) as database:
 
         print("Creating a fitting input file from database into file {}".format(training_set_path))
 
@@ -58,13 +60,15 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
             print("Generated training set with " + str(count_configs) + " Configurations.")
 
 
-def generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis,
+def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis,
         cp, *tags, e_bind_max=float('inf'), e_mon_max=float('inf')):
     """"
     Creates a 2b training set file from the calculated energies in a database.
 
     Args:
         settings_path       - Local path to the ".ini" file with all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         training_set_path   - Local path to file to write training set to.
         molecule_name       - The name of this dimer.
         monomer1_name       - The name of one monomer in the dimer.
@@ -83,7 +87,7 @@ def generate_2b_training_set(settings_path, training_set_path, molecule_name, mo
     settings = SettingsReader(settings_path)
     
     # open the database
-    with Database() as database:
+    with Database(database_config_path) as database:
 
         print("Creating a fitting input file from database into file {}".format(training_set_path))
 

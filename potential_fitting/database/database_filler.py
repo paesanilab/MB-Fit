@@ -10,7 +10,7 @@ from potential_fitting.utils import SettingsReader, files
 from .database import Database
 
 
-def fill_database(settings_path, client_name, calculation_count=sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, calculation_count=sys.maxsize):
     """
     Loops over uncalculated energies in a database and calculates them.
 
@@ -20,6 +20,8 @@ def fill_database(settings_path, client_name, calculation_count=sys.maxsize):
 
     Args:
         settings_path       - Local path to the file with all relevant settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
         calculation_count   - Maximum number of calculations to perform. Default is unlimited.
 
@@ -28,7 +30,7 @@ def fill_database(settings_path, client_name, calculation_count=sys.maxsize):
     """
 
     # open the database
-    with Database() as database:
+    with Database(database_config_path) as database:
 
         print("Filling database.")
 

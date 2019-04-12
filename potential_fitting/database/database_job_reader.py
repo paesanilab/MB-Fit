@@ -11,7 +11,7 @@ from potential_fitting.exceptions import ConfigMissingPropertyError
 from .database import Database
 
 
-def read_all_jobs(job_dir):
+def read_all_jobs(database_config_path, job_dir):
     """
     Searches the given directory for completed job directories and enters
     the results into the database.
@@ -21,6 +21,8 @@ def read_all_jobs(job_dir):
     job_* to job_*_done.
 
     Args:
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         job_dir             - Local path the the directory to search.
 
     Returns:
@@ -37,7 +39,7 @@ def read_all_jobs(job_dir):
             with Database() as db:
                 db.set_properties(calculation_results)
 
-    with Database() as db:
+    with Database(database_config_path) as db:
         db.set_properties(calculation_results)
 
     for directory in glob(job_dir + "/job_*"):

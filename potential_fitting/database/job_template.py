@@ -20,6 +20,7 @@ def execute_job():
     method = "{method}"
     basis = "{basis}"
     cp = "{cp}"
+    use_cp = "{use_cp}"
     number_of_threads = {num_threads}
     memory = "{memory}"
 
@@ -80,6 +81,7 @@ def execute_job():
         out_file.write("method = {format}\n".format(method))
         out_file.write("basis = {format}\n".format(basis))
         out_file.write("cp = {format}\n".format(cp))
+        out_file.write("use_cp = {format}\n".format(use_cp))
         out_file.write("frag_indices = {format}\n".format(frag_indices))
 
         if success:

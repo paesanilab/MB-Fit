@@ -1,5 +1,5 @@
 # external package imports
-import os
+import os, sys
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files
@@ -8,7 +8,8 @@ from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissin
 # local module imports
 from .database import Database
 
-def make_all_jobs(settings_path, client_name, job_dir, num_jobs):
+
+def make_all_jobs(settings_path, client_name, job_dir, num_jobs=sys.maxsize):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -16,7 +17,7 @@ def make_all_jobs(settings_path, client_name, job_dir, num_jobs):
         settings_path       - Local path to the ".ini" file with relevent settings.
         client_name         - Name of the client that will perform these jobs
         job_dir             - Local path to the directory to place the job files in.
-        num_jobs            - The number of jobs to generate.
+        num_jobs            - The number of jobs to generate. Default is unlimited.
 
     Returns:
         None.
@@ -24,16 +25,25 @@ def make_all_jobs(settings_path, client_name, job_dir, num_jobs):
 
     # open the database
     with Database() as database:
-        for molecule, method, basis, cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=num_jobs):
+        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=num_jobs):
             write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
 
-def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir):
+
+def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir):
     """
-    Makes a Job file for a specific Calculation.
+    Makes a Job file for a specific calculation.
+
+    cp is not the same as use_cp. Some models have cp, but should not
+    use cp for some of their energies.
 
     Args:
         settings_path       - Local path to the ".ini" file with relevent settings
-        job                 - The Job object (see database.py) with the information needed to make a job
+        molecule            - The molecule of this calculation.
+        method              - Method to use to calculate the energy.
+        basis               - Basis to use to calculate the energy.
+        cp                  - True if the model has counterpoise correction.
+        use_cp              - True if counterpoise correction should be used for this calculation.
+        frag_indices        - List of indices of fragments to include in the calculation.
         job_dir             - Local path to the directory to place the job file in.
 
     Returns:
@@ -72,6 +82,7 @@ def write_job(settings_path, molecule, method, basis, cp, frag_indices, job_dir)
             "method":       method,
             "basis":        basis,
             "cp":           cp,
+            "use_cp":       use_cp,
             "num_threads":  settings.get("psi4", "num_threads"),
             "memory":       settings.get("psi4", "memory"),
             "format":       "{}"

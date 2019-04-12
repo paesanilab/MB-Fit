@@ -5,7 +5,8 @@ from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError
 # local module imports
 from .database import Database
 
-def generate_1b_training_set(settings_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
+
+def generate_1b_training_set(settings_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min=0, e_max=float('inf')):
     """
     Writes a 1b training set to the given file from the calculated energies in a database.
 
@@ -57,11 +58,8 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
             print("Generated training set with " + str(count_configs) + " Configurations.")
 
 
-
-                    
-
 def generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis,
-        cp, *tags, e_bind_max = float('inf'), e_mon_max = float('inf')):
+        cp, *tags, e_bind_max=float('inf'), e_mon_max=float('inf')):
     """"
     Creates a 2b training set file from the calculated energies in a database.
 
@@ -69,8 +67,8 @@ def generate_2b_training_set(settings_path, training_set_path, molecule_name, mo
         settings_path       - Local path to the ".ini" file with all relevent settings information.
         training_set_path   - Local path to file to write training set to.
         molecule_name       - The name of this dimer.
-        monomer1_name      - The name of the first monomer in the dimer.
-        monomer2_name      - The name of the second monomer in the dimer.
+        monomer1_name       - The name of one monomer in the dimer.
+        monomer2_name       - The name of the other monomer in the dimer.
         method              - Use energies calculated with this method. Use % for any method.
         basis               - Use energies calculated with this basis. Use % for any basis.
         cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.
@@ -89,7 +87,7 @@ def generate_2b_training_set(settings_path, training_set_path, molecule_name, mo
 
         print("Creating a fitting input file from database into file {}".format(training_set_path))
 
-        #intializing a counter
+        # initializing a counter
         count_configs = 0
 
         with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:

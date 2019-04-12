@@ -98,6 +98,7 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
+
 def init_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
@@ -110,13 +111,14 @@ def init_database(settings_path, configurations_path, method, basis, cp, *tags, 
         basis               - QM basis to use to calculate the energy of these configurations.
         cp                  - Use counterpoise correction for these configurations?
         tags                - Mark the new configurations with these tags.
-        optimized           - Are these configurations optimized geometries?
+        optimized           - Are these configurations optimized geometries? Defualt is False.
 
     Returns:
         None.
     """
 
     database.initialize_database(settings_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
+
 
 def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
     """
@@ -126,13 +128,14 @@ def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         client_name         - Name of the client performing these calculations.
-        calculation_count   - Maximum number of calculations to perform.
+        calculation_count   - Maximum number of calculations to perform. Default is unlimited.
 
     Returns:
         None.
     """
 
     database.fill_database(settings_path, client_name, calculation_count)
+
 
 def generate_1b_training_set(settings_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
@@ -162,6 +165,7 @@ def generate_1b_training_set(settings_path, training_set_path, molecule_name, me
     database.generate_1b_training_set(settings_path, training_set_path, molecule_name,
             method, basis, cp, *tags, e_min = e_min, e_max = e_max)
 
+
 def generate_2b_training_set(settings_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags,
             e_bind_max = float('inf'), e_mon_max = float('inf')):
     """
@@ -176,9 +180,9 @@ def generate_2b_training_set(settings_path, training_set_path, molecule_name, mo
         settings_path       - Local path to the file containing all relevent settings information.
         training_set_path   - Local path to the file to write the training set to.
         molecule_name       - The name of the dimer.
-        monomer1_name       - The name of first monomer in the dimer.
-        monomer2_name       - The name of the second monomer in the dimer.
-        method              - Only use energies calcualted by this method.
+        monomer1_name       - The name of one monomer in this dimer.
+        monomer2_name       - The name of the other monomer in the dimer.
+        method              - Only use energies calculated by this method.
         basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp.
         tags                - Only use energies marked with one or more of these tags.

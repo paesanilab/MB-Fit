@@ -504,7 +504,7 @@ class Database():
             frag_indices    - List of indices of fragments that should be included in the calculation.
                     If use_cp is True, then include other fragments as ghost atoms.
 
-            cp is not the same as use_cp. Some calculations belong to a model that has cp, but should not
+            cp is not the same as use_cp. Some models have cp, but should not
             use cp for some of their energies.
         """
 

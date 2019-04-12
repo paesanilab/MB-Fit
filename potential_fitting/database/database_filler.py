@@ -9,18 +9,19 @@ from potential_fitting.utils import SettingsReader, files
 # local module imports
 from .database import Database
 
-def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
-    """
-    Loops over all the uncalculated energies in a database and calculates them.
 
-    Results are submitted to the database in batches of 1000. If interrupted
+def fill_database(settings_path, client_name, calculation_count=sys.maxsize):
+    """
+    Loops over uncalculated energies in a database and calculates them.
+
+    Results are submitted to the database in batches. If interrupted
     all results since the last batch will be stuck on "running".
     call clean_database() to set them back to pending.
 
     Args:
         settings_path       - Local path to the file with all relevant settings information.
         client_name         - Name of the client performing these calculations.
-        calculation_count   - Maximum number of calculations to perform.
+        calculation_count   - Maximum number of calculations to perform. Default is unlimited.
 
     Returns:
         None.
@@ -53,7 +54,7 @@ def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
 
                 calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, "log_text"))
 
-            if len(calculation_results) > 1000:
+            if len(calculation_results) >= database.get_batch_size():
                 database.set_properties(calculation_results)
                 # save changes to the database
                 database.save()
@@ -61,6 +62,7 @@ def fill_database(settings_path, client_name, calculation_count = sys.maxsize):
         database.set_properties(calculation_results)
 
         print("\nFilling of database successful")
+
 
 def print_progress(counter):
     """

@@ -16,7 +16,7 @@ def initialize_database(settings_path, training_set_path, method, basis, cp, *ta
         basis               - QM basis to use to calculate the energy of these configurations.
         cp                  - Use counterpoise correction for these configurations?
         tags                - Label this calculation with these tags.
-        optimized 			- Are these configurations optimized geometries?
+        optimized 			- Are these configurations optimized geometries? Default is False.
 
     Returns:
         None.

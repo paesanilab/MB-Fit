@@ -10,7 +10,22 @@ from potential_fitting.exceptions import ConfigMissingPropertyError
 # local module imports
 from .database import Database
 
+
 def read_all_jobs(job_dir):
+    """
+    Searches the given directory for completed job directories and enters
+    the results into the database.
+
+    Any directory that starts with job_ will be considered a completed job directory.
+    After data is entered into the database, these directories will be renamed from
+    job_* to job_*_done.
+
+    Args:
+        job_dir             - Local path the the directory to search.
+
+    Returns:
+        None.
+    """
     calculation_results = []
     for directory in glob(job_dir + "/job_*"):
         print(directory)
@@ -44,16 +59,14 @@ def read_all_jobs(job_dir):
 
 def read_job(job_dat_path, job_log_path):
     """
-    Reads a completed job from its output file and enters the result into a database.
+    Reads a completed job from its output file and log_file and enters the result into a database.
     
     Args:
-        database_path       - Local path to the file where the database is stored. ".db" will be appended if it does
-                not already end in "db".
-        job_path            - Local path to the job_<id>.out output file to enter into the datbase.
+        job_dat_path        - Local path to the .ini output file from this job.
         job_log_path        - Local path to the log file from this job.
 
     Returns:
-        None
+        None.
     """
 
     data = SettingsReader(job_dat_path)
@@ -67,6 +80,7 @@ def read_job(job_dat_path, job_log_path):
     method = data.get("molecule", "method")
     basis = data.get("molecule", "basis")
     cp = data.get("molecule", "cp")
+    use_cp = data.get("molecule", "use_cp")
     frag_indices = data.getlist("molecule", "frag_indices", int)
 
     print(symmetries)
@@ -76,17 +90,14 @@ def read_job(job_dat_path, job_log_path):
     try:
         energy = data.getfloat("molecule", "energy")
         success = True
-    except (ConfigMissingPropertyError):
+    except ConfigMissingPropertyError:
         energy = 0
         success = False
 
-
-    log_text = ""
     with open(job_log_path, "r") as log_file:
         log_text = "\n".join(log_file.readlines())
 
-
-    return molecule, method, basis, cp, frag_indices, success, energy, log_text
+    return molecule, method, basis, cp, use_cp, frag_indices, success, energy, log_text
 
 
 

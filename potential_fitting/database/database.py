@@ -13,7 +13,7 @@ class Database():
     
     def __init__(self, batch_size = 100):
         """
-        Initializes the database, sets up connection, and cursor.
+        Initializer for database object. Opens connection and sets up cursor.
 
         Args:
             batch_size      - number of operations to perfrom on the database per round trip to the server.
@@ -26,9 +26,12 @@ class Database():
         self.batch_size = batch_size
 
         # connection is used to get the cursor, commit to the database, and close the database
-        #self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
         self.connection = psycopg2.connect("host='piggy.pl.ucsd.edu' port=5432 dbname='potential_fitting' user='potential_fitting' password='9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId'")
+
+        # this line can be modified to connect to a local database.
+
         #self.connection = psycopg2.connect("host='localhost' port=5432 dbname='potential_fitting' user='USER' password='password'")
+
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
@@ -196,42 +199,7 @@ class Database():
             "END $$",
             params)
 
-    #TODO: exists, insert, select, and update will be removed in the future.
-
-    def exists(self, table, **property_value_pairs):
-        if len(property_value_pairs) < 1:
-            # must specify at least one property
-            raise InvalidValueError("property_value_pairs", property_value_pairs, "Must specify at least one pair.")
-        properties = tuple(property_value_pairs)
-        properties_string = properties[0] + "=%s"
-        for property in properties[1:]:
-            properties_string += " AND "
-            properties_string += property + "=%s"
-
-        values = tuple(property_value_pairs.values())
-        self.commands.append("")
-        self.cursor.execute("SELECT EXISTS(SELECT * FROM {} WHERE {})".format(table, properties_string), values)
-
-        return self.cursor.fetchone()[0]
-
-    def insert(self, table, **property_value_pairs):
-
-        properties = tuple(property_value_pairs)
-
-        property_string = "(" + properties[0]
-        for prop in properties[1:]:
-            property_string += ", " + prop
-        property_string += ")"
-
-        values = tuple(property_value_pairs.values())
-
-        values_string = "(%s"
-        for value in values[1:]:
-            values_string += ", %s"
-        values_string += ")"
-
-        self.cursor.execute("INSERT INTO {}{} VALUES {}".format(table, property_string, values_string), values)
-        return None
+    #TODO: select, will be removed in the future.
 
     def select(self, table, fetch_all, *values, **property_value_pairs):
         if len(property_value_pairs) < 1:
@@ -264,16 +232,6 @@ class Database():
             return self.cursor.fetchall()
 
         return self.cursor.fetchone()
-
-    def update(self, table, values, set_property_value_pairs, where_property_value_pairs):
-        if len(set_property_value_pairs) < 1:
-            # must specify at least one property
-            raise InvalidValueError("set_property_value_pairs", set_property_value_pairs, "Must specify at least one pair.")
-        if len(where_property_value_pairs) < 1:
-            # must specify at least one property
-            raise InvalidValueError("where_property_value_pairs", where_property_value_pairs, "Must specify at least one pair.")
-
-        raise NotImplementedError
         
     def create_postgres_array(self, *values):
         """
@@ -292,7 +250,23 @@ class Database():
 
         return "{" + ",".join([str(i) for i in values]) + "}"
 
-    def add_model_info(self, method, basis, cp):\
+    def add_model_info(self, method, basis, cp):
+        """
+        Returns a string consisting of a postgres command to
+        add a new model to the database.
+
+        Pass the output into execute() to run it.
+
+        Args:
+             method         - The method of this model.
+             basis          - The basis of this model.
+             cp             - True if this model uses counterpoise correction.
+
+        Returns:
+            (command, params)
+            command         - A string consisting of the command to run in the postgres database.
+            params          - The parameters to substitute for the %s in the command.
+        """
 
         command_string = "PERFORM add_model_info(%s, %s, %s);"
 
@@ -301,7 +275,23 @@ class Database():
         return command_string, params
 
     def add_molecule(self, molecule):
-        # should always be at COM and Principle axes before calling!!!!
+        """
+        Returns a string consisting of a postgres command to
+        add a new molecule type to the database.
+
+        Pass the output into execute() to run it.
+
+        You should generally make sure the molecule is in standard
+        orientation before adding it to the database.
+
+        Args:
+             molecule         - An instance of the molecule to add.
+
+        Returns:
+            (command, params)
+            command         - A string consisting of the command to run in the postgres database.
+            params          - The parameters to substitute for the %s in the command.
+        """
 
         coordinates = []
         for fragment in molecule.get_fragments():
@@ -309,7 +299,6 @@ class Database():
                 coordinates.append(atom.get_x())
                 coordinates.append(atom.get_y())
                 coordinates.append(atom.get_z())
-
 
         command_string = "PERFORM add_molecule(%s, %s, ARRAY["
         params = (molecule.get_SHA1(), molecule.get_name())
@@ -347,6 +336,23 @@ class Database():
         return command_string, params
 
     def add_calculations(self, molecule_list, method, basis, cp, *tags, optimized = False):
+        """
+        Adds new calculations to the database.
+
+        Will queue the database to calculate the energies of each molecule in the list
+        with the given model. Does not calculate the energies.
+
+        Args:
+            molecule_list   - List of molecules whose energies are wanted.
+            method          - Method to use to calculate the molecules' energies.
+            basis           - Basis to use to calculate the molecules' energies.
+            cp              - True if counterpoise correction should be used in the calculation of the molecules' energies.
+            tags            - Set of tags to label these calculations in the database.
+            optimized       - True if all molecules represent optimized geometries.
+
+        Returns:
+            None.
+        """
 
         command_string = ""
         params = []
@@ -409,6 +415,24 @@ class Database():
                 self.execute(command_string, params)
 
     def update_tags(self, mol_hash, model_name, *tags):
+        """
+        Returns a string consisting of a postgres command to
+        update the tags of a calculation in the database.
+
+        The command will add new tags, but not remove existing ones.
+
+        Pass the output into execute() to run it.
+
+        Args:
+             mol_hash       - The hash of the molecule produced by molecule.get_SHA1().
+             model_name     - The name of the model in format method/basis/cp. cp = True or False.
+             tags           - The new tags for this molecule.
+
+        Returns:
+            (command, params)
+            command         - A string consisting of the command to run in the postgres database.
+            params          - The parameters to substitute for the %s in the command.
+        """
 
         command_string = ""
         params = []
@@ -458,8 +482,31 @@ class Database():
         return molecule
 
     def get_all_calculations(self, client_name, *tags, calculations_to_do = sys.maxsize):
+        """
+        Gets uncalculaed energies from the database so that the user can calculate them.
 
-        # TODO: make tags work with this!
+        Pass the output into set_properties to update the energies in the database.
+
+        NOTE: the tags argument does not work. Currently, calculations will be selected regardless of tag.
+
+        Args:
+            client_name     - The name of the client that will perform these calculations.
+            tags            - Only fetch calculations with these tags.
+            calculations_to_do - Maximum number of calculations to fetch. Defualt is unlimited.
+
+        Yields:
+            (molecule, method, basis, cp, use_cp, frag_indices)
+            molecule        - The molecule whose energy should be calculated.
+            method          - Method to do the calculation.
+            basis           - Basis to do the calculation.
+            cp              - True if the model uses counterpoise correction.
+            use_cp          - True if counterpoise correction should be used for this calculation.
+            frag_indices    - List of indices of fragments that should be included in the calculation.
+                    If use_cp is True, then include other fragments as ghost atoms.
+
+            cp is not the same as use_cp. Some calculations belong to a model that has cp, but should not
+            use cp for some of their energies.
+        """
 
         while True:
 
@@ -496,7 +543,25 @@ class Database():
                 return
 
     def set_properties(self, calculation_results):
-        # possibly check to make sure molecule is not morphed
+        """
+        Sets newly calculated energies in the database.
+
+        Args:
+            calculation_results - List of tuples of format
+                    (molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text)
+                    molecule    - Molecule whose energy should be set.
+                    method      - Method used to calculate the new energy.
+                    basis       - Basis used to calculate the new energy.
+                    cp          - True if the model for this energy includes counterpoise correction.
+                    use_cp      - True if counterpoise correction was used for this calculation.
+                    frag_indices - Fragments included in this calculation.
+                    result      - True if the calculation succeeded.
+                    energy      - The calculated energy in atomic units. Not used in result is False.
+                    log_text    - The text of the log file for this calculation.
+
+        Returns:
+            None.
+        """
 
         command_string = ""
         params = []
@@ -521,6 +586,25 @@ class Database():
             self.execute(command_string, params)
 
     def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
+        """
+        Gets a 1B training set from the calculated energies in the database.
+
+        All complete calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule for which a training set is desired.
+            method          - Method of this training set.
+            basis           - Basis of this training set.
+            cp              - Counterpoise correction of this training set.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, energy)
+            molecule        - One molecule in the training set.
+            energy          - Its 1B deformation energy.
+        """
+
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
@@ -548,10 +632,36 @@ class Database():
                 return;
 
     def get_2B_training_set(self, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags):
+        """
+        Gets a 2B training set from the calculated energies in the database.
+
+        All complete calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule for which a training set is desired.
+            monomer1_name   - Name of one monomer in the molecule.
+            monomer2_name   - Name of the other monomer in the molecule.
+            method          - Method of this training set.
+            basis           - Basis of this training set.
+            cp              - Counterpoise correction of this training set.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy)
+            molecule        - One molecule in the training set.
+            binding_energy  - Its 2B binding energy.
+            interaction_energy - Its 2B interaction energy.
+            monomer1_energy - Its first monomer's deformation energy.
+            monomer2_energy - Its second monomer's deformation energy.
+        """
+
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
         empty_molecule = self.build_empty_molecule(molecule_name)
+
+        monomer1_name, monomer2_name = sorted([monomer1_name, monomer2_name])
         
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
@@ -574,8 +684,42 @@ class Database():
             batch_offset += self.batch_size
 
     def reset_all_calculations(self, *tags):
+        """
+        Resets all dispatched, complete, and failed calculations in the database back to pending. Their
+        energies are queued for recalculation.
+
+        Args:
+            tags            - Currently unused.
+
+        Returns:
+            None.
+        """
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "complete"))
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "failed"))
 
     def clean(self, *tags):
+        """
+        Resets all dispatched calculations in the database back to pending. Their
+        energies are queued for recalculation.
+
+        Args:
+            tags            - Currently unused.
+
+        Returns:
+            None.
+        """
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))
+
+    def reset_failed(self, *tags):
+        """
+        Resets all failed calculations in the database back to pending. Their
+        energies are queued for recalculation.
+
+        Args:
+            tags            - Currently unused.
+
+        Returns:
+            None.
+        """
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "failed"))

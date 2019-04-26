@@ -26,8 +26,8 @@ class Database():
         Returns:
             A new Database object.
         """
-
-        self.batch_size = batch_size
+        self.batch_size = 0
+        self.set_batch_size(batch_size)
 
         config = SettingsReader(config_file)
 
@@ -132,6 +132,8 @@ class Database():
         Returns:
             None.
         """
+        if batch_size < 1:
+            raise InvalidValueError("batch_size", batch_size, "must be at least 1.")
 
         self.batch_size = batch_size
 

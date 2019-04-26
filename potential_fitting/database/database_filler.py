@@ -58,6 +58,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
 
             if len(calculation_results) >= database.get_batch_size():
                 database.set_properties(calculation_results)
+                calculation_results = []
                 # save changes to the database
                 database.save()
 

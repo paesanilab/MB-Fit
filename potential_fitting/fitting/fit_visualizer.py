@@ -101,7 +101,8 @@ class Dataset_2b(Dataset):
 
         return Dataset_2b(low_calc, low_fit, self.method + " below {} kcal/mol".format(threshold), low_bind), Dataset_2b(high_calc, high_fit, self.method + " above {} kcal/mol".format(threshold), high_bind)
 
-def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag):
+
+def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, molecule_name, method, basis, cp, tag):
     '''
     This method returns the molecules, the required calculated energies, and the list of mb_data points 
     using the provided parameters, method, basis, cp and tag. 
@@ -109,7 +110,8 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, me
     Args:
         file_path_MB - The location, on memory, of the MB data
         file_path_MB_params - The file path containing the list of MB parameters.
-        db_name - The name of the database from which calculations must be made.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         molecule_name - The name of the molecule for which the calculations must be made,
         method - The specified basis for the calculations/fit.
         cp - The specified cp for the calculations/fit.
@@ -118,18 +120,15 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, me
     
     mb = []
 
-    with Database(db_name) as database:
+    with Database(database_config_path) as database:
 
-        energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
-
-        # getting the monomer optimized energies 
-        opt_energy = list(database.get_energies(molecule_name, method, basis, cp, tag, optimized = True))[0][1][0]
+        energy_molecule_pairs = list(database.get_1B_training_set(molecule_name, method, basis, cp, tag))
 
     # getting the molecules
     molecules = [i[0] for i in energy_molecule_pairs]
 
     # calculating the required energy from the energy-molecule pairs
-    calc = [i[1][0] - opt_energy for i in energy_molecule_pairs]
+    calc = [i[1][0] for i in energy_molecule_pairs]
 
     calc = [i * constants.au_to_kcal for i in calc]
 
@@ -151,7 +150,7 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, me
 
     return molecules, calc, mb
 
-def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, monomer1_name,
         monomer2_name, method, basis, cp, tag):
 
     '''
@@ -164,7 +163,8 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
         file_path_TTM_params - The file path containing the list of TTM parameters.
         file_path_MB - The location, on memory, of the MB data
         file_path_MB_params - The file path containing the list of MB parameters.
-        db_name - The name of the database from which calculations must be made.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         monomer1_name - The name of the first monomer from which the calculations must be made,
         monomer2_name - The name of the second monomer from which the calculations must be made,
         method - The specified basis for the calculations/fit.
@@ -178,30 +178,21 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     #creating a dimer
     molecule_name = monomer1_name + "-" + monomer2_name
 
-    with Database(db_name) as database:
+    with Database(database_config_path) as database:
 
-        energy_molecule_pairs = list(database.get_energies(molecule_name, method, basis, cp, tag))
-
-        #getting the monomer optimized energies 
-        monomer1_opt = list(database.get_energies(monomer1_name, method, basis, cp, tag, optimized = True))[0][1][0]
-        monomer2_opt = list(database.get_energies(monomer2_name, method, basis, cp, tag, optimized = True))[0][1][0]
+        energy_molecule_pairs = list(database.get_2B_training_set(molecule_name, monomer1_name, monomer2_name, method, basis, cp, tag))
 
         #getting the molecules
         molecules = [i[0] for i in energy_molecule_pairs]
 
          #calculating the required interaction energy from the energy-molecule pairs
-        calc = [j[1][2] - j[1][1] - j[1][0] for j in energy_molecule_pairs]
-
+        calc = [interaction_energy for molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in energy_molecule_pairs]
 
         #getting the binding energies
-        binding_energies = [interaction + 
-                ((energies[1][0] if len(energies[1]) == 3 else energies[1][3]) - monomer1_opt) +
-                ((energies[1][1] if len(energies[1]) == 3 else energies[1][4]) - monomer2_opt) 
-                for interaction, energies in zip(calc, energy_molecule_pairs)]
-
-        binding_energies = [i * constants.au_to_kcal for i in binding_energies]
+        binding_energies = [binding_energy for molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in energy_molecule_pairs]
 
         calc = [i * constants.au_to_kcal for i in calc]
+        binding_energies = [i * constants.au_to_kcal for i in binding_energies]
 
         for m in molecules:
             #writing to xyz file
@@ -226,7 +217,8 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 
     return molecules, calc, mb, ttm, binding_energies
 
-def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag,
+
+def make_1b_graphs(file_path_MB, file_path_MB_params, database_config_path, molecule_name, method, basis, cp, tag,
         low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
     '''
@@ -237,7 +229,8 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
         file_path_TTM_params - The file path containing the list of TTM parameters.
         file_path_MB - The location, on memory, of the MB data
         file_path_MB_params - The file path containing the list of MB parameters.
-        db_name - The name of the database from which calculations must be made.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         molecule_name - The name of the first monomer from which the calculations must be made. 
         method - The specified basis for the calculations/fit.
         cp - The specified cp for the calculations/fit.
@@ -248,12 +241,12 @@ def make_1b_graphs(file_path_MB, file_path_MB_params, db_name, molecule_name, me
         file_data - The file to which data can be written during a plot. 
     '''
 
-
-    molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, db_name, molecule_name, method, basis, cp, tag)
+    molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, molecule_name, method, basis, cp, tag)
     if file_data == None: file_data = "correlation_1b_" + "METHOD" + str(tag) + ".dat"
     make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 
-def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+
+def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, monomer1_name,
         monomer2_name, method, basis, cp, tag, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
     '''
@@ -264,7 +257,8 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
         file_path_TTM_params - The file path containing the list of TTM parameters.
         file_path_MB - The location, on memory, of the MB data
         file_path_MB_params - The file path containing the list of MB parameters.
-        db_name - The name of the database from which calculations must be made.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         monomer1_name - The name of the first monomer from which the calculations must be made.
         monomer2_name - The name of the second monomer from which the calculations must be made.
         method - The specified basis for the calculations/fit.
@@ -278,7 +272,7 @@ def make_2b_graphs(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 
     if file_data == None: file_data = "correlation_2b_" + "METHOD" + str(tag) + ".dat"
     
-    molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, db_name, monomer1_name,
+    molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, monomer1_name,
         monomer2_name, method, basis, cp, tag)
 
     make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
@@ -288,7 +282,7 @@ def filter_dataset_energies(dataset, min_cutoff = float('-inf'), max_cutoff = fl
     This method filters the dataset with given energies bounds, which may be upper-bounded or lower-bounded. 
 
       Args:
-        dataset - The name of the dataset for which filtering energies must be done.  
+        dataset - The name of the dataset for which filtering energies must be done.
         min_cutoff - minimum cutoff while plotting, defaults to negative infinity. 
         max_cutoff - maximum cutoff energy while plotting, defaults to positive infinity.
     '''

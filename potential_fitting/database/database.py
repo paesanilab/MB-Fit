@@ -183,7 +183,7 @@ class Database():
         """
 
         if confirm == "confirm":
-            self.cursor.execute("TRUNCATE atom_info, fragment_contents, fragment_info, log_files, model_info, molecule_contents, molecule_info, molecule_list, molecule_properties, optimized_geometries, tags")
+            self.cursor.execute("TRUNCATE atom_info, fragment_contents, fragment_info, log_files, model_info, molecule_contents, molecule_info, molecule_list, molecule_properties, pending_calculations, optimized_geometries, tags")
         else:
             print("annihilate failed. specify confirm = \"confirm\" if deletion of all content in the database is desired.")
 
@@ -399,8 +399,14 @@ class Database():
                         command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
                         params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", [], True]
 
+                        command_string += "INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp) VALUES (%s, %s, %s, %s);"
+                        params += [molecule.get_SHA1(), model_name, list(fragment_indices), True]
+
                     command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
                     params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", [], False]
+
+                    command_string += "INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp) VALUES (%s, %s, %s, %s);"
+                    params += [molecule.get_SHA1(), model_name, list(fragment_indices), False]
 
             command_string += "INSERT INTO tags VALUES (%s, %s, %s);"
             params += [molecule.get_SHA1(), model_name, []]
@@ -526,12 +532,16 @@ class Database():
 
         while True:
 
-            self.cursor.execute("SELECT molecule_list.mol_name from molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE molecule_properties.status = %s", ("pending",))
+            self.cursor.execute("SELECT mol_hash FROM pending_calculations LIMIT 1")
 
             try:
-                molecule_name = self.cursor.fetchone()[0]
+                mol_hash = self.cursor.fetchone()[0]
             except TypeError:
                 break
+
+            self.cursor.execute("SELECT mol_name FROM molecule_list WHERE mol_hash = %s", (mol_hash,))
+
+            molecule_name = self.cursor.fetchone()[0]
 
             self.cursor.execute("SELECT * FROM get_pending_calculations(%s, %s, %s, %s)", (molecule_name, client_name, self.create_postgres_array(*tags), min(self.batch_size, calculations_to_do)))
 
@@ -682,8 +692,6 @@ class Database():
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
             training_set = self.cursor.fetchall()
-
-            print("SET SIZE:", len(training_set))
 
             if training_set == []:
                 return

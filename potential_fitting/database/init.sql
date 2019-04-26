@@ -4,14 +4,6 @@ comment on schema public is 'standard public schema';
 
 alter schema public owner to postgres;
 
-create type dup_result as
-(
-	f1 integer,
-	f2 text
-);
-
-alter type dup_result owner to ebullvul;
-
 create type empty_mol as
 (
 	mol_name varchar,
@@ -34,6 +26,10 @@ create type fragment as
 );
 
 alter type fragment owner to ebullvul;
+
+create type status_enum as enum ('pending', 'dispatched', 'complete', 'failed');
+
+alter type status_enum owner to ebullvul;
 
 create table molecule_info
 (
@@ -167,7 +163,7 @@ create table molecule_properties
 	frag_indices integer[] not null,
 	energies double precision[] not null,
 	atomic_charges double precision[] not null,
-	status varchar not null,
+	status status_enum not null,
 	past_log_ids integer[] not null,
 	most_recent_log_id integer
 		constraint energies_list_log_files_log_id_fk
@@ -183,9 +179,6 @@ create index energies_list_mol_hash_model_name_index
 create unique index energies_list_most_recent_log_id_uindex
 	on molecule_properties (most_recent_log_id);
 
-create index molecule_properties_status_index
-	on molecule_properties (status);
-
 create index molecule_properties_mol_hash_index
 	on molecule_properties (mol_hash);
 
@@ -194,6 +187,9 @@ create index molecule_properties_frag_indices_index
 
 create index molecule_properties_mol_hash_model_name_frag_indices_index
 	on molecule_properties (mol_hash, model_name, frag_indices);
+
+create index molecule_properties_status_index
+	on molecule_properties (status);
 
 create unique index log_files_log_id_uindex
 	on log_files (log_id);
@@ -231,6 +227,21 @@ alter table optimized_geometries owner to "paesanilab-pgadmins";
 
 create index optimized_geometries_mol_name_model_name_index
 	on optimized_geometries (mol_name, model_name);
+
+create table pending_calculations
+(
+	mol_hash varchar not null
+		constraint pending_calculations_molecule_list_mol_hash_fk
+			references molecule_list,
+	model_name varchar not null,
+	frag_indices integer[] not null,
+	use_cp boolean not null
+);
+
+alter table pending_calculations owner to ebullvul;
+
+create index pending_calculations_mol_hash_model_name_frag_indices_use_cp_in
+	on pending_calculations (mol_hash, model_name, frag_indices, use_cp);
 
 create function get_empty_molecule(molecule_name character varying) returns empty_mol
 	language plpgsql
@@ -699,38 +710,6 @@ $$;
 
 alter function add_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean) owner to ebullvul;
 
-create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[], use_cp boolean)
-	language plpgsql
-as $$
-DECLARE
-    molecule_hash VARCHAR;
-    id INTEGER;
-
-  BEGIN
-
-    FOR molecule_hash, model, indices, get_pending_calculations.use_cp IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices, molecule_properties.use_cp FROM
-      molecule_properties INNER JOIN molecule_list ON molecule_properties.mol_hash = molecule_list.mol_hash WHERE
-      molecule_properties.status = 'pending' AND molecule_list.mol_name = molecule_name LIMIT batch_size
-    LOOP
-
-      INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name) RETURNING log_id
-        INTO id;
-
-      UPDATE molecule_properties SET status='dispatched', most_recent_log_id=id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices AND molecule_properties.use_cp = get_pending_calculations.use_cp;
-
-      SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
-        INTO coords;
-
-      RETURN NEXT;
-
-    END LOOP;
-
-  END;
-
-$$;
-
-alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
-
 create function set_properties(hash character varying, model character varying, use_cp boolean, indices integer[], result boolean, energy double precision, log_txt character varying) returns void
 	language plpgsql
 as $$
@@ -761,4 +740,38 @@ DECLARE
 $$;
 
 alter function set_properties(varchar, varchar, boolean, integer[], boolean, double precision, varchar) owner to ebullvul;
+
+create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[], use_cp boolean)
+	language plpgsql
+as $$
+DECLARE
+    molecule_hash VARCHAR;
+    id INTEGER;
+
+  BEGIN
+
+    FOR molecule_hash, model, indices, get_pending_calculations.use_cp IN SELECT pending_calculations.mol_hash, pending_calculations.model_name, pending_calculations.frag_indices, pending_calculations.use_cp FROM
+      pending_calculations INNER JOIN molecule_list ON pending_calculations.mol_hash = molecule_list.mol_hash WHERE
+      molecule_list.mol_name = molecule_name LIMIT batch_size
+    LOOP
+
+      INSERT INTO log_files(start_time, client_name) VALUES (clock_timestamp(), input_client_name) RETURNING log_id
+        INTO id;
+
+      UPDATE molecule_properties SET status='dispatched', most_recent_log_id=id WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices AND molecule_properties.use_cp = get_pending_calculations.use_cp;
+
+      DELETE FROM pending_calculations WHERE mol_hash = molecule_hash AND model_name = model AND frag_indices = indices AND pending_calculations.use_cp = get_pending_calculations.use_cp;
+
+      SELECT atom_coordinates, mol_name from molecule_list WHERE mol_hash = molecule_hash
+        INTO coords;
+
+      RETURN NEXT;
+
+    END LOOP;
+
+  END;
+
+$$;
+
+alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
 

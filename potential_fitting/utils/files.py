@@ -4,7 +4,9 @@ import datetime
 from enum import Enum
 
 # absolute package imports
-from potential_fitting.exceptions import FileExistsError, InvalidValueError
+#from potential_fitting.exceptions import FileExistsError, InvalidValueError
+from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError,
+        ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError)
 
 def init_directory(directory_path):
     """
@@ -103,10 +105,13 @@ def get_molecule_log_path(log_path, molecule, suffix):
         The log file for the given molecule with the given suffix.
     """
 
-    file_path = os.path.join(log_path, molecule.get_name(), "{}_{}.{}".format(molecule.get_SHA1()[-8:], str(datetime.datetime.now()).replace(" ", "_").replace(":", "-"), suffix))
+    if not "." in suffix:
+        file_path = os.path.join(log_path, molecule.get_name(), "{}.{}".format(molecule.get_SHA1()[-8:], suffix))
+    else:
+        file_path = os.path.join(log_path, molecule.get_name(), "{}{}".format(molecule.get_SHA1()[-8:], suffix))
 
     # make sure the required directories exist
-    return init_file(file_path)
+    return init_file(file_path, overwrite_method = OverwriteMethod.NONE)
     
 def get_model_log_path(log_path, molecule, method, basis, suffix):
     """
@@ -177,6 +182,39 @@ def get_frequencies_log_path(log_path, molecule, method, basis, suffix):
     """
 
     return get_model_log_path(os.path.join(log_path, "frequencies"), molecule, method, basis, suffix)
+
+def get_qchem_input_string(molecule, fragment_indicies, model, cp, settings):
+    method, basis = model.split("/")
+    # initialize qchem input string
+    qchem_input = "";
+
+    # molecule format
+    qchem_input += "$molecule\n"
+
+    # charge and spin multiplicity
+    qchem_input += "{} {}\n".format(molecule.get_charge(fragment_indicies),
+            molecule.get_spin_multiplicity(fragment_indicies))
+
+    # atoms in the molecule
+    # might need to add whitespace before each line?
+    qchem_input += molecule.to_xyz(fragment_indicies, cp) + "\n"
+
+    qchem_input += "$end\n"
+
+    # Q-chem settings
+    qchem_input += "$rem\n"
+    qchem_input += "jobtype " + "sp" + "\n"
+    qchem_input += "method " + model.split('/')[0] + "\n"
+    qchem_input += "basis " + model.split('/')[1] + "\n"
+
+    try:
+        qchem_input += "ecp " + settings.get("qchem", "ecp") + "\n"
+    except (ConfigMissingSectionError, ConfigMissingPropertyError):
+        pass
+
+    qchem_input += "$end"
+
+    return qchem_input
 
 def write_qchem_input(settings, qchem_in_path, jobtype, template_input = ""):
     with open(qchem_in_path, "w") as qchem_in_file:

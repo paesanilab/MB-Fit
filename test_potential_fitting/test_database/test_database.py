@@ -203,6 +203,7 @@ class TestDatabase(unittest.TestCase):
 
         self.assertEqual(molecule, self.database.build_empty_molecule(molecule.get_name()))
 
+    """
     def test_set_properties_and_get_training_set(self):
         molecules = []
         for i in range(100):
@@ -220,9 +221,42 @@ class TestDatabase(unittest.TestCase):
         self.database.set_properties(calculation_results)
 
         training_set = self.database.get_1B_training_set("H2O", "testmethod", "testbasis", True, "tag1")
-
+        self.assertEqual(len(training_set), 100)
         for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
             self.assertIn([molecule, energy], training_set)
+
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_dimer())
+            energies.append([random.random(), random.random(), random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "tag1")
+
+        calculations = self.database.get_all_calculations("testclient", "notused")
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            index = molecules.index(molecule)
+            if frag_indices == [0]:
+                energy = energies[index][0]
+            elif frag_indices == [1]:
+                energy = energies[index][1]
+            else:
+                energy = energies[index][2]
+            calculation_results.append([molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = self.database.get_2B_training_set("H2O-H2O", "testmethod", "testbasis", True, "tag1")
+        self.assertEqual(len(training_set), 100)
+
+        for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
+            index = molecules.index(molecule)
+            self.assertIn([molecule, energy], training_set)
+    """
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestDatabase)

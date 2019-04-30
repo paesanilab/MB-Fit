@@ -175,9 +175,7 @@ class Database():
 
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "init.sql")) as sql_initilizer:
             sql_script = sql_initilizer.read()
-
-            try:
-                self.cursor.execute(sql_script)
+            self.cursor.execute(sql_script)
 
     def annihilate(self, confirm = "no way"):
         """
@@ -306,7 +304,7 @@ class Database():
         return command_string, params
 
     def get_models(self):
-        self.execute("SELECT * FROM model_info;")
+        self.cursor.execute("SELECT * FROM model_info;")
         return [i[0] for i in self.cursor.fetchall()]
 
     def add_molecule(self, molecule):
@@ -371,11 +369,11 @@ class Database():
         return command_string, params
 
     def get_molecule(self, hash):
-        self.execute("SELECT mol_name, atom_coordinates FROM molecule_list WHERE mol_hash=%s", (hash,))
+        self.cursor.execute("SELECT mol_name, atom_coordinates FROM molecule_list WHERE mol_hash=%s;", (hash,))
         try:
-            name, atom_coordinates = self.cursor.fetchone()[0]
-        except IndexError:
-            raise NoSuchMoleculeError(self.name, hash)
+            name, atom_coordinates = self.cursor.fetchone()
+        except TypeError:
+            raise NoSuchMoleculeError(self.name, hash) from None
 
         molecule = self.build_empty_molecule(name)
 
@@ -595,7 +593,7 @@ class Database():
                 method = model[:model.index("/")]
                 model = model[model.index("/") + 1:]
                 basis = model[:model.index("/")]
-                cp = model[model.index("/") + 1:]
+                cp = bool(model[model.index("/") + 1:])
 
                 yield molecule, method, basis, cp, use_cp, frag_indices
 

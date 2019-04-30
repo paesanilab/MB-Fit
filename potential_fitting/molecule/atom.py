@@ -1,4 +1,4 @@
-import math
+import math, numpy as np
 from potential_fitting.utils import constants
 
 class Atom(object):
@@ -316,4 +316,9 @@ class Atom(object):
         """
         return "@{}".format(self.to_xyz())
 
+    def __eq__(self, other):
+        return (self.get_name() == other.get_name() and self.get_symmetry_class() == other.get_symmetry_class()
+                and np.isclose(self.get_x(), other.get_x()) and np.isclose(self.get_y(), other.get_y()) and np.isclose(self.get_z(), other.get_z()))
 
+    def __ne__(self, other):
+        return not self == other

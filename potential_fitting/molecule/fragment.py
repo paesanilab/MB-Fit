@@ -358,4 +358,20 @@ class Fragment(object):
             raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
 
         return self
- 
+
+    def __eq__(self, other):
+        if not self.get_name() == other.get_name():
+            return False
+        if not self.get_charge() == other.get_charge():
+            return False
+        if not self.get_spin_multiplicity() == other.get_spin_multiplicity():
+            return False
+
+        for self_atom, other_atom in zip(self.get_atoms(), other.get_atoms()):
+            if self_atom != other_atom:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self == other

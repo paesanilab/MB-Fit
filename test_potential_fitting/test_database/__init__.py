@@ -1,4 +1,4 @@
 import unittest
-from . import test_atom
+from . import test_database
 
-suite = unittest.TestSuite([test_atom.suite])
+suite = unittest.TestSuite([test_database.suite])

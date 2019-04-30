@@ -914,3 +914,16 @@ class Molecule(object):
         self.read_fragment_from_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry)
 
         return self
+
+    def __eq__(self, other):
+        if not self.get_name() == other.get_name():
+            return False
+
+        for self_frag, other_frag in zip(self.get_fragments(), other.get_fragments()):
+            if self_frag != other_frag:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self == other

@@ -50,11 +50,11 @@ class TestDatabase(unittest.TestCase):
         return molecule
 
     def setUp(self):
-        self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.ini)")
+        self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.ini")
         self.database = Database(self.config)
+        self.database.annihilate(confirm="confirm")
 
     def tearDown(self):
-        self.database.annihilate(confirm="confirm")
         self.database.close()
 
     def test_set_and_get_batch_size(self):
@@ -75,16 +75,16 @@ class TestDatabase(unittest.TestCase):
     def test_execute(self):
 
         with self.assertRaises(psycopg2.InternalError):
-            self.database.execute("RAISE EXCEPTION 'EXECUTE WORKED'")
+            self.database.execute("RAISE EXCEPTION %s;", ("EXECUTE WORKED",))
         self.database.save()
 
         pass
 
     def test_create_postgres_array(self):
-        self.assertEqual(self.database.create_postgres_array("A", "B", "C", "D"), "{A, B, C, D}")
-        self.assertEqual(self.database.create_postgres_array(1, 2, 3, 4), "{1, 2, 3, 4}")
+        self.assertEqual(self.database.create_postgres_array("A", "B", "C", "D"), "{A,B,C,D}")
+        self.assertEqual(self.database.create_postgres_array(1, 2, 3, 4), "{1,2,3,4}")
 
-    def test_add_model_info(self):
+    def test_add_model_info_and_get_model(self):
         str, param = self.database.add_model_info("testmethod", "testbasis", True)
         self.database.execute(str, param)
 
@@ -104,26 +104,29 @@ class TestDatabase(unittest.TestCase):
         self.assertIn("testmethod/testbasis/True", models)
         self.assertIn("testmethod/testbasis/False", models)
 
-    def test_add_molecule(self):
+    def test_add_molecule_and_get_molecule(self):
 
-        for i in range(100):
+        for i in range(1):
 
             molecule = self.get_water_monomer()
 
-            self.database.add_molecule(molecule)
+            str, param = self.database.add_molecule(molecule)
 
-            self.assertEqual(molecule, self.database.get_molecule(molecule.get_SHA1()))
+            self.database.execute(str, param)
 
-        for i in range(100):
+            self.assertEqual(molecule.get_SHA1(), self.database.get_molecule(molecule.get_SHA1()).get_SHA1())
+
+        for i in range(0):
             molecule = self.get_water_dimer()
 
-            self.database.add_molecule(molecule)
+            str, param = self.database.add_molecule(molecule)
+            self.database.execute(str, param)
 
             self.assertEqual(molecule, self.database.get_molecule(molecule.get_SHA1()))
 
     def test_add_calculation_and_get_all_calculations(self):
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
@@ -132,13 +135,13 @@ class TestDatabase(unittest.TestCase):
 
         self.database.add_calculations(molecules, "testmethod", "testbasis", True, "tag1")
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 100)
 
         for molecule in molecules:
             self.assertIn([molecule, "testmethod", "testbasis", True, False, [0]], calculations)
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
@@ -147,13 +150,13 @@ class TestDatabase(unittest.TestCase):
 
         self.database.add_calculations(molecules, "testmethod", "testbasis", False, "tag1")
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 100)
 
         for molecule in molecules:
             self.assertIn([molecule, "testmethod", "testbasis", False, False, [0]], calculations)
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
@@ -162,7 +165,7 @@ class TestDatabase(unittest.TestCase):
 
         self.database.add_calculations(molecules, "testmethod", "testbasis", True, "tag1")
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 500)
 
         for molecule in molecules:
@@ -172,7 +175,7 @@ class TestDatabase(unittest.TestCase):
             self.assertIn([molecule, "testmethod", "testbasis", True, True, [1]], calculations)
             self.assertIn([molecule, "testmethod", "testbasis", True, False, [0, 1]], calculations)
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
@@ -181,7 +184,7 @@ class TestDatabase(unittest.TestCase):
 
         self.database.add_calculations(molecules, "testmethod", "testbasis", False, "tag1")
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 300)
 
         for molecule in molecules:
@@ -189,19 +192,23 @@ class TestDatabase(unittest.TestCase):
             self.assertIn([molecule, "testmethod", "testbasis", True, False, [1]], calculations)
             self.assertIn([molecule, "testmethod", "testbasis", True, False, [0, 1]], calculations)
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 0)
 
     def test_build_empty_molecule(self):
 
         molecule = self.get_water_monomer()
 
-        self.database.add_molecule(molecule)
+        str, param = self.database.add_molecule(molecule)
 
-        for atom in molecule:
+        self.database.execute(str, param)
+
+        for atom in molecule.get_atoms():
             atom.set_xyz(0, 0, 0)
 
-        self.assertEqual(molecule, self.database.build_empty_molecule(molecule.get_name()))
+        empty_mol = self.database.build_empty_molecule(molecule.get_name())
+
+        self.assertEqual(molecule, empty_mol)
 
     """
     def test_set_properties_and_get_training_set(self):

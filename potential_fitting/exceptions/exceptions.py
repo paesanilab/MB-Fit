@@ -79,6 +79,18 @@ class DatabaseError(PotentialFittingError):
     def __init__(self, database, message):
         super().__init__("Error during access to database '{}': {}".format(database, message))
 
+class DatabaseConnectionError(DatabaseError):
+    """Raised when there is a problem connecting to the database."""
+
+    def __init__(self, database, problem):
+        super().__init__(database, "Problem connecting to the database: {}".format(problem))
+
+class DatabaseNotEmptyError(DatabaseError):
+    """Raised when a database is attempted to be created in a database that already has tables."""
+
+    def __init(self, database, table_names):
+        super().__init__(database, "Attempting to initialize database, but database already contains tables: {}".format(table_names))
+
 class InconsistentDatabaseError(DatabaseError):
     """Raised when a database contains inconsistent informaiton that should not be possible"""
 

@@ -3,8 +3,9 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import NoSuchMoleculeError, InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
+from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError
 from potential_fitting.utils import SettingsReader
+from psycopg2 import OperationalError
 
 class Database():
 
@@ -48,8 +49,10 @@ class Database():
         """
 
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))
-
+        try:
+            self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))
+        except OperationalError as e:
+            raise DatabaseConnectionError(self.name, str(e))
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
@@ -163,10 +166,18 @@ class Database():
             None.
         """
 
+        self.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != %s AND schemaname != %s;", ("pg_catalog", "information_schema"))
+
+        table_names = [table[1] for table in self.cursor.fetchall()]
+
+        if len(table_names) > 0:
+            raise DatabaseNotEmptyError(self.name, table_names)
+
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "init.sql")) as sql_initilizer:
             sql_script = sql_initilizer.read()
 
-            self.cursor.execute(sql_script)
+            try:
+                self.cursor.execute(sql_script)
 
     def annihilate(self, confirm = "no way"):
         """

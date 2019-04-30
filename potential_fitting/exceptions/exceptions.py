@@ -114,6 +114,12 @@ class NoPendingCalculationsError(DatabaseError):
 
     def __init__(self, database):
         super().__init__(database, "No more pending calculations in the database.")
+
+class NoSuchMoleculeError(DatabaseError):
+    """Raised when a user tries to query for a molecule that does not exist"""
+
+    def __init__(self, database, mol_hash):
+        super().__init__(database, "No molecule in database with hash {}".format(mol_hash))
 """
 --------------------------- InputException
 """

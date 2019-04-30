@@ -3,7 +3,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
+from potential_fitting.exceptions import NoSuchMoleculeError, InconsistentDatabaseError, InvalidValueError, NoPendingCalculationsError
 from potential_fitting.utils import SettingsReader
 
 class Database():
@@ -36,6 +36,8 @@ class Database():
         database = config.get("database", "database")
         username = config.get("database", "username")
         password = config.get("database", "password")
+
+        self.name = host + " " + database
 
         """
         host = "piggy.pl.ucsd.edu"
@@ -292,6 +294,10 @@ class Database():
 
         return command_string, params
 
+    def get_models(self):
+        self.execute("SELECT * FROM model_info;")
+        return [i[0] for i in self.cursor.fetchall()]
+
     def add_molecule(self, molecule):
         """
         Returns a string consisting of a postgres command to
@@ -352,6 +358,21 @@ class Database():
         params += (fragment_counts, coordinates)
 
         return command_string, params
+
+    def get_molecule(self, hash):
+        self.execute("SELECT mol_name, atom_coordinates FROM molecule_list WHERE mol_hash=%s", (hash,))
+        try:
+            name, atom_coordinates = self.cursor.fetchone()[0]
+        except IndexError:
+            raise NoSuchMoleculeError(self.name, hash)
+
+        molecule = self.build_empty_molecule(name)
+
+        for atom in molecule.get_atoms():
+            atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+            atom_coordinates = atom_coordinates[3:]
+
+        return molecule
 
     def add_calculations(self, molecule_list, method, basis, cp, *tags, optimized = False):
         """

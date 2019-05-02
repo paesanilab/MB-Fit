@@ -35,6 +35,23 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     settings = SettingsReader(settings_file)
 
+    monomer_settings = []
+    names = settings.get("molecule", "names").split(",")
+    fragments = settings.get("molecule", "fragments").split(",")
+    charges = settings.get("molecule", "charges").split(",")
+    spins = settings.get("molecule", "spins").split(",")
+    symmetries = settings.get("molecule", "symmetry").split(",")
+
+
+    for name, fragment, charge, spin, symmetry in zip(names, fragments, charges, spins, symmetries):
+        monomer_setting = SettingsReader(settings_file)
+        monomer_setting.set("molecule", "names", name)
+        monomer_setting.set("molecule", "fragments", fragment)
+        monomer_setting.set("molecule", "charges", charge)
+        monomer_setting.set("molecule", "spins", spin)
+        monomer_setting.set("molecule", "symmetry", symmetry)
+        monomer_settings.append(monomer_setting)
+
     # split the molecule input string into fragments
 
     parser = MoleculeInParser(molecule_in)
@@ -65,7 +82,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         else:
 
             # read geometry into a molecule object
-            molecule1 = xyz_to_molecules(geo_paths[0])[0]
+            molecule1 = xyz_to_molecules(geo_paths[0], settings = monomer_settings[0])[0]
 
             # move molecule1 to its standard orientation
             molecule1.move_to_center_of_mass()
@@ -83,7 +100,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
             if len(geo_paths) > 1:
 
                 # read geonetry into molecule object
-                molecule2 = xyz_to_molecules(geo_paths[1])[0]
+                molecule2 = xyz_to_molecules(geo_paths[1], settings = monomer_settings[1])[0]
 
                 # move molecule2 to its standard orientation
                 molecule2.move_to_center_of_mass()
@@ -104,7 +121,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
                 if len(geo_paths) > 2:
 
                     # read geometry into a molecule object
-                    molecule3 = xyz_to_molecules(geo_paths[2])[0]
+                    molecule3 = xyz_to_molecules(geo_paths[2], settings = monomer_settings[2])[0]
 
                     # move molecule3 to its standard orientation
                     molecule3.move_to_center_of_mass()

@@ -593,7 +593,7 @@ class Database():
                 method = model[:model.index("/")]
                 model = model[model.index("/") + 1:]
                 basis = model[:model.index("/")]
-                cp = bool(model[model.index("/") + 1:])
+                cp = model[model.index("/") + 1:] == "True"
 
                 yield molecule, method, basis, cp, use_cp, frag_indices
 
@@ -627,7 +627,7 @@ class Database():
         batch_count = 0
 
         for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
-            model_name = method + "/" + basis + "/" + cp
+            model_name = method + "/" + basis + "/" + str(cp)
 
             command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s);"
             params += [molecule.get_SHA1(), model_name, use_cp, self.create_postgres_array(*frag_indices), result, energy, log_text]

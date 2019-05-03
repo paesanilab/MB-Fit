@@ -3,7 +3,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError
+from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError
 from potential_fitting.utils import SettingsReader
 from psycopg2 import OperationalError
 
@@ -27,8 +27,11 @@ class Database():
         Returns:
             A new Database object.
         """
+
         self.batch_size = 0
         self.set_batch_size(batch_size)
+
+        # parse the user's config file to get their login info
 
         config = SettingsReader(config_file)
 
@@ -53,6 +56,7 @@ class Database():
             self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))
         except OperationalError as e:
             raise DatabaseConnectionError(self.name, str(e))
+
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
@@ -137,6 +141,7 @@ class Database():
         Returns:
             None.
         """
+
         if batch_size < 1:
             raise InvalidValueError("batch_size", batch_size, "must be at least 1.")
 
@@ -175,7 +180,10 @@ class Database():
 
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "init.sql")) as sql_initilizer:
             sql_script = sql_initilizer.read()
-            self.cursor.execute(sql_script)
+            try:
+                self.cursor.execute(sql_script)
+            except OperationalError as e:
+                raise DatabaseInitializationError(self.name, str(e))
 
     def annihilate(self, confirm = "no way"):
         """
@@ -221,12 +229,15 @@ class Database():
             None.
         """
 
-        self.cursor.execute(
-            "DO $$" + 
-            "   BEGIN " + 
-            command + 
-            "END $$",
-            params)
+        try:
+            self.cursor.execute(
+                "DO $$" +
+                "   BEGIN " +
+                command +
+                "END $$",
+                params)
+        except OperationalError as e:
+            raise DatabaseOperationError(self.name, str(e))
 
     #TODO: select, will be removed in the future.
 

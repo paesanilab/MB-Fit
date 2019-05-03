@@ -88,8 +88,20 @@ class DatabaseConnectionError(DatabaseError):
 class DatabaseNotEmptyError(DatabaseError):
     """Raised when a database is attempted to be created in a database that already has tables."""
 
-    def __init(self, database, table_names):
+    def __init__(self, database, table_names):
         super().__init__(database, "Attempting to initialize database, but database already contains tables: {}".format(table_names))
+
+class DatabaseInitializationError(DatabaseError):
+    """Raised when a database initialization fails."""
+
+    def __init__(self, database, msg):
+        super().__init__(database, "Problem while initializing the database: {}".format(msg))
+
+class DatabaseOperationError(DatabaseError):
+    """Raised when an error occurs during the performing of an sql statement in the database."""
+
+    def __init__(self, database, msg):
+        super().__init__(database, "Problem while executing sql statement in database: {}".format(msg))
 
 class InconsistentDatabaseError(DatabaseError):
     """Raised when a database contains inconsistent informaiton that should not be possible"""

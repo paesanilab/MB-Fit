@@ -229,6 +229,7 @@ class Database():
             None.
         """
 
+        print("A")
         try:
             self.cursor.execute(
                 "DO $$" +
@@ -238,6 +239,8 @@ class Database():
                 params)
         except OperationalError as e:
             raise DatabaseOperationError(self.name, str(e))
+
+        print("B")
 
     #TODO: select, will be removed in the future.
 
@@ -418,57 +421,52 @@ class Database():
 
         batch_count = 0
 
+
         for molecule in molecule_list:
 
-            model_name ="{}/{}/{}".format(method, basis, cp)
+            coordinates = []
+            for fragment in molecule.get_fragments():
+                for atom in fragment.get_atoms():
+                    coordinates.append(atom.get_x())
+                    coordinates.append(atom.get_y())
+                    coordinates.append(atom.get_z())
 
+            command_string += "PERFORM add_calculation(%s, %s, ARRAY["
+            params += (molecule.get_SHA1(), molecule.get_name())
 
-            command_string += \
-                "IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=%s AND model_name=%s) THEN "
+            fragments = [fragment.get_name() for fragment in molecule.get_fragments()]
 
-            params += [molecule.get_SHA1(), model_name]
+            frag_names, counts = np.unique(fragments, return_counts=True, axis=0)
+            fragment_counts = [int(i) for i in counts]
 
-            new_command_string, new_params = self.add_molecule(molecule)
-            command_string += new_command_string
-            params += new_params
+            for frag_name in frag_names:
 
-            new_command_string, new_params = self.add_model_info(method, basis, cp)
-            command_string += new_command_string
-            params += new_params
+                fragment = None
 
-            for n in range(1, molecule.get_num_fragments() + 1):
-                for fragment_indices in itertools.combinations(range(molecule.get_num_fragments()), n):
-                    if cp and len(fragment_indices) != molecule.get_num_fragments():
-                        command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
-                        params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", [], True]
+                for frag in molecule.get_fragments():
+                    if frag.get_name() == frag_name:
+                        fragment = frag
 
-                        command_string += "INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp) VALUES (%s, %s, %s, %s);"
-                        params += [molecule.get_SHA1(), model_name, list(fragment_indices), True]
+                atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
 
-                    command_string += "INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
-                    params += [molecule.get_SHA1(), model_name, list(fragment_indices), [], [], "pending", [], False]
+                symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
+                atom_counts = [int(i) for i in counts]
 
-                    command_string += "INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp) VALUES (%s, %s, %s, %s);"
-                    params += [molecule.get_SHA1(), model_name, list(fragment_indices), False]
+                symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
+                symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
 
-            command_string += "INSERT INTO tags VALUES (%s, %s, %s);"
-            params += [molecule.get_SHA1(), model_name, []]
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
+                if not frag_name == frag_names[-1]:
+                    command_string += ", "
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(),
+                           self.create_postgres_array(*symbols),
+                           self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
 
-            command_string += "END IF;"
-
-            new_command_string, new_params = self.update_tags(molecule.get_SHA1(), model_name, *tags)
-            command_string += new_command_string
-            params += new_params
-            
-            if optimized:
-                command_string += \
-                    "IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=%s AND mol_hash=%s AND model_name=%s) THEN " + \
-                    "   INSERT INTO optimized_geometries VALUES (%s, %s, %s);" + \
-                    "END IF;"
-
-                params += [molecule.get_name(), molecule.get_SHA1(), model_name, molecule.get_name(), molecule.get_SHA1(), model_name]
+            command_string += "], %s, %s, %s, %s, %s, %s, %s);"
+            params += (fragment_counts, coordinates, method, basis, cp, self.create_postgres_array(tags), optimized)
 
             batch_count += 1
+
 
             if batch_count == self.batch_size:
                 self.execute(command_string, params)
@@ -476,8 +474,9 @@ class Database():
                 params = []
                 batch_count = 0
 
+
         if batch_count != 0:
-                self.execute(command_string, params)
+            self.execute(command_string, params)
 
     def update_tags(self, mol_hash, model_name, *tags):
         """

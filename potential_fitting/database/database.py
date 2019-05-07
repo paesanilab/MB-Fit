@@ -229,7 +229,6 @@ class Database():
             None.
         """
 
-        print("A")
         try:
             self.cursor.execute(
                 "DO $$" +
@@ -239,8 +238,6 @@ class Database():
                 params)
         except OperationalError as e:
             raise DatabaseOperationError(self.name, str(e))
-
-        print("B")
 
     #TODO: select, will be removed in the future.
 
@@ -463,7 +460,7 @@ class Database():
                            self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
 
             command_string += "], %s, %s, %s, %s, %s, %s, %s);"
-            params += (fragment_counts, coordinates, method, basis, cp, self.create_postgres_array(tags), optimized)
+            params += (fragment_counts, coordinates, method, basis, cp, self.create_postgres_array(*tags), optimized)
 
             batch_count += 1
 

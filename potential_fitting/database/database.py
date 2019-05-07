@@ -394,6 +394,10 @@ class Database():
 
         return molecule
 
+    def get_symmetry(self, mol_name):
+        molecule = self.build_empty_molecule(mol_name)
+        return molecule.get_symmetry()
+
     def add_calculations(self, molecule_list, method, basis, cp, *tags, optimized = False):
         """
         Adds new calculations to the database.

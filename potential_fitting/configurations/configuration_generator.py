@@ -22,7 +22,7 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
     """
 
     if seed is None:
-        seed = random.randint(-100000, 100000)
+        seed = randint(-100000, 100000)
 
     print("Parsing normal mode input file.")
 
@@ -154,7 +154,7 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
     """
 
     if seed is None:
-        seed = random.randint(-100000, 100000)
+        seed = randint(-100000, 100000)
 
     print("Running normal distribution configuration generator...")
 

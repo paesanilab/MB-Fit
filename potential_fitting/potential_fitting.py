@@ -219,7 +219,7 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
 
-def generate_poly_input_from_database(settings_path, database_path, molecule_name, in_file_path):
+def generate_poly_input_from_database(settings_path, database_config_path, molecule_name, in_file_path):
     """
     Generates an input file for polynomial generation.
     Looks in a database to find the symmetry and creates a file in the given directory.
@@ -229,8 +229,8 @@ def generate_poly_input_from_database(settings_path, database_path, molecule_nam
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing the molecular symmetry. ".db" will
-                automatically be added to the end if it does not already end in ".db".
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         molecule_name       - The name of the molecule to generate a polynomial generation input file for. At least one
                 instance of this molecule must be in the database.
         in_file_path        - Local path to the file to write the polynomial input to.
@@ -239,7 +239,7 @@ def generate_poly_input_from_database(settings_path, database_path, molecule_nam
         None.
     """
 
-    with Database(database_path) as database:
+    with Database(database_config_path) as database:
         symmetry = database.get_symmetry(molecule_name)
 
         generate_poly_input(settings_path, symmetry, in_file_path)

@@ -758,34 +758,6 @@ $$;
 
 alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
 
-create function combinations(arr integer[]) returns TABLE(perm integer[])
-	language plpgsql
-as $$
-DECLARE
-  len INTEGER;
-  x INTEGER[];
-  BEGIN
-    SELECT * FROM array_length(arr, 1) INTO len;
-    IF len = 1 THEN
-      perm := arr;
-      RETURN NEXT;
-    ELSE
-      perm := '{}';
-      perm := (perm || arr[len]);
-      RETURN NEXT;
-      FOR x IN SELECT * FROM combinations(arr[:len - 1]) LOOP
-        perm := x;
-        RETURN NEXT;
-        perm := (x || arr[len]);
-        RETURN NEXT;
-      END LOOP;
-    END IF;
-  END;
-
-$$;
-
-alter function combinations(integer[]) owner to ebullvul;
-
 create function add_calculation(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[], method character varying, basis character varying, cp boolean, tags character varying[], optimized boolean) returns boolean
 	language plpgsql
 as $$
@@ -818,7 +790,7 @@ DECLARE
         END LOOP;
       END LOOP;
 
-      FOR indices IN SELECT * FROM combinations(all_frags) LOOP
+      FOR indices IN SELECT perm FROM combinations(all_frags) LOOP
         IF cp = True AND array_length(indices, 1) != array_length(all_frags, 1) THEN
           INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
               VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', True);
@@ -860,3 +832,116 @@ DECLARE
 $$;
 
 alter function add_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+
+create function combinations(arr integer[]) returns TABLE(perm integer[], l integer)
+	language plpgsql
+as $$
+DECLARE
+  len INTEGER;
+  x INTEGER[];
+  i INTEGER;
+  BEGIN
+    SELECT * FROM array_length(arr, 1) INTO len;
+    IF len = 1 THEN
+      perm := arr;
+      l := 1;
+      RETURN NEXT;
+    ELSE
+      perm := '{}';
+      perm := (perm || arr[1]);
+      l := 1;
+      RETURN NEXT;
+
+      FOR x IN SELECT * FROM combinations(arr[2:]) LOOP
+        perm := x;
+        l := array_length(perm, 1);
+        RETURN NEXT;
+      END LOOP;
+
+      FOR x IN SELECT * FROM combinations(arr[2:]) LOOP
+        perm := (arr[1] || x);
+        l := array_length(perm, 1);
+        RETURN NEXT;
+      END LOOP;
+
+    END IF;
+  END;
+
+$$;
+
+alter function combinations(integer[]) owner to ebullvul;
+
+create function import_calculation(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[], method character varying, basis character varying, cp boolean, tags character varying[], optimized boolean, nmer_energies double precision[]) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  model varchar;
+  indices INTEGER[];
+  all_frags INTEGER[];
+  i INTEGER;
+  x integer;
+  z integer;
+  new_config BOOLEAN;
+  tag_name VARCHAR;
+  energy_index INTEGER;
+  BEGIN
+    model := concat(method, '/', basis, '/');
+    IF cp THEN
+      model := concat(model, 'True');
+    ELSE
+      model := concat(model, 'False');
+    end if;
+    IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=hash AND model_name=model) THEN
+      PERFORM add_molecule(hash, name, fragments, counts, coordinates);
+      PERFORM add_model_info(method, basis, cp);
+
+
+      i = 0;
+      FOREACH x IN ARRAY counts LOOP
+        FOR z IN 1..x LOOP
+          all_frags := all_frags || i;
+          i := i + 1;
+        END LOOP;
+      END LOOP;
+
+      energy_index := 1;
+
+      FOR indices IN SELECT perm FROM combinations(all_frags) ORDER BY l, perm LOOP
+        IF cp = True AND array_length(indices, 1) != array_length(all_frags, 1) THEN
+          INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+              VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', True);
+
+          energy_index := energy_index + 1;
+        END IF;
+
+        INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+              VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', False);
+
+        energy_index := energy_index + 1;
+      END LOOP;
+
+      INSERT INTO tags VALUES (hash, model, '{}');
+
+      new_config :=  True;
+    ELSE
+      new_config := False;
+    END IF;
+
+    FOREACH tag_name IN ARRAY tags LOOP
+      IF NOT EXISTS(SELECT mol_hash FROM tags WHERE mol_hash=hash AND model_name=model AND tag_name=ANY(tag_names)) THEN
+        UPDATE tags SET tag_names=(tag_name || tag_names) WHERE mol_hash=hash AND model_name=model;
+      END IF;
+    END LOOP;
+
+    IF optimized = True THEN
+      IF NOT EXISTS(SELECT mol_hash FROM optimized_geometries WHERE mol_name=name AND mol_hash=hash AND model_name=model) THEN
+        INSERT INTO optimized_geometries VALUES (name, hash, model);
+      END IF;
+    END IF;
+
+    RETURN new_config;
+  END;
+
+$$;
+
+alter function import_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean, character varying[], boolean, double precision[]) owner to ebullvul;

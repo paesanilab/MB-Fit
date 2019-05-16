@@ -4,8 +4,7 @@ from potential_fitting.database import Database
 import subprocess 
 
 import matplotlib.pyplot as plt 
-
-from potential_fitting.utils import constants
+from potential_fitting.utils import constants, files
 
 import numpy as np
 
@@ -128,7 +127,7 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, mole
     molecules = [i[0] for i in energy_molecule_pairs]
 
     # calculating the required energy from the energy-molecule pairs
-    calc = [i[1][0] for i in energy_molecule_pairs]
+    calc = [i[1] for i in energy_molecule_pairs]
 
     calc = [i * constants.au_to_kcal for i in calc]
 
@@ -337,6 +336,7 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
     # make the graph featuring all information divided into low and high energy datasets
 
     # Set figure number
+    plt.rcParams["figure.figsize"] = (8, 8) 
     plt.figure(figure_num)
 
     above_plots = []
@@ -394,8 +394,6 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
 
 
 
-        
-  
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph
     plt.plot(datasets[0].calc_energies, datasets[0].calc_energies, c = 'orange', alpha = 0.5)
@@ -406,7 +404,8 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
     #Adding axes titles
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy [Kcal/mol]")
-
+    
+    files.init_file("fit.png")
     plt.savefig("fit.png", dpi = 300)
 
     # make the graph of the error featuring all info divided into low and high energy datasets
@@ -425,6 +424,7 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = flo
     '''
     # make the graph featuring all error information high and low
 
+    plt.rcParams["figure.figsize"] = (8, 8) 
     plt.figure(figure_num)
 
     above_plots = []
@@ -445,6 +445,7 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = flo
                 [fit - calc for fit, calc in zip(high_dataset_filtered[1], high_dataset_filtered[0])],
                 c = Dataset.colors[index][1], s = 5, alpha = 0.5))
     
+
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph
     plt.plot(datasets[0].calc_energies, [0 for calc_energy in datasets[0].calc_energies], c = 'orange', alpha = 0.5)
@@ -456,6 +457,7 @@ def make_error_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = flo
     plt.xlabel("Ref. Energy [Kcal/mol]")
     plt.ylabel("Fitted Energy - Ref. Energy [Kcal/mol]")
 
+    files.init_file("rmsd.png")
     plt.savefig("rmsd.png", dpi = 300)
 
     # make the graph of the error featuring all info divided into low and high energy datasets

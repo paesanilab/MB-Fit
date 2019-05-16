@@ -994,3 +994,76 @@ $$;
 
 alter function get_failed_configs(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
 
+create function remove_calculation(hash character varying, name character varying, method character varying, basis character varying, cp boolean, tags character varying[], optimized boolean) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  model varchar;
+  cur_tags varchar[];
+  t varchar;
+  mol_frags varchar[];
+  frag varchar;
+  mol_atoms varchar[];
+  atom varchar;
+  BEGIN
+    model := concat(method, '/', basis, '/');
+    IF cp THEN
+      model := concat(model, 'True');
+    ELSE
+      model := concat(model, 'False');
+    end if;
+
+    -- still must clear optimized_geometries, pending_calculations, and log_files tables.
+
+    IF EXISTS(SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model) THEN
+      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model
+        INTO cur_tags;
+      FOREACH t IN ARRAY tags LOOP
+        cur_tags = array_remove(cur_tags, t);
+      end loop;
+      UPDATE tags SET tag_names = cur_tags WHERE mol_hash = hash AND model_name = model;
+
+      IF array_length(CURTAGS, 1) = 0 THEN
+        DELETE FROM tags WHERE mol_hash = hash AND model_name = model;
+        DELETE FROM molecule_properties WHERE mol_hash = hash and model_name = model;
+
+        IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash = hash) THEN
+          DELETE FROM molecule_list WHERE mol_hash = hash;
+
+          IF NOT EXISTS(SELECT mol_hash FROM molecule_list WHERE mol_name = name) THEN
+            DELETE FROM molecule_info WHERE molecule_info.name = remove_calculation.name;
+            DELETE FROM molecule_contents WHERE molecule_contents.mol_name = remove_calculation.name RETURNING frag_name
+              INTO mol_frags;
+
+            FOREACH frag in ARRAY mol_frags LOOP
+              IF NOT EXISTS(SELECT frag_name FROM molecule_contents WHERE frag_name = frag) THEN
+                DELETE FROM fragment_info WHERE name = frag;
+                DELETE FROM fragment_contents WHERE frag_name = frag RETURNING atom_symbol
+                  INTO mol_atoms;
+
+                FOREACH atom IN ARRAY mol_atoms LOOP
+                  IF NOT EXISTS(SELECT atom_symbol FROM fragment_contents WHERE atom_symbol = atom) THEN
+                    DELETE FROM atom_info WHERE atomic_symbol = atom;
+                  end if;
+                end loop;
+
+              end if;
+            end loop;
+
+
+          end if;
+
+        end if;
+
+        IF NOT EXISTS(SELECT moldel_name FROM molecule_properties WHERE model_name = model) THEN
+          DELETE FROM model_info WHERE model_info.name = model;
+        end if;
+
+      end if;
+    end if;
+  END;
+
+$$;
+
+alter function remove_calculation(varchar, varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+

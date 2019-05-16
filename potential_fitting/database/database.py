@@ -171,7 +171,7 @@ class Database():
             None.
         """
 
-        self.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != %s AND schemaname != %s;", ("pg_catalog", "information_schema"))
+        self.cursor.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != %s AND schemaname != %s;", ("pg_catalog", "information_schema"))
 
         table_names = [table[1] for table in self.cursor.fetchall()]
 
@@ -612,7 +612,7 @@ class Database():
             batch_offset += self.batch_size
 
             if batch_offset > max_count:
-                return;
+                return
 
     def get_2B_training_set(self, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags):
         """
@@ -738,6 +738,55 @@ class Database():
 
         if batch_count != 0:
             self.execute(command_string, params)
+
+    def get_failed(self, molecule_name, method, basis, cp, *tags, optimized = False):
+        """
+        Gets geometries of energy caclulations that have failed.
+
+        All failed calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule to find failed calculations for.
+            method          - Method for the failed calculations.
+            basis           - Basis for the failed calculations.
+            cp              - Counterpoise correction for the failed calculations.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, energy, used_cp)
+            molecule        - One molecule in the training set.
+            frag_indices    - The indices of the fragments used in the failed calculation.
+            used_cp         - True of fragments not in frag_indices where included as ghost
+                    atoms in this failed calculation.
+        """
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        while True:
+            self.cursor.execute("SELECT * FROM get_failed_configs(%s, %s, %s, %s, %s)", (
+            molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            training_set = self.cursor.fetchall()
+
+            for atom_coordinates, frag_indices, used_cp in training_set:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                yield molecule, frag_indices, used_cp
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
 
     def reset_all_calculations(self, *tags):
         """

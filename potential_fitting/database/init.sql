@@ -945,3 +945,52 @@ DECLARE
 $$;
 
 alter function import_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean, character varying[], boolean, double precision[]) owner to ebullvul;
+
+create function get_failed_configs(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], frags integer[], used_cp boolean)
+	language plpgsql
+as $$
+DECLARE
+        hash VARCHAR;
+        mol_tags VARCHAR[];
+        mol_tag VARCHAR;
+        valid_tags BOOL;
+        mol_properties molecule_properties;
+      BEGIN
+
+        FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
+        LOOP
+          valid_tags := FALSE;
+
+
+          SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+            INTO mol_tags;
+
+          FOREACH mol_tag IN ARRAY mol_tags
+          LOOP
+
+
+            IF (SELECT mol_tag = ANY(input_tags)) THEN
+              valid_tags := TRUE;
+            END IF;
+
+          END LOOP;
+
+          IF (SELECT valid_tags) THEN
+            SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                INTO mol_properties;
+              IF mol_properties.status = 'failed' THEN
+                SELECT atom_coordinates FROM molecule_list WHERE mol_hash = hash
+                  INTO coords;
+                frags := mol_properties.frag_indices;
+                used_cp = mol_properties.use_cp;
+                RETURN NEXT;
+              END IF;
+          END IF;
+
+        END LOOP;
+      END;
+
+$$;
+
+alter function get_failed_configs(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
+

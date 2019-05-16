@@ -202,6 +202,8 @@ def calc_psi4_energy(molecule, fragment_indicies, model, cp, settings):
         return psi4.energy(model, molecule=psi4_mol)
     except QcdbException as e:
         raise LibraryCallError("psi4", "energy", str(e))
+    except SystemError as e:
+        raise LibraryCallError("psi4", "energy", str(e))
 
 '''
 def TensorMol_convert_str(molecule, fragment_indicies, settings):

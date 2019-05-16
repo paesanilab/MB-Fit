@@ -171,7 +171,7 @@ class Database():
             None.
         """
 
-        self.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != %s AND schemaname != %s;", ("pg_catalog", "information_schema"))
+        self.cursor.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != %s AND schemaname != %s;", ("pg_catalog", "information_schema"))
 
         table_names = [table[1] for table in self.cursor.fetchall()]
 
@@ -290,94 +290,9 @@ class Database():
 
         return "{" + ",".join([str(i) for i in values]) + "}"
 
-    def add_model_info(self, method, basis, cp):
-        """
-        Returns a string consisting of a postgres command to
-        add a new model to the database.
-
-        Pass the output into execute() to run it.
-
-        Args:
-             method         - The method of this model.
-             basis          - The basis of this model.
-             cp             - True if this model uses counterpoise correction.
-
-        Returns:
-            (command, params)
-            command         - A string consisting of the command to run in the postgres database.
-            params          - The parameters to substitute for the %s in the command.
-        """
-
-        command_string = "PERFORM add_model_info(%s, %s, %s);"
-
-        params = [method, basis, cp]
-
-        return command_string, params
-
     def get_models(self):
         self.cursor.execute("SELECT * FROM model_info;")
         return [i[0] for i in self.cursor.fetchall()]
-
-    def add_molecule(self, molecule):
-        """
-        Returns a string consisting of a postgres command to
-        add a new molecule type to the database.
-
-        Pass the output into execute() to run it.
-
-        You should generally make sure the molecule is in standard
-        orientation before adding it to the database.
-
-        Args:
-             molecule         - An instance of the molecule to add.
-
-        Returns:
-            (command, params)
-            command         - A string consisting of the command to run in the postgres database.
-            params          - The parameters to substitute for the %s in the command.
-        """
-
-        coordinates = []
-        for fragment in molecule.get_fragments():
-            for atom in fragment.get_atoms():
-                coordinates.append(atom.get_x())
-                coordinates.append(atom.get_y())
-                coordinates.append(atom.get_z())
-
-        command_string = "PERFORM add_molecule(%s, %s, ARRAY["
-        params = (molecule.get_SHA1(), molecule.get_name())
-
-        fragments = [fragment.get_name() for fragment in molecule.get_fragments()]
-
-        frag_names, counts = np.unique(fragments, return_counts=True, axis=0)
-        fragment_counts = [int(i) for i in counts]
-
-        for frag_name in frag_names:
-
-            fragment = None
-
-            for frag in molecule.get_fragments():
-                if frag.get_name() == frag_name:
-                    fragment = frag
-
-            atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
-
-            symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
-            atom_counts = [int(i) for i in counts]
-
-            symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
-            symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
-
-            command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
-            if not frag_name == frag_names[-1]:
-                command_string += ", "
-            params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), self.create_postgres_array(*symbols),
-                    self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
-
-        command_string += "], %s, %s);"
-        params += (fragment_counts, coordinates)
-
-        return command_string, params
 
     def get_molecule(self, hash):
         self.cursor.execute("SELECT mol_name, atom_coordinates FROM molecule_list WHERE mol_hash=%s;", (hash,))
@@ -421,7 +336,6 @@ class Database():
         params = []
 
         batch_count = 0
-
 
         for molecule in molecule_list:
 
@@ -698,7 +612,7 @@ class Database():
             batch_offset += self.batch_size
 
             if batch_offset > max_count:
-                return;
+                return
 
     def get_2B_training_set(self, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags):
         """
@@ -749,6 +663,130 @@ class Database():
                 yield molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
             batch_offset += self.batch_size
+
+    def import_calculations(self, molecule_energies_pairs, method, basis, cp, *tags, optimized = False):
+        """
+        Imports already completed calculations into the database.
+
+        Args:
+            molecule_energies_pairs - Array of 2-tuples (molecule, nmer_energies)
+                    each pair being a molecule and its energies in the numeric order
+                    by fragment index. If cp is true, cp energies should come before non-cp energies.
+            method              - Method used to calculate these energies.
+            basis               - Basis used to calculate these energies.
+            cp                  - True if counterpoise correction was used for these energies.
+            tags                - Tags to mark these energies with.
+            optimized           - True if all geometries in molecule_energy_pairs are optimized in
+                    the given method and basis.
+        """
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+
+        for molecule, energies in molecule_energies_pairs:
+
+            coordinates = []
+            for fragment in molecule.get_fragments():
+                for atom in fragment.get_atoms():
+                    coordinates.append(atom.get_x())
+                    coordinates.append(atom.get_y())
+                    coordinates.append(atom.get_z())
+
+            command_string += "PERFORM import_calculation(%s, %s, ARRAY["
+            params += (molecule.get_SHA1(), molecule.get_name())
+
+            fragments = [fragment.get_name() for fragment in molecule.get_fragments()]
+
+            frag_names, counts = np.unique(fragments, return_counts=True, axis=0)
+            fragment_counts = [int(i) for i in counts]
+
+            for frag_name in frag_names:
+
+                fragment = None
+
+                for frag in molecule.get_fragments():
+                    if frag.get_name() == frag_name:
+                        fragment = frag
+
+                atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
+
+                symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
+                atom_counts = [int(i) for i in counts]
+
+                symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
+                symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
+
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
+                if not frag_name == frag_names[-1]:
+                    command_string += ", "
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(),
+                           self.create_postgres_array(*symbols),
+                           self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
+
+            command_string += "], %s, %s, %s, %s, %s, %s, %s, %s);"
+            params += (fragment_counts, coordinates, method, basis, cp, self.create_postgres_array(*tags), optimized, self.create_postgres_array(*energies))
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def get_failed(self, molecule_name, method, basis, cp, *tags, optimized = False):
+        """
+        Gets geometries of energy caclulations that have failed.
+
+        All failed calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule to find failed calculations for.
+            method          - Method for the failed calculations.
+            basis           - Basis for the failed calculations.
+            cp              - Counterpoise correction for the failed calculations.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, energy, used_cp)
+            molecule        - One molecule in the training set.
+            frag_indices    - The indices of the fragments used in the failed calculation.
+            used_cp         - True of fragments not in frag_indices where included as ghost
+                    atoms in this failed calculation.
+        """
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        while True:
+            self.cursor.execute("SELECT * FROM get_failed_configs(%s, %s, %s, %s, %s)", (
+            molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            training_set = self.cursor.fetchall()
+
+            for atom_coordinates, frag_indices, used_cp in training_set:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                yield molecule, frag_indices, used_cp
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
 
     def reset_all_calculations(self, *tags):
         """

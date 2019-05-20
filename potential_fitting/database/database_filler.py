@@ -3,6 +3,7 @@ import sys
 
 # absolute module imports
 from potential_fitting import calculator
+from potential_fitting.calculator import Model
 from potential_fitting.exceptions import LibraryCallError
 from potential_fitting.utils import SettingsReader, files
 
@@ -34,8 +35,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
 
         print("Filling database.")
 
-        # parse settings file
-        settings = SettingsReader(settings_path)
+        calc = calculator.get_calculator(settings_path)
 
         counter = 0
 
@@ -47,14 +47,25 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
             print_progress(counter)
 
             try:
+                model = Model(method, basis, cp)
 
                 # calculate the missing energy
-                energy = calculator.calculate_energy(molecule, frag_indices, method + "/" + basis, use_cp, settings)
-                calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, True, energy, "log_text"))
+                energy, log_path = calc.calculate_energy(molecule, model, frag_indices)
+                with open(log_path, "r") as log_file:
+                    log_text = log_file.read()
+                calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, True, energy, log_text))
             
-            except LibraryCallError:
+            except LibraryCallError as e:
+                if e.log_path is not None:
+                    with open(e.log_path, "r") as log_file:
+                        log_text = log_file.read()
+                    if log_text is "":
+                        log_text = "<Log file was empty.>"
+                    calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, log_text))
+                else:
+                    log_text = "<Error occurred without producing log file.>"
+                    calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, log_text))
 
-                calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, "log_text"))
 
             if len(calculation_results) >= database.get_batch_size():
                 database.set_properties(calculation_results)

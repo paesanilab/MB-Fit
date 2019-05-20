@@ -391,9 +391,6 @@ def make_energy_graph(figure_num, *datasets, low_threshold = 50, min_cutoff = fl
                 file.write('####################################################')
                 file.write('\n' * 2)
 
-
-
-
     # plotting an idealized prediction using color codes for TTM fit
     # NOT IDEAL, should just plot y=x constrained to the graph
     plt.plot(datasets[0].calc_energies, datasets[0].calc_energies, c = 'orange', alpha = 0.5)

@@ -60,8 +60,13 @@ class LibraryError(PotentialFittingError):
 class LibraryCallError(LibraryError):
     """Exception for all errors caused by calls to Libraries"""
 
-    def __init__(self, library, call, message):
-        super().__init__(library, "Error during call to '{}': {}".format(call, message))
+    # If there is a log file containing more info about the error, specify it in the log_path parameter.
+    def __init__(self, library, call, message, log_path = None):
+        if log_path is not None:
+            super().__init__(library, "Error during call to '{}': {}. Log File Path: {}".format(call, message, log_path))
+        else:
+            super().__init__(library, "Error during call to '{}': {}".format(call, message))
+        self.log_path = log_path
 
 class LibraryNotAvailableError(LibraryError):
     """Exception when a user tries to use a library that is not installed"""

@@ -51,7 +51,6 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
 
 def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, num_attempts = 100, logarithmic = False, seed = None):
-
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
     outputs them to an xyz file.

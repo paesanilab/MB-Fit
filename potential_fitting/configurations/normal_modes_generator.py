@@ -2,8 +2,9 @@
 from potential_fitting import calculator
 from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader, files
+from potential_fitting.calculator import Model
 
-def generate_normal_modes(settings_path, opt_path, normal_modes_path):
+def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, basis):
     """
     Generates the a normal modes input file from an optimized geometry.
 
@@ -18,11 +19,14 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path):
     
     settings = SettingsReader(settings_path)
 
+    calc = calculator.get_calculator(settings_path)
+    model = Model(method, basis)
+
     # parse the optimized geometry
     molecule = xyz_to_molecules(opt_path, settings)[0]
     
     # calculate the normal modes
-    normal_modes, frequencies, red_masses = calculator.frequencies(settings, molecule, settings.get("config_generator", "method"), settings.get("config_generator", "basis"))
+    normal_modes, frequencies, red_masses, log_path = calc.find_frequencies(molecule, model)
 
     # calculate dim null
     dim_null = 3 * molecule.get_num_atoms() - len(normal_modes)

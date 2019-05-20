@@ -79,7 +79,7 @@ class Fragment(object):
             A list of the atoms in this fragment, sorted in standard order
         """
 
-        return sorted(self.atoms, key=lambda atom: atom.get_symmetry_class())
+        return sorted(self.atoms, key=lambda atom: atom.get_name() + atom.get_symmetry_class())
 
     def get_index(self):
         """

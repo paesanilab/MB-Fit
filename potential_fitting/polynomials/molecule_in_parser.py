@@ -49,8 +49,6 @@ class FragmentParser(object):
         self.atom_parsers = []
         print("fragment_init", fragment_in)
         print(self)
-        if not fragment_in == "A2B6C1D2E5F5G3H3I3":
-            raise Exception
         for atom_in in self.split_fragments_in(fragment_in):
 
             self.atom_parsers.append(AtomTypeParser(atom_in))

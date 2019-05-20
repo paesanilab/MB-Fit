@@ -423,8 +423,8 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
     molecule = Molecule()
-    for geo_path in geo_paths:
-        molecule.read_xyz_path_direct(geo_path)
+    for geo_path, setting in zip(geo_paths, monomer_settings):
+        molecule.read_xyz_path_direct(geo_path, setting)
 
     excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
 

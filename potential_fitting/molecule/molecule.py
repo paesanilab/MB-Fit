@@ -768,10 +768,10 @@ class Molecule(object):
         # if settings is defined, read values from xyz file
         else:
             atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
-            name_per_fragment = [int(name) for name in settings.get("molecule", "name").split(",")]
+            name_per_fragment = [name for name in settings.get("molecule", "names").split(",")]
             charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
-            spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spin").split(",")]
-            symmetry_per_fragment = [int(symmetry) for symmetry in settings.get("molecule", "symmetry").split(",")]
+            spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spins").split(",")]
+            symmetry_per_fragment = [symmetry for symmetry in settings.get("molecule", "symmetry").split(",")]
 
 
         self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)

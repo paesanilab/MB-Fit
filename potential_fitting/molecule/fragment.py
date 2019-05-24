@@ -1,5 +1,6 @@
 import numpy
 import itertools
+import collections
 
 from .atom import Atom
 
@@ -205,6 +206,22 @@ class Fragment(object):
         for atom in self.get_atoms():
             atom.rotate(quaternion, origin_x, origin_y, origin_z)
 
+    def get_connectivity_matrix(self):
+
+    	# construct a matrix of size n by n where n is the number of atoms in this fragment
+        # a value of 1 in row a and column b means that atom a and b are bonded
+        connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
+
+        # loop over each pair of atoms
+        for index1, atom1 in enumerate(self.get_atoms()):
+            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
+                index2 += index1 + 1
+
+                # if these atoms are bonded, set their values in the connectivity matrix to 1.
+                if atom1.is_bonded(atom2):
+                    connectivity_matrix[index1][index2] = 1
+                    connectivity_matrix[index2][index1] = 1
+
     def get_excluded_pairs(self, max_exclusion = 3):
         """
         Gets the excluded pairs lists for this fragment
@@ -218,19 +235,7 @@ class Fragment(object):
 
         excluded_pairs = []
 
-        # construct a matrix of size n by n where n is the number of atoms in this fragment
-        # a value of 1 in row a and column b means that atom a and b are bonded
-        connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
-
-        # loop over each pair of atoms
-        for index1, atom1 in enumerate(self.get_atoms()):
-            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
-                index2 += index1 + 1
-
-                # if these atoms are bonded, set their values in the connectivity matrix to 1.
-                if atom1.is_bonded(atom2):
-                    connectivity_matrix[index1][index2] = 1
-                    connectivity_matrix[index2][index1] = 1
+        connectivity_matrix = self.get_connectivity_matrix()
 
         # current matrix represents connectivity_matrix^x where x is the same as as in the excluded_1x pairs we are currently generating
         current_matrix = connectivity_matrix
@@ -358,6 +363,46 @@ class Fragment(object):
             raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
 
         return self
+
+    def get_priority(self, connectivity_matrix, atom):
+
+    priority = atom.get_mass()
+
+    for
+
+    return priority, next_atom
+
+
+    def get_standard_order(self):
+
+    	# make sure order of connectivity_matrix matches that of atoms list
+    	connectivity_matrix = get_connectivity_matrix()
+
+    	atoms = self.get_atoms()
+
+    	atoms = sorted(atoms, lambda x: x.get_mass())
+
+    	atom_names = [atom.get_name() for atom in atoms]
+
+    	atom_name_dict = dict(collections.Counter(atom_names))
+
+    	symmetry = ""
+    	standard_order = [];
+
+    	next_sym = "A"
+
+    	for atom_name, count in atom_names_dict.items():
+    		if count == 1:
+    			symmetry += next_sym
+    			next_sym = chr(ord(next_sym) + 1)
+    			standard_order.append(atoms[0])
+    			atoms = atoms[1:]
+    		else:
+    			tie_atoms = atoms[:count]
+    			atoms = atoms[counts:]
+
+
+
 
     def __eq__(self, other):
         if not self.get_name() == other.get_name():

@@ -2,19 +2,6 @@
 from potential_fitting.utils import SettingsReader
 from potential_fitting.exceptions import NoSuchLibraryError
 from potential_fitting.molecule import Molecule
-from .psi4_calculator import Psi4Calculator
-from .qchem_calculator import QchemCalculator
-
-
-def get_calculator(settings_path, logging = True):
-    settings = SettingsReader(settings_path)
-    if settings.get("energy_calculator", "code") == "psi4":
-        return Psi4Calculator(settings_path, logging)
-    elif settings.get("energy_calculator", "code") == "qchem":
-        return QchemCalculator(settings_path, logging)
-    else:
-        raise NoSuchLibraryError(settings.get("energy_calculator", "code"))
-
 
 def generate_input(molecule, fragment_indicies, model, cp, settings):
     """

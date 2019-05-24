@@ -6,7 +6,7 @@ from .utils import SettingsReader, files, system
 from . import configurations, database, polynomials, fitting
 from .database import Database
 
-def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path):
+def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
     """
     Optimizes the geometry of the given molecule.
 
@@ -14,14 +14,16 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path):
         settings_path       - Local path to the file containing all relevent settings information.
         unopt_geo_path      - Local path to the file to read the unoptimized geoemtry from.
         opt_geo_path        - Local path to the file to write the optimized geometry to.
+        method              - The method to use for this geometry optimization.
+        basis               - The basis to use for this geometry optimization.
 
     Returns:
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis)
 
-def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
+def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis):
     """
     Generates the normal modes for the given molecule.
 
@@ -29,12 +31,14 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
         settings_path       - Local path to the file containing all relevent settings information.
         opt_geo_path        - Local path to the file to read the optimized geometry from.
         normal_modes_path   - Local path to the file to write the normal modes to.
+        method              - The method to use for this normal modes calculation.
+        basis               - The basis to use for this normal modes calculation.
 
     Returns:
         Null dimension of normal modes.
     """
     
-    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path)
+    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis)
 
     return dim_null
 
@@ -145,7 +149,7 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
     """
     Generates a 1b training set from the energies inside a database.
 
-    Specific method, bnasis, and cp may be specified to only use energies calculated
+    Specific method, basis, and cp may be specified to only use energies calculated
     with a specific model.
 
     '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.

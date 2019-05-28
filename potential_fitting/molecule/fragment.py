@@ -367,7 +367,7 @@ class Fragment(object):
 
         return self
 
-    def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None):
+    def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None, recursion_depth = 1):
         """
         Compares the priority of the two atoms for purposes of establishing
         the standard order.
@@ -375,12 +375,13 @@ class Fragment(object):
         Args:
             atom1       - the first atom to compare.
             atom2       - the second atom to compare.
-        Return:
+
+        Returns:
             Integer, positive if atom1 has higher priority, negative if atom2 has higher priority,
             and 0 if they have the same priority.
         """
 
-        print(atom1.get_name(), atom2.get_name())
+        print("-".join(["" for i in range(recursion_depth * 3)]), atom1.get_name(), atom2.get_name())
 
         if atom1.get_base_priority() > atom2.get_base_priority():
             return 1
@@ -405,14 +406,17 @@ class Fragment(object):
             if not visited2[i] and connectivity_matrix[index2][i]:
                 substituents2.append(self.get_atoms()[i])
 
-        print("Substituents1:", [atom.get_name() for atom in substituents1])
-        print("Substituents2:", [atom.get_name() for atom in substituents2])
+        print("-".join(["" for i in range(recursion_depth * 3)]), "Substituents1:", [atom.get_name() for atom in substituents1])
+        print("-".join(["" for i in range(recursion_depth * 3)]), "Substituents2:", [atom.get_name() for atom in substituents2])
 
-        substituents1 = sorted(substituents1, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix)))
-        substituents2 = sorted(substituents2, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited2, visited2 = visited2, connectivity_matrix = connectivity_matrix)))
+        substituents1 = sorted(substituents1, reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix, recursion_depth = recursion_depth + 1)))
+        substituents2 = sorted(substituents2, reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited2, visited2 = visited2, connectivity_matrix = connectivity_matrix, recursion_depth = recursion_depth + 1)))
+
+        print("-".join(["" for i in range(recursion_depth * 3)]), "Sorted Substituents1:", [atom.get_name() for atom in substituents1])
+        print("-".join(["" for i in range(recursion_depth * 3)]), "Sorted Substituents2:", [atom.get_name() for atom in substituents2])
 
         for substituent1, substituent2 in zip(substituents1, substituents2):
-            compare_result = self.compare_priority(substituent1, substituent2, visited1 = visited1, visited2 = visited2, connectivity_matrix = connectivity_matrix)
+            compare_result = self.compare_priority(substituent1, substituent2, visited1 = visited1, visited2 = visited2, connectivity_matrix = connectivity_matrix, recursion_depth = recursion_depth + 1)
             if compare_result != 0:
                 return compare_result
 
@@ -422,37 +426,70 @@ class Fragment(object):
             return -1
         else:
             return 0
-
-    """
+    
     def get_standard_order(self):
+        """
+        Gets the atoms of this fragment in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            List of the atoms of this molecule sorted in standard order.
+        """
 
         # make sure order of connectivity_matrix matches that of atoms list
-        connectivity_matrix = get_connectivity_matrix()
+        connectivity_matrix = self.get_connectivity_matrix()
 
-        atoms = self.get_atoms()
+        visited1 = [False for atom in self.get_atoms()]
+        visited2 = [False for atom in self.get_atoms()]
+        
+        sorted_atoms = sorted(self.get_atoms(), reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix, recursion_depth = 0)))
 
-        atoms = sorted(atoms, lambda x: x.get_mass())
+        return sorted_atoms
 
-        atom_names = [atom.get_name() for atom in atoms]
+    def confirm_symmetry_class(self):
+        """
+        Checks if the user-specified symmetry matches the 
+        auto-generated one.
 
-        atom_name_dict = dict(collections.Counter(atom_names))
+        Args:
+            None.
 
-        symmetry = ""
-        standard_order = [];
+        Returns:
+            (same, auto_symmetry, user_symmetry)
+            same        - True if auto_symmetry and user_symmetry are identical.
+            auto_symmetry - Automatically generated symmetry.
+            user_symmetry - User-specified symmetry.
+        """
+        standard_order = self.get_standard_order()
 
-        next_sym = "A"
+        standard_symmetry = ""
 
-        for atom_name, count in atom_names_dict.items():
-            if count == 1:
-                symmetry += next_sym
-                next_sym = chr(ord(next_sym) + 1)
-                standard_order.append(atoms[0])
-                atoms = atoms[1:]
-            else:
-                tie_atoms = atoms[:count]
-                atoms = atoms[counts:]
-    """
+        prev_atom = None
+        next_letter = 'A'
+        sym_count = 0
 
+        connectivity_matrix = self.get_connectivity_matrix()
+
+        visited1 = [False for atom in self.get_atoms()]
+        visited2 = [False for atom in self.get_atoms()]
+
+        for atom in standard_order:
+            if prev_atom is None or self.compare_priority(prev_atom, atom, visited1, visited2, connectivity_matrix) != 0:
+                if sym_count > 0:
+                    standard_symmetry += str(sym_count)
+                standard_symmetry += next_letter
+                sym_count = 0
+                next_letter = chr(ord(next_letter) + 1)
+
+            sym_count += 1
+            prev_atom = atom
+
+        if sym_count > 0:
+            standard_symmetry += str(sym_count)
+
+        return standard_symmetry == self.get_symmetry(), standard_symmetry, self.get_symmetry()
 
 
     def __eq__(self, other):

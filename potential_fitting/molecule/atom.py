@@ -127,6 +127,20 @@ class Atom(object):
         """
         return constants.symbol_to_vdw_radius(self.name)
 
+    def get_base_priority(self):
+        """
+        Gets the base priority of this atom.
+        This is equal to its atomic number.
+
+        Args:
+            None
+
+        Returns:
+            The priority of this atom.
+        """
+
+        return constants.symbol_to_number(self.name)
+
 
     def get_x(self):
         """

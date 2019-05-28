@@ -1,6 +1,7 @@
 import numpy
 import itertools
 import collections
+import functools
 
 from .atom import Atom
 
@@ -208,7 +209,7 @@ class Fragment(object):
 
     def get_connectivity_matrix(self):
 
-    	# construct a matrix of size n by n where n is the number of atoms in this fragment
+        # construct a matrix of size n by n where n is the number of atoms in this fragment
         # a value of 1 in row a and column b means that atom a and b are bonded
         connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
 
@@ -221,6 +222,8 @@ class Fragment(object):
                 if atom1.is_bonded(atom2):
                     connectivity_matrix[index1][index2] = 1
                     connectivity_matrix[index2][index1] = 1
+
+        return connectivity_matrix
 
     def get_excluded_pairs(self, max_exclusion = 3):
         """
@@ -364,43 +367,91 @@ class Fragment(object):
 
         return self
 
-    def get_priority(self, connectivity_matrix, atom):
+    def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None):
+        """
+        Compares the priority of the two atoms for purposes of establishing
+        the standard order.
 
-    priority = atom.get_mass()
+        Args:
+            atom1       - the first atom to compare.
+            atom2       - the second atom to compare.
+        Return:
+            Integer, positive if atom1 has higher priority, negative if atom2 has higher priority,
+            and 0 if they have the same priority.
+        """
 
-    for
+        print(atom1.get_name(), atom2.get_name())
 
-    return priority, next_atom
+        if atom1.get_base_priority() > atom2.get_base_priority():
+            return 1
+        elif atom2.get_base_priority() > atom1.get_base_priority():
+            return -1
 
+        visited1 = list(visited1)
+        visited2 = list(visited2)
 
+        index1 = self.get_atoms().index(atom1)
+        index2 = self.get_atoms().index(atom2)
+
+        visited1[index1] = True
+        visited2[index2] = True
+
+        substituents1 = []
+        substituents2 = []
+
+        for i in range(len(self.get_atoms())):
+            if not visited1[i] and connectivity_matrix[index1][i]:
+                substituents1.append(self.get_atoms()[i])
+            if not visited2[i] and connectivity_matrix[index2][i]:
+                substituents2.append(self.get_atoms()[i])
+
+        print("Substituents1:", [atom.get_name() for atom in substituents1])
+        print("Substituents2:", [atom.get_name() for atom in substituents2])
+
+        substituents1 = sorted(substituents1, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix)))
+        substituents2 = sorted(substituents2, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited2, visited2 = visited2, connectivity_matrix = connectivity_matrix)))
+
+        for substituent1, substituent2 in zip(substituents1, substituents2):
+            compare_result = self.compare_priority(substituent1, substituent2, visited1 = visited1, visited2 = visited2, connectivity_matrix = connectivity_matrix)
+            if compare_result != 0:
+                return compare_result
+
+        if len(substituents1) > len(substituents2):
+            return 1
+        elif len(substituents2) > len(substituents1):
+            return -1
+        else:
+            return 0
+
+    """
     def get_standard_order(self):
 
-    	# make sure order of connectivity_matrix matches that of atoms list
-    	connectivity_matrix = get_connectivity_matrix()
+        # make sure order of connectivity_matrix matches that of atoms list
+        connectivity_matrix = get_connectivity_matrix()
 
-    	atoms = self.get_atoms()
+        atoms = self.get_atoms()
 
-    	atoms = sorted(atoms, lambda x: x.get_mass())
+        atoms = sorted(atoms, lambda x: x.get_mass())
 
-    	atom_names = [atom.get_name() for atom in atoms]
+        atom_names = [atom.get_name() for atom in atoms]
 
-    	atom_name_dict = dict(collections.Counter(atom_names))
+        atom_name_dict = dict(collections.Counter(atom_names))
 
-    	symmetry = ""
-    	standard_order = [];
+        symmetry = ""
+        standard_order = [];
 
-    	next_sym = "A"
+        next_sym = "A"
 
-    	for atom_name, count in atom_names_dict.items():
-    		if count == 1:
-    			symmetry += next_sym
-    			next_sym = chr(ord(next_sym) + 1)
-    			standard_order.append(atoms[0])
-    			atoms = atoms[1:]
-    		else:
-    			tie_atoms = atoms[:count]
-    			atoms = atoms[counts:]
-
+        for atom_name, count in atom_names_dict.items():
+            if count == 1:
+                symmetry += next_sym
+                next_sym = chr(ord(next_sym) + 1)
+                standard_order.append(atoms[0])
+                atoms = atoms[1:]
+            else:
+                tie_atoms = atoms[:count]
+                atoms = atoms[counts:]
+    """
 
 
 

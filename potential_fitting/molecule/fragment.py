@@ -391,7 +391,7 @@ class Fragment(object):
         visited1 = list(visited1)
         visited2 = list(visited2)
 
-        index1 = self.get_atoms().index(atom1)
+        index1 = self.get_atoms().index(atom1) # could be made more efficient by keeping track of index instead of searching.
         index2 = self.get_atoms().index(atom2)
 
         visited1[index1] = True
@@ -438,7 +438,6 @@ class Fragment(object):
             List of the atoms of this molecule sorted in standard order.
         """
 
-        # make sure order of connectivity_matrix matches that of atoms list
         connectivity_matrix = self.get_connectivity_matrix()
 
         visited1 = [False for atom in self.get_atoms()]
@@ -462,18 +461,20 @@ class Fragment(object):
             auto_symmetry - Automatically generated symmetry.
             user_symmetry - User-specified symmetry.
         """
-        standard_order = self.get_standard_order()
-
-        standard_symmetry = ""
-
-        prev_atom = None
-        next_letter = 'A'
-        sym_count = 0
 
         connectivity_matrix = self.get_connectivity_matrix()
 
         visited1 = [False for atom in self.get_atoms()]
         visited2 = [False for atom in self.get_atoms()]
+
+        standard_order = self.get_standard_order()
+
+        # get the auto generated symmetry
+        standard_symmetry = ""
+
+        prev_atom = None
+        next_letter = 'A'
+        sym_count = 0
 
         for atom in standard_order:
             if prev_atom is None or self.compare_priority(prev_atom, atom, visited1, visited2, connectivity_matrix) != 0:
@@ -489,7 +490,34 @@ class Fragment(object):
         if sym_count > 0:
             standard_symmetry += str(sym_count)
 
-        return standard_symmetry == self.get_symmetry(), standard_symmetry, self.get_symmetry()
+        # get the user defined symmetry
+        user_symmetry = ""
+
+        prev_atom = None
+        next_letter = 'A'
+        sym_count = 0
+        used_symmetries = []
+
+        for atom in standard_order:
+            if prev_atom is None or prev_atom.get_symmetry_class() != atom.get_symmetry_class():
+                if sym_count > 0:
+                    user_symmetry += str(sym_count)
+                if prev_atom is not None:
+                    used_symmetries.append(prev_atom.get_symmetry_class())
+                user_symmetry += next_letter
+                sym_count = 0
+                next_letter = chr(ord(next_letter) + 1)
+
+            if atom.get_symmetry_class() in used_symmetries:
+                return False, standard_symmetry, "User symmetry had non-identical atoms in the same symmetry class."
+
+            sym_count += 1
+            prev_atom = atom
+
+        if sym_count > 0:
+            user_symmetry += str(sym_count)
+
+        return standard_symmetry == user_symmetry, standard_symmetry, user_symmetry
 
 
     def __eq__(self, other):

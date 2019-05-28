@@ -367,7 +367,7 @@ class Fragment(object):
 
         return self
 
-    def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None, recursion_depth = 1):
+    def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None):
         """
         Compares the priority of the two atoms for purposes of establishing
         the standard order.
@@ -380,8 +380,6 @@ class Fragment(object):
             Integer, positive if atom1 has higher priority, negative if atom2 has higher priority,
             and 0 if they have the same priority.
         """
-
-        print("-".join(["" for i in range(recursion_depth * 3)]), atom1.get_name(), atom2.get_name())
 
         if atom1.get_base_priority() > atom2.get_base_priority():
             return 1
@@ -406,17 +404,11 @@ class Fragment(object):
             if not visited2[i] and connectivity_matrix[index2][i]:
                 substituents2.append(self.get_atoms()[i])
 
-        print("-".join(["" for i in range(recursion_depth * 3)]), "Substituents1:", [atom.get_name() for atom in substituents1])
-        print("-".join(["" for i in range(recursion_depth * 3)]), "Substituents2:", [atom.get_name() for atom in substituents2])
-
-        substituents1 = sorted(substituents1, reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix, recursion_depth = recursion_depth + 1)))
-        substituents2 = sorted(substituents2, reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited2, visited2 = visited2, connectivity_matrix = connectivity_matrix, recursion_depth = recursion_depth + 1)))
-
-        print("-".join(["" for i in range(recursion_depth * 3)]), "Sorted Substituents1:", [atom.get_name() for atom in substituents1])
-        print("-".join(["" for i in range(recursion_depth * 3)]), "Sorted Substituents2:", [atom.get_name() for atom in substituents2])
+        substituents1 = sorted(substituents1, reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix)))
+        substituents2 = sorted(substituents2, reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited2, visited2 = visited2, connectivity_matrix = connectivity_matrix)))
 
         for substituent1, substituent2 in zip(substituents1, substituents2):
-            compare_result = self.compare_priority(substituent1, substituent2, visited1 = visited1, visited2 = visited2, connectivity_matrix = connectivity_matrix, recursion_depth = recursion_depth + 1)
+            compare_result = self.compare_priority(substituent1, substituent2, visited1 = visited1, visited2 = visited2, connectivity_matrix = connectivity_matrix)
             if compare_result != 0:
                 return compare_result
 
@@ -443,7 +435,7 @@ class Fragment(object):
         visited1 = [False for atom in self.get_atoms()]
         visited2 = [False for atom in self.get_atoms()]
         
-        sorted_atoms = sorted(self.get_atoms(), reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix, recursion_depth = 0)))
+        sorted_atoms = sorted(self.get_atoms(), reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix)))
 
         return sorted_atoms
 

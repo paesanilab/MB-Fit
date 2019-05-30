@@ -149,6 +149,12 @@ class NoSuchMoleculeError(DatabaseError):
 
     def __init__(self, database, mol_hash):
         super().__init__(database, "No molecule in database with hash {}".format(mol_hash))
+
+class StandardOrderError(DatabaseError):
+    """Raised when a user tries to put a configuration into the database not in standard order."""
+
+    def __init__(self, database, molecule):
+        super().__init__(database, "User attempted to put molecule in database which was not in standard order.  XYZ: {}".format(molecule.to_xyz()))
 """
 --------------------------- InputException
 """

@@ -805,7 +805,7 @@ class Database():
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "complete"))
         self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "failed"))
 
-    def clean(self, *tags):
+    def reset_dispatched(self, *tags):
         """
         Resets all dispatched calculations in the database back to pending. Their
         energies are queued for recalculation.
@@ -816,7 +816,7 @@ class Database():
         Returns:
             None.
         """
-        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))
+        self.execute("PERFORM reset_dispatched(%s);", [self.create_postgres_array(*tags)])
 
     def reset_failed(self, *tags):
         """
@@ -829,4 +829,4 @@ class Database():
         Returns:
             None.
         """
-        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "failed"))
+        self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])

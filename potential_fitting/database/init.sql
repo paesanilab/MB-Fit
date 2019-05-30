@@ -1,8 +1,5 @@
-create schema public;
-
-comment on schema public is 'standard public schema';
-
-alter schema public owner to postgres;
+create database potential_fitting
+	with owner "paesanilab-pgadmins";
 
 create type empty_mol as
 (
@@ -357,26 +354,28 @@ DECLARE
           SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
             INTO mol_tags;
 
-          FOREACH mol_tag IN ARRAY mol_tags
-          LOOP
+          IF NOT mol_tags ISNULL THEN
+            FOREACH mol_tag IN ARRAY mol_tags
+            LOOP
 
 
-            IF (SELECT mol_tag = ANY(input_tags)) THEN
-              valid_tags := TRUE;
-            END IF;
-
-          END LOOP;
-
-          IF (SELECT valid_tags) THEN
-            SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
-                INTO mol_properties;
-              IF mol_properties.status = 'complete' THEN
-                SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
-                  INTO coords;
-                energy := mol_properties.energies[1] - optimized_energy;
-                RETURN NEXT;
+              IF (SELECT mol_tag = ANY(input_tags)) THEN
+                valid_tags := TRUE;
               END IF;
-          END IF;
+
+            END LOOP;
+
+            IF (SELECT valid_tags) THEN
+              SELECT * FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                  INTO mol_properties;
+                IF mol_properties.status = 'complete' THEN
+                  SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
+                    INTO coords;
+                  energy := mol_properties.energies[1] - optimized_energy;
+                  RETURN NEXT;
+                END IF;
+            END IF;
+          end if;
 
         END LOOP;
       END;
@@ -1066,4 +1065,54 @@ DECLARE
 $$;
 
 alter function remove_calculation(varchar, varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+
+create function reset_dispatched(ts character varying[]) returns integer
+	language plpgsql
+as $$
+DECLARE
+    hash VARCHAR;
+    model VARCHAR;
+    frags INTEGER[];
+    cp BOOLEAN;
+    counter INTEGER;
+  BEGIN
+    counter := 0;
+    FOR hash, model, frags, cp IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices, molecule_properties.use_cp FROM molecule_properties INNER JOIN tags ON molecule_properties.mol_hash = tags.mol_hash AND molecule_properties.model_name = tags.model_name WHERE status = 'dispatched' and ts && tags.tag_names
+    LOOP
+      UPDATE molecule_properties SET status = 'pending' WHERE mol_hash = hash AND model_name = model AND frag_indices = frags;
+      INSERT INTO pending_calculations VALUES (hash, model, frags, cp);
+      counter = counter + 1;
+    end loop;
+
+    RETURN counter;
+  END;
+
+$$;
+
+alter function reset_dispatched(character varying[]) owner to ebullvul;
+
+create function reset_failed(ts character varying[]) returns integer
+	language plpgsql
+as $$
+DECLARE
+    hash VARCHAR;
+    model VARCHAR;
+    frags INTEGER[];
+    cp BOOLEAN;
+    counter INTEGER;
+  BEGIN
+    counter := 0;
+    FOR hash, model, frags, cp IN SELECT molecule_properties.mol_hash, molecule_properties.model_name, molecule_properties.frag_indices, molecule_properties.use_cp FROM molecule_properties INNER JOIN tags ON molecule_properties.mol_hash = tags.mol_hash AND molecule_properties.model_name = tags.model_name WHERE status = 'failed' and ts && tags.tag_names
+    LOOP
+      UPDATE molecule_properties SET status = 'pending' WHERE mol_hash = hash AND model_name = model AND frag_indices = frags;
+      INSERT INTO pending_calculations VALUES (hash, model, frags, cp);
+      counter = counter + 1;
+    end loop;
+
+    RETURN counter;
+  END;
+
+$$;
+
+alter function reset_failed(character varying[]) owner to ebullvul;
 

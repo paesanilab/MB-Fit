@@ -518,6 +518,19 @@ class Fragment(object):
 
         return sorted_atoms
 
+    def confirm_standard_order(self):
+        """
+        Checks if this fragment is in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            True if this fragment's atoms are in standard order.
+            False otherwise.
+        """
+        return self.get_standard_order() == self.get_atoms()
+
     def confirm_symmetry_class(self):
         """
         Checks if the user-specified symmetry matches the 

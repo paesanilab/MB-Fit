@@ -963,6 +963,26 @@ class Molecule(object):
 
         return names, fragments, charges, spins, symmetry
 
+    def confirm_standard_order(self):
+        """
+        Checks if this fragment is in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            True if this fragment's atoms are in standard order.
+            False otherwise.
+        """
+        if not self.get_standard_order() == self.get_fragments():
+            return False
+
+        for fragment in self.get_fragments():
+            if not fragment.confirm_standard_order():
+                return False
+        
+        return True
+
     def __eq__(self, other):
         if not self.get_name() == other.get_name():
             return False

@@ -3,7 +3,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError
+from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
 from potential_fitting.utils import SettingsReader
 from psycopg2 import OperationalError
 
@@ -338,6 +338,8 @@ class Database():
         batch_count = 0
 
         for molecule in molecule_list:
+            if not molecule.confirm_standard_order():
+                raise StandardOrderError(self.name, molecule)
 
             coordinates = []
             for fragment in molecule.get_fragments():

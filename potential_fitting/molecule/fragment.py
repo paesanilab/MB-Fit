@@ -81,7 +81,7 @@ class Fragment(object):
             A list of the atoms in this fragment, sorted in standard order
         """
 
-        return sorted(self.atoms, key=lambda atom: atom.get_name() + atom.get_symmetry_class())
+        return self.atoms
 
     def get_index(self):
         """
@@ -114,6 +114,45 @@ class Fragment(object):
         symmetric_atom_count = 1
 
         for atom in self.get_atoms()[1:]:
+
+            # if this atom has a different symmetry than the one before it
+            if atom.get_symmetry_class() != symmetry[-1]:
+
+                # record the number of atoms with the previous symmetry
+                symmetry += str(symmetric_atom_count) + atom.get_symmetry_class()
+
+                # reset the atom counter
+                symmetric_atom_count = 1
+
+            # if this atom has the same symmetry than the one before it
+            else:
+
+                # record this atom in the atom count
+                symmetric_atom_count += 1
+
+        # record the number of atoms with the last symmetry
+        symmetry += str(symmetric_atom_count)
+
+        return symmetry
+
+    def get_standard_symmetry(self):
+        """
+        Gets the symmetry of this fragment with atoms in standard order.
+
+        Args:
+            None
+
+        Returns:
+            the symmetry of this fragment in A1B2 form in standard order.
+        """
+
+        # used to build the symmetry string
+        symmetry = self.get_standard_order()[0].get_symmetry_class()
+
+        # used to count how many atoms there are of the current symmetry
+        symmetric_atom_count = 1
+
+        for atom in self.get_standard_order()[1:]:
 
             # if this atom has a different symmetry than the one before it
             if atom.get_symmetry_class() != symmetry[-1]:
@@ -285,13 +324,13 @@ class Fragment(object):
 
     def to_xyz(self):
         """ 
-        Gets the string representation of this fragment in the xyz file format
+        Gets the string representation of this fragment in the xyz file format.
 
         Args:
             None
 
         Returns:
-            String containing the atomic symbols and coordinates of each atom in this fragment in standard order
+            String containing the atomic symbols and coordinates of each atom in this fragment.
         """
 
         string = ""
@@ -302,9 +341,49 @@ class Fragment(object):
 
         return string
 
+    def to_standard_xyz(self):
+        """ 
+        Gets the string representation of this fragment in the xyz file format.
+        Atoms are in standard order.
+
+        Args:
+            None
+
+        Returns:
+            String containing the atomic symbols and coordinates of each atom in this fragment in standard order.
+        """
+
+        string = ""
+
+        # add each atom to the string
+        for atom in self.get_standard_order():
+            string += atom.to_xyz() + "\n"
+
+        return string
+
     def to_ghost_xyz(self):
         """ 
-        Gets the string representation of this fragment in the xyz file format as a ghost fragment
+        Gets the string representation of this fragment in the xyz file format as a ghost fragment.
+
+        Args:
+            None
+
+        Returns:
+            string containing the atomic symbols and coordinates of each atom in this fragment as ghost atoms.
+        """
+
+        string = ""
+
+        # add each atom to the string
+        for atom in self.get_atoms():
+            string += atom.to_ghost_xyz() + "\n"
+
+        return string
+
+    def to_standard_ghost_xyz(self):
+        """ 
+        Gets the string representation of this fragment in the xyz file format as a ghost fragment.
+        Atoms are in standard order.
 
         Args:
             None
@@ -316,7 +395,7 @@ class Fragment(object):
         string = ""
 
         # add each atom to the string
-        for atom in self.get_atoms():
+        for atom in self.get_standard_order():
             string += atom.to_ghost_xyz() + "\n"
 
         return string

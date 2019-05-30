@@ -5,6 +5,30 @@ import os, sys, contextlib
 from .utils import SettingsReader, files, system
 from . import configurations, database, polynomials, fitting
 from .database import Database
+from .molecule import xyz_to_molecules
+
+def apply_standard_order(settings_path, geo_path):
+	settings = SettingsReader(settings_path)
+	molecule = xyz_to_molecules(geo_path, settings)[0]
+	names, fragments, charges, spins, symmetry = molecule.get_config_molecule_section()
+	settings.set("molecule", "names", names)
+	settings.set("molecule", "fragments", fragments)
+	settings.set("molecule", "charges", charges)
+	settings.set("molecule", "spins", spins)
+	settings.set("molecule", "symmetry", symmetry)
+
+	settings.write(settings_path)
+
+	with open(geo_path, "r") as geo_file:
+		geo_file.readline()
+		comment_line = geo_file.readline()
+
+	files.init_file(geo_path, files.OverwriteMethod.BACKUP)
+
+	with open(geo_path, "w") as geo_file:
+		geo_file.write("{}\n".format(molecule.get_num_atoms()))
+		geo_file.write(comment_line)
+		geo_file.write("{}\n".format(molecule.to_standard_xyz()))
 
 def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
     """

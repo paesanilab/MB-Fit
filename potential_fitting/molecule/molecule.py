@@ -140,7 +140,7 @@ class Molecule(object):
             List of fragments in this molecule in standard order
         """
 
-        return sorted(self.fragments, key=lambda fragment: fragment.get_name())
+        return self.fragments
 
     def get_atoms(self):
         """
@@ -524,6 +524,33 @@ class Molecule(object):
                 string += self.get_fragments()[index].to_xyz()
             elif cp:
                 string += self.get_fragments()[index].to_ghost_xyz() 
+
+        return string[:-1] # removes last character of string (extra newline)
+
+    def to_standard_xyz(self, fragments = None, cp = False):
+        """
+        Gets a string representation of the fragments in this molecule in the xyz file format.
+        The order of the fragments and atoms is in standard order.
+
+        Args:
+            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments
+            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments
+
+        Returns:
+            String representation of the fragments in this molecule in the xyz format in standard order.
+        """
+
+        # by default, use all fragments
+        if fragments == None:
+            fragments = range(self.get_num_fragments())
+
+        string = ""
+
+        for index in range(len(self.get_standard_order())):
+            if index in fragments:
+                string += self.get_standard_order()[index].to_standard_xyz()
+            elif cp:
+                string += self.get_standard_order()[index].to_standard_ghost_xyz() 
 
         return string[:-1] # removes last character of string (extra newline)
 
@@ -914,6 +941,27 @@ class Molecule(object):
         self.read_fragment_from_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry)
 
         return self
+
+    def get_standard_order(self):
+        return sorted(self.fragments, key = lambda x: x.get_name())
+
+    def get_config_molecule_section(self):
+
+        fragments_list = self.get_standard_order()
+
+        names = "{}\n".format(",".join(fragment.get_name() for fragment in fragments_list))
+        fragments = "{}\n".format(",".join(str(fragment.get_num_atoms()) for fragment in fragments_list))
+        charges = "{}\n".format(",".join(str(fragment.get_charge()) for fragment in fragments_list))
+        spins = "{}\n".format(",".join(str(fragment.get_spin_multiplicity()) for fragment in fragments_list))
+        symmetry = "{}\n".format(",".join(fragment.get_standard_symmetry() for fragment in fragments_list))
+
+        next_letter = "A"
+        for i in range(len(symmetry)):
+            if symmetry[i].isupper():
+                symmetry = symmetry[:i] + next_letter + symmetry[i + 1:]
+                next_letter = chr(ord(next_letter) + 1)
+
+        return names, fragments, charges, spins, symmetry
 
     def __eq__(self, other):
         if not self.get_name() == other.get_name():

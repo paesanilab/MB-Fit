@@ -1,7 +1,7 @@
 # local module imports
 from .database import Database
 
-def clean_database(database_config_path, settings_path, tags*):
+def clean_database(database_config_path, settings_path, *tags):
     """
     Sets all dispatched calculations back to pending in the given database.
 
@@ -19,7 +19,7 @@ def clean_database(database_config_path, settings_path, tags*):
 
         database.reset_dispatched(*tags)
 
-def reset_database(settings_path, database_path, tags*):
+def reset_database(settings_path, database_path, *tags):
     """
     Sets all failed calculations back to pending in the given database.
 

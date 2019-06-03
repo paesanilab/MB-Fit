@@ -15,7 +15,7 @@ class Fragment(object):
     Stores name, charge, spin multiplicity, and atoms of a fragment
     """
     
-    def __init__(self, name, charge, spin_multiplicity):
+    def __init__(self, name, charge, spin_multiplicity, SMILE, atoms):
         """
         Creates a new Fragment
 
@@ -29,16 +29,78 @@ class Fragment(object):
         """
 
         self.name = name
+
         # Array of atoms in this molecule
+
+        atomic_symbols, self.connectivity_matrix = self.parse_SMILE(SMILE)
+
         self.atoms = []
+        for atom in atoms:
+            self.add_atom(atom)
+
+        for atomic_symbol, atom in zip(atomic_symbols, self.atoms):
+            if atomic_symbol != atom.get_name():
+                raise Error
+        
         # charge of this fragment
         self.charge = charge
+        
         # spin_multiplicity multiplicity of this fragment
         if spin_multiplicity < 1:
             raise InvalidValueError("spin multiplicity", spin_multiplicity, "1 or greater")
         self.spin_multiplicity = spin_multiplicity
 
         self.index = -1
+
+    def parse_SMILE(self, SMILE):
+        
+        # parse the next atom from the SMILE string
+        if SMILE.startswith('['):
+            atomic_symbol = SMILE[1:SMILE.index(']')]
+            SMILE = SMILE[SMILE.index(']') + 1:]
+        else:
+            atomic_symbol = SMILE[0]
+            SMILE = SMILE[1:]
+
+        atoms = [atomic_symbol]
+        connectivity_matrix = [[False]]
+
+        # add ring handling code
+
+        # parse the bond of the next SMILE string
+        parts = []
+        while(SMILE.startswith('(')):
+            parts.append(SMILE[1:SMILE.index(')')])
+            SMILE = SMILE[SMILE.index(')') + 1:]
+
+        if len(SMILE) > 0:
+            parts.append(SMILE)
+
+        for part in parts:
+            if part.startswith('.') or part.startswith('-') or part.startswith('=') or part.startswith('#') or part.startswith('$') or part.startswith(':') or part.startswith('/') or part.startswith('\\'):
+                part = part[1:]
+            a, c = self.parse_SMILE(part)
+
+            new_atoms = atoms + a
+            new_connectivity_matrix = [[False for atom in new_atoms] for atom in new_atoms]
+            for i in range(len(atoms)):
+                for k in range(len(atoms)):
+                    if connectivity_matrix[i][k]:
+                        new_connectivity_matrix[i][k] = True
+
+            for i in range(len(a)):
+                for k in range(len(a)):
+                    if c[i][k]:
+                        new_connectivity_matrix[len(atoms) + i][len(atoms) + k] = True
+
+            new_connectivity_matrix[0][len(atoms)] = True
+            new_connectivity_matrix[len(atoms)][0] = True
+
+            atoms = new_atoms
+            connectivity_matrix = new_connectivity_matrix
+
+
+        return atoms, connectivity_matrix
 
     def get_name(self):
         """
@@ -248,6 +310,8 @@ class Fragment(object):
 
     def get_connectivity_matrix(self):
 
+        return self.connectivity_matrix
+        """
         # construct a matrix of size n by n where n is the number of atoms in this fragment
         # a value of 1 in row a and column b means that atom a and b are bonded
         connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
@@ -263,6 +327,7 @@ class Fragment(object):
                     connectivity_matrix[index2][index1] = 1
 
         return connectivity_matrix
+        """
 
     def get_excluded_pairs(self, max_exclusion = 3):
         """

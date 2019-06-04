@@ -34,7 +34,9 @@ class Fragment(object):
 
         # Array of atoms in this molecule
 
-        atomic_symbols, self.connectivity_matrix = self.parse_SMILE(SMILE)
+        atomic_symbols, self.connectivity_matrix, loose_bonds = self.parse_SMILE(SMILE)
+
+        print(loose_bonds)
 
         self.atoms = []
         for atom in atoms:
@@ -59,10 +61,38 @@ class Fragment(object):
         # parse the next atom from the SMILE string
         if SMILE.startswith('['):
             atomic_symbol = SMILE[1:SMILE.index(']')]
-            SMILE = SMILE[SMILE.index(']') + 1:]
+            SMILE = SMILE[SMILE.index(']') + 1:] # NOTE: THE PROBLEM IS THAT IF THERE ARE no BRACKETS, THEN THE RING NUMBERS DONT GET READ!!!!!!!
         else:
             atomic_symbol = SMILE[0]
             SMILE = SMILE[1:]
+
+        digit_index = -1
+        for index, char in enumerate(atomic_symbol):
+            if char.isdigit() or char == '%':
+                digit_index = index
+
+        loose_bonds = []
+
+        if digit_index != -1:
+            atomic_symbol = atomic_symbol[:digit_index]
+            digits = atomic_symbol[digit_index:]
+
+            while len(digits) > 0:
+                if digits[0] is '%':
+                    digits = digits[1:]
+                    try:
+                        loose_bonds.append((0, int(digits[:digits.index('%')])))
+                        digits = digits[digits.index('%'):]
+                    except ValueError:
+                        loose_bonds.append(int(digits))
+                        digits = ""
+                else:
+                    loose_bonds.append((0, int(digits[0])))
+                    digits = digits[1:]
+
+            if len(loose_bonds) != len(set(loose_bonds)):
+                # SMILE indicates atom is bonded to itself!!!
+                raise Error
 
         atoms = [atomic_symbol]
         connectivity_matrix = [[False]]
@@ -81,10 +111,12 @@ class Fragment(object):
         for part in parts:
             if part.startswith('.') or part.startswith('-') or part.startswith('=') or part.startswith('#') or part.startswith('$') or part.startswith(':') or part.startswith('/') or part.startswith('\\'):
                 part = part[1:]
-            a, c = self.parse_SMILE(part)
+
+            a, c, l = self.parse_SMILE(part)
 
             new_atoms = atoms + a
             new_connectivity_matrix = [[False for atom in new_atoms] for atom in new_atoms]
+            new_loose_bonds = []
             for i in range(len(atoms)):
                 for k in range(len(atoms)):
                     if connectivity_matrix[i][k]:
@@ -98,11 +130,24 @@ class Fragment(object):
             new_connectivity_matrix[0][len(atoms)] = True
             new_connectivity_matrix[len(atoms)][0] = True
 
+            for self_index, self_value in loose_bonds:
+                for other_index, other_value in l:
+                    if self_value == other_value:
+                        new_connectivity_matrix[self_index][len(atoms) + other_index]
+                new_loose_bonds.append((self_index, self_value))
+
+            for other_index, other_value in l:
+                for self_index, self_value in loose_bonds:
+                    if self_value == other_value:
+                        new_connectivity_matrix[len(atoms) + other_index][self_index]
+                new_loose_bonds.append((len(atoms) + other_index, other_value))
+
             atoms = new_atoms
             connectivity_matrix = new_connectivity_matrix
+            loose_bonds = new_loose_bonds
 
 
-        return atoms, connectivity_matrix
+        return atoms, connectivity_matrix, loose_bonds
 
     def get_name(self):
         """
@@ -238,17 +283,20 @@ class Fragment(object):
 
         return symmetry
 
+    # TODO: FINISH THESE METHODS!!!
+
     def get_SMILE(self):
         SMILE = ""
 
         included_atoms = []
 
-        for atom in self.get_atoms()
-
+        for atom in self.get_atoms():
+            pass
 
         return SMILE
 
     def get_standard_SMILE(self):
+        pass
 
     def get_charge(self):
         """

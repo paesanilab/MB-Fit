@@ -688,7 +688,7 @@ class Molecule(object):
         for num_atoms, name, charge, spin, symmetry, SMILE in zip(atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
 
             #
-            fragments.append(Fragment.read_xyz("\n".join(lines[:num_atoms]), name, charge, spin_multiplicity, SMILE, symmetry))
+            fragments.append(Fragment.read_xyz("\n".join(lines[:num_atoms]), name, charge, spin, SMILE, symmetry))
             # remove a number of lines from the lines list equal to the number used in the Fragment that was just read
             lines = lines[num_atoms:]
 
@@ -807,18 +807,18 @@ class Molecule(object):
 
             SMILE = ""
             for line in string.splitlines()[2:]:
-            	SMILE += string.split()[0]
+            	SMILE += line.split()[0]
 
             SMILE_per_fragment = [SMILE]
             
         # if settings is defined, read values from xyz file
         else:
             atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
-            name_per_fragment = [name for name in settings.get("molecule", "name").split(",")]
+            name_per_fragment = settings.get("molecule", "name").split(",")
             charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
             spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spin").split(",")]
-            symmetry_per_fragment = [symmetry for symmetry in settings.get("molecule", "symmetry").split(",")]
-            SMILE_per_fragment = [SMILE for SMILE in settings.get("molecule", "SMILES").split(",")]
+            symmetry_per_fragment = settings.get("molecule", "symmetry").split(",")
+            SMILE_per_fragment = settings.get("molecule", "SMILES").split(",")
 
 
         return Molecule.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
@@ -934,7 +934,7 @@ class Molecule(object):
         SMILE = ""
 
         for line in string.splitlines()[1:]:
-        	SMILE += string.split()[0]
+        	SMILE += line.split()[0]
 
         return Molecule([Fragment.read_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry, SMILE)])
 
@@ -942,6 +942,8 @@ class Molecule(object):
         return sorted(self.fragments, key = lambda x: x.get_name())
 
     def get_config_molecule_section(self):
+
+    	# TODO: update SMILE
 
         fragments_list = self.get_standard_order()
 

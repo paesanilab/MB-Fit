@@ -238,6 +238,18 @@ class Fragment(object):
 
         return symmetry
 
+    def get_SMILE(self):
+        SMILE = ""
+
+        included_atoms = []
+
+        for atom in self.get_atoms()
+
+
+        return SMILE
+
+    def get_standard_SMILE(self):
+
     def get_charge(self):
         """
         Gets the charge of this fragment
@@ -514,7 +526,7 @@ class Fragment(object):
 
                 atoms.append(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
 
-        return Fragment(name, charge, spin_multiplicity, SMILE, atoms)
+        return Fragment(atoms, name, charge, spin_multiplicity, SMILE)
 
         # check if there are more lines than atoms in the symmetry
         if len(lines) != 0:

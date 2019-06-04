@@ -15,17 +15,19 @@ class Fragment(object):
     Stores name, charge, spin multiplicity, and atoms of a fragment
     """
     
-    def __init__(self, name, charge, spin_multiplicity, SMILE, atoms):
+    def __init__(self, atoms, name, charge, spin_multiplicity, SMILE):
         """
         Creates a new Fragment
 
         Args:
-            name - the name of this fragment ('H2O', 'CO2', etc)
-            charge - the charge of this fragment
-            spin_multiplicity - the spin mulitplicity of this fragment, should be greater than or equal to 1
+            atoms           - The atoms in the Fragment
+            name            - The name of this Fragment
+            charge          - The charge of this fragment
+            spin_multiplicity - The spin mulitplicity of this fragment, should be greater than or equal to 1
+            SMILE           - The SMILE string of this fragment.
 
         Returns:
-            A new Fragment
+            A new Fragment.
         """
 
         self.name = name
@@ -465,16 +467,21 @@ class Fragment(object):
 
         return string
 
-    def read_xyz(self, string, symmetry):
+    @staticmethod
+    def read_xyz(string, name, charge, spin_multiplicity, SMILE, symmetry):
         """
-        Reads the given string into this Fragment with the given symmetry
+        Constructs a new Fragment from the given xyz string
         
         Args:
-            string - the xyz file format string, just the lines with the atom information, no atom count / comment line
-            symmetry - the symmetry of this Fragment
+            string          - The xyz file format string, just the lines with the atom information, no atom count / comment line.
+            name            - The name of the new Fragment
+            charge          - The charge of the new Fragment
+            spin_multiplicity - The spin multiplicity of the new Fragment
+            SMILE           - The SMILE string of the new fragment.
+            symmetry        - The symmetry of the fragment.
 
         Returns:
-            self
+            The new Fragment.
         """
 
         # used to keep track of the index of the current atom symmetry class in the symmetry string
@@ -485,6 +492,8 @@ class Fragment(object):
         fragment_parser = FragmentParser(symmetry, "a")
 
         lines = string.splitlines()
+
+        atoms = []
 
         for atom_type in fragment_parser.get_atom_types():
 
@@ -503,7 +512,9 @@ class Fragment(object):
                     # there are no more lines to read but are still symmetries
                     raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
 
-                self.add_atom(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
+                atoms.append(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
+
+        return Fragment(name, charge, spin_multiplicity, SMILE, atoms)
 
         # check if there are more lines than atoms in the symmetry
         if len(lines) != 0:

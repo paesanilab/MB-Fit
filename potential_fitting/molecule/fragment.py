@@ -729,8 +729,6 @@ class Fragment(object):
                 if prev_atom is not None:
                     used_symmetries[prev_atom.get_symmetry_class()] = prev_atom.get_name()
 
-                print(used_symmetries, atom.get_symmetry_class())
-
                 if atom.get_symmetry_class() in used_symmetries.keys():
                     if used_symmetries[atom.get_symmetry_class()] != atom.get_name():
                         return False, standard_symmetry, "User symmetry had non-identical atoms in the same symmetry class."

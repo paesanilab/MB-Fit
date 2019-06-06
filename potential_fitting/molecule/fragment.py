@@ -80,7 +80,7 @@ class Fragment(object):
                     loose_bonds.append((0, int(digits[:digits.index('%')])))
                     digits = digits[digits.index('%'):]
                 except ValueError:
-                    loose_bonds.append(int(digits))
+                    loose_bonds.append((0, int(digits)))
                     digits = ""
             else:
                 loose_bonds.append((0, int(digits[0])))

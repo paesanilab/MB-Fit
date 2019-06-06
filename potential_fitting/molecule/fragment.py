@@ -66,33 +66,29 @@ class Fragment(object):
             atomic_symbol = SMILE[0]
             SMILE = SMILE[1:]
 
-        digit_index = -1
-        for index, char in enumerate(atomic_symbol):
-            if char.isdigit() or char == '%':
-                digit_index = index
+        digits = ""
+        while(len(SMILE) > 0 and (SMILE[0] == "%" or SMILE[0].isdigit())):
+            digits += SMILE[0]
+            SMILE = SMILE[1:]
 
         loose_bonds = []
 
-        if digit_index != -1:
-            atomic_symbol = atomic_symbol[:digit_index]
-            digits = atomic_symbol[digit_index:]
+        while len(digits) > 0:
+            if digits[0] is '%':
+                digits = digits[1:]
+                try:
+                    loose_bonds.append((0, int(digits[:digits.index('%')])))
+                    digits = digits[digits.index('%'):]
+                except ValueError:
+                    loose_bonds.append(int(digits))
+                    digits = ""
+            else:
+                loose_bonds.append((0, int(digits[0])))
+                digits = digits[1:]
 
-            while len(digits) > 0:
-                if digits[0] is '%':
-                    digits = digits[1:]
-                    try:
-                        loose_bonds.append((0, int(digits[:digits.index('%')])))
-                        digits = digits[digits.index('%'):]
-                    except ValueError:
-                        loose_bonds.append(int(digits))
-                        digits = ""
-                else:
-                    loose_bonds.append((0, int(digits[0])))
-                    digits = digits[1:]
-
-            if len(loose_bonds) != len(set(loose_bonds)):
-                # SMILE indicates atom is bonded to itself!!!
-                raise Error
+        if len(loose_bonds) != len(set(loose_bonds)):
+            # SMILE indicates atom is bonded to itself!!!
+            raise Error
 
         atoms = [atomic_symbol]
         connectivity_matrix = [[False]]
@@ -131,16 +127,24 @@ class Fragment(object):
             new_connectivity_matrix[len(atoms)][0] = True
 
             for self_index, self_value in loose_bonds:
+                used_loose_bond = False
                 for other_index, other_value in l:
                     if self_value == other_value:
-                        new_connectivity_matrix[self_index][len(atoms) + other_index]
-                new_loose_bonds.append((self_index, self_value))
+                        new_connectivity_matrix[self_index][len(atoms) + other_index] = True
+                        used_loose_bond = True
+                        break;
+                if not used_loose_bond:
+                    new_loose_bonds.append((self_index, self_value))
 
             for other_index, other_value in l:
+                used_loose_bond = False
                 for self_index, self_value in loose_bonds:
                     if self_value == other_value:
-                        new_connectivity_matrix[len(atoms) + other_index][self_index]
-                new_loose_bonds.append((len(atoms) + other_index, other_value))
+                        new_connectivity_matrix[len(atoms) + other_index][self_index] = True
+                        used_loose_bond = True
+                        break;
+                if not used_loose_bond:
+                    new_loose_bonds.append((len(atoms) + other_index, other_value))
 
             atoms = new_atoms
             connectivity_matrix = new_connectivity_matrix
@@ -716,20 +720,25 @@ class Fragment(object):
         prev_atom = None
         next_letter = 'A'
         sym_count = 0
-        used_symmetries = []
+        used_symmetries = {}
 
         for atom in standard_order:
             if prev_atom is None or prev_atom.get_symmetry_class() != atom.get_symmetry_class():
                 if sym_count > 0:
                     user_symmetry += str(sym_count)
                 if prev_atom is not None:
-                    used_symmetries.append(prev_atom.get_symmetry_class())
-                user_symmetry += next_letter
-                sym_count = 0
-                next_letter = chr(ord(next_letter) + 1)
+                    used_symmetries[prev_atom.get_symmetry_class()] = prev_atom.get_name()
 
-            if atom.get_symmetry_class() in used_symmetries:
-                return False, standard_symmetry, "User symmetry had non-identical atoms in the same symmetry class."
+                print(used_symmetries, atom.get_symmetry_class())
+
+                if atom.get_symmetry_class() in used_symmetries.keys():
+                    if used_symmetries[atom.get_symmetry_class()] != atom.get_name():
+                        return False, standard_symmetry, "User symmetry had non-identical atoms in the same symmetry class."
+                    user_symmetry += atom.get_symmetry_class()
+                else:
+                    user_symmetry += next_letter
+                    next_letter = chr(ord(next_letter) + 1)
+                sym_count = 0
 
             sym_count += 1
             prev_atom = atom

@@ -105,6 +105,7 @@ class Fragment(object):
             parts.append(SMILE)
 
         for part in parts:
+            bond = not part.startswith('.')
             if part.startswith('.') or part.startswith('-') or part.startswith('=') or part.startswith('#') or part.startswith('$') or part.startswith(':') or part.startswith('/') or part.startswith('\\'):
                 part = part[1:]
 
@@ -123,8 +124,9 @@ class Fragment(object):
                     if c[i][k]:
                         new_connectivity_matrix[len(atoms) + i][len(atoms) + k] = True
 
-            new_connectivity_matrix[0][len(atoms)] = True
-            new_connectivity_matrix[len(atoms)][0] = True
+            if bond:
+                new_connectivity_matrix[0][len(atoms)] = True
+                new_connectivity_matrix[len(atoms)][0] = True
 
             for self_index, self_value in loose_bonds:
                 used_loose_bond = False
@@ -294,8 +296,28 @@ class Fragment(object):
 
         included_atoms = []
 
-        for atom in self.get_atoms():
-            pass
+        reserved_bonds = []
+
+        index_to_bond_dict = {}
+
+        connectivity_matrix = self.get_connectivity_matrix()
+
+        for this_index, this_atom in enumerate(self.get_atoms()):
+            SMILE += "[" + atom.get_name() + "]"
+
+            for other_index, other_atom in enumerate(self.get_atoms()[:this_index]):
+                # check if any previously reserved bonds are completed.
+                pass
+
+            for other_index, other_atom in enumerate(self.get_atoms()[this_index + 1:]):
+                # check if any new bonds must be reserved
+                pass
+
+            if not this_index == len(self.get_atoms()) - 1:
+                if not connectivity_matrix[this_index][this_index + 1]:
+                    SMILE += "."
+
+
 
         return SMILE
 

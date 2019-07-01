@@ -42,6 +42,9 @@ class Fragment(object):
         for atom in atoms:
             self.add_atom(atom)
 
+        if len(atomic_symbols) != len(self.atoms):
+            raise Error
+
         for atomic_symbol, atom in zip(atomic_symbols, self.atoms):
             if atomic_symbol != atom.get_name():
                 raise Error
@@ -294,26 +297,38 @@ class Fragment(object):
     def get_SMILE(self):
         SMILE = ""
 
-        included_atoms = []
-
-        reserved_bonds = []
+        next_bond = 1
 
         index_to_bond_dict = {}
 
         connectivity_matrix = self.get_connectivity_matrix()
 
         for this_index, this_atom in enumerate(self.get_atoms()):
-            SMILE += "[" + atom.get_name() + "]"
+            print(this_atom.get_name())
+            SMILE += "[" + this_atom.get_name() + "]"
 
-            for other_index, other_atom in enumerate(self.get_atoms()[:this_index]):
-                # check if any previously reserved bonds are completed.
-                pass
+            if this_index != 0:
+                for other_index, other_atom in list(enumerate(self.get_atoms()))[:this_index - 1]:
+                    # check if any previously reserved bonds are completed.
+                    if connectivity_matrix[this_index][other_index]:
+                        bond_num = index_to_bond_dict[other_index][0]
+                        index_to_bond_dict[other_index] = index_to_bond_dict[other_index][1:]
+                        SMILE += "%" + str(bond_num)
 
-            for other_index, other_atom in enumerate(self.get_atoms()[this_index + 1:]):
+            for other_index, other_atom in list(enumerate(self.get_atoms()))[this_index + 2:]:
                 # check if any new bonds must be reserved
-                pass
+                print(other_index)
+                if connectivity_matrix[this_index][other_index]:
+                    try:
+                        index_to_bond_dict[this_index].append(next_bond)
+                    except KeyError:
+                        index_to_bond_dict[this_index] = [next_bond]
+                    SMILE += "%" + str(next_bond)
+                    next_bond += 1
 
-            if not this_index == len(self.get_atoms()) - 1:
+            print(index_to_bond_dict)
+
+            if this_index < (len(self.get_atoms()) - 1):
                 if not connectivity_matrix[this_index][this_index + 1]:
                     SMILE += "."
 

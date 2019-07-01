@@ -3,7 +3,7 @@ from potential_fitting.utils import files
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError)
 
-from .calculator import Calculator
+from . import Calculator
 
 try:
     import psi4
@@ -159,7 +159,7 @@ class Psi4Calculator(Calculator):
         if self.logging:
             print("Completed geometry optimization.")
 
-        return Molecule().read_psi4_string(psi4_mol.save_string_xyz()), energy, log_path
+        return Molecule.read_psi4_string(psi4_mol.save_string_xyz()), energy, log_path
 
     def find_frequencies(self, molecule, model):
         """

@@ -10,12 +10,13 @@ from .molecule import xyz_to_molecules
 def apply_standard_order(settings_path, geo_path):
 	settings = SettingsReader(settings_path)
 	molecule = xyz_to_molecules(geo_path, settings)[0]
-	names, fragments, charges, spins, symmetry = molecule.get_config_molecule_section()
+	names, fragments, charges, spins, symmetry, SMILES = molecule.get_config_molecule_section()
 	settings.set("molecule", "names", names)
 	settings.set("molecule", "fragments", fragments)
 	settings.set("molecule", "charges", charges)
 	settings.set("molecule", "spins", spins)
 	settings.set("molecule", "symmetry", symmetry)
+	settings.set("molecule", "SMILES", SMILES)
 
 	settings.write(settings_path)
 

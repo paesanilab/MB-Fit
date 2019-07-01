@@ -4,7 +4,7 @@ from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError,
         ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError)
 
-from .calculator import Calculator
+from . import Calculator
 
 class QchemCalculator(Calculator):
 

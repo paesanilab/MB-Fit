@@ -36,7 +36,8 @@ class Fragment(object):
 
         atomic_symbols, self.connectivity_matrix, loose_bonds = self.parse_SMILE(SMILE)
 
-        print(loose_bonds)
+        if loose_bonds != []:
+            raise Error
 
         self.atoms = []
         for atom in atoms:
@@ -292,8 +293,6 @@ class Fragment(object):
 
         return symmetry
 
-    # TODO: FINISH THESE METHODS!!!
-
     def get_SMILE(self):
         SMILE = ""
 
@@ -332,12 +331,47 @@ class Fragment(object):
                 if not connectivity_matrix[this_index][this_index + 1]:
                     SMILE += "."
 
-
-
         return SMILE
 
     def get_standard_SMILE(self):
-        pass
+        SMILE = ""
+
+        next_bond = 1
+
+        index_to_bond_dict = {}
+
+        connectivity_matrix = self.get_standard_connectivity_matrix()
+
+        for this_index, this_atom in enumerate(self.get_standard_order()):
+            print(this_atom.get_name())
+            SMILE += "[" + this_atom.get_name() + "]"
+
+            if this_index != 0:
+                for other_index, other_atom in list(enumerate(self.get_standard_order()))[:this_index - 1]:
+                    # check if any previously reserved bonds are completed.
+                    if connectivity_matrix[this_index][other_index]:
+                        bond_num = index_to_bond_dict[other_index][0]
+                        index_to_bond_dict[other_index] = index_to_bond_dict[other_index][1:]
+                        SMILE += "%" + str(bond_num)
+
+            for other_index, other_atom in list(enumerate(self.get_standard_order()))[this_index + 2:]:
+                # check if any new bonds must be reserved
+                print(other_index)
+                if connectivity_matrix[this_index][other_index]:
+                    try:
+                        index_to_bond_dict[this_index].append(next_bond)
+                    except KeyError:
+                        index_to_bond_dict[this_index] = [next_bond]
+                    SMILE += "%" + str(next_bond)
+                    next_bond += 1
+
+            print(index_to_bond_dict)
+
+            if this_index < (len(self.get_standard_order()) - 1):
+                if not connectivity_matrix[this_index][this_index + 1]:
+                    SMILE += "."
+
+        return SMILE
 
     def get_charge(self):
         """
@@ -431,6 +465,24 @@ class Fragment(object):
 
         return connectivity_matrix
         """
+
+    def get_standard_connectivity_matrix(self):
+    
+        atoms = self.get_atoms()
+        standard_atoms = self.get_standard_order()
+
+        connectivity_matrix = self.get_connectivity_matrix()
+
+        standard_connectivity_matrix = [[False for atom2 in standard_atoms] for atom1 in standard_atoms]
+        
+        for standard_index1, atom1 in enumerate(standard_atoms):
+            for standard_index2, atom2 in enumerate(standard_atoms):
+                index1 = atoms.index(atom1)
+                index2 = atoms.index(atom2)
+                if connectivity_matrix[index1][index2]:
+                    standard_connectivity_matrix[standard_index1][standard_index2] = True    
+
+        return standard_connectivity_matrix
 
     def get_excluded_pairs(self, max_exclusion = 3):
         """

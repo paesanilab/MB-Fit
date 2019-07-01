@@ -25,7 +25,7 @@ class SettingsReader(object):
         """
 
         # create a new ConfigParser
-        self.configparser = configparser.ConfigParser(allow_no_value=False)
+        self.configparser = configparser.RawConfigParser(allow_no_value=False)
 
         if file_path is not None:
             # confirm that the input file exists

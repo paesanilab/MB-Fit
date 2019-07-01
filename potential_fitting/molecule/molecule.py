@@ -888,7 +888,7 @@ class Molecule(object):
                 raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
 
     @staticmethod
-    def read_psi4_string(self, string):
+    def read_psi4_string(string):
         """
         Reads the string outputted by a call to psi4.molecule.save_string_xyz() into a new Molecule.
 
@@ -936,7 +936,7 @@ class Molecule(object):
         for line in string.splitlines()[1:]:
         	SMILE += line.split()[0]
 
-        return Molecule([Fragment.read_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry, SMILE)])
+        return Molecule([Fragment.read_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, SMILE, symmetry)])
 
     def get_standard_order(self):
         return sorted(self.fragments, key = lambda x: x.get_name())
@@ -952,6 +952,7 @@ class Molecule(object):
         charges = "{}\n".format(",".join(str(fragment.get_charge()) for fragment in fragments_list))
         spins = "{}\n".format(",".join(str(fragment.get_spin_multiplicity()) for fragment in fragments_list))
         symmetry = "{}\n".format(",".join(fragment.get_standard_symmetry() for fragment in fragments_list))
+        SMILES = "{}\n".format(",".join(fragment.get_standard_SMILE() for fragment in fragments_list))
 
         next_letter = "A"
         for i in range(len(symmetry)):
@@ -959,7 +960,7 @@ class Molecule(object):
                 symmetry = symmetry[:i] + next_letter + symmetry[i + 1:]
                 next_letter = chr(ord(next_letter) + 1)
 
-        return names, fragments, charges, spins, symmetry
+        return names, fragments, charges, spins, symmetry, SMILES
 
     def confirm_standard_order(self):
         """

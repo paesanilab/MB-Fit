@@ -2,7 +2,7 @@ create schema public;
 
 comment on schema public is 'standard public schema';
 
-alter schema public owner to postgres;
+alter schema public owner to ebullvul;
 
 create type empty_mol as
 (
@@ -40,7 +40,7 @@ create table molecule_info
 			primary key
 );
 
-alter table molecule_info owner to "paesanilab-pgadmins";
+alter table molecule_info owner to ebullvul;
 
 create index molecule_info_name_uindex
 	on molecule_info (name);
@@ -56,7 +56,7 @@ create table molecule_list
 	atom_coordinates double precision[] not null
 );
 
-alter table molecule_list owner to "paesanilab-pgadmins";
+alter table molecule_list owner to ebullvul;
 
 create unique index molecule_list_mol_hash_uindex
 	on molecule_list (mol_hash);
@@ -73,7 +73,7 @@ create table atom_info
 
 comment on table atom_info is 'Holds immutable information that is universal to all instances of a specific Atom.';
 
-alter table atom_info owner to "paesanilab-pgadmins";
+alter table atom_info owner to ebullvul;
 
 create unique index atom_info_atomic_symbol_uindex
 	on atom_info (atomic_symbol);
@@ -90,7 +90,7 @@ create table fragment_info
 
 comment on table fragment_info is 'This table holds all immutable information shared by all fragments of a type';
 
-alter table fragment_info owner to "paesanilab-pgadmins";
+alter table fragment_info owner to ebullvul;
 
 create unique index fragment_info_name_uindex
 	on fragment_info (name);
@@ -106,7 +106,7 @@ create table molecule_contents
 	count integer not null
 );
 
-alter table molecule_contents owner to "paesanilab-pgadmins";
+alter table molecule_contents owner to ebullvul;
 
 create index molecule_contents_mol_name_index
 	on molecule_contents (mol_name);
@@ -125,7 +125,7 @@ create table fragment_contents
 
 comment on table fragment_contents is 'This table describes fragments found in fragment_info table as built by atoms in atom_info table.';
 
-alter table fragment_contents owner to "paesanilab-pgadmins";
+alter table fragment_contents owner to ebullvul;
 
 create index fragment_contents_frag_name_index
 	on fragment_contents (frag_name);
@@ -137,7 +137,7 @@ create table model_info
 			primary key
 );
 
-alter table model_info owner to "paesanilab-pgadmins";
+alter table model_info owner to ebullvul;
 
 create unique index models_info_name_uindex
 	on model_info (name);
@@ -153,7 +153,10 @@ create table log_files
 	client_name varchar not null
 );
 
-alter table log_files owner to "paesanilab-pgadmins";
+alter table log_files owner to ebullvul;
+
+create unique index log_files_log_id_uindex
+	on log_files (log_id);
 
 create table molecule_properties
 (
@@ -174,7 +177,7 @@ create table molecule_properties
 	use_cp boolean not null
 );
 
-alter table molecule_properties owner to "paesanilab-pgadmins";
+alter table molecule_properties owner to ebullvul;
 
 create index energies_list_mol_hash_model_name_index
 	on molecule_properties (mol_hash, model_name);
@@ -194,9 +197,6 @@ create index molecule_properties_mol_hash_model_name_frag_indices_index
 create index molecule_properties_status_index
 	on molecule_properties (status);
 
-create unique index log_files_log_id_uindex
-	on log_files (log_id);
-
 create table tags
 (
 	mol_hash varchar not null
@@ -208,7 +208,7 @@ create table tags
 	tag_names character varying[] not null
 );
 
-alter table tags owner to "paesanilab-pgadmins";
+alter table tags owner to ebullvul;
 
 create unique index tags_mol_hash_model_name_uindex
 	on tags (mol_hash, model_name);
@@ -226,7 +226,7 @@ create table optimized_geometries
 			references model_info
 );
 
-alter table optimized_geometries owner to "paesanilab-pgadmins";
+alter table optimized_geometries owner to ebullvul;
 
 create index optimized_geometries_mol_name_model_name_index
 	on optimized_geometries (mol_name, model_name);
@@ -563,7 +563,7 @@ DECLARE
 
 $$;
 
-alter function count_entries(varchar) owner to potential_fitting;
+alter function count_entries(varchar) owner to ebullvul;
 
 create function add_atom_info(atomic_symbol character varying) returns boolean
 	language plpgsql
@@ -594,7 +594,7 @@ DECLARE
       INSERT INTO molecule_info VALUES(add_molecule_info.name);
 
       FOR index IN 1..array_length(fragments, 1) LOOP
-        PERFORM add_fragment_info(fragments[index].name, fragments[index].charge, fragments[index].spin, fragments[index].atomic_symbols, fragments[index].symmetries, fragments[index].counts);
+        PERFORM add_fragment_info(fragments[index].name, fragments[index].charge, fragments[index].spin, fragments[index].smile, fragments[index].atomic_symbols, fragments[index].symmetries, fragments[index].counts);
         INSERT INTO molecule_contents VALUES (add_molecule_info.name, fragments[index].name, counts[index]);
       END LOOP;
 

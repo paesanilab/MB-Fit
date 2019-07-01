@@ -369,13 +369,16 @@ class Database():
                 symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
                 atom_counts = [int(i) for i in counts]
 
-                symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
-                symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
+                symbol_symmetry_count_pairs = [[symbol_symmetry_pairs[i][0], symbol_symmetry_pairs[i][1], counts[i]] for i in range(len(atom_counts))]
+                symbol_symmetry_count_pairs.sort(key = lambda x: x[1])
 
-                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
+                symbols = [symbol for symbol, symmetry, count in symbol_symmetry_count_pairs]
+                symmetries = [symmetry for symbol, symmetry, count in symbol_symmetry_count_pairs]
+                counts = [count for symbol, symmetry, count in symbol_symmetry_count_pairs]
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
                 if not frag_name == frag_names[-1]:
                     command_string += ", "
-                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(),
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_SMILE(),
                            self.create_postgres_array(*symbols),
                            self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
 

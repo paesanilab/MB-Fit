@@ -1,5 +1,8 @@
-create database potential_fitting
-	with owner "paesanilab-pgadmins";
+create schema public;
+
+comment on schema public is 'standard public schema';
+
+alter schema public owner to postgres;
 
 create type empty_mol as
 (
@@ -7,7 +10,8 @@ create type empty_mol as
 	frag_names character varying[],
 	frag_counts integer[],
 	frag_charges integer[],
-	frag_spins integer[]
+	frag_spins integer[],
+	frag_smiles character varying[]
 );
 
 alter type empty_mol owner to ebullvul;
@@ -19,7 +23,8 @@ create type fragment as
 	spin integer,
 	atomic_symbols character varying[],
 	symmetries character varying[],
-	counts integer[]
+	counts integer[],
+	smile varchar
 );
 
 alter type fragment owner to ebullvul;
@@ -79,7 +84,8 @@ create table fragment_info
 		constraint fragment_info_name_key
 			primary key,
 	charge integer not null,
-	spin integer not null
+	spin integer not null,
+	smile varchar default 'no smile specified'::character varying not null
 );
 
 comment on table fragment_info is 'This table holds all immutable information shared by all fragments of a type';
@@ -248,7 +254,7 @@ DECLARE
     fragment_desc RECORD;
   BEGIN
   mol.mol_name := molecule_name;
-  FOR fragment_desc IN SELECT frag_name, count, charge, spin
+  FOR fragment_desc IN SELECT frag_name, count, charge, spin, SMILE
       FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name
       where molecule_contents.mol_name=molecule_name LOOP
 
@@ -256,6 +262,7 @@ DECLARE
       mol.frag_counts := mol.frag_counts || fragment_desc.count;
       mol.frag_charges := mol.frag_charges || fragment_desc.charge;
       mol.frag_spins := mol.frag_spins || fragment_desc.spin;
+      mol.frag_SMILES := mol.frag_SMILES || fragment_desc.SMILE;
 
       --SELECT atom_symbol, symmetry, count FROM fragment_contents WHERE frag_name = fragment_desc.name INTO fragment_cont;
 
@@ -282,6 +289,7 @@ DECLARE
       mol.frag_counts := mol.frag_counts || fragment_desc.count;
       mol.frag_charges := mol.frag_charges || fragment_desc.charge;
       mol.frag_spins := mol.frag_spins || fragment_desc.spin;
+      mol.frag_SMILES := mol.frag_SMILES || fragment_desc.SMILE;
 
       --SELECT atom_symbol, symmetry, count FROM fragment_contents WHERE frag_name = fragment_desc.name INTO fragment_cont;
 
@@ -575,34 +583,6 @@ $$;
 
 alter function add_atom_info(varchar) owner to ebullvul;
 
-create function add_fragment_info(name character varying, charge integer, spin integer, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns boolean
-	language plpgsql
-as $$
-DECLARE
-  atomic_symbol character varying;
-  index integer;
-  BEGIN
-    IF NOT EXISTS(SELECT fragment_info.name FROM fragment_info WHERE fragment_info.name=add_fragment_info.name AND fragment_info.charge=add_fragment_info.charge AND fragment_info.spin=add_fragment_info.spin) THEN
-      INSERT INTO fragment_info VALUES(add_fragment_info.name, add_fragment_info.charge, add_fragment_info.spin);
-
-      FOREACH atomic_symbol IN ARRAY atomic_symbols LOOP
-        PERFORM add_atom_info(atomic_symbol);
-      END LOOP;
-
-      FOR index IN 1..array_length(atomic_symbols, 1) LOOP
-        INSERT INTO fragment_contents VALUES (name, atomic_symbols[index], counts[index], symmetries[index]);
-      END LOOP;
-
-      RETURN True;
-    ELSE
-      RETURN False;
-    END IF;
-  END;
-
-$$;
-
-alter function add_fragment_info(varchar, integer, integer, character varying[], character varying[], integer[]) owner to ebullvul;
-
 create function add_molecule_info(name character varying, fragments fragment[], counts integer[]) returns boolean
 	language plpgsql
 as $$
@@ -627,26 +607,6 @@ DECLARE
 $$;
 
 alter function add_molecule_info(varchar, fragment[], integer[]) owner to ebullvul;
-
-create function construct_fragment(name character varying, charge integer, spin integer, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns fragment
-	language plpgsql
-as $$
-DECLARE
-  frag fragment;
-
-  BEGIN
-    frag.name = name;
-    frag.charge = charge;
-    frag.spin = spin;
-    frag.atomic_symbols = atomic_symbols;
-    frag.symmetries = symmetries;
-    frag.counts = counts;
-    RETURN frag;
-  END;
-
-$$;
-
-alter function construct_fragment(varchar, integer, integer, character varying[], character varying[], integer[]) owner to ebullvul;
 
 create function add_model_info(method character varying, basis character varying, cp boolean) returns boolean
 	language plpgsql
@@ -1115,4 +1075,53 @@ DECLARE
 $$;
 
 alter function reset_failed(character varying[]) owner to ebullvul;
+
+create function add_fragment_info(name character varying, charge integer, spin integer, smile character varying, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  atomic_symbol character varying;
+  index integer;
+  BEGIN
+    IF NOT EXISTS(SELECT fragment_info.name FROM fragment_info WHERE fragment_info.name=add_fragment_info.name AND fragment_info.charge=add_fragment_info.charge AND fragment_info.spin=add_fragment_info.spin AND fragment_info.smile=add_fragment_info.SMILE) THEN
+      INSERT INTO fragment_info VALUES(add_fragment_info.name, add_fragment_info.charge, add_fragment_info.spin, add_fragment_info.SMILE);
+
+      FOREACH atomic_symbol IN ARRAY atomic_symbols LOOP
+        PERFORM add_atom_info(atomic_symbol);
+      END LOOP;
+
+      FOR index IN 1..array_length(atomic_symbols, 1) LOOP
+        INSERT INTO fragment_contents VALUES (name, atomic_symbols[index], counts[index], symmetries[index]);
+      END LOOP;
+
+      RETURN True;
+    ELSE
+      RETURN False;
+    END IF;
+  END;
+
+$$;
+
+alter function add_fragment_info(varchar, integer, integer, varchar, character varying[], character varying[], integer[]) owner to ebullvul;
+
+create function construct_fragment(name character varying, charge integer, spin integer, smile character varying, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns fragment
+	language plpgsql
+as $$
+DECLARE
+  frag fragment;
+
+  BEGIN
+    frag.name = name;
+    frag.charge = charge;
+    frag.spin = spin;
+    frag.atomic_symbols = atomic_symbols;
+    frag.symmetries = symmetries;
+    frag.counts = counts;
+    frag.smile = SMILE;
+    RETURN frag;
+  END;
+
+$$;
+
+alter function construct_fragment(varchar, integer, integer, varchar, character varying[], character varying[], integer[]) owner to ebullvul;
 

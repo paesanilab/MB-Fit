@@ -440,15 +440,15 @@ class Database():
             a Molecule object with all coordinates set to 0.
         """
 
-        molecule = Molecule()
+        fragments = []
 
-        self.cursor.execute("SELECT frag_name, count, charge, spin FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name where mol_name=%s", (mol_name,))
+        self.cursor.execute("SELECT frag_name, count, charge, spin, SMILE FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name where mol_name=%s", (mol_name,))
 
         molecule_contents = self.cursor.fetchall()
 
-        for frag_name, frag_count, charge, spin in molecule_contents:
+        for frag_name, frag_count, charge, spin, SMILE in molecule_contents:
             for i in range(frag_count):
-                fragment = Fragment(frag_name, charge, spin)
+                atoms = []
 
                 fragment_contents = self.select("fragment_contents", True, "atom_symbol", "symmetry", "count", frag_name = frag_name)
 
@@ -456,11 +456,13 @@ class Database():
                     for k in range(atom_count):
                         atom = Atom(atom_symbol, atom_symmetry, 0, 0, 0)
 
-                        fragment.add_atom(atom)
+                        atoms.append(atom)
 
-                molecule.add_fragment(fragment)
+                atoms.sort(key = lambda x: x.get_symmetry_class())
 
-        return molecule
+                fragments.append(Fragment(atoms, frag_name, charge, spin, SMILE))
+
+        return Molecule(fragments)
 
     def get_all_calculations(self, client_name, *tags, calculations_to_do = sys.maxsize):
         """

@@ -7,29 +7,38 @@ from . import configurations, database, polynomials, fitting
 from .database import Database
 from .molecule import xyz_to_molecules
 
+
 def apply_standard_order(settings_path, geo_path):
-	settings = SettingsReader(settings_path)
-	molecule = xyz_to_molecules(geo_path, settings)[0]
-	names, fragments, charges, spins, symmetry, SMILES = molecule.get_config_molecule_section()
-	settings.set("molecule", "names", names)
-	settings.set("molecule", "fragments", fragments)
-	settings.set("molecule", "charges", charges)
-	settings.set("molecule", "spins", spins)
-	settings.set("molecule", "symmetry", symmetry)
-	settings.set("molecule", "SMILES", SMILES)
 
-	settings.write(settings_path)
+    settings = SettingsReader(settings_path)
+    molecule = xyz_to_molecules(geo_path, settings)[0]
+    names, fragments, charges, spins, symmetry, SMILES = molecule.get_config_molecule_section()
+    settings.set("molecule", "names", names)
+    settings.set("molecule", "fragments", fragments)
+    settings.set("molecule", "charges", charges)
+    settings.set("molecule", "spins", spins)
+    settings.set("molecule", "symmetry", symmetry)
+    settings.set("molecule", "SMILES", SMILES)
 
-	with open(geo_path, "r") as geo_file:
-		geo_file.readline()
-		comment_line = geo_file.readline()
+    standard_settings_path = settings_path + "_standard"
+    standard_geo_path = geo_path + "_standard"
+    
+    files.init_file(standard_settings_path, files.OverwriteMethod.BACKUP)
+    settings.write(standard_settings_path)
 
-	files.init_file(geo_path, files.OverwriteMethod.BACKUP)
+    with open(geo_path, "r") as geo_file:
+        geo_file.readline()
+        comment_line = geo_file.readline()
 
-	with open(geo_path, "w") as geo_file:
-		geo_file.write("{}\n".format(molecule.get_num_atoms()))
-		geo_file.write(comment_line)
-		geo_file.write("{}\n".format(molecule.to_standard_xyz()))
+    files.init_file(standard_geo_path, files.OverwriteMethod.BACKUP)
+
+    with open(standard_geo_path, "w") as geo_file:
+        geo_file.write("{}\n".format(molecule.get_num_atoms()))
+        geo_file.write(comment_line)
+        geo_file.write("{}\n".format(molecule.to_standard_xyz()))
+
+    return standard_settings_path, standard_geo_path
+
 
 def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
     """

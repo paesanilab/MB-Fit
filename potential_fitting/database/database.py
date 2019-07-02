@@ -373,7 +373,8 @@ class Database():
                 symbol_symmetry_count_pairs.sort(key = lambda x: x[1])
 
                 symbols = [symbol for symbol, symmetry, count in symbol_symmetry_count_pairs]
-                symmetries = [symmetry for symbol, symmetry, count in symbol_symmetry_count_pairs]
+                symmetries = [chr(65 + index) for index in range(len(symbol_symmetry_count_pairs))]
+                print(symmetries)
                 counts = [count for symbol, symmetry, count in symbol_symmetry_count_pairs]
                 command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
                 if not frag_name == frag_names[-1]:
@@ -449,21 +450,32 @@ class Database():
 
         molecule_contents = self.cursor.fetchall()
 
+        next_start_symmetry = 'A'
+
         for frag_name, frag_count, charge, spin, SMILE in molecule_contents:
             for i in range(frag_count):
+
+                next_symmetry = next_start_symmetry
+
                 atoms = []
 
                 fragment_contents = self.select("fragment_contents", True, "atom_symbol", "symmetry", "count", frag_name = frag_name)
 
+                fragment_contents.sort(key = lambda x: x[1])
+
                 for atom_symbol, atom_symmetry, atom_count in fragment_contents:
                     for k in range(atom_count):
-                        atom = Atom(atom_symbol, atom_symmetry, 0, 0, 0)
+                        atom = Atom(atom_symbol, next_symmetry, 0, 0, 0)
 
                         atoms.append(atom)
+
+                    next_symmetry = chr(ord(next_symmetry) + 1)
 
                 atoms.sort(key = lambda x: x.get_symmetry_class())
 
                 fragments.append(Fragment(atoms, frag_name, charge, spin, SMILE))
+
+            next_start_symmetry = next_symmetry
 
         return Molecule(fragments)
 
@@ -693,6 +705,8 @@ class Database():
         batch_count = 0
 
         for molecule, energies in molecule_energies_pairs:
+            if not molecule.confirm_standard_order():
+                raise StandardOrderError(self.name, molecule)
 
             coordinates = []
             for fragment in molecule.get_fragments():

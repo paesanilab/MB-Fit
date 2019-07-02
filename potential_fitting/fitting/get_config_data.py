@@ -406,8 +406,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
     molecule = Molecule()
-    for geo_path in geo_paths:
+    for index, geo_path in enumerate(geo_paths):
         molecule.read_xyz_path_direct(geo_path)
+        molecule.get_fragments()[-1].set_name("frag_" + str(index))
 
     excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
 

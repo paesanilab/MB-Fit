@@ -172,6 +172,19 @@ class Fragment(object):
 
         return self.name
 
+    def set_name(self, name):
+        """
+        Sets the name of this fragment
+
+        Args:
+            name    - The new name of this fragment.
+
+        Returns:
+            None.
+        """
+
+        self.name = name
+
     def add_atom(self, atom):
         """
         Adds an atom to this fragment
@@ -303,7 +316,6 @@ class Fragment(object):
         connectivity_matrix = self.get_connectivity_matrix()
 
         for this_index, this_atom in enumerate(self.get_atoms()):
-            print(this_atom.get_name())
             SMILE += "[" + this_atom.get_name() + "]"
 
             if this_index != 0:
@@ -316,7 +328,6 @@ class Fragment(object):
 
             for other_index, other_atom in list(enumerate(self.get_atoms()))[this_index + 2:]:
                 # check if any new bonds must be reserved
-                print(other_index)
                 if connectivity_matrix[this_index][other_index]:
                     try:
                         index_to_bond_dict[this_index].append(next_bond)
@@ -324,8 +335,6 @@ class Fragment(object):
                         index_to_bond_dict[this_index] = [next_bond]
                     SMILE += "%" + str(next_bond)
                     next_bond += 1
-
-            print(index_to_bond_dict)
 
             if this_index < (len(self.get_atoms()) - 1):
                 if not connectivity_matrix[this_index][this_index + 1]:
@@ -343,7 +352,6 @@ class Fragment(object):
         connectivity_matrix = self.get_standard_connectivity_matrix()
 
         for this_index, this_atom in enumerate(self.get_standard_order()):
-            print(this_atom.get_name())
             SMILE += "[" + this_atom.get_name() + "]"
 
             if this_index != 0:
@@ -356,7 +364,6 @@ class Fragment(object):
 
             for other_index, other_atom in list(enumerate(self.get_standard_order()))[this_index + 2:]:
                 # check if any new bonds must be reserved
-                print(other_index)
                 if connectivity_matrix[this_index][other_index]:
                     try:
                         index_to_bond_dict[this_index].append(next_bond)
@@ -364,8 +371,6 @@ class Fragment(object):
                         index_to_bond_dict[this_index] = [next_bond]
                     SMILE += "%" + str(next_bond)
                     next_bond += 1
-
-            print(index_to_bond_dict)
 
             if this_index < (len(self.get_standard_order()) - 1):
                 if not connectivity_matrix[this_index][this_index + 1]:

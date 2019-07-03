@@ -74,8 +74,6 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
                     Make sure only you have access to this file or your password will be compromised!
         training_set_path   - Local path to file to write training set to.
         molecule_name       - The name of this dimer.
-        monomer1_name       - The name of one monomer in the dimer.
-        monomer2_name       - The name of the other monomer in the dimer.
         method              - Use energies calculated with this method. Use % for any method.
         basis               - Use energies calculated with this basis. Use % for any basis.
         cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.

@@ -594,6 +594,9 @@ class Database():
 
         Args:
             molecule_name   - Name of the molecule for which a training set is desired.
+            names           - List of name of the monomer.
+            SMILES          - List of SMILE string of the monomer, the atoms in the training set will
+                    be in this order.
             method          - Method of this training set.
             basis           - Basis of this training set.
             cp              - Counterpoise correction of this training set.
@@ -640,8 +643,10 @@ class Database():
 
         Args:
             molecule_name   - Name of the molecule for which a training set is desired.
-            monomer1_name   - Name of one monomer in the molecule.
-            monomer2_name   - Name of the other monomer in the molecule.
+            names           - List of names of the two monomers, the training set will have the monomers
+                    in this order.
+            SMILES          - List of SMILE strings of each monomer, the atoms in the training set will
+                    be in this order.
             method          - Method of this training set.
             basis           - Basis of this training set.
             cp              - Counterpoise correction of this training set.

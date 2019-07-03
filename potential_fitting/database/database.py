@@ -537,6 +537,8 @@ class Database():
                 basis = model[:model.index("/")]
                 cp = model[model.index("/") + 1:] == "True"
 
+                molecule = molecule.get_standard_copy()
+
                 yield molecule, method, basis, cp, use_cp, frag_indices
 
             if calculations_to_do < 1:
@@ -569,6 +571,7 @@ class Database():
         batch_count = 0
 
         for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
+            molecule = molecule.get_standard_copy()
             model_name = method + "/" + basis + "/" + str(cp)
 
             command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s);"

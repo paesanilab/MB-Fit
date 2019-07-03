@@ -262,6 +262,7 @@ def make_permutations(atom_types):
     A1B2 -> [[0, 1, 2], [0, 2, 1]
     A1B1C1 -> [[0, 1, 2]]
     A2B2 -> [[0, 1, 2, 3], [0, 1, 3, 2], [1, 0, 2, 3], [1, 0, 3, 2]]
+    A1B1A1 -> [[0, 1, 2],[2, 1, 0]]
 
     Args:
         atom_types            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
@@ -292,6 +293,8 @@ def make_permutations(atom_types):
         # the fragment
         atom_types, new_gen = itertools.tee(atom_types)
         yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(new_gen))
+
+
 
 def combine_permutations(fragments, fragment_permutations):
     """

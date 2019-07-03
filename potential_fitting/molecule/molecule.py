@@ -983,7 +983,32 @@ class Molecule(object):
         return True
 
     def get_standard_copy(self):
+        order, frag_orders = self.get_standard_order_order()
+        return self.get_reordered_copy(order, frag_orders, [frag.get_standard_SMILE() for frag in self.get_standard_order()])
 
+    def get_reorder_copy(self, names, SMILES):
+        order, frag_orders = self.get_reorder_order(names, SMILES)
+        return self.get_reordered_copy(order, frag_orders, SMILES)
+
+    def get_standard_order_order(self):
+        order = [self.get_fragments().index(frag) for frag in self.get_standard_order()]
+        frag_orders = [frag.get_standard_order_order() for frag in [self.get_fragments()[index] for index in order]]
+        return order, frag_orders
+
+    def get_reorder_order(self, names, SMILES):
+
+        order = []
+
+        for name in names:
+            for index, fragment in enumerate(self.get_fragments()):
+                if fragment.get_name() == name and index not in order:
+                    order.append(index)
+
+        frag_orders = [frag.get_reorder_order(SMILE) for frag, SMILE in zip([self.get_fragments()[index] for index in order], SMILES)]
+
+        return order, frag_orders
+
+    def get_reordered_copy(self, order, frag_orders, SMILES):
         fragments = []
 
         prev_frag_name = None
@@ -991,7 +1016,7 @@ class Molecule(object):
         next_starting_symmetry = 'A'
         next_symmetry = None
 
-        for fragment in self.get_standard_order():
+        for fragment, frag_order, SMILE in zip([self.get_fragments()[index] for index in order], frag_orders, SMILES):
 
             if prev_frag_name is not None and fragment.get_name() != prev_frag_name:
                 next_starting_symmetry = chr(ord(next_symmetry) + 1)
@@ -999,41 +1024,7 @@ class Molecule(object):
 
             next_symmetry = next_starting_symmetry
 
-            fragments.append(fragment.get_standard_copy())
-
-            prev_symmetry = None
-
-            for atom in fragments[-1].get_standard_order():
-
-                if prev_symmetry is not None and atom.get_symmetry_class() != prev_symmetry:
-                    next_symmetry = chr(ord(next_symmetry) + 1)
-
-                prev_symmetry = atom.get_symmetry_class()
-
-                atom.set_symmetry_class(next_symmetry)
-
-        return Molecule(fragments)
-
-    def get_order_copy(self, names, SMILES):
-        fragments = []
-
-        prev_frag_name = None
-
-        next_starting_symmetry = 'A'
-        next_symmetry = None
-
-        for fragment in self.get_standard_order():
-
-            if prev_frag_name is not None and fragment.get_name() != prev_frag_name:
-                next_starting_symmetry = chr(ord(next_symmetry) + 1)
-            prev_frag_name = fragment.get_name()
-
-            next_symmetry = next_starting_symmetry
-
-            for name, SMILE in zip(names, SMILES):
-                if name == fragment.get_name():
-                    fragments.append(fragment.get_order_copy(SMILE))
-                    break
+            fragments.append(fragment.get_reordered_copy(frag_order, SMILE))
 
             prev_symmetry = None
 
@@ -1046,15 +1037,7 @@ class Molecule(object):
 
                 atom.set_symmetry_class(next_symmetry)
 
-        final_frags = []
-
-        for name in names:
-            for index in range(len(fragments)):
-                if fragments[index].get_name() == name:
-                    final_frags.append(fragments[index])
-                    break
-
-        return Molecule(final_frags)
+        return Molecule(fragments)
 
     def __eq__(self, other):
         if not self.get_name() == other.get_name():

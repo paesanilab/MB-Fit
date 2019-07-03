@@ -320,6 +320,8 @@ class Database():
         Will queue the database to calculate the energies of each molecule in the list
         with the given model. Does not calculate the energies.
 
+        All molecules must be of the same type.
+
         Args:
             molecule_list   - List of molecules whose energies are wanted.
             method          - Method to use to calculate the molecules' energies.
@@ -338,6 +340,7 @@ class Database():
         batch_count = 0
 
         for molecule in molecule_list:
+
             molecule = molecule.get_standard_copy()
 
             coordinates = []
@@ -630,7 +633,7 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule.get_order_copy(names, SMILES), energy
+                yield molecule.get_reorder_copy(names, SMILES), energy
 
             batch_offset += self.batch_size
 
@@ -685,7 +688,7 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule.get_order_copy(names, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
+                yield molecule.get_reorder_copy(names, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
             batch_offset += self.batch_size
 

@@ -28,6 +28,9 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
     """
 
     settings = SettingsReader(settings_path)
+
+    names = settings.get("molecule", "names").split(",")
+    SMILES = settings.get("molecule", "SMILES").split(",")
     
     # open the database
     with Database(database_config_path) as database:
@@ -39,7 +42,7 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
 
         with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
 
-            for molecule, deformation_energy_hartrees in database.get_1B_training_set(molecule_name, method, basis, cp, *tags):
+            for molecule, deformation_energy_hartrees in database.get_1B_training_set(molecule_name, names, SMILES, method, basis, cp, *tags):
 
                 deformation_energy_kcalmol = deformation_energy_hartrees * constants.au_to_kcal # Converts Hartree to kcal/mol
                 if deformation_energy_kcalmol < e_max and deformation_energy_kcalmol - e_min > -0.000000000001:
@@ -60,7 +63,7 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
             print("Generated training set with " + str(count_configs) + " Configurations.")
 
 
-def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, monomer1_name, monomer2_name, method, basis,
+def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis,
         cp, *tags, e_bind_max=float('inf'), e_mon_max=float('inf')):
     """"
     Creates a 2b training set file from the calculated energies in a database.
@@ -85,6 +88,9 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
     """
 
     settings = SettingsReader(settings_path)
+
+    names = settings.get("molecule", "names").split(",")
+    SMILES = settings.get("molecule", "SMILES").split(",")
     
     # open the database
     with Database(database_config_path) as database:
@@ -95,7 +101,7 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
         count_configs = 0
 
         with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
-            for molecule, binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation in database.get_2B_training_set(molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags):
+            for molecule, binding_energy, interaction_energy, monomer1_energy_deformation, monomer2_energy_deformation in database.get_2B_training_set(molecule_name, names, SMILES, method, basis, cp, *tags):
 
                 binding_energy *= constants.au_to_kcal
                 interaction_energy *= constants.au_to_kcal

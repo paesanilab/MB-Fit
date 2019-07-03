@@ -338,8 +338,7 @@ class Database():
         batch_count = 0
 
         for molecule in molecule_list:
-            if not molecule.confirm_standard_order():
-                raise StandardOrderError(self.name, molecule)
+            molecule = molecule.get_standard_copy()
 
             coordinates = []
             for fragment in molecule.get_fragments():
@@ -374,7 +373,6 @@ class Database():
 
                 symbols = [symbol for symbol, symmetry, count in symbol_symmetry_count_pairs]
                 symmetries = [chr(65 + index) for index in range(len(symbol_symmetry_count_pairs))]
-                print(symmetries)
                 counts = [count for symbol, symmetry, count in symbol_symmetry_count_pairs]
                 command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
                 if not frag_name == frag_names[-1]:
@@ -587,7 +585,7 @@ class Database():
         if batch_count != 0:
             self.execute(command_string, params)
 
-    def get_1B_training_set(self, molecule_name, method, basis, cp, *tags):
+    def get_1B_training_set(self, molecule_name, names, SMILES, method, basis, cp, *tags):
         """
         Gets a 1B training set from the calculated energies in the database.
 
@@ -626,14 +624,14 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule, energy
+                yield molecule.get_order_copy(names, SMILES), energy
 
             batch_offset += self.batch_size
 
             if batch_offset > max_count:
                 return
 
-    def get_2B_training_set(self, molecule_name, monomer1_name, monomer2_name, method, basis, cp, *tags):
+    def get_2B_training_set(self, molecule_name, names, SMILES, method, basis, cp, *tags):
         """
         Gets a 2B training set from the calculated energies in the database.
 
@@ -663,7 +661,7 @@ class Database():
 
         empty_molecule = self.build_empty_molecule(molecule_name)
 
-        monomer1_name, monomer2_name = sorted([monomer1_name, monomer2_name])
+        monomer1_name, monomer2_name = sorted([names[0], names[1]])
         
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
@@ -679,7 +677,7 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy
+                yield molecule.get_order_copy(names, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
             batch_offset += self.batch_size
 
@@ -705,8 +703,7 @@ class Database():
         batch_count = 0
 
         for molecule, energies in molecule_energies_pairs:
-            if not molecule.confirm_standard_order():
-                raise StandardOrderError(self.name, molecule)
+            molecule = molecule.get_standard_copy()
 
             coordinates = []
             for fragment in molecule.get_fragments():

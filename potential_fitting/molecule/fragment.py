@@ -840,6 +840,71 @@ class Fragment(object):
 
         return standard_symmetry == user_symmetry, standard_symmetry, user_symmetry
 
+    def get_standard_copy(self):
+
+        symmetries = []
+        for atom in self.get_standard_order():
+            if atom.get_symmetry_class() not in symmetries:
+                symmetries.append(atom.get_symmetry_class())
+
+        symmetries.sort()
+
+        atoms = []
+        prev_symmetry = None
+
+        next_symmetry = symmetries[0]
+        symmetries = symmetries[1:]
+
+        for atom in self.get_standard_order():
+
+            if prev_symmetry is not None and prev_symmetry != atom.get_symmetry_class():
+                next_symmetry = symmetries[0]
+                symmetries = symmetries[1:]
+
+            prev_symmetry = atom.get_symmetry_class()
+
+            atoms.append(Atom(atom.get_name(), next_symmetry, atom.get_x(), atom.get_y(), atom.get_z()))
+
+        return Fragment(atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), self.get_standard_SMILE())
+
+    def get_order_copy(self, SMILE):
+
+        symmetries = []
+        for atom in self.get_standard_order():
+            if atom.get_symmetry_class() not in symmetries:
+                symmetries.append(atom.get_symmetry_class())
+
+        symmetries.sort()
+
+        atoms = []
+        prev_symmetry = None
+
+        next_symmetry = symmetries[0]
+        symmetries = symmetries[1:]
+
+        for atom in self.get_standard_order():
+
+            if prev_symmetry is not None and prev_symmetry != atom.get_symmetry_class():
+                next_symmetry = symmetries[0]
+                symmetries = symmetries[1:]
+
+            prev_symmetry = atom.get_symmetry_class()
+
+            atoms.append(Atom(atom.get_name(), next_symmetry, atom.get_x(), atom.get_y(), atom.get_z()))
+
+        atomic_symbols, c, l = self.parse_SMILE(SMILE)
+        test_atoms = []
+        for index, atomic_symbol in enumerate(atomic_symbols):
+            test_atoms.append(Atom(atomic_symbol, atomic_symbol, index, index, index))
+            test_atoms[-1].index = index
+        test_frag = Fragment(test_atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), SMILE)
+
+        final_atoms = [None for atom in atoms]
+
+        for index, atom in enumerate(test_frag.get_standard_order()):
+            final_atoms[atom.index] = atoms[index]
+
+        return Fragment(final_atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), SMILE)
 
     def __eq__(self, other):
         if not self.get_name() == other.get_name():

@@ -339,9 +339,14 @@ class Database():
 
         batch_count = 0
 
-        for molecule in molecule_list:
+        order, frag_order, SMILES = None, None, None
 
-            molecule = molecule.get_standard_copy()
+        for molecule in molecule_list:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
 
             coordinates = []
             for fragment in molecule.get_fragments():
@@ -507,6 +512,8 @@ class Database():
             use cp for some of their energies.
         """
 
+        name_to_order_dict = {}
+
         while True:
 
             self.cursor.execute("SELECT mol_hash FROM pending_calculations LIMIT 1")
@@ -540,7 +547,15 @@ class Database():
                 basis = model[:model.index("/")]
                 cp = model[model.index("/") + 1:] == "True"
 
-                molecule = molecule.get_standard_copy()
+
+                try:
+                    order, frag_orders, SMILES = name_to_order_dict[molecule.get_name()]
+                except KeyError:
+                    order, frag_orders = molecule.get_standard_order_order()
+                    SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+                    name_to_order_dict[molecule.get_name()] = order, frag_orders, SMILES
+
+                molecule = molecule.get_reordered_copy(order, frag_orders, SMILES)
 
                 yield molecule, method, basis, cp, use_cp, frag_indices
 
@@ -573,8 +588,18 @@ class Database():
 
         batch_count = 0
 
+        name_to_order_dict = {}
+
         for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
-            molecule = molecule.get_standard_copy()
+            try:
+                order, frag_orders, SMILES = name_to_order_dict[molecule.get_name()]
+            except KeyError:
+                order, frag_orders = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+                name_to_order_dict[molecule.get_name()] = order, frag_orders, SMILES
+
+            molecule = molecule.get_reordered_copy(order, frag_orders, SMILES)
+
             model_name = method + "/" + basis + "/" + str(cp)
 
             command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s);"
@@ -622,6 +647,8 @@ class Database():
 
         empty_molecule = self.build_empty_molecule(molecule_name)
 
+        order, frag_orders = None, None
+
         while True:
             self.cursor.execute("SELECT * FROM get_1B_training_set(%s, %s, %s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
             training_set = self.cursor.fetchall()
@@ -633,7 +660,10 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule.get_reorder_copy(names, SMILES), energy
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                yield molecule.get_reordered_copy(order, frag_orders, SMILES), energy
 
             batch_offset += self.batch_size
 
@@ -672,6 +702,8 @@ class Database():
 
         empty_molecule = self.build_empty_molecule(molecule_name)
 
+        order, frag_orders = None, None
+
         monomer1_name, monomer2_name = sorted([names[0], names[1]])
         
         while True:
@@ -688,7 +720,12 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule.get_reorder_copy(names, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
+
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                yield molecule.get_reordered_copy(order, frag_orders, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
             batch_offset += self.batch_size
 

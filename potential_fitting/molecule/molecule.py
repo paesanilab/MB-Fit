@@ -983,20 +983,63 @@ class Molecule(object):
         return True
 
     def get_standard_copy(self):
+        """
+        Gets a copy of this molecule, with fragments and atoms in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            A copy of this molecule in standard order.
+        """
+
         order, frag_orders = self.get_standard_order_order()
         return self.get_reordered_copy(order, frag_orders, [frag.get_standard_SMILE() for frag in self.get_standard_order()])
 
     def get_reorder_copy(self, names, SMILES):
+        """
+        Gets a copy of this molecule, with fragments in the order specified by the names list and
+        atoms in the order specified in the SMILE strings.
+
+        Args:
+            names - names of the fragments in the new order.
+            SMILE - list of SMILE strings corresponding to the new order of fragments.
+                    Order the atoms of each fragment to match the order in these SMILE strings.
+
+        Returns:
+            A copy of this molecule in the order specified by names and SMILES.
+        """
         order, frag_orders = self.get_reorder_order(names, SMILES)
         return self.get_reordered_copy(order, frag_orders, SMILES)
 
     def get_standard_order_order(self):
+        """
+        Gets the order the fragments and atoms in this molecule must be in to be in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            (order, frag_orders)
+            order   - A list of indices, where indices[i] = index of fragment that should be in index i to put the molecule in standard order.
+            frag_orders - A list of lists, where each list corresponds to one fragment.
+                    where frag_orders[j][i] = index of atom that should be in index i to put the fragment j of the new order in standard order.
+        """
         order = [self.get_fragments().index(frag) for frag in self.get_standard_order()]
         frag_orders = [frag.get_standard_order_order() for frag in [self.get_fragments()[index] for index in order]]
         return order, frag_orders
 
     def get_reorder_order(self, names, SMILES):
+        """
+        Gets the order the fragments and atoms in this molecule must be in to match the SMILE string.
 
+        Args:
+            SMILE - order the atoms to match the order in this SMILE string.
+
+        Returns:
+            A list of indices, where indices[i] = index of atom that should be in index i to make this fragment
+            order match the SMILE string.
+        """
         order = []
 
         for name in names:

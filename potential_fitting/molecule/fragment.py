@@ -841,20 +841,57 @@ class Fragment(object):
         return standard_symmetry == user_symmetry, standard_symmetry, user_symmetry
 
     def get_standard_copy(self):
+        """
+        Gets a copy of this fragment, with atoms in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            A copy of this fragment in standard order.
+        """
 
         return self.get_reordered_copy(self.get_standard_order_order(), self.get_standard_SMILE())
 
     def get_reorder_copy(self, SMILE):
+        """
+        Gets a copy of this fragment, with atoms in the order specified in the SMILE string.
+
+        Args:
+            SMILE - order the atoms to match the order in this SMILE string.
+
+        Returns:
+            A copy of this fragment in the order specified by the SMILE string.
+        """
 
         return self.get_reordered_copy(self.get_reorder_order(SMILE), SMILE)
 
     def get_standard_order_order(self):
+        """
+        Gets the order the atoms in this fragment must be in to be in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            A list of indices, where indices[i] = index of atom that should be in index i to put this fragment in standard order.
+        """
 
         order = [self.get_atoms().index(atom) for atom in self.get_standard_order()]
 
         return order
 
     def get_reorder_order(self, SMILE):
+        """
+        Gets the order the atoms in this fragment must be in to match the SMILE string.
+
+        Args:
+            SMILE - order the atoms to match the order in this SMILE string.
+
+        Returns:
+            A list of indices, where indices[i] = index of atom that should be in index i to make this fragment
+            order match the SMILE string.
+        """
         atoms = self.get_standard_order()
 
         atomic_symbols, c, l = self.parse_SMILE(SMILE)
@@ -875,6 +912,16 @@ class Fragment(object):
         return order
 
     def get_reordered_copy(self, order, SMILE):
+        """
+        Returns a copy of the fragment with atoms in the order specified by the input list that matches the SMILE string.
+
+        Args:
+             order - list where order[i] = index of fragment that should be in index i to make the new order.
+             SMILE - SMILE string of the new order. Should match the order in the list.
+
+        Returns:
+            A copy of this fragment with order matching that of the input array and SMILE string.
+        """
 
         symmetries = []
         for atom in self.get_atoms():
@@ -889,7 +936,7 @@ class Fragment(object):
         next_symmetry = symmetries[0]
         symmetries = symmetries[1:]
 
-        for atom in self.get_atoms():
+        for atom in [self.get_atoms()[index] for index in order]:
 
             if prev_symmetry is not None and prev_symmetry != atom.get_symmetry_class():
                 next_symmetry = symmetries[0]
@@ -899,12 +946,7 @@ class Fragment(object):
 
             atoms.append(Atom(atom.get_name(), next_symmetry, atom.get_x(), atom.get_y(), atom.get_z()))
 
-        final_atoms = []
-
-        for index in order:
-            final_atoms.append(atoms[index])
-
-        return Fragment(final_atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), SMILE)
+        return Fragment(atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), SMILE)
 
     def __eq__(self, other):
         if not self.get_name() == other.get_name():

@@ -749,9 +749,13 @@ class Database():
         params = []
 
         batch_count = 0
+        order, frag_order, SMILES = None, None, None
 
         for molecule, energies in molecule_energies_pairs:
-            molecule = molecule.get_standard_copy()
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
 
             coordinates = []
             for fragment in molecule.get_fragments():
@@ -805,7 +809,7 @@ class Database():
         if batch_count != 0:
             self.execute(command_string, params)
 
-    def get_failed(self, molecule_name, method, basis, cp, *tags, optimized = False):
+    def get_failed(self, molecule_name, names, SMILES, method, basis, cp, *tags, optimized = False):
         """
         Gets geometries of energy caclulations that have failed.
 
@@ -814,6 +818,10 @@ class Database():
 
         Args:
             molecule_name   - Name of the molecule to find failed calculations for.
+            names           - List of names of the two monomers, the molecules will have the monomers
+                    in this order.
+            SMILES          - List of SMILE strings of each monomer, the atoms in the fragments will
+                    be in this order.
             method          - Method for the failed calculations.
             basis           - Basis for the failed calculations.
             cp              - Counterpoise correction for the failed calculations.
@@ -835,6 +843,8 @@ class Database():
 
         empty_molecule = self.build_empty_molecule(molecule_name)
 
+        order, frag_orders = None, None
+
         while True:
             self.cursor.execute("SELECT * FROM get_failed_configs(%s, %s, %s, %s, %s)", (
             molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
@@ -847,7 +857,10 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-                yield molecule, frag_indices, used_cp
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                yield molecule.get_reordered_copy(order, frag_orders, SMILES), frag_indices, used_cp
 
             batch_offset += self.batch_size
 

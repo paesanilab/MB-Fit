@@ -222,7 +222,7 @@ class QchemCalculator(Calculator):
             for line in qchem_out_file:
                 if found:
                     if "ATOM" in line:
-                        for atom_index in range(num_atoms):
+                        for atom_index in range(sum(atoms_per_fragment)):
                             qchem_out_string += " ".join(qchem_out_file.readline().split()[1:]) + "\n"
                         return Molecule.read_xyz("{}\n\n".format(sum(atoms_per_fragment)) + qchem_out_string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment), energy
                 elif "Final energy is" in line:

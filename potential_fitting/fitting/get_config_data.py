@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from potential_fitting.utils import constants, SettingsReader, files
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
-from potential_fitting.molecule import Molecule, xyz_to_molecules
+from potential_fitting.molecule import Molecule, Fragment, xyz_to_molecules
 from potential_fitting.polynomials import MoleculeInParser
 
 qchem_template = "qchem_template"
@@ -25,7 +25,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     settings = SettingsReader(settings_file)
 
-    print("Generating fitting config file for molecule with fragments {}".format(settings.get("molecule", "names")))
+    print("Generating fitting config file for molecule with fragments: {}".format(settings.get("molecule", "names")))
 
     print("Preparing qchem input...")
 

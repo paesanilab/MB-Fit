@@ -153,7 +153,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     print("Executing qchem calculation...")
     # perform qchem system call
-    os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+    #os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
 
     print("Parsing qchem output...")
 
@@ -426,8 +426,9 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     fragments = []
 
     for geo_path, setting in zip(geo_paths, monomer_settings):
-
-        fragments.append(Fragment.read_xyz(geo_path, setting.get("molecule", "names"), setting.getint("molecule", "charges"), setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"), setting.get("molecule", "symmetry")))
+        with open(geo_path, "r") as geo_file:
+            frag_string = "\n".join(geo_file.read().splitlines()[2:])
+            fragments.append(Fragment.read_xyz(geo_path, setting.get("molecule", "names"), setting.getint("molecule", "charges"), setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"), setting.get("molecule", "symmetry")))
 
     molecule = Molecule(fragments)
 

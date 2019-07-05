@@ -456,6 +456,8 @@ def compile_fit_code(settings_path, fit_dir_path):
 
 def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
+    print("Performing {} fits from which the best will be chosen...".format(num_fits))
+
     settings = SettingsReader(settings_path)
 
     # init the required files
@@ -552,6 +554,8 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
 
 def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
+
+    print("Performing {} fits from which the best will be chosen...".format(num_fits))
 
     settings = SettingsReader(settings_path)
 
@@ -667,6 +671,8 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
 
 
 def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
+
+    print("Performing {} fits from which the best will be chosen...".format(num_fits))
     
     settings = SettingsReader(settings_path)
 

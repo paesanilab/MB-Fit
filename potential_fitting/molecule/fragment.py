@@ -668,7 +668,7 @@ class Fragment(object):
                     lines = lines[1:]
                 except ValueError:
                     # if we cannot parse the line, raise an error                
-                    raise XYZFormatError(line, "ATOMIC_SYMBOL X Y Z") from None
+                    raise XYZFormatError(lines[0], "ATOMIC_SYMBOL X Y Z") from None
                 except IndexError:
                     # there are no more lines to read but are still symmetries
                     raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")

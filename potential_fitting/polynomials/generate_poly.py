@@ -22,6 +22,8 @@ def generate_poly(settings_path, input_path, order, output_path):
         None.
     """
 
+    print("Generating polynomial files from input file {} into directory {}.".format(input_path, output_path))
+
     # make sure the output directory exists
     files.init_directory(output_path)
 
@@ -37,6 +39,8 @@ def generate_poly(settings_path, input_path, order, output_path):
 
     # open output file for polynomials, will automatically be closed by with open as syntax
     with open(poly_log_path, "w") as poly_log_file:
+
+        print("Parsing input...")
 
         # write number of fragments to log
         poly_log_file.write("<> fragments({}) <>\n".format(len(fragments)))
@@ -67,6 +71,8 @@ def generate_poly(settings_path, input_path, order, output_path):
         poly_log_file.write(":".join(atom_names) + "\n")
         poly_log_file.write("\n")
 
+        print("Finding permutations...")
+
         # build the permutation group for each fragment
         fragment_permutations = []
 
@@ -84,8 +90,6 @@ def generate_poly(settings_path, input_path, order, output_path):
             fragment_permutations.append(permutations)
 
         # construct total permutations from the fragments, including permutations of like fragments
-
-        print(fragment_permutations)
 
         atom_permutations = list(combine_permutations(fragments, fragment_permutations))
 
@@ -123,8 +127,12 @@ def generate_poly(settings_path, input_path, order, output_path):
         # degree monomials, etc
         total_monomials = []
 
+        print("Finding permutations...")
+
         # loop thru every degree in this polynomial
         for degree in range(1, order + 1):
+
+            print("Generating degree {} terms...".format(degree))
 
             # header for this degree
             poly_log_file.write("<> {} degree <>\n".format(degree))
@@ -136,8 +144,12 @@ def generate_poly(settings_path, input_path, order, output_path):
             # log number of possible monomials
             poly_log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
+            print("Filtering degree {} terms...".format(degree))
+
             # filter out monomials from the list based on filters in the poly.in file
             accepted_monomials = list(filter_monomials(monomials, variables, monomial_filters))
+
+            print("Eliminating Redundant degree {} terms...".format(degree))
 
             # filter out redundant monomials (that are a permutation of eachother)
             accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
@@ -153,8 +165,14 @@ def generate_poly(settings_path, input_path, order, output_path):
             # add the monomials of the current degree to the list of all monomials
             total_monomials.append(accepted_monomials)
 
+            print("There were {} accepted degree {} terms.".format(len(accepted_monomials), degree))
+
+        print("There were {} accepted terms over all".format(total_terms))
+
         # log the total number of terms
         poly_log_file.write(" Total number of terms: {}\n".format(total_terms))
+
+        print("Writing .h and .maple polynomial files...")
 
         # write the header file
         with open(output_path + "/poly-model.h", "w") as header_file:
@@ -184,6 +202,8 @@ def generate_poly(settings_path, input_path, order, output_path):
             write_cpp_closing(cpp_file, total_terms)
             write_grd_closing(grd_file, total_terms, len(variables))
             write_nogrd_closing(nogrd_file, total_terms, len(variables))
+
+    print("Successfully generated polynomial files!")
 
 
 def parse_input(input_path):
@@ -391,7 +411,7 @@ def make_variable_permutations(variables, atom_permutations, atom_names):
             # this catch is technically not needed, as this should *never* happen.
             # a variable should always be found, if one is not found new_index being -1 signifies a problem
             if new_index == -1:
-                print("Something went wrong :(")
+                print("Uh Oh, something went wrong. This should never print. :( Contant Ethan to help debug this very cryptic error message.")
 
             # append the index of the permutated variable to variable permutation
             variable_permutation.append(new_index)

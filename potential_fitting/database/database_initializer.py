@@ -24,11 +24,11 @@ def initialize_database(settings_path, database_config_path, training_set_path, 
         None.
     """
     
-    print("Initializing database from xyz file {} directory into database.".format(training_set_path))
+    print("Adding configurations from xyz file {} into database.".format(training_set_path))
 
     molecules = parse_training_set_file(training_set_path, SettingsReader(settings_path))
 
     with Database(database_config_path) as database:
         database.add_calculations(molecules, method, basis, cp, *tags, optimized = optimized)
 
-    print("Initializing of database successful.")
+    print("Configurations added successfully!")

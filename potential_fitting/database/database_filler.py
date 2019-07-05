@@ -33,11 +33,13 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
     # open the database
     with Database(database_config_path) as database:
 
-        print("Filling database.")
+        print("Calculating Missing Energies...")
 
         calc = calculator.get_calculator(settings_path)
 
         counter = 0
+        successes = 0
+        failures = 0
 
         calculation_results = []
         
@@ -54,6 +56,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
                 with open(log_path, "r") as log_file:
                     log_text = log_file.read()
                 calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, True, energy, log_text))
+                successes += 1
             
             except LibraryCallError as e:
                 if e.log_path is not None:
@@ -65,6 +68,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
                 else:
                     log_text = "<Error occurred without producing log file.>"
                     calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, log_text))
+                failures += 1
 
 
             if len(calculation_results) >= database.get_batch_size():
@@ -75,7 +79,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
 
         database.set_properties(calculation_results)
 
-        print("\nFilling of database successful")
+        print("Done! Performed {} calculations. {} Successes and {} Failures.".format(counter, successes, failures))
 
 
 def generate_inputs_from_database(settings_path, database_path):
@@ -194,7 +198,7 @@ def print_progress(counter):
         None.
     """
 
-    s = "{:6d}".format(counter)
     if counter % 10 == 0:
-       s += "\n" 
-    print(s, end="", flush=True)
+        s = "Beginning calculation number {:6d}.".format(counter)
+        s += "\n"
+        print(s, end="", flush=True)

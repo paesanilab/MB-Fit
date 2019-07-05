@@ -22,7 +22,12 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         use_published_polarizabilities - use the polarizabilities from the 2018 Schwerdtfeger & Nagle paper; otherwise, use those calculated using MolPRO with ccsd(t)
     """
 
+
     settings = SettingsReader(settings_file)
+
+    print("Generating fitting config file for molecule with fragments {}".format(settings.get("molecule", "names")))
+
+    print("Preparing qchem input...")
 
     monomer_settings = []
     names = settings.get("molecule", "names").split(",")
@@ -146,8 +151,11 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     num_threads = settings.getint("qchem", "num_threads")
 
+    print("Executing qchem calculation...")
     # perform qchem system call
     os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+
+    print("Parsing qchem output...")
 
     # parse the output file
     with open(qchem_out_path, "r") as qchem_out:
@@ -403,6 +411,8 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
             charges.append(frag_charges)
 
+    print("Writing config file...")
+
     # create the config file!
     configwriter = configparser.ConfigParser()
     configwriter.add_section("common")
@@ -413,10 +423,13 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
-    molecule = Molecule()
-    
+    fragments = []
+
     for geo_path, setting in zip(geo_paths, monomer_settings):
-        molecule.read_xyz_path_direct(geo_path, setting)
+
+        fragments.append(Fragment.read_xyz(geo_path, setting.get("molecule", "names"), setting.getint("molecule", "charges"), setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"), setting.get("molecule", "symmetry")))
+
+    molecule = Molecule(fragments)
 
     excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
 
@@ -446,3 +459,5 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)
+
+    print("Completed generating config file {}.".format(config_path))

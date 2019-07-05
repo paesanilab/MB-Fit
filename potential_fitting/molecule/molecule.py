@@ -820,7 +820,6 @@ class Molecule(object):
             symmetry_per_fragment = settings.get("molecule", "symmetry").split(",")
             SMILE_per_fragment = settings.get("molecule", "SMILES").split(",")
 
-
         return Molecule.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
     @staticmethod

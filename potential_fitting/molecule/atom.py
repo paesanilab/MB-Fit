@@ -303,7 +303,7 @@ class Atom(object):
         """
         return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
 
-    def is_bonded(self, atom, bond_sensitivity = 1.1):
+    def is_bonded(self, atom, bond_sensitivity = 1.15):
         """
         Calculates whether this atom is likely to be bonded to another based on their atomic radii and the distance between them.
 

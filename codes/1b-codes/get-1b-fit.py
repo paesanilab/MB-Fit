@@ -108,7 +108,7 @@ for type_index in range(0, len(types), 2):
     for atom_index in range(1, int(types[type_index + 1]) + 1):
         atom_list.append(types[type_index] + str(atom_index))
 
-    for type2_index in range(type_index, len(types), 2):
+    for type2_index in range(type_index + (2 if int(types[type_index + 1]) == 1 else 0), len(types), 2):
         complete_real_pairs.append(types[type_index] + types[type2_index])
 
 print("atom list:", atom_list)

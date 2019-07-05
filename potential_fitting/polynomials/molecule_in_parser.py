@@ -8,11 +8,11 @@ class MoleculeInParser(object):
 
     def __init__(self, molecule_in):
         self.fragment_parsers = []
-
+        print("molecule_init", molecule_in)
         frag_id = 'a'
 
         for fragment_in in molecule_in.split("_"):
-
+            print("looping...")
             self.fragment_parsers.append(FragmentParser(fragment_in, frag_id))
 
             frag_id = chr(ord(frag_id) + 1)
@@ -49,7 +49,7 @@ class FragmentParser(object):
         self.atom_parsers = []
 
         start_index_dict = {}
-
+        
         for atom_in in self.split_fragments_in(fragment_in):
 
             atom_type = "".join(itertools.takewhile(str.isupper, atom_in))
@@ -177,7 +177,7 @@ class FragmentParser(object):
 
             # if character is not a digit or capital letter
             else:
-
+                print("error", fragment_in)
                 # raise exception, because fragment_in must be all numbers and capital letters.
                 raise Exception
 

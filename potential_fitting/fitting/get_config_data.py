@@ -153,7 +153,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     print("Executing qchem calculation...")
     # perform qchem system call
-    #os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+    os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
 
     print("Parsing qchem output...")
 

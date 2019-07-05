@@ -428,7 +428,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     for geo_path, setting in zip(geo_paths, monomer_settings):
         with open(geo_path, "r") as geo_file:
             frag_string = "\n".join(geo_file.read().splitlines()[2:])
-            fragments.append(Fragment.read_xyz(geo_path, setting.get("molecule", "names"), setting.getint("molecule", "charges"), setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"), setting.get("molecule", "symmetry")))
+            fragments.append(Fragment.read_xyz(frag_string, setting.get("molecule", "names"), setting.getint("molecule", "charges"), setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"), setting.get("molecule", "symmetry")))
 
     molecule = Molecule(fragments)
 

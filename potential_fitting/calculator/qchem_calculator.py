@@ -195,7 +195,7 @@ class QchemCalculator(Calculator):
 
         return geometry, energy, qchem_out_path
         
-    def find_optimized_geometry_and_energy_in_optimization_output_file(self, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
+    def find_optimized_geometry_and_energy_in_optimization_output_file(self, qchem_out_path, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
         """
         Parses the output file of a Qchem geometry optimization and retrieves the optimized
         geometry and optimized energy that resulted from the calculation.

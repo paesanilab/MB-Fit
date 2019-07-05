@@ -729,6 +729,9 @@ class Database():
 
             batch_offset += self.batch_size
 
+    def export_calculations(self, molecule_name, names, SMILES, method, basis, cp, *tags):
+        raise NotImplementedError # TODO: finish this
+
     def import_calculations(self, molecule_energies_pairs, method, basis, cp, *tags, optimized = False):
         """
         Imports already completed calculations into the database.
@@ -750,12 +753,33 @@ class Database():
 
         batch_count = 0
         order, frag_order, SMILES = None, None, None
+        energies_order = None
 
         for molecule, energies in molecule_energies_pairs:
             if order is None:
                 order, frag_order = molecule.get_standard_order_order()
                 SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+                if molecule.get_num_fragments() == 1:
+                    energies_order = [0]
+                if molecule.get_num_fragments() == 2:
+                    if order == [0, 1]:
+                        if cp:
+                            energies_order = [0, 1, 2, 3, 4]
+                        else:
+                            energies_order = [0, 1, 2]
+                    else:
+                        if cp:
+                            energies_order = [1, 0, 3, 2, 4]
+                        else:
+                            energies_order = [1, 0, 2]
+                if molecule.get_num_fragments() == 3:
+                    print("For now, import calculations does not work for 3B :( sorry.")
+                    raise Error
+
             molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+
+            energies = [energies[index] for index in energies_order]
 
             coordinates = []
             for fragment in molecule.get_fragments():

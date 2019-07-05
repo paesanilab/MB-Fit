@@ -667,7 +667,7 @@ DECLARE
     END IF;
 
     IF result THEN
-      UPDATE molecule_properties SET energies = energies || energy, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp RETURNING most_recent_log_id
+      UPDATE molecule_properties SET energies = energy || energies, status='complete' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp RETURNING most_recent_log_id
         INTO id;
       UPDATE log_files SET end_time=clock_timestamp(), log_text=log_txt WHERE log_id=id;
     ELSE
@@ -1124,4 +1124,3 @@ DECLARE
 $$;
 
 alter function construct_fragment(varchar, integer, integer, varchar, character varying[], character varying[], integer[]) owner to ebullvul;
-

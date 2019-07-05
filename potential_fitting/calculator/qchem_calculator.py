@@ -173,20 +173,41 @@ class QchemCalculator(Calculator):
         except CommandExecutionError as e:
             raise LibraryCallError("qchem", "optimize", str(e), log_path=qchem_out_path)
 
-        geometry, energy = self.find_optimized_geometry_and_energy_in_optimization_output_file(qchem_out_path, molecule.get_num_atoms(), molecule.get_charge(), molecule.get_spin_multiplicity())
+        atoms_per_fragment = []
+        name_per_fragment = []
+        charge_per_fragment = []
+        spin_multiplicity_per_fragment = []
+        symmetry_per_fragment = []
+        SMILE_per_fragment = []
+
+        for fragment in molecule.get_fragments():
+            atoms_per_fragment.append(fragment.get_num_atoms())
+            name_per_fragment.append(fragment.get_name())
+            charge_per_fragment.append(fragment.get_charge())
+            spin_multiplicity_per_fragment.append(fragment.get_spin_multiplicity())
+            symmetry_per_fragment.append(fragment.get_symmetry())
+            SMILE_per_fragment.append(fragment.get_SMILE())
+
+        geometry, energy = self.find_optimized_geometry_and_energy_in_optimization_output_file(qchem_out_path, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
         if self.logging:
             print("Completed geometry optimization.")
 
         return geometry, energy, qchem_out_path
         
-    def find_optimized_geometry_and_energy_in_optimization_output_file(self, qchem_out_path, num_atoms, charge, spin_multiplicity):
+    def find_optimized_geometry_and_energy_in_optimization_output_file(self, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
         """
         Parses the output file of a Qchem geometry optimization and retrieves the optimized
         geometry and optimized energy that resulted from the calculation.
 
         Args:
             qchem_out_path  - The path to the output file to parse.
+            atoms_per_fragment - List containing the number of atoms in each fragment.
+            name_per_fragment - List containing the names of each fragment.
+            charge_per_fragment - List containing the charges of each fragment.
+            spin_multiplicity_per_fragment - List containing the spin multiplicities of each fragment.
+            symmetry_per_fragment - List containing the symmetries of each fragment, in format A1B2.
+            SMILE_per_fragment - List containing the SMILE strings of each fragment.
 
         Returns:
             (optimized geometry Molecule, optimized energy) from the output file.
@@ -203,8 +224,7 @@ class QchemCalculator(Calculator):
                     if "ATOM" in line:
                         for atom_index in range(num_atoms):
                             qchem_out_string += " ".join(qchem_out_file.readline().split()[1:]) + "\n"
-                        return Molecule().read_psi4_string("{} {}\n{}".format(charge,
-                                spin_multiplicity, qchem_out_string)), energy
+                        return Molecule.read_xyz("{}\n\n".format(sum(atoms_per_fragment)) + qchem_out_string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment), energy
                 elif "Final energy is" in line:
                     energy = float(line.split()[3])
                     found = True

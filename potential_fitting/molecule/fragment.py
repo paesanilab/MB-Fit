@@ -61,6 +61,9 @@ class Fragment(object):
         self.index = -1
 
     def parse_SMILE(self, SMILE):
+
+        if len(SMILE) == 0:
+            return [], [], []
         
         # parse the next atom from the SMILE string
         if SMILE.startswith('['):

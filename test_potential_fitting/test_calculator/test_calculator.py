@@ -10,8 +10,8 @@ class TestCalculator(unittest.TestCase):
     # set up before the first test case
     def setUpClass():
 
-        TestCalculator.CO2 = Molecule().read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.xyz"), [3], ["CO2"], [0], [1], ["A1B2"])
-        TestCalculator.CN = Molecule().read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.xyz"), [2], ["CN"], [-1], [1], ["A1B1"])
+        TestCalculator.CO2 = Molecule.read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.xyz"), [3], ["CO2"], [0], [1], ["A1B2"], ["C(O)O"])
+        TestCalculator.CN = Molecule.read_xyz_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.xyz"), [2], ["CN"], [-1], [1], ["A1B1"], ["CN"])
 
         TestCalculator.model1 = Model("HF", "STO-3G", True)
         TestCalculator.model2 = Model("wb97", "cc-pvdz", False)

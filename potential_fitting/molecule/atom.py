@@ -1,5 +1,5 @@
 import math, numpy as np
-from potential_fitting.utils import constants
+from potential_fitting.utils import constants, math
 
 class Atom(object):
     """
@@ -332,7 +332,7 @@ class Atom(object):
 
     def __eq__(self, other):
         return (self.get_name() == other.get_name() and self.get_symmetry_class() == other.get_symmetry_class()
-                and np.isclose(self.get_x(), other.get_x()) and np.isclose(self.get_y(), other.get_y()) and np.isclose(self.get_z(), other.get_z()))
+                and math.test_difference_under_threshold(self.get_x(), other.get_x(), 0.00001) and math.test_difference_under_threshold(self.get_y(), other.get_y(), 0.00001) and math.test_difference_under_threshold(self.get_z(), other.get_z(), 0.00001))
 
     def __ne__(self, other):
         return not self == other

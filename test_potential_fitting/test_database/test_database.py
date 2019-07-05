@@ -13,13 +13,9 @@ class TestDatabase(unittest.TestCase):
         H2 = Atom("H", "A", random.random(), random.random(), random.random())
         O1 = Atom("O", "B", random.random(), random.random(), random.random())
 
-        frag1 = Fragment("H2O", 0, 1)
-        frag1.add_atom(H1)
-        frag1.add_atom(H2)
-        frag1.add_atom(O1)
+        frag1 = Fragment([H1, H2, O1], "H2O", 0, 1, "H1.HO1")
 
-        molecule = Molecule()
-        molecule.add_fragment(frag1)
+        molecule = Molecule([frag1])
 
         return molecule
 
@@ -29,28 +25,20 @@ class TestDatabase(unittest.TestCase):
         H2 = Atom("H", "A", random.random(), random.random(), random.random())
         O1 = Atom("O", "B", random.random(), random.random(), random.random())
 
-        frag1 = Fragment("H2O", 0, 1)
-        frag1.add_atom(H1)
-        frag1.add_atom(H2)
-        frag1.add_atom(O1)
+        frag1 = Fragment([H1, H2, O1], "H2O", 0, 1, "H1.HO1")
 
         H1 = Atom("H", "A", random.random(), random.random(), random.random())
         H2 = Atom("H", "A", random.random(), random.random(), random.random())
         O1 = Atom("O", "B", random.random(), random.random(), random.random())
 
-        frag2 = Fragment("H2O", 0, 1)
-        frag2.add_atom(H1)
-        frag2.add_atom(H2)
-        frag2.add_atom(O1)
+        frag2 = Fragment([H1, H2, O1], "H2O", 0, 1, "H1.HO1")
 
-        molecule = Molecule()
-        molecule.add_fragment(frag1)
-        molecule.add_fragment(frag2)
+        molecule = Molecule([frag1, frag2])
 
         return molecule
 
     def setUp(self):
-        self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.ini")
+        self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.ini")
         self.database = Database(self.config)
         self.database.annihilate(confirm="confirm")
 
@@ -84,47 +72,6 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(self.database.create_postgres_array("A", "B", "C", "D"), "{A,B,C,D}")
         self.assertEqual(self.database.create_postgres_array(1, 2, 3, 4), "{1,2,3,4}")
 
-    def test_add_model_info_and_get_model(self):
-        str, param = self.database.add_model_info("testmethod", "testbasis", True)
-        self.database.execute(str, param)
-
-        models = self.database.get_models()
-
-        self.assertIn("testmethod/testbasis/True", models)
-        self.assertNotIn("wrongmethod/testbasis/True", models)
-        self.assertNotIn("testmethod/wrongbasis/True", models)
-        self.assertNotIn("testmethod/testbasis/False", models)
-
-
-        str, param = self.database.add_model_info("testmethod", "testbasis", False)
-        self.database.execute(str, param)
-
-        models = self.database.get_models()
-
-        self.assertIn("testmethod/testbasis/True", models)
-        self.assertIn("testmethod/testbasis/False", models)
-
-    def test_add_molecule_and_get_molecule(self):
-
-        for i in range(1):
-
-            molecule = self.get_water_monomer()
-
-            str, param = self.database.add_molecule(molecule)
-
-            self.database.execute(str, param)
-
-            self.assertEqual(molecule.get_SHA1(), self.database.get_molecule(molecule.get_SHA1()).get_SHA1())
-
-        for i in range(0):
-            molecule = self.get_water_dimer()
-
-            str, param = self.database.add_molecule(molecule)
-            self.database.execute(str, param)
-
-            self.assertEqual(molecule, self.database.get_molecule(molecule.get_SHA1()))
-
-    @unittest.skip("skip")
     def test_add_calculation_and_get_all_calculations(self):
 
         calculations = list(self.database.get_all_calculations("testclient", "notused"))
@@ -141,6 +88,8 @@ class TestDatabase(unittest.TestCase):
 
         mols = [calc[0] for calc in calculations]
 
+        molecules = [molecule.get_standard_copy() for molecule in molecules]
+
         for molecule in molecules:
             self.assertIn((molecule, "testmethod", "testbasis", True, False, [0]), calculations)
 
@@ -156,6 +105,8 @@ class TestDatabase(unittest.TestCase):
         calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 100)
 
+        molecules = [molecule.get_standard_copy() for molecule in molecules]
+
         for molecule in molecules:
             self.assertIn((molecule, "testmethod", "testbasis", False, False, [0]), calculations)
 
@@ -170,6 +121,8 @@ class TestDatabase(unittest.TestCase):
 
         calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 500)
+
+        molecules = [molecule.get_standard_copy() for molecule in molecules]
 
         for molecule in molecules:
             self.assertIn((molecule, "testmethod", "testbasis", True, False, [0]), calculations)
@@ -190,6 +143,8 @@ class TestDatabase(unittest.TestCase):
         calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 300)
 
+        molecules = [molecule.get_standard_copy() for molecule in molecules]
+
         for molecule in molecules:
             self.assertIn((molecule, "testmethod", "testbasis", False, False, [0]), calculations)
             self.assertIn((molecule, "testmethod", "testbasis", False, False, [1]), calculations)
@@ -198,22 +153,6 @@ class TestDatabase(unittest.TestCase):
         calculations = list(self.database.get_all_calculations("testclient", "notused"))
         self.assertEqual(len(calculations), 0)
 
-    def test_build_empty_molecule(self):
-
-        molecule = self.get_water_monomer()
-
-        str, param = self.database.add_molecule(molecule)
-
-        self.database.execute(str, param)
-
-        for atom in molecule.get_atoms():
-            atom.set_xyz(0, 0, 0)
-
-        empty_mol = self.database.build_empty_molecule(molecule.get_name())
-
-        self.assertEqual(molecule, empty_mol)
-
-    @unittest.skip("skip")
     def test_set_properties_and_get_1B_training_set(self):
         opt_mol = self.get_water_monomer()
         opt_energy = random.random()
@@ -229,7 +168,7 @@ class TestDatabase(unittest.TestCase):
         calculation_results = []
 
         for molecule, method, basis, cp, use_cp, frag_indices in calculations:
-            if molecule == opt_mol:
+            if molecule == opt_mol.get_standard_copy():
                 energy = opt_energy
             else:
                 energy = random.random()
@@ -238,7 +177,7 @@ class TestDatabase(unittest.TestCase):
 
         self.database.set_properties(calculation_results)
 
-        training_set = list(self.database.get_1B_training_set("H2O", "testmethod", "testbasis", True, "tag1"))
+        training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "tag1"))
         self.assertEqual(len(training_set), 101)
 
         for index in range(len(training_set)):
@@ -247,7 +186,7 @@ class TestDatabase(unittest.TestCase):
             training_set[index] = tuple(training_set[index])
 
         for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
-            self.assertIn((molecule, round(energy - opt_energy, 5)), training_set)
+            self.assertIn((molecule.get_reorder_copy(["H2O"], ["H1.HO1"]), round(energy - opt_energy, 5)), training_set)
 
     def test_set_properties_and_get_2B_training_set(self):
         opt_mol = self.get_water_monomer()
@@ -267,10 +206,10 @@ class TestDatabase(unittest.TestCase):
         calculation_results = []
 
         for molecule, method, basis, cp, use_cp, frag_indices in calculations:
-            if molecule == opt_mol:
+            if molecule == opt_mol.get_standard_copy():
                 energy = opt_energy
             else:
-                index = molecules.index(molecule)
+                index = molecules.index(molecule.get_reorder_copy(["H2O", "H2O"], ["H1.HO1", "H1.HO1"]))
                 if frag_indices == [0]:
                     energy = energies[index][0]
                 elif frag_indices == [1]:
@@ -283,7 +222,7 @@ class TestDatabase(unittest.TestCase):
 
         self.database.save()
 
-        training_set = list(self.database.get_2B_training_set("H2O-H2O", "H2O", "H2O", "testmethod", "testbasis", False, "tag1"))
+        training_set = list(self.database.get_2B_training_set("H2O-H2O", ["H2O", "H2O"], ["H1.HO1", "H1.HO1"], "testmethod", "testbasis", False, "tag1"))
         self.assertEqual(len(training_set), 100)
 
         for index in range(len(training_set)):

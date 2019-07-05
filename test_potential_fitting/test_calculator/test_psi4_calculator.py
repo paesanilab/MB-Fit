@@ -69,62 +69,56 @@ class TestPsi4Calculator(TestCalculator):
         
         geometry, energy, log_path = self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
 
-        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
+        ref_geometry, ref_energy, ref_log_path = Molecule.read_xyz(
                 "3\n" +
                 "comment line\n" + 
                 "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
                 "O    1.18792281660400e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
                 "O   -1.18792281660400e+00  -0.00000000000000e+00   0.00000000000000e+00",
-                [3], ["CO2"], [0], [1], ["A1B2"]
+                [3], ["CO2"], [0], [1], ["A1B2"], ["C(O)O"]
                 ), -185.0686096209073, "reference/87d98bce_2019-02-12_18-05-57.011827.log"
 
         self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
-
-
         geometry, energy, log_path = self.calculator2.optimize_geometry(TestCalculator.CN, TestCalculator.model1)
 
-        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
-                "3\n" +
+        ref_geometry, ref_energy, ref_log_path = Molecule.read_xyz(
+                "2\n" +
                 "comment line\n" + 
                 "C    0.00000000000000e+00   0.00000000000000e+00  -6.25871642281000e-01\n" + 
-                "N    0.00000000000000e+00   0.00000000000000e+00   5.36343641746000e-01\n" + 
-                [3], ["CO2"], [0], [1], ["A1B2"]
+                "N    0.00000000000000e+00   0.00000000000000e+00   5.36343641746000e-01\n",
+                [2], ["CN"], [-1], [1], ["A1B1"], ["CN"]
                 ), -90.93789222723362, "reference/87d98bce_2019-02-12_18-05-57.011827.log"
 
         self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
-
-
         geometry, energy, log_path = self.calculator3.optimize_geometry(TestCalculator.CO2, TestCalculator.model2)
 
-        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
+        ref_geometry, ref_energy, ref_log_path = Molecule.read_xyz(
                 "3\n" +
                 "comment line\n" + 
                 "C    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
                 "O    1.16583555902900e+00   0.00000000000000e+00   0.00000000000000e+00\n" + 
                 "O   -1.16583555902900e+00  -0.00000000000000e+00   0.00000000000000e+00",
-                [3], ["CO2"], [0], [1], ["A1B2"]
+                [3], ["CO2"], [0], [1], ["A1B2"], ["C(O)O"]
                 ), -188.57010830948178, "reference/87d98bce_2019-02-26_17-12-02.103049.log"
 
         self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
-        
-
 
         geometry, energy, log_path = self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
         
-        ref_geometry, ref_energy, ref_log_path = Molecule().read_xyz(
+        ref_geometry, ref_energy, ref_log_path = Molecule.read_xyz(
                 "2\n" +
                 "comment line\n" + 
                 "C    0.00000000000000e+00   0.00000000000000e+00  -6.37177443370000e-01\n" + 
-                "N    0.00000000000000e+00   0.00000000000000e+00   5.46032201060000e-01\n" + 
-                [2], ["CN-"], [-1], [1], ["A1B1"]
+                "N    0.00000000000000e+00   0.00000000000000e+00   5.46032201060000e-01\n",
+                [2], ["CN"], [-1], [1], ["A1B1"], ["CN"]
                 ), -92.8200195418866, "reference/59bb6335_2019-02-26_17-08-15.986530.log"
 
         self.assertTrue(geometry == ref_geometry, "Geometry optimization failed. Compare log files reference: {} and calculated: {}.".format(ref_log_path, log_path))

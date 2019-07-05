@@ -159,7 +159,24 @@ class Psi4Calculator(Calculator):
         if self.logging:
             print("Completed geometry optimization.")
 
-        return Molecule.read_psi4_string(psi4_mol.save_string_xyz()), energy, log_path
+        atoms_per_fragment = []
+        name_per_fragment = []
+        charge_per_fragment = []
+        spin_multiplicity_per_fragment = []
+        symmetry_per_fragment = []
+        SMILE_per_fragment = []
+
+        for fragment in molecule.get_fragments():
+            atoms_per_fragment.append(fragment.get_num_atoms())
+            name_per_fragment.append(fragment.get_name())
+            charge_per_fragment.append(fragment.get_charge())
+            spin_multiplicity_per_fragment.append(fragment.get_spin_multiplicity())
+            symmetry_per_fragment.append(fragment.get_symmetry())
+            SMILE_per_fragment.append(fragment.get_SMILE())
+
+        xyz_string = "{}\ncomment_line\n".format(molecule.get_num_atoms()) + "\n".join(psi4_mol.save_string_xyz().splitlines()[1:])
+
+        return Molecule.read_xyz(xyz_string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment), energy, log_path
 
     def find_frequencies(self, molecule, model):
         """

@@ -1034,11 +1034,14 @@ class Molecule(object):
         Gets the order the fragments and atoms in this molecule must be in to match the SMILE string.
 
         Args:
-            SMILE - order the atoms to match the order in this SMILE string.
+            names - order the fragments to match the order in this list.
+            SMILE - order the atoms of each fragment to match the orders in these SMILE strings.
 
         Returns:
-            A list of indices, where indices[i] = index of atom that should be in index i to make this fragment
-            order match the SMILE string.
+            (order, frag_orders)
+            order   - A list of indices, where indices[i] = index of fragment that should be in index i to put the fragments in the order specified.
+            frag_orders - A list of lists, where each list corresponds to one fragment.
+                    where frag_orders[j][i] = index of atom that should be in index i to put the fragment j of the new order in the order specified.
         """
         order = []
 
@@ -1052,6 +1055,17 @@ class Molecule(object):
         return order, frag_orders
 
     def get_reordered_copy(self, order, frag_orders, SMILES):
+        """
+        Gets a copy of this molecule, the fragments and atoms are reordered according to the input.
+
+        Args:
+            order - New order of the fragments.
+            frag_orders - New order of the atoms within each fragment.
+            SMILES  -   new SMILE strings for each of the fragments.
+        Returns:
+            A copy of this molecule, reordered to match the input.
+
+        """
         fragments = []
 
         prev_frag_name = None

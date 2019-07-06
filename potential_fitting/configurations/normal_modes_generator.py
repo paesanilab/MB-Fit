@@ -34,9 +34,6 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, ba
     # write the normal modes to the output file
     write_normal_modes(settings_path, normal_modes, frequencies, red_masses, normal_modes_path)
 
-    # return dim null so it can be used as input to configuration_generator
-    return dim_null
-
 def write_normal_modes(settings_path, normal_modes, frequencies, red_masses, normal_modes_path):
     """
     Writes the info returned by calculator.frequencies() to the file normal_modes_path.

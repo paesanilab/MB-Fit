@@ -347,7 +347,6 @@ class Database():
                 SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
 
             molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
-
             coordinates = []
             for fragment in molecule.get_fragments():
                 for atom in fragment.get_atoms():
@@ -534,6 +533,7 @@ class Database():
             pending_calcs = self.cursor.fetchall()
 
             empty_molecule = self.build_empty_molecule(molecule_name)
+            empty_molecule = empty_molecule.get_standard_copy()
 
             for atom_coordinates, model, frag_indices, use_cp in pending_calcs:
                 molecule = copy.deepcopy(empty_molecule)

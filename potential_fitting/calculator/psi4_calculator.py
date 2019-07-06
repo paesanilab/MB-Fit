@@ -117,10 +117,13 @@ class Psi4Calculator(Calculator):
         
         try:
             # Perform library call to calculate energy of molecule
+
+            energy = psi4.energy(model.get_method() + "/" + model.get_basis(), molecule=psi4_mol)
+
             if self.logging:
                 print("Successfully completed energy calculation.")
 
-            return psi4.energy(model.get_method() + "/" + model.get_basis(), molecule=psi4_mol), log_path
+            return energy, log_path
 
         except QcdbException as e:
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)

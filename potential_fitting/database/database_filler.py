@@ -46,6 +46,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
         for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=calculation_count):
             
             counter += 1
+            print_progress(counter)
 
             try:
                 model = Model(method, basis, cp)

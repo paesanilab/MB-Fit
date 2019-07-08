@@ -3,7 +3,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
+from potential_fitting.exceptions import PotentialFittingError, NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
 from potential_fitting.utils import SettingsReader
 from psycopg2 import OperationalError
 
@@ -782,8 +782,7 @@ class Database():
                         else:
                             energies_order = [1, 0, 2]
                 if molecule.get_num_fragments() == 3:
-                    print("For now, import calculations does not work for 3B :( sorry.")
-                    raise Error
+                    raise PotentialFittingError("For now, import calculations does not work for 3B :( sorry.")
 
             molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
 

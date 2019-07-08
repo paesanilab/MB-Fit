@@ -37,18 +37,18 @@ class Fragment(object):
         atomic_symbols, self.connectivity_matrix, loose_bonds = self.parse_SMILE(SMILE)
 
         if loose_bonds != []:
-            raise Error
+            raise InvalidValueError("SMILE string", SMILE, "All numbered bonds must be closed.")
 
         self.atoms = []
         for atom in atoms:
             self.add_atom(atom)
 
         if len(atomic_symbols) != len(self.atoms):
-            raise Error
+            raise InconsistentValueError("Number of atoms", "SMILE string", len(self.atoms), SMILE, "SMILE string must have exactly one atomic symbol per atom in the Fragment.")
 
         for atomic_symbol, atom in zip(atomic_symbols, self.atoms):
             if atomic_symbol != atom.get_name():
-                raise Error
+                raise InconsistentValueError("Atomic symbol of atom", "Atomic symbol of SMILE string", atom.get_name(), atomic_symbol, "Order of atoms in Fragment must match order of atoms in SMILE string.")
         
         # charge of this fragment
         self.charge = charge
@@ -95,7 +95,7 @@ class Fragment(object):
 
         if len(loose_bonds) != len(set(loose_bonds)):
             # SMILE indicates atom is bonded to itself!!!
-            raise Error
+            raise InvalidValueError("SMILE BONDS", loose_bonds, "SMILE string indicates atom is bonded to itself.")
 
         atoms = [atomic_symbol]
         connectivity_matrix = [[False]]

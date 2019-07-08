@@ -712,9 +712,6 @@ class Database():
 
         monomer1_name, monomer2_name = sorted([names[0], names[1]])
 
-        if sorted(molecule_name.split("-")) != [monomer1_name, monomer2_name]:
-            raise Exception
-
         molecule_name = monomer1_name + "-" + monomer2_name
         
         while True:

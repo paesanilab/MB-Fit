@@ -30,7 +30,6 @@ def read_all_jobs(database_config_path, job_dir):
     """
     calculation_results = []
     for directory in glob(job_dir + "/job_*"):
-        print(directory)
         if directory.endswith("done"):
             continue
         calculation_results.append(read_job(directory + "/output.ini", directory + "/output.log"))
@@ -43,7 +42,6 @@ def read_all_jobs(database_config_path, job_dir):
         db.set_properties(calculation_results)
 
     for directory in glob(job_dir + "/job_*"):
-        print(directory)
         if directory.endswith("done"):
             continue
 
@@ -78,6 +76,7 @@ def read_job(job_dat_path, job_log_path):
     charges = data.getlist("molecule", "charges", int)
     spins = data.getlist("molecule", "spins", int)
     symmetries = data.getlist("molecule", "symmetries", str)
+    SMILES = data.get("molecule", "SMILES", str).split(",")
     names = data.getlist("molecule", "names", str)
     method = data.get("molecule", "method")
     basis = data.get("molecule", "basis")
@@ -85,9 +84,7 @@ def read_job(job_dat_path, job_log_path):
     use_cp = data.get("molecule", "use_cp")
     frag_indices = data.getlist("molecule", "frag_indices", int)
 
-    print(symmetries)
-
-    molecule = Molecule().read_xyz(xyz, atom_counts, names, charges, spins, symmetries)
+    molecule = Molecule.read_xyz(xyz, atom_counts, names, charges, spins, symmetries, SMILES)
 
     try:
         energy = data.getfloat("molecule", "energy")

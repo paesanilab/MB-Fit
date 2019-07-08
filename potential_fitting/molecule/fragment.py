@@ -936,14 +936,17 @@ class Fragment(object):
         atoms = []
         prev_symmetry = None
 
-        next_symmetry = symmetries[0]
-        symmetries = symmetries[1:]
+        symmetries_dict = {}
 
         for atom in [self.get_atoms()[index] for index in order]:
 
-            if prev_symmetry is not None and prev_symmetry != atom.get_symmetry_class():
-                next_symmetry = symmetries[0]
-                symmetries = symmetries[1:]
+            if prev_symmetry is None or prev_symmetry != atom.get_symmetry_class():
+                try:
+                    next_symmetry = symmetries_dict[atom.get_symmetry_class()]
+                except KeyError:
+                    next_symmetry = symmetries[0]
+                    symmetries = symmetries[1:]
+                    symmetries_dict[atom.get_symmetry_class()] = next_symmetry
 
             prev_symmetry = atom.get_symmetry_class()
 

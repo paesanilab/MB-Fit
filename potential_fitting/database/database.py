@@ -482,7 +482,12 @@ class Database():
 
             next_start_symmetry = next_symmetry
 
-        return Molecule(fragments)
+        molecule = Molecule(fragments)
+
+        for index, atom in enumerate(molecule.get_atoms()):
+            atom.set_xyz(index, index, index)
+
+        return molecule
 
     def get_all_calculations(self, client_name, *tags, calculations_to_do = sys.maxsize):
         """

@@ -160,7 +160,7 @@ def init_database(settings_path, database_config_path, configurations_path, meth
     database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 
-def fill_database(settings_path, database_config_path, client_name, calculation_count = sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
@@ -170,13 +170,17 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
         database_config_path - .ini file containing host, port, database, username, and password.
                     Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
-        calculation_count   - Maximum number of calculations to perform. Default is unlimited.
+        tags                - Only perform calculations marked with at least one of these tags.
+        calculation_count   - Maximum number of calculations to perform. Unlimited if None.
 
     Returns:
         None.
     """
 
-    database.fill_database(settings_path, database_config_path, client_name, calculation_count)
+    if calculation_count is None:
+        calculation_count = sys.maxsize
+
+    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
 
 
 def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):

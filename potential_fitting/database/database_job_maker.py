@@ -9,7 +9,7 @@ from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissin
 from .database import Database
 
 
-def make_all_jobs(settings_path, database_config_path, client_name, job_dir, num_jobs=sys.maxsize):
+def make_all_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -19,15 +19,19 @@ def make_all_jobs(settings_path, database_config_path, client_name, job_dir, num
                     Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client that will perform these jobs
         job_dir             - Local path to the directory to place the job files in.
-        num_jobs            - The number of jobs to generate. Default is unlimited.
+        tags                - Onlt  make jobs for calculations marked with at least one of these tags.
+        num_jobs            - The number of jobs to generate. Unlimted if None.
 
     Returns:
         None.
     """
 
+    if num_jobs is None:
+        num_jobs = sys.maxsize
+
     # open the database
     with Database(database_config_path) as database:
-        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=num_jobs):
+        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=num_jobs):
             write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir)
 
 

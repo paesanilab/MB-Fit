@@ -495,8 +495,6 @@ class Database():
 
         Pass the output into set_properties to update the energies in the database.
 
-        NOTE: the tags argument does not work. Currently, calculations will be selected regardless of tag.
-
         Args:
             client_name     - The name of the client that will perform these calculations.
             tags            - Only fetch calculations with these tags.
@@ -520,7 +518,7 @@ class Database():
 
         while True:
 
-            self.cursor.execute("SELECT mol_hash FROM pending_calculations LIMIT 1")
+            self.cursor.execute("SELECT pending_calculations.mol_hash FROM pending_calculations INNER JOIN tags ON pending_calculations.mol_hash = tags.mol_hash AND pending_calculations.model_name = tags.model_name WHERE tags.tag_names && %s LIMIT 1", (self.create_postgres_array(*tags),))
 
             try:
                 mol_hash = self.cursor.fetchone()[0]

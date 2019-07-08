@@ -11,7 +11,7 @@ from potential_fitting.utils import SettingsReader, files
 from .database import Database
 
 
-def fill_database(settings_path, database_config_path, client_name, calculation_count=sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=sys.maxsize):
     """
     Loops over uncalculated energies in a database and calculates them.
 
@@ -43,7 +43,7 @@ def fill_database(settings_path, database_config_path, client_name, calculation_
 
         calculation_results = []
         
-        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, calculations_to_do=calculation_count):
+        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=calculation_count):
             
             counter += 1
             print_progress(counter)

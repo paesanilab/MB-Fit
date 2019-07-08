@@ -12,6 +12,7 @@ def execute_job():
     charges = "{charges}"
     spins = "{spins}"
     symmetries = "{symmetries}"
+    SMILES = "{SMILES}"
     names = "{names}"
     atom_counts = "{atom_counts}"
     total_atoms = "{total_atoms}"
@@ -23,6 +24,8 @@ def execute_job():
     use_cp = "{use_cp}"
     number_of_threads = {num_threads}
     memory = "{memory}"
+    total_charge = "{total_charge}"
+    total_spin = "{total_spin}"
 
     try:
         max_threads = int(subprocess.check_output(["grep", "-c", "cores", "/proc/cpuinfo"]))
@@ -58,7 +61,8 @@ def execute_job():
 
     psi4.core.set_output_file(log_file, False)
     psi4.set_memory(memory)
-    psi4.geometry(molecule)
+    psi4_input_geo = "\n" + str(total_charge) + " " + str(total_spin) + "\n" + molecule
+    psi4.geometry(psi4_input_geo)
     psi4.set_num_threads(number_of_threads)
 
     try:
@@ -77,6 +81,7 @@ def execute_job():
         out_file.write("charges = {format}\n".format(charges))
         out_file.write("spins = {format}\n".format(spins))
         out_file.write("symmetries = {format}\n".format(symmetries).replace("'", ""))
+        out_file.write("SMILES = {format}\n".format(SMILES).replace("'", ""))
         out_file.write("names = {format}\n".format(names).replace("'",""))
         out_file.write("method = {format}\n".format(method))
         out_file.write("basis = {format}\n".format(basis))

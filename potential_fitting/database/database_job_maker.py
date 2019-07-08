@@ -80,6 +80,7 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
             "charges": [frag.get_charge() for frag in molecule.get_fragments()],
             "spins": [frag.get_spin_multiplicity() for frag in molecule.get_fragments()],
             "symmetries": [frag.get_symmetry() for frag in molecule.get_fragments()],
+            "SMILES": ",".join([frag.get_SMILE() for frag in molecule.get_fragments()]),
             "atom_counts": [frag.get_num_atoms() for frag in molecule.get_fragments()],
             "names": [frag.get_name() for frag in molecule.get_fragments()],
             "total_atoms": molecule.get_num_atoms(),
@@ -91,5 +92,7 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
             "use_cp":       use_cp,
             "num_threads":  settings.get("psi4", "num_threads"),
             "memory":       settings.get("psi4", "memory"),
-            "format":       "{}"
+            "format":       "{}",
+            "total_charge": sum([frag.get_charge() for frag in molecule.get_fragments()]),
+            "total_spin": sum([frag.get_spin_multiplicity() for frag in molecule.get_fragments()])
         }))

@@ -700,6 +700,9 @@ class Database():
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
         empty_molecule = self.build_empty_molecule(molecule_name)
 
         order, frag_orders = None, None
@@ -709,9 +712,6 @@ class Database():
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
             training_set = self.cursor.fetchall()
-
-            if training_set == []:
-                return
 
             for atom_coordinates, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in training_set:
                 molecule = copy.deepcopy(empty_molecule)
@@ -728,6 +728,9 @@ class Database():
                 yield molecule.get_reordered_copy(order, frag_orders, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
             batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
 
     def export_calculations(self, molecule_name, names, SMILES, method, basis, cp, *tags):
         raise NotImplementedError # TODO: finish this

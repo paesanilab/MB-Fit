@@ -708,6 +708,11 @@ class Database():
         order, frag_orders = None, None
 
         monomer1_name, monomer2_name = sorted([names[0], names[1]])
+
+        if sorted(molecule_name.split("-")) != [monomer1_name, monomer2_name]:
+            raise Exception
+
+        molecule_name = monomer1_name + "-" + monomer2_name
         
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))

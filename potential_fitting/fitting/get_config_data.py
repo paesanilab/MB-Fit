@@ -35,15 +35,17 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     charges = settings.get("molecule", "charges").split(",")
     spins = settings.get("molecule", "spins").split(",")
     symmetries = settings.get("molecule", "symmetry").split(",")
+    SMILES = settings.get("molecule", "SMILES").split(",")
 
 
-    for name, fragment, charge, spin, symmetry in zip(names, fragments, charges, spins, symmetries):
+    for name, fragment, charge, spin, symmetry, SMILE in zip(names, fragments, charges, spins, symmetries, SMILES):
         monomer_setting = SettingsReader(settings_file)
         monomer_setting.set("molecule", "names", name)
         monomer_setting.set("molecule", "fragments", fragment)
         monomer_setting.set("molecule", "charges", charge)
         monomer_setting.set("molecule", "spins", spin)
         monomer_setting.set("molecule", "symmetry", symmetry)
+        monomer_setting.set("molecule", "SMILES", SMILE)
         monomer_settings.append(monomer_setting)
 
     # split the molecule input string into fragments

@@ -939,12 +939,12 @@ class Database():
         """
         self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])
 
-    def delete_calculations(self, molecule_list, method, basis, cp, *tags):
+    def delete_calculations(self, molecule_list, method, basis, cp, *tags, delete_complete_calculations = False):
         """
         Removes the specified tags from any calculations in the database that matches one of the molecules in
         molecule_list and the given method, basis, and cp.
 
-        Will never delete calculated energies, only remove tags from them.
+        Will never delete calculated energies unless delete_complete_calculations is True, only remove tags from them.
 
         Will fully delete uncomplete calculations from the database.
 
@@ -954,6 +954,8 @@ class Database():
             basis   - Remove tags from calculations with this basis.
             cp      - Remove tags from calculations with this cp.
             tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
 
         Returns:
             None.
@@ -973,8 +975,8 @@ class Database():
 
             molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
 
-            command_string += "PERFORM delete_calculation(%s, %s, %s, %s, %s, %s);"
-            params += [molecule.get_SHA1(), molecule.get_name(), method, basis, cp, self.create_postgres_array(*tags)]
+            command_string += "PERFORM delete_calculation(%s, %s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), molecule.get_name(), method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations]
 
             batch_count += 1
 

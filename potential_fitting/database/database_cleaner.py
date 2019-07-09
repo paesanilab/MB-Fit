@@ -42,12 +42,12 @@ def reset_database(settings_path, database_config_path, *tags):
         database.reset_failed(*tags)
 
 
-def delete_calculations(settings_path, database_config_path, configurations_path, method, basis, cp, *tags):
+def delete_calculations(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, delete_complete_calculations = False):
     """
     Removes the specified tags from any calculations in the database that matches one of the molecules in
     the configurations file and the given method, basis, and cp.
 
-    Will never delete calculated energies, only remove tags from them.
+    Will never delete calculated energies unless delete_complete_calculations is True, only remove tags from them.
 
     Will fully delete uncomplete calculations from the database.
 
@@ -60,6 +60,8 @@ def delete_calculations(settings_path, database_config_path, configurations_path
         basis   - Remove tags from calculations with this basis.
         cp      - Remove tags from calculations with this cp.
         tags    - The tags to remove.
+        delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
 
     Returns:
         None.
@@ -68,4 +70,4 @@ def delete_calculations(settings_path, database_config_path, configurations_path
 
     with Database(database_config_path) as database:
 
-        database.delete_calculations(molecules, method, basis, cp, *tags)
+        database.delete_calculations(molecules, method, basis, cp, *tags, delete_complete_calculations)

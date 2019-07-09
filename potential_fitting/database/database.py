@@ -725,10 +725,11 @@ class Database():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
 
-
-
                 if order is None:
                     order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                if order == [1, 0]:
+                    monomer1_energy, monomer2_energy = monomer2_energy, monomer1_energy
 
                 yield molecule.get_reordered_copy(order, frag_orders, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
@@ -819,10 +820,10 @@ class Database():
                 symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
                 symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
 
-                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
                 if not frag_name == frag_names[-1]:
                     command_string += ", "
-                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(),
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_SMILE(),
                            self.create_postgres_array(*symbols),
                            self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
 

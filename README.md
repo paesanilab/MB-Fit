@@ -1,3 +1,7 @@
+## POSTGRES DATBASE NOTES:
+
+For now, please ALWAYS include your name or initials in the tag. This is so your training and test sets don't get mixed up with other people's.
+
 # MB-nrg potential energy function generation
 
 [![Build Status](https://travis-ci.org/paesanilab/potential_fitting.svg?branch=master)](https://travis-ci.org/paesanilab/potential_fitting)

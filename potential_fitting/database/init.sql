@@ -1082,8 +1082,8 @@ DECLARE
   BEGIN
     IF NOT EXISTS(SELECT frag_name FROM molecule_contents WHERE frag_name = name) THEN
       for atomic_symbol, atom_symmetry in SELECT atom_symbol, symmetry FROM fragment_contents WHERE frag_name = name LOOP
-        PERFORM delete_atom_info(atomic_symbol);
         DELETE FROM fragment_contents WHERE frag_name = name AND atomic_symbol = atomic_symbol AND symmetry = atom_symmetry;
+        PERFORM delete_atom_info(atomic_symbol);
       end loop;
 
       DELETE FROM fragment_info WHERE fragment_info.name = delete_fragment_info.name;
@@ -1107,8 +1107,8 @@ DECLARE
 
     IF NOT EXISTS(SELECT mol_name FROM molecule_list WHERE mol_name=name) THEN
       for fragment_name in SELECT frag_name FROM molecule_contents WHERE mol_name = name LOOP
-        PERFORM delete_fragment_info(fragment_name);
         DELETE FROM molecule_contents WHERE mol_name = name AND frag_name = fragment_name;
+        PERFORM delete_fragment_info(fragment_name);
       end loop;
 
       DELETE FROM molecule_info WHERE molecule_info.name = delete_molecule_info.name;
@@ -1131,9 +1131,10 @@ DECLARE
   BEGIN
 
     IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=hash) THEN
-      PERFORM delete_molecule_info(name);
 
       DELETE FROM molecule_list WHERE mol_hash=hash;
+
+      PERFORM delete_molecule_info(name);
 
       RETURN TRUE;
     end if;
@@ -1171,7 +1172,7 @@ $$;
 
 alter function delete_model_info(varchar, varchar, boolean) owner to ebullvul;
 
-create function delete_calculation(hash character varying, name character varying, method character varying, basis character varying, cp boolean, tags character varying[]) returns boolean
+create function delete_calculation(hash character varying, name character varying, method character varying, basis character varying, cp boolean, tags character varying[], delete_complete_calculations boolean) returns boolean
 	language plpgsql
 as $$
 DECLARE
@@ -1199,11 +1200,15 @@ DECLARE
 
         can_delete := True;
 
-        for stat in SELECT status FROM molecule_properties WHERE mol_hash=hash AND model_name=model LOOP
-          if stat != 'pending' THEN
-            can_delete = False;
-          end if;
-        end loop;
+        if not delete_complete_calculations THEN
+
+          for stat in SELECT status FROM molecule_properties WHERE mol_hash=hash AND model_name=model LOOP
+            if stat != 'pending' THEN
+              can_delete = False;
+            end if;
+          end loop;
+
+        end if;
 
         if can_delete THEN
           DELETE FROM tags WHERE mol_hash=hash AND model_name=model;
@@ -1226,5 +1231,44 @@ DECLARE
 
 $$;
 
-alter function delete_calculation(varchar, varchar, varchar, varchar, boolean, character varying[]) owner to ebullvul;
+alter function delete_calculation(varchar, varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+
+create function delete_all_calculations(molecule_name character varying, method character varying, basis character varying, cp boolean, input_tags character varying[], delete_complete_calculations boolean) returns integer
+	language plpgsql
+as $$
+DECLARE
+  model   varchar;
+  hash    varchar;
+  counter int;
+BEGIN
+
+  model := concat(method, '/', basis, '/');
+  IF cp THEN
+    model := concat(model, 'True');
+  ELSE
+    model := concat(model, 'False');
+  end if;
+
+  counter := 0;
+
+  for hash in SELECT molecule_list.mol_hash
+                     FROM tags
+                            INNER JOIN molecule_list ON tags.mol_hash = molecule_list.mol_hash
+                     WHERE molecule_list.mol_name = molecule_name
+                       AND model_name = model
+                       AND tag_names && input_tags
+    LOOP
+
+      IF delete_calculation(hash, molecule_name, method, basis, cp, input_tags, delete_complete_calculations) THEN
+        counter = counter + 1;
+      end if;
+
+    end loop;
+
+  return counter;
+END;
+
+$$;
+
+alter function delete_all_calculations(varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
 

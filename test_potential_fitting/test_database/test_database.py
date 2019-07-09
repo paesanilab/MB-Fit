@@ -220,8 +220,6 @@ class TestDatabase(unittest.TestCase):
 
         self.database.set_properties(calculation_results)
 
-        self.database.save()
-
         training_set = list(self.database.get_2B_training_set("H2O-H2O", ["H2O", "H2O"], ["H1.HO1", "H1.HO1"], "testmethod", "testbasis", False, "tag1"))
         self.assertEqual(len(training_set), 100)
 

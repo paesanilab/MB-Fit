@@ -730,6 +730,9 @@ class Database():
                 if order is None:
                     order, frag_orders = molecule.get_reorder_order(names, SMILES)
 
+                if order == [1, 0]:
+                    monomer1_energy, monomer2_energy = monomer2_energy, monomer1_energy
+
                 yield molecule.get_reordered_copy(order, frag_orders, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
 
             batch_offset += self.batch_size

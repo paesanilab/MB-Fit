@@ -938,3 +938,35 @@ class Database():
             None.
         """
         self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])
+
+    def delete_calculations(self, molecule_list, method, basis, cp, *tags):
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+
+        order, frag_order, SMILES = None, None, None
+
+        for molecule in molecule_list:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+
+            command_string += "PERFORM delete_calculation(%s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), molecule.get_name(), method, basis, cp, self.create_postgres_array(*tags)]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+

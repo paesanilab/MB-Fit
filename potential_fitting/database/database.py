@@ -940,6 +940,24 @@ class Database():
         self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])
 
     def delete_calculations(self, molecule_list, method, basis, cp, *tags):
+        """
+        Removes the specified tags from any calculations in the database that matches one of the molecules in
+        molecule_list and the given method, basis, and cp.
+
+        Will never delete calculated energies, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_list - Remove tags from calculations involving these molecules.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+
+        Returns:
+            None.
+        """
 
         command_string = ""
         params = []

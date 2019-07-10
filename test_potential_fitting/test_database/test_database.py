@@ -332,7 +332,6 @@ class TestDatabase(unittest.TestCase):
             binding = monomer1 + monomer2 + interaction
             self.assertIn((molecule, round(binding, 5), round(interaction, 5), round(monomer1, 5), round(monomer2, 5)), training_set)
 
-
     def test_import_calculations(self):
 
         # 1B
@@ -422,6 +421,58 @@ class TestDatabase(unittest.TestCase):
             binding = monomer1 + monomer2 + interaction
             self.assertIn((molecule, round(binding, 5), round(interaction, 5), round(monomer1, 5), round(monomer2, 5)),
                           training_set)
+
+    def test_export_calculations(self):
+        # 1B
+
+        molecule_energies_pairs = []
+        for i in range(10):
+            molecule_energies_pairs.append((self.get_water_monomer(), [random.random()]))
+
+        self.database.import_calculations(molecule_energies_pairs, "testmethod", "testbasis", False, "database_test",
+                                          optimized=False)
+
+        calculations = list(
+            self.database.export_calculations(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                              "database_test"))
+        self.assertEqual(len(calculations), 10)
+
+        for index in range(len(calculations)):
+            calculations[index] = list(calculations[index])
+            calculations[index][1][0] = round(calculations[index][1][0], 5)
+            calculations[index] = tuple(calculations[index])
+
+        for molecule, energies in molecule_energies_pairs:
+            self.assertIn((molecule.get_reorder_copy(["H2O"], ["H1.HO1"]), [round(energies[0], 5)]),
+            calculations)
+
+        # 2B
+        molecule_energies_pairs = []
+        for i in range(10):
+            molecule_energies_pairs.append((self.get_I_water_dimer(), [random.random(), random.random(), random.random(), random.random(), random.random()]))
+
+
+        self.database.import_calculations(molecule_energies_pairs, "testmethod", "testbasis", True,
+                                          "database_test",
+                                          optimized=False)
+
+        calculations = list(
+            self.database.export_calculations(["I", "H2O"], ["I", "H1.HO1"], "testmethod", "testbasis", True,
+                                              "database_test"))
+        self.assertEqual(len(calculations), 10)
+
+        for index in range(len(calculations)):
+            calculations[index] = list(calculations[index])
+            calculations[index][1][0] = round(calculations[index][1][0], 5)
+            calculations[index][1][1] = round(calculations[index][1][1], 5)
+            calculations[index][1][2] = round(calculations[index][1][2], 5)
+            calculations[index][1][3] = round(calculations[index][1][3], 5)
+            calculations[index][1][4] = round(calculations[index][1][4], 5)
+            calculations[index] = tuple(calculations[index])
+
+        for molecule, energies in molecule_energies_pairs:
+            self.assertIn((molecule.get_reorder_copy(["I", "H2O"], ["I", "H1.HO1"]), [round(energies[0], 5), round(energies[1], 5), round(energies[2], 5), round(energies[3], 5), round(energies[4], 5)]),
+                          calculations)
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestDatabase)

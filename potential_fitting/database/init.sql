@@ -922,79 +922,6 @@ $$;
 
 alter function get_failed_configs(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
 
-create function remove_calculation(hash character varying, name character varying, method character varying, basis character varying, cp boolean, tags character varying[], optimized boolean) returns boolean
-	language plpgsql
-as $$
-DECLARE
-  model varchar;
-  cur_tags varchar[];
-  t varchar;
-  mol_frags varchar[];
-  frag varchar;
-  mol_atoms varchar[];
-  atom varchar;
-  BEGIN
-    model := concat(method, '/', basis, '/');
-    IF cp THEN
-      model := concat(model, 'True');
-    ELSE
-      model := concat(model, 'False');
-    end if;
-
-    -- still must clear optimized_geometries, pending_calculations, and log_files tables.
-
-    IF EXISTS(SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model) THEN
-      SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model
-        INTO cur_tags;
-      FOREACH t IN ARRAY tags LOOP
-        cur_tags = array_remove(cur_tags, t);
-      end loop;
-      UPDATE tags SET tag_names = cur_tags WHERE mol_hash = hash AND model_name = model;
-
-      IF array_length(CURTAGS, 1) = 0 THEN
-        DELETE FROM tags WHERE mol_hash = hash AND model_name = model;
-        DELETE FROM molecule_properties WHERE mol_hash = hash and model_name = model;
-
-        IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash = hash) THEN
-          DELETE FROM molecule_list WHERE mol_hash = hash;
-
-          IF NOT EXISTS(SELECT mol_hash FROM molecule_list WHERE mol_name = name) THEN
-            DELETE FROM molecule_info WHERE molecule_info.name = remove_calculation.name;
-            DELETE FROM molecule_contents WHERE molecule_contents.mol_name = remove_calculation.name RETURNING frag_name
-              INTO mol_frags;
-
-            FOREACH frag in ARRAY mol_frags LOOP
-              IF NOT EXISTS(SELECT frag_name FROM molecule_contents WHERE frag_name = frag) THEN
-                DELETE FROM fragment_info WHERE name = frag;
-                DELETE FROM fragment_contents WHERE frag_name = frag RETURNING atom_symbol
-                  INTO mol_atoms;
-
-                FOREACH atom IN ARRAY mol_atoms LOOP
-                  IF NOT EXISTS(SELECT atom_symbol FROM fragment_contents WHERE atom_symbol = atom) THEN
-                    DELETE FROM atom_info WHERE atomic_symbol = atom;
-                  end if;
-                end loop;
-
-              end if;
-            end loop;
-
-
-          end if;
-
-        end if;
-
-        IF NOT EXISTS(SELECT moldel_name FROM molecule_properties WHERE model_name = model) THEN
-          DELETE FROM model_info WHERE model_info.name = model;
-        end if;
-
-      end if;
-    end if;
-  END;
-
-$$;
-
-alter function remove_calculation(varchar, varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
-
 create function reset_dispatched(ts character varying[]) returns integer
 	language plpgsql
 as $$
@@ -1128,4 +1055,279 @@ DECLARE
 $$;
 
 alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
+
+create function delete_atom_info(atomic_symbol character varying) returns boolean
+	language plpgsql
+as $$
+DECLARE
+
+  BEGIN
+    IF NOT EXISTS(SELECT atom_symbol FROM fragment_contents WHERE atom_symbol = atomic_symbol) THEN
+      DELETE FROM atom_info WHERE atom_info.atomic_symbol = delete_atom_info.atomic_symbol;
+      RETURN TRUE;
+    end if;
+    RETURN FALSE;
+  END;
+
+$$;
+
+alter function delete_atom_info(varchar) owner to ebullvul;
+
+create function delete_fragment_info(name character varying) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  atomic_symbol character varying;
+  atom_symmetry character varying;
+  BEGIN
+    IF NOT EXISTS(SELECT frag_name FROM molecule_contents WHERE frag_name = name) THEN
+      for atomic_symbol, atom_symmetry in SELECT atom_symbol, symmetry FROM fragment_contents WHERE frag_name = name LOOP
+        DELETE FROM fragment_contents WHERE frag_name = name AND atomic_symbol = atomic_symbol AND symmetry = atom_symmetry;
+        PERFORM delete_atom_info(atomic_symbol);
+      end loop;
+
+      DELETE FROM fragment_info WHERE fragment_info.name = delete_fragment_info.name;
+
+      RETURN TRUE;
+    end if;
+    RETURN FALSE;
+  END;
+
+$$;
+
+alter function delete_fragment_info(varchar) owner to ebullvul;
+
+create function delete_molecule_info(name character varying) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  fragment_name varchar;
+
+  BEGIN
+
+    IF NOT EXISTS(SELECT mol_name FROM molecule_list WHERE mol_name=name) THEN
+      for fragment_name in SELECT frag_name FROM molecule_contents WHERE mol_name = name LOOP
+        DELETE FROM molecule_contents WHERE mol_name = name AND frag_name = fragment_name;
+        PERFORM delete_fragment_info(fragment_name);
+      end loop;
+
+      DELETE FROM molecule_info WHERE molecule_info.name = delete_molecule_info.name;
+
+      RETURN TRUE;
+    end if;
+
+    RETURN FALSE;
+  END;
+
+$$;
+
+alter function delete_molecule_info(varchar) owner to ebullvul;
+
+create function delete_molecule(hash character varying, name character varying) returns boolean
+	language plpgsql
+as $$
+DECLARE
+
+  BEGIN
+
+    IF NOT EXISTS(SELECT mol_hash FROM molecule_properties WHERE mol_hash=hash) THEN
+
+      DELETE FROM molecule_list WHERE mol_hash=hash;
+
+      PERFORM delete_molecule_info(name);
+
+      RETURN TRUE;
+    end if;
+
+    RETURN FALSE;
+  END;
+
+$$;
+
+alter function delete_molecule(varchar, varchar) owner to ebullvul;
+
+create function delete_model_info(method character varying, basis character varying, cp boolean) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  model varchar;
+  BEGIN
+    model := concat(method, '/', basis, '/');
+    IF cp THEN
+      model := concat(model, 'True');
+    ELSE
+      model := concat(model, 'False');
+    end if;
+
+    IF NOT EXISTS(SELECT model_name FROM molecule_properties WHERE model_name = model) THEN
+      DELETE FROM model_info WHERE name=model;
+
+      RETURN TRUE;
+    end if;
+
+    RETURN FALSE;
+  END;
+
+$$;
+
+alter function delete_model_info(varchar, varchar, boolean) owner to ebullvul;
+
+create function delete_calculation(hash character varying, name character varying, method character varying, basis character varying, cp boolean, tags character varying[], delete_complete_calculations boolean) returns boolean
+	language plpgsql
+as $$
+DECLARE
+  model varchar;
+  tag_name VARCHAR;
+  can_delete BOOLEAN;
+  stat VARCHAR;
+  BEGIN
+    model := concat(method, '/', basis, '/');
+    IF cp THEN
+      model := concat(model, 'True');
+    ELSE
+      model := concat(model, 'False');
+    end if;
+
+    IF EXISTS(SELECT mol_hash FROM tags WHERE mol_hash=hash AND model_name=model AND delete_calculation.tags && tags.tag_names) THEN
+
+      FOREACH tag_name in ARRAY tags LOOP
+        UPDATE tags SET tag_names=array_remove(tag_names, tag_name) WHERE mol_hash=hash AND model_name=model;
+      END LOOP;
+
+      IF EXISTS(SELECT tag_names FROM tags WHERE mol_hash=hash AND model_name=model AND tag_names = '{}') THEN
+
+        DELETE FROM optimized_geometries WHERE mol_hash = hash AND mol_name = name AND model_name = model;
+
+        can_delete := True;
+
+        if not delete_complete_calculations THEN
+
+          for stat in SELECT status FROM molecule_properties WHERE mol_hash=hash AND model_name=model LOOP
+            if stat != 'pending' THEN
+              can_delete = False;
+            end if;
+          end loop;
+
+        end if;
+
+        if can_delete THEN
+          DELETE FROM tags WHERE mol_hash=hash AND model_name=model;
+          DELETE FROM molecule_properties WHERE mol_hash=hash AND model_name=model;
+          DELETE FROM pending_calculations WHERE mol_hash=hash AND model_name=model;
+          PERFORM delete_molecule(hash, name);
+          PERFORM delete_model_info(method, basis, cp);
+        end if;
+
+
+      END IF;
+
+
+      RETURN TRUE;
+
+    end if;
+
+    RETURN FALSE;
+  END;
+
+$$;
+
+alter function delete_calculation(varchar, varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+
+create function delete_all_calculations(molecule_name character varying, method character varying, basis character varying, cp boolean, input_tags character varying[], delete_complete_calculations boolean) returns integer
+	language plpgsql
+as $$
+DECLARE
+  model   varchar;
+  hash    varchar;
+  counter int;
+BEGIN
+
+  model := concat(method, '/', basis, '/');
+  IF cp THEN
+    model := concat(model, 'True');
+  ELSE
+    model := concat(model, 'False');
+  end if;
+
+  counter := 0;
+
+  for hash in SELECT molecule_list.mol_hash
+                     FROM tags
+                            INNER JOIN molecule_list ON tags.mol_hash = molecule_list.mol_hash
+                     WHERE molecule_list.mol_name = molecule_name
+                       AND model_name = model
+                       AND tag_names && input_tags
+    LOOP
+
+      IF delete_calculation(hash, molecule_name, method, basis, cp, input_tags, delete_complete_calculations) THEN
+        counter = counter + 1;
+      end if;
+
+    end loop;
+
+  return counter;
+END;
+
+$$;
+
+alter function delete_all_calculations(varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+
+create function export_calculations(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], energies double precision[])
+	language plpgsql
+as $$
+DECLARE
+        hash VARCHAR;
+        mol_tags VARCHAR[];
+        mol_tag VARCHAR;
+        valid_tags BOOL;
+        mol_properties molecule_properties;
+      BEGIN
+
+        <<main_loop>>
+        FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
+        LOOP
+          valid_tags := FALSE;
+
+
+          SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+            INTO mol_tags;
+
+          IF NOT mol_tags ISNULL THEN
+            FOREACH mol_tag IN ARRAY mol_tags
+            LOOP
+
+
+              IF (SELECT mol_tag = ANY(input_tags)) THEN
+                valid_tags := TRUE;
+              END IF;
+
+            END LOOP;
+
+            IF (SELECT valid_tags) THEN
+              energies = '{}';
+              for mol_properties IN SELECT * FROM molecule_properties
+                  WHERE mol_hash = hash AND model_name = model ORDER BY array_length(frag_indices, 1) ASC, frag_indices ASC, use_cp DESC
+              LOOP
+
+                IF mol_properties.status != 'complete' THEN
+                  CONTINUE main_loop;
+                end if;
+
+                energies = energies || mol_properties.energies[1];
+
+              end loop;
+
+              SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
+                    INTO coords;
+
+              RETURN NEXT;
+            END IF;
+          end if;
+
+        END LOOP;
+      END;
+
+$$;
+
+alter function export_calculations(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
 

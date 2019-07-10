@@ -738,8 +738,43 @@ class Database():
             if batch_offset > max_count:
                 return
 
-    def export_calculations(self, molecule_name, names, SMILES, method, basis, cp, *tags):
-        raise NotImplementedError # TODO: finish this
+    def export_calculations(self, names, SMILES, method, basis, cp, *tags):
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        order, frag_orders, energies_order = None, None, None
+
+        molecule_name = "-".join(sorted(names))
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        while True:
+            self.cursor.execute("SELECT * FROM export_calculations(%s, %s, %s, %s, %s)", (
+                    molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            calculations = self.cursor.fetchall()
+
+            for atom_coordinates, energies in calculations:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+                    energies_order = self.get_energies_order(order, molecule.get_num_fragments(), cp)
+
+                yield molecule.get_reordered_copy(order, frag_orders,
+                                                  SMILES), [energies[i] for i in energies_order]
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
 
     def import_calculations(self, molecule_energies_pairs, method, basis, cp, *tags, optimized = False):
         """
@@ -761,8 +796,7 @@ class Database():
         params = []
 
         batch_count = 0
-        order, frag_order, SMILES = None, None, None
-        energies_order = None
+        order, frag_order, SMILES, energies_order = None, None, None, None
 
         for molecule, energies in molecule_energies_pairs:
             if order is None:
@@ -953,8 +987,8 @@ class Database():
         for i in range(1, num_bodies + 1):
             perms = list(itertools.combinations(range(num_bodies), i))
             for p in perms:
-                permutations.append((p, False))
                 if cp and i < num_bodies:
                     permutations.append((p, True))
+                permutations.append((p, False))
 
         return permutations

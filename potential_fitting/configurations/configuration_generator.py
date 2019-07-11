@@ -8,7 +8,7 @@ from potential_fitting.utils import SettingsReader, files, constants
 from potential_fitting.exceptions import ParsingError, LineFormatError, InvalidValueError
 
 def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_path, config_path, num_configs, 
-        seed = None):
+        seed = None, temperature = None):
     """
     Generates a set of 1b configurations for a molecule given its optimized geometry and normal modes.
 
@@ -19,6 +19,9 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
         config_path - path to the file to write the configurations, existing content will be clobbered.
         num_configs - number of configurations to generate.
         seed - use this seed to generate random numbers, the same seed will give the same configurations.
+        temperature         - Temperature at which normal mode sampling is done. If specified, configurations
+                will use clasical normal mode distribution at the specified temperature instead of either geometric
+                or linear progression.
     """
 
     if seed is None:
@@ -121,10 +124,10 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
     print("Completed parsing normal modes input file.")
 
     generate_normal_mode_distribution_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
-            num_configs, seed = seed)
+            num_configs, seed = seed, temperature=temperature)
 
 def generate_normal_mode_distribution_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
-        num_configs, seed = None):
+        num_configs, seed = None, temperature = None):
     """
     Generates 1b configurations based on a geometry (should usually be optimized) and the normal modes corresponding
     to that geometry.
@@ -151,6 +154,10 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
         num_configs         - Number of configurations to generate
         seed                - Seed to use to generate the configurations, the same seed will give the same
                 configurations.
+        temperature         - Temperature at which normal mode sampling is done. If specified, configurations
+                will use clasical normal mode distribution at the specified temperature instead of either geometric
+                or linear progression.
+
     """
 
     if seed is None:
@@ -187,7 +194,12 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
     # get the number of configurations to generate from settings
     # MRR - this should be argument -- num_configs = settings.getint("config_generator", "num_configs")
 
-    geometric = settings.getboolean("config_generator", "geometric")
+    geometric = settings.getboolean("config_generator", "geometric", False)
+    linear = settings.getboolean("config_generator", "linear", False)
+
+    if temperature is not None:
+        linear = False
+        geometric = False
 
     # calculate the dimension of this molecule
     dim = 3 * molecule.get_num_atoms()
@@ -248,12 +260,17 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
         temp_addend = 0
 
     # if a linear progression was requested, set min, max, factor, and addend of temp to correspond
-    else:
+    elif linear:
 
         temp_min = 0 # au
         temp_max = frequencies[-1] # au
         temp_factor = 1
         temp_addend = (temp_max - temp_min) / (num_temp_configs - 1)
+    else:
+        temp_min = frequencies[-1] / 100
+        num_temp_configs = num_configs
+        if temperature is not None:
+            temp_min = temperature
 
     # initialize temp to the temp minimum, it will be increased each iteration of the loop
     temp = temp_min
@@ -276,8 +293,11 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
                 # check if frequency is high enough to have an effect
                 if frequency >= freq_cutoff:
 
-                    # if temp is significantly larger than 0, then set this normal mode's d by the formula
-                    if temp > 1.0e-8:
+                    if not geometric and not linear:
+                        d = temp / (frequency ** 2)
+
+                    elif temp > 1.0e-8:
+                        # if temp is significantly larger than 0, then set this normal mode's d by the formula
                         d = 0.5 / (numpy.tanh(frequency / (2 * temp)) * frequency)
 
                     # if temp is not significantly larger than 0 (so it is close to 0), then we must use a different
@@ -292,63 +312,80 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
 
             make_config(config_file, config_index + 1, molecule, G, random)
 
-            # increase temp
-            temp = temp * temp_factor + temp_addend
-
-
-    # now we will generate the A distribution configs
-
-    # if a geometric progression was requested, set min, max, factor, and addend of A to correspond
-    if geometric:
-        A_min = 1
-        A_max = 2
-        A_factor = (A_min / A_max) ** (-1 / (num_A_configs - 1))
-        A_addend = 0
-
-    # if a linear progression was requested, set min, max, factor, and addend of A to correspond
-    else:
-        A_min = 0
-        A_max = 2
-        A_factor = 1
-        A_addend = (A_max - A_min) / (num_A_configs - 1)
-
-    # initialize A to the A minimum, it will be increased each iteration of the loop
-    A = A_min
-
-    # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
-    with open(config_path, "a") as config_file:
-
-        # loop over each A distribution config to generate
-        for config_index in range(num_A_configs):
-
-            # fill G with all 0s
-            G = [[0 for i in range(dim)] for k in range(dim)] # sqrt of the mass scaled covariance matrix
-
-            # for each normal mode, frequency pair, update d and G.
-            for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
-                    reduced_masses, normal_modes):
-
-                # check if frequency is high enough to have an effect
-                if frequency >= freq_cutoff:
-
-                    # if A is significantly larger than 0, then set this normal mode's d by the formula
-                    if A > 1.0e-8:
-                        d = 0.5 / (numpy.tanh(0.5 / A) * frequency)
-
-                    # if A is not significantly larger than 0 (so it is close to 0), then we must use a different
-                    # formula to avoid divide-by-zero error.
+            if not geometric and not linear:
+                if temperature is None:
+                    config_percent = (config_index + 1) / num_temp_configs
+                    if config_percent < 0.05:
+                        temp = frequencies[-1] / 100
+                    elif config_percent < 0.45:
+                        temp = frequencies[-1] / 20
+                    elif config_percent < 0.75:
+                        temp = frequencies[-1] / 10
+                    elif config_percent < 0.95:
+                        temp = frequencies[-1] / 5
                     else:
-                        d = 0.5 / frequency
+                        temp = frequencies[-1] / 2
 
-                    # G = ( d * U * U^T )^(1/2), where U are normal modes
-                    for i in range(dim):
-                        for j in range(dim):
-                            G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
+            else:
+                # increase temp
+                temp = temp * temp_factor + temp_addend
 
-            make_config(config_file, config_index + num_temp_configs + 1, molecule, G, random)
 
-            # increase A
-            A = A * A_factor + A_addend
+    if geometric or linear:
+
+        # now we will generate the A distribution configs
+
+        # if a geometric progression was requested, set min, max, factor, and addend of A to correspond
+        if geometric:
+            A_min = 1
+            A_max = 2
+            A_factor = (A_min / A_max) ** (-1 / (num_A_configs - 1))
+            A_addend = 0
+
+        # if a linear progression was requested, set min, max, factor, and addend of A to correspond
+        else:
+            A_min = 0
+            A_max = 2
+            A_factor = 1
+            A_addend = (A_max - A_min) / (num_A_configs - 1)
+
+        # initialize A to the A minimum, it will be increased each iteration of the loop
+        A = A_min
+
+        # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
+        with open(config_path, "a") as config_file:
+
+            # loop over each A distribution config to generate
+            for config_index in range(num_A_configs):
+
+                # fill G with all 0s
+                G = [[0 for i in range(dim)] for k in range(dim)] # sqrt of the mass scaled covariance matrix
+
+                # for each normal mode, frequency pair, update d and G.
+                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
+                        reduced_masses, normal_modes):
+
+                    # check if frequency is high enough to have an effect
+                    if frequency >= freq_cutoff:
+
+                        # if A is significantly larger than 0, then set this normal mode's d by the formula
+                        if A > 1.0e-8:
+                            d = 0.5 / (numpy.tanh(0.5 / A) * frequency)
+
+                        # if A is not significantly larger than 0 (so it is close to 0), then we must use a different
+                        # formula to avoid divide-by-zero error.
+                        else:
+                            d = 0.5 / frequency
+
+                        # G = ( d * U * U^T )^(1/2), where U are normal modes
+                        for i in range(dim):
+                            for j in range(dim):
+                                G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
+
+                make_config(config_file, config_index + num_temp_configs + 1, molecule, G, random)
+
+                # increase A
+                A = A * A_factor + A_addend
 
     print("Normal Distribution Configuration generation complete.")
 

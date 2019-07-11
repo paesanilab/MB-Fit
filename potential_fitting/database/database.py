@@ -704,7 +704,7 @@ class Database():
 
                 if order is None:
                     order, frag_orders = molecule.get_reorder_order(names, SMILES)
-                    energies_order = Database.get_energies_order(order, molecule.get_num_fragments(), cp)
+                    energies_order = Database.get_energies_order(order, molecule.get_num_fragments(), False)
 
                 deformation_energies = [deformation_energies[i] for i in energies_order[:len(deformation_energies)]]
 

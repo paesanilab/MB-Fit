@@ -267,6 +267,60 @@ class TestDatabase(unittest.TestCase):
             binding = monomer1 + monomer2 + interaction
             self.assertIn((molecule, round(binding, 5), round(interaction, 5), round(monomer1, 5), round(monomer2, 5)), training_set)
 
+    def test_set_properties_and_get_training_set_1B(self):
+
+        # no cp
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O"], ["H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 101)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            interaction = 0
+            binding = energies[index][0] - opt_energy
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5)), training_set)
+
     def test_set_properties_and_get_training_set_2B(self):
 
         # no cp

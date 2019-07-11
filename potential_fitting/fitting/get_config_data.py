@@ -419,8 +419,8 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
     if len(geo_paths) != 1:
         print("Reading charges and polarizabilites from 1b config files")
-        for index, config_path in enumerate(config_1b_paths):
-            config_1b = SettingsReader(config_path)
+        for index, config_1b_path in enumerate(config_1b_paths):
+            config_1b = SettingsReader(config_1b_path)
             charges[index] = config_1b.getlist("fitting", "charges", float)
             effective_polarizabilities[index] = config_1b.getlist("fitting", "polarizabilities", float)
 

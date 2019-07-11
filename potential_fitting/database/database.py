@@ -673,6 +673,46 @@ class Database():
             if batch_offset > max_count:
                 return
 
+    def get_training_set(self, names, SMILES, method, basis, cp, *tags):
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        order, frag_orders = None, None
+
+        standard_names = sorted(names)
+
+        molecule_name = "-".join(standard_names)
+
+        self.cursor.execute("SELECT * FROM count_training_set_size(%s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags)))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        while True:
+            self.cursor.execute("SELECT * FROM get_training_set(%s, %s, %s, %s, %s, %s)", (
+            molecule_name, self.create_postgres_array(*standard_names), model_name, self.create_postgres_array(*tags), batch_offset,
+            self.batch_size))
+            training_set = self.cursor.fetchall()
+
+            for atom_coordinates, binding_energy, interaction_energy, deformation_energies in training_set:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                yield molecule.get_reordered_copy(order, frag_orders,
+                                                  SMILES), binding_energy, interaction_energy
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
+
     def get_2B_training_set(self, molecule_name, names, SMILES, method, basis, cp, *tags):
         """
         Gets a 2B training set from the calculated energies in the database.

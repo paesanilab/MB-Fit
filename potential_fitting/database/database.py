@@ -678,7 +678,7 @@ class Database():
         model_name = "{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
-        order, frag_orders = None, None
+        order, frag_orders, energies_order = None, None, None
 
         standard_names = sorted(names)
 
@@ -704,9 +704,12 @@ class Database():
 
                 if order is None:
                     order, frag_orders = molecule.get_reorder_order(names, SMILES)
+                    energies_order = Database.get_energies_order(order, molecule.get_num_fragments(), cp)
+
+                deformation_energies = [deformation_energies[i] for i in energies_order[:len(deformation_energies)]]
 
                 yield molecule.get_reordered_copy(order, frag_orders,
-                                                  SMILES), binding_energy, interaction_energy
+                                                  SMILES), binding_energy, interaction_energy, deformation_energies
 
             batch_offset += self.batch_size
 

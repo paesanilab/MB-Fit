@@ -407,13 +407,14 @@ class TestDatabase(unittest.TestCase):
             training_set[index] = list(training_set[index])
             training_set[index][1] = round(training_set[index][1], 5)
             training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
             training_set[index] = tuple(training_set[index])
 
         for molecule in molecules:
             index = molecules.index(molecule)
             interaction = 0
             binding = energies[index][0] - opt_energy
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5)), training_set)
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(binding, 5)]), training_set)
 
     def test_set_properties_and_get_training_set_2B(self):
 
@@ -459,6 +460,8 @@ class TestDatabase(unittest.TestCase):
             training_set[index] = list(training_set[index])
             training_set[index][1] = round(training_set[index][1], 5)
             training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
             training_set[index] = tuple(training_set[index])
 
         for molecule in molecules:
@@ -467,7 +470,7 @@ class TestDatabase(unittest.TestCase):
             monomer2 = energies[index][1] - opt_energy
             interaction = energies[index][2] - energies[index][1] - energies[index][0]
             binding = monomer1 + monomer2 + interaction
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5)), training_set)
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5)]), training_set)
 
         # yes cp
 
@@ -516,6 +519,8 @@ class TestDatabase(unittest.TestCase):
             training_set[index] = list(training_set[index])
             training_set[index][1] = round(training_set[index][1], 5)
             training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
             training_set[index] = tuple(training_set[index])
 
         for molecule in molecules:
@@ -525,7 +530,7 @@ class TestDatabase(unittest.TestCase):
             interaction = energies[index][4] - energies[index][0] - energies[index][2]
             binding = monomer1 + monomer2 + interaction
 
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5)), training_set)
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5)]), training_set)
 
     def test_set_properties_and_get_training_set_3B(self):
 
@@ -578,6 +583,9 @@ class TestDatabase(unittest.TestCase):
             training_set[index] = list(training_set[index])
             training_set[index][1] = round(training_set[index][1], 5)
             training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
+            training_set[index][3][2] = round(training_set[index][3][2], 5)
             training_set[index] = tuple(training_set[index])
 
         for molecule in molecules:
@@ -587,7 +595,7 @@ class TestDatabase(unittest.TestCase):
             monomer3 = energies[index][2] - opt_energy
             interaction = energies[index][6] - energies[index][5] - energies[index][4] - energies[index][3] + energies[index][2] + energies[index][1] + energies[index][0]
             binding = monomer1 + monomer2 + monomer3 + interaction
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5)), training_set)
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)
 
         # yes cp
 
@@ -660,6 +668,9 @@ class TestDatabase(unittest.TestCase):
             training_set[index] = list(training_set[index])
             training_set[index][1] = round(training_set[index][1], 5)
             training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
+            training_set[index][3][2] = round(training_set[index][3][2], 5)
             training_set[index] = tuple(training_set[index])
 
         for molecule in molecules:
@@ -670,7 +681,7 @@ class TestDatabase(unittest.TestCase):
             interaction = energies[index][12] - energies[index][10] - energies[index][8] - energies[index][6] + \
                           energies[index][4] + energies[index][2] + energies[index][0]
             binding = monomer1 + monomer2 + monomer3 + interaction
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5)), training_set)
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)
 
     def test_import_calculations(self):
 

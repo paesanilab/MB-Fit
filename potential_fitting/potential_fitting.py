@@ -136,6 +136,33 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
+def generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius = 10, min_inter_distance=0.8, num_attempts=100,
+                                      seed=None, logarithmic = False):
+    """
+    Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        number_of_configs   - Number of configurations to generate.
+        config_path         - Local path to the file to write the configurations.
+        geo_paths           - Paths of all the geometries to make the nb configurations from. Can be single optimized
+                geometry or a set of distorted geometries. Will take random configs from these files to make the
+                nb configs.
+        radius              - Radius of the sphere monomers are placed within.
+        min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+                atoms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        seed                - Seed to use, the same seed will give the same configurations.
+        logarithmic         - If True, will use logarithmic progression to chose distances from center of sphere
+                for monomers.
+
+    Returns:
+        None
+    """
+
+    configurations.generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius=radius, min_inter_distance=min_inter_distance, num_attempts=num_attempts,
+                                      seed=seed, logarithmic=logarithmic)
 
 def init_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """

@@ -412,9 +412,8 @@ class TestDatabase(unittest.TestCase):
 
         for molecule in molecules:
             index = molecules.index(molecule)
-            interaction = 0
             binding = energies[index][0] - opt_energy
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(binding, 5)]), training_set)
+            self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
 
     def test_set_properties_and_get_training_set_2B(self):
 

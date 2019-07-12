@@ -77,7 +77,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs = 100, seed = None):
+        number_of_configs = 100, seed = None, temperature = None):
     """
     Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
 
@@ -90,13 +90,16 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         number_of_configs   - Number of configurations to generate
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
+        temperature         - Temperature at which normal mode sampling is done. If specified, configurations
+                will use clasical normal mode distribution at the specified temperature instead of either geometric
+                or linear progression.
 
     Returns:
         None.
     """
 
     configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-            number_of_configs, seed = seed)
+            number_of_configs, seed = seed, temperature=temperature)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
@@ -312,31 +315,6 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
     """
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
-
-def generate_poly_input_from_database(settings_path, database_config_path, molecule_name, in_file_path):
-    """
-    Generates an input file for polynomial generation.
-    Looks in a database to find the symmetry and creates a file in the given directory.
-
-    If the symmetry is A1B2, then the file A1B2.in containing polynomial generation input will be created inside
-    the poly_directory_path directory.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        database_config_path - .ini file containing host, port, database, username, and password.
-                    Make sure only you have access to this file or your password will be compromised!
-        molecule_name       - The name of the molecule to generate a polynomial generation input file for. At least one
-                instance of this molecule must be in the database.
-        in_file_path        - Local path to the file to write the polynomial input to.
-
-    Returns:
-        None.
-    """
-
-    with Database(database_config_path) as database:
-        symmetry = database.get_symmetry(molecule_name)
-
-        generate_poly_input(settings_path, symmetry, in_file_path)
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
     """

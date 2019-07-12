@@ -115,9 +115,6 @@ class TestDatabase(unittest.TestCase):
 
         with self.assertRaises(psycopg2.InternalError):
             self.database.execute("RAISE EXCEPTION %s;", ("EXECUTE WORKED",))
-        self.database.save()
-
-        pass
 
     def test_create_postgres_array(self):
         self.assertEqual(self.database.create_postgres_array("A", "B", "C", "D"), "{A,B,C,D}")
@@ -206,6 +203,91 @@ class TestDatabase(unittest.TestCase):
 
         calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 200))
         self.assertEqual(len(calculations), 0)
+
+    def test_delete_calculations(self):
+
+        molecules = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
+
+        self.database.delete_calculations(molecules, "testmethod", "testbasis", True, "database_test", delete_complete_calculations = False)
+
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
+        self.assertEqual(len(calculations), 0)
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+        molecules = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                energy = random.random()
+
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, False, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        self.database.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
+        self.database.delete_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
+
+        with self.assertRaises(psycopg2.InternalError):
+            training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
+
+    def test_delete_all_calculations(self):
+
+        molecules = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
+
+        self.database.delete_all_calculations("H2O", "testmethod", "testbasis", True, "database_test", delete_complete_calculations = False)
+
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
+        self.assertEqual(len(calculations), 0)
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+        molecules = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                energy = random.random()
+
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, False, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        self.database.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
+
+        with self.assertRaises(psycopg2.InternalError):
+            training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
 
     def test_set_properties_and_get_1B_training_set(self):
         opt_mol = self.get_water_monomer()

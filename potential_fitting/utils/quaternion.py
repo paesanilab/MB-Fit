@@ -39,17 +39,42 @@ class Quaternion(object):
         """
 
         # first generate a random unit vector
+
+
         # horizontal rotation of unit vector
         theta = math.pi - random.random() * 2 * math.pi
+
         # vertical rotation of unit vector
         phi = math.asin(random.random()) * (-1 if random.random() < 0.5 else 1)
+
+        # coordinates of the unit vector
+        x = math.cos(phi) * math.cos(theta)
+        y = math.cos(phi) * math.sin(theta)
+        z = math.sin(phi)
+
+        """
+        theta = random.random() *2 * math.pi
+        z = 1 - random.random() * 2
+        x = math.sqrt(1 - z ** 2)*math.cos(theta)
+        y = math.sqrt(1 - z ** 2)*math.sin(theta)
+        """
+
+        """
+        x = random.random()
+        y = random.random()
+        z = random.random()
+        len = math.sqrt(x**2 + y**2 + z**2)
+        x = x / len
+        y = y / len
+        z = z / len
+        """
 
         # rotation around unit vector
         rotation = math.pi - random.random() * 2 * math.pi
 
         # now create the Quaternion of rotation
-        return Quaternion(math.cos(rotation/2), math.sin(rotation/2) * math.sin(phi) * math.cos(theta),
-                math.sin(rotation/2) * math.sin(phi) * math.sin(theta), math.sin(rotation/2) * math.cos(phi))
+        return Quaternion(math.cos(rotation/2), math.sin(rotation/2) * x,
+                math.sin(rotation/2) * y, math.sin(rotation/2) * z)
     
     def __init__(self, r, i, j, k):
         """

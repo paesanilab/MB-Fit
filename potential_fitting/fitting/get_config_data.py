@@ -69,7 +69,7 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
                                              len(config_1b_paths),
                                              "When only 2 geometries is specified, you are creating a 2b config file, so there is no need to input one.")
         else:
-            if itertools.combinations(geo_paths, 2) != len(config_2b_paths):
+            if len(list(itertools.combinations(geo_paths, 2))) != len(config_2b_paths):
                 raise InconsistentValueError("number of geometries", "number of 1b config files", len(geo_paths),
                                              len(config_1b_paths),
                                              "When 3 or more geometries are specified, you must specify a 2b config file for each combination of them.")
@@ -103,7 +103,7 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
                 if not (fragment1 + "_" + fragment2) in done_list:
                     config_2b = SettingsReader(config_2b_paths[index])
-                    for c6 in config_2b.getlist("fitting", "C6")[-1]:
+                    for c6 in config_2b.getlist("fitting", "C6", float)[-1]:
                         c6_constants[-1].append(c6)
 
                     done_list.append(fragment1 + "_" + fragment2)

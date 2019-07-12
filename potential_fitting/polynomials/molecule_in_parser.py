@@ -15,6 +15,12 @@ class MoleculeInParser(object):
 
             frag_id = chr(ord(frag_id) + 1)
 
+    def get_num_atoms(self):
+        return sum(atom_type.get_num_atoms() for atom_type in self.get_fragments())
+
+    def get_num_atoms_and_virtual_sites(self):
+        return sum(atom_type.get_num_atoms_and_virtual_sites() for atom_type in self.get_fragments())
+
     def get_molecule_in(self):
         return "_".join([fragment_parser.get_fragment_in() for fragment_parser in self.fragment_parsers])
 
@@ -62,6 +68,12 @@ class FragmentParser(object):
             self.atom_parsers.append(AtomTypeParser(start_index, atom_in))
 
         self.frag_id = frag_id
+
+    def get_num_atoms(self):
+        return sum(atom_type.get_count() for atom_type in self.get_atom_types())
+
+    def get_num_atoms_and_virtual_sites(self):
+        return sum(atom_type.get_count() for atom_type in self.get_atom_and_virtual_site_types())
 
     def get_fragment_in(self):
         return "".join([atom_parser.get_atom_in() for atom_parser in self.atom_parsers])

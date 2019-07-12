@@ -1,5 +1,5 @@
 import os
-import math, configparser
+import math, configparser, itertools
 from collections import OrderedDict
 
 from potential_fitting.utils import constants, SettingsReader, files
@@ -9,7 +9,7 @@ from potential_fitting.polynomials import MoleculeInParser
 
 qchem_template = "qchem_template"
 
-def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths, distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths, config_2b_paths, distance_between = 20, use_published_polarizabilities = True):
 
 
     settings = SettingsReader(settings_file)
@@ -55,12 +55,117 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
         if len(config_1b_paths) != 0:
             raise InconsistentValueError("number of geometries", "number of 1b config files", len(geo_paths), len(config_1b_paths) ,
                                          "When only 1 geometry is specified, you are creating a 1b config file, so there is no need to input one.")
+        if len(config_2b_paths) != 0:
+            raise InconsistentValueError("number of geometries", "number of 2b config files", len(geo_paths), len(config_1b_paths) ,
+                                         "When only 1 geometry is specified, you are creating a 1b config file, so there is no need for any 2b config files.")
+    else:
+        if len(geo_paths) != len(config_1b_paths):
+            raise InconsistentValueError("number of geometries", "number of 1b config files", len(geo_paths),
+                                         len(config_1b_paths),
+                                         "When 2 or more geometries are specified, you must specify a 1b config file for each of them.")
+        if len(geo_paths) == 2:
+            if len(config_2b_paths) != 0:
+                raise InconsistentValueError("number of geometries", "number of 2b config files", len(geo_paths),
+                                             len(config_1b_paths),
+                                             "When only 2 geometries is specified, you are creating a 2b config file, so there is no need to input one.")
+        else:
+            if itertools.combinations(geo_paths, 2) != len(config_2b_paths):
+                raise InconsistentValueError("number of geometries", "number of 1b config files", len(geo_paths),
+                                             len(config_1b_paths),
+                                             "When 3 or more geometries are specified, you must specify a 2b config file for each combination of them.")
 
-    elif len(geo_paths) != len(config_1b_paths):
-        raise InconsistentValueError("number of geometries", "number of 1b config files", len(geo_paths), len(config_1b_paths) ,
-                                     "When 2 or more geometries are specified, you must specify a 1b config file for each of them.")
+    if len(geo_paths) < 3:
+        charges, effective_polarizabilities, c6_constants = execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, distance_between,
+                                  use_published_polarizabilities)
+    else:
+        charges = [[] for geo_path in geo_paths]
+        effective_polarizabilities = [[] for geo_path in geo_paths]
+        c6_constants = [[] for geo_path in geo_paths]
+        c6_constants.append([])
 
 
+
+    if len(geo_paths) != 1:
+        # read charges, polarizabilites, and intramolecular c6 from the 1b config files.
+        print("Reading charges and polarizabilites from 1b config files")
+        for index, config_1b_path in enumerate(config_1b_paths):
+            config_1b = SettingsReader(config_1b_path)
+            charges[index] = config_1b.getlist("fitting", "charges", float)[0]
+            effective_polarizabilities[index] = config_1b.getlist("fitting", "polarizabilities", float)[0]
+            c6_constants[index] = config_1b.getlist("fitting", "C6", float)[0]
+
+    if len(geo_paths) > 2:
+        # read intermolecular c6 from the 2b config files
+        done_list = []
+        index = 0
+        for index1, fragment1 in enumerate(fragments):
+            for index2, fragment2 in enumerate(fragments[index1 + 1:]):
+
+                if not (fragment1 + "_" + fragment2) in done_list:
+                    config_2b = SettingsReader(config_2b_paths[index])
+                    for c6 in config_2b.getlist("fitting", "C6")[-1]:
+                        c6_constants[-1].append(c6)
+
+                    done_list.append(fragment1 + "_" + fragment2)
+                index += 1
+
+    print("Writing config file...")
+
+    # create the config file!
+    configwriter = configparser.ConfigParser()
+    configwriter.add_section("common")
+    configwriter.add_section("fitting")
+
+    configwriter.set("common", "molecule", molecule_in)
+
+    fragments = []
+
+    for geo_path, setting in zip(geo_paths, monomer_settings):
+        with open(geo_path, "r") as geo_file:
+            frag_string = "\n".join(geo_file.read().splitlines()[2:])
+            fragments.append(
+                Fragment.read_xyz(frag_string, setting.get("molecule", "names"), setting.getint("molecule", "charges"),
+                                  setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"),
+                                  setting.get("molecule", "symmetry")))
+
+    molecule = Molecule(fragments)
+
+    configwriter.set("fitting", "number_of_atoms", str(molecule.get_num_atoms()))
+    configwriter.set("fitting", "number_of_electrostatic_sites", str(parser.get_num_atoms_and_virtual_sites()))
+
+
+    excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
+
+    configwriter.set("fitting", "excluded_pairs_12", "{}".format(excluded_pairs12))
+    configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
+    configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
+
+    configwriter.set("fitting", "charges", str(charges))
+    configwriter.set("fitting", "polarizabilities", str(effective_polarizabilities))
+    configwriter.set("fitting", "polarizability_factors", str(effective_polarizabilities))
+
+    configwriter.set("fitting", "k_min", str(0.0))
+    configwriter.set("fitting", "k_max", str(5.0))
+    configwriter.set("fitting", "d_min", str(0.0))
+    configwriter.set("fitting", "d_max", str(7.0))
+
+    configwriter.set("fitting", "C6", str(c6_constants))
+    configwriter.set("fitting", "d6", str([[0 for x in c6] for c6 in c6_constants]))
+
+    configwriter.set("fitting", "var_intra", "exp")
+    configwriter.set("fitting", "var_inter", "exp")
+    configwriter.set("fitting", "var_lonepairs", "coul")
+    configwriter.set("fitting", "energy_range", str(50.0))
+    configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
+
+    config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
+
+    with open(config_path, "w") as config_file:
+        configwriter.write(config_file)
+
+    print("Completed generating config file {}.".format(config_path))
+
+def execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, distance_between, use_published_polarizabilities):
 
     qchem_in_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.in")
     with open(qchem_in_path, "w") as qchem_in:
@@ -415,66 +520,4 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
             charges.append(frag_charges)
 
-    # read charges and polarizabilites from the 1b config files.
-
-    if len(geo_paths) != 1:
-        print("Reading charges and polarizabilites from 1b config files")
-        for index, config_1b_path in enumerate(config_1b_paths):
-            config_1b = SettingsReader(config_1b_path)
-            charges[index] = config_1b.getlist("fitting", "charges", float)
-            effective_polarizabilities[index] = config_1b.getlist("fitting", "polarizabilities", float)
-
-    print("Writing config file...")
-
-    # create the config file!
-    configwriter = configparser.ConfigParser()
-    configwriter.add_section("common")
-    configwriter.add_section("fitting")
-
-    configwriter.set("common", "molecule", molecule_in)
-
-    configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
-    configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
-
-    fragments = []
-
-    for geo_path, setting in zip(geo_paths, monomer_settings):
-        with open(geo_path, "r") as geo_file:
-            frag_string = "\n".join(geo_file.read().splitlines()[2:])
-            fragments.append(
-                Fragment.read_xyz(frag_string, setting.get("molecule", "names"), setting.getint("molecule", "charges"),
-                                  setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"),
-                                  setting.get("molecule", "symmetry")))
-
-    molecule = Molecule(fragments)
-
-    excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
-
-    configwriter.set("fitting", "excluded_pairs_12", "{}".format(excluded_pairs12))
-    configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
-    configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
-
-    configwriter.set("fitting", "charges", str(charges))
-    configwriter.set("fitting", "polarizabilities", str(effective_polarizabilities))
-    configwriter.set("fitting", "polarizability_factors", str(effective_polarizabilities))
-
-    configwriter.set("fitting", "k_min", str(0.0))
-    configwriter.set("fitting", "k_max", str(5.0))
-    configwriter.set("fitting", "d_min", str(0.0))
-    configwriter.set("fitting", "d_max", str(7.0))
-
-    configwriter.set("fitting", "C6", str(c6_constants))
-    configwriter.set("fitting", "d6", str([[0 for x in c6] for c6 in c6_constants]))
-
-    configwriter.set("fitting", "var_intra", "exp")
-    configwriter.set("fitting", "var_inter", "exp")
-    configwriter.set("fitting", "var_lonepairs", "coul")
-    configwriter.set("fitting", "energy_range", str(50.0))
-    configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
-
-    config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
-
-    with open(config_path, "w") as config_file:
-        configwriter.write(config_file)
-
-    print("Completed generating config file {}.".format(config_path))
+    return charges, effective_polarizabilities, c6_constants

@@ -1,67 +1,84 @@
 # external package imports
-import itertools, datetime, sqlite3
+import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
-from potential_fitting.utils import files
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import InconsistentDatabaseError, InvalidValueError
+from potential_fitting.exceptions import PotentialFittingError, NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
+from potential_fitting.utils import SettingsReader
+from psycopg2 import OperationalError
 
 class Database():
+
     """
     Database class. Allows one to access a database and perform operations on it.
     """
     
-    def __init__(self, file_path):
+    def __init__(self, config_file, batch_size=100):
         """
-        Initializes the database, sets up connection, and cursor.
+        Initializer for database object. Opens connection and sets up cursor.
 
         Args:
-            file_path       - Local path to the database file. ".db" will be appended if it does not already end in
-                    ".db".
+            config_file     - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+            batch_size      - number of operations to perfrom on the database per round trip to the server.
+                    larger numbers will be more efficient, but you should not exceed a couple thousand.
+                    Default is 100.
 
         Returns:
             A new Database object.
         """
 
-        if file_path[-3:] != ".db":
-            print("Automatically ending '.db' suffix to database name {}.".format(file_path))
-            file_path += ".db"
+        self.batch_size = 0
+        self.set_batch_size(batch_size)
 
-        self.file_name = file_path
-        
+        # parse the user's config file to get their login info
+
+        config = SettingsReader(config_file)
+
+        host = config.get("database", "host")
+        port = config.get("database", "port")
+        database = config.get("database", "database")
+        username = config.get("database", "username")
+        password = config.get("database", "password")
+
+        self.name = host + " " + database
+
+        """
+        host = "piggy.pl.ucsd.edu"
+        port = "5432"
+        database = "potential_fitting"
+        username = "potential_fitting"
+        password = "9t8ARDuN2Wy49VtMOrcJyHtOzyKhkiId"
+        """
+
         # connection is used to get the cursor, commit to the database, and close the database
-        self.connection = sqlite3.connect(files.init_file(file_path, files.OverwriteMethod.NONE))
-        
+        try:
+            self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))
+        except OperationalError as e:
+            raise DatabaseConnectionError(self.name, str(e))
+
         # the cursor is used to execute operations on the database
         self.cursor = self.connection.cursor()
 
-        # this checks to make sure the file specified by file_path is a valid database file. The sqlite3 command will
-        # throw an error if the file is exists but is not a database
-        try:
-            self.cursor.execute("PRAGMA table_info('schema_version')");
-        except:
-            self.close()
-            raise InconsistentDatabaseError(file_path, "File exists but is not a valid database file.") from None
-    
-
     # the __enter__() and __exit__() methods define a database as a context manager, meaning you can use
     # with ... as ... syntax on it
+
     def __enter__(self):
         """
-        Simply returns self.
+        Simply returns self. Called when entering the context manager.
 
         Args:
             None.
 
-        Returms:
+        Returns:
             self.
         """
 
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exception, value, traceback):
         """
-        Automatically saves and closes the database.
+        Saves and closes the database. Called when exiting the context manager.
 
         Args:
             None.
@@ -70,7 +87,10 @@ class Database():
             None.
         """
 
-        self.save()
+        # only save if all operations executed without error
+        if exception is None:
+            self.save()
+
         self.close()
         
         # returning false lets the context manager know that no exceptions were handled in the __exit__() method
@@ -78,8 +98,9 @@ class Database():
 
     def save(self):
         """
-        Save any Changes to the database.
-        Changes will not be perminent untill this function is called.
+        Commits changes to the database.
+
+        Changes will not be permanent until this function is called.
 
         Args:
             None.
@@ -92,11 +113,13 @@ class Database():
 
     def close(self):
         """
-        Close the database.
+        Closes the database.
 
         Always close the database after you are done using it.
 
         Closing the database does NOT automatically save it.
+
+        Any non-saved changes will be lost.
 
         Args:
             None.
@@ -107,9 +130,39 @@ class Database():
 
         self.connection.close()
 
+    def set_batch_size(self, batch_size):
+        """
+        Sets the number of operations to do on the database per server round trip.
+        Larger numbers will be more efficient, but you should not exceed a couple thousand.
+
+        Args:
+            batch_size      - The number of operations to do per server round trip.
+
+        Returns:
+            None.
+        """
+
+        if batch_size < 1:
+            raise InvalidValueError("batch_size", batch_size, "must be at least 1.")
+
+        self.batch_size = batch_size
+
+    def get_batch_size(self):
+        """
+        Gets the batch size, the number of operations performed per server round trip.
+
+        Args:
+            None.
+
+        Returns:
+            batch_size
+        """
+
+        return self.batch_size
+
     def create(self):
         """
-        Creates all the tables in the database, if they do not exist already.
+        Creates all the tables, procedures, and sequences in the database.
 
         Args:
             None.
@@ -117,831 +170,895 @@ class Database():
         Returns:
             None.
         """
-        
-        # create the Models table 
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Models(method TEXT, basis TEXT, cp INT)
-            """
-        )
 
-        # create the Molecules table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Molecules(name TEXT, hash TEXT)
-            """
-        )
+        self.cursor.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != %s AND schemaname != %s;", ("pg_catalog", "information_schema"))
 
-        # create the Fragments table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Fragments(molecule_id INT, frag_index INT, name TEXT, charge INT, spin INT)
-            """
-        )
+        table_names = [table[1] for table in self.cursor.fetchall()]
 
-        # create the Atoms table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Atoms(fragment_id INT, symbol TEXT, symmetry_class TEST, x REAL, y REAL, z REAL)
-            """
-        )
+        if len(table_names) > 0:
+            raise DatabaseNotEmptyError(self.name, table_names)
 
-        # create the Calculations table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Calculations(molecule_id INT, model_id INT, tag TEXT, optimized INT)
-            """
-        )
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "init.sql")) as sql_initilizer:
+            sql_script = sql_initilizer.read()
+            try:
+                self.cursor.execute(sql_script)
+            except OperationalError as e:
+                raise DatabaseInitializationError(self.name, str(e))
 
-        # create the Energies table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Energies(calculation_id INT, job_id INT, energy_index INT, energy REAL)
-            """
-        )
-
-        # create the Jobs table
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Jobs(status TEXT, log_file TEXT, start_date TEXT, end_date TEXT)
-            """
-        )
-
-    def add_calculation(self, molecule, method, basis, cp, *tags, optimized = False):
+    def annihilate(self, confirm = "no way"):
         """
-        Adds a calculation to the database. A calculation consists of pending nmer energies to be calculated in a given
-        method, basis, and cp.
+        DELETES ALL CONTENT IN ALL TABLES IN THE DATABASE.
 
-        If cp is False, then all monomer, dimer, trimer, etc energies will be added to the database. If cp is True,
-        then monomer energies will be added in their own basis set in addition to their counterpoise corrected basis
-        sets.
+        Don't EVER do this for databases you share with others unless you ask them first.
+
+        TODO: Make this method require administrator priveleges on the database.
+
+        In order to protect users, confirm must be specified as
+        "confirm" or the content will not be deleted.
 
         Args:
-            molecule        - The molecule associated with this calculation.
-            method          - The method to use to calculate the energies.
-            basis           - The basis to use to calculate the energies.
-            cp              - Whether to use counterpoise correction for this calculation.
-            tags            - A set of tags to be able to identify this calculation at a later date.
-            optimized       - A special flag which indicates whether this calculation uses an optimized geometry.
+            confirm         - set to "confirm" if deletion of all content in the database is desired.
+
+        Returns:
+            None
+        """
+
+        if confirm == "confirm":
+            self.cursor.execute("TRUNCATE atom_info, fragment_contents, fragment_info, log_files, model_info, molecule_contents, molecule_info, molecule_list, molecule_properties, pending_calculations, optimized_geometries, tags")
+        else:
+            print("annihilate failed. specify confirm = \"confirm\" if deletion of all content in the database is desired.")
+
+    def execute(self, command, params):
+        """
+        Executes a PostgreSQL command in the database.
+
+        The String command can contain '%s' substrings, each %s
+        will be substituted for an item in params. Order of the '%s's
+        matches the order in which the params will be substituted.
+        One param per '%s'.
+
+        pyscopg2 is pretty good about converting python types to
+        the correct postgres types, except lists. For lists, add
+        create_postgres_array(list) to params.
+
+        Args:
+            command         - The command to run.
+            params          - Parameters for the command.
 
         Returns:
             None.
         """
 
-        # check if this model is not already in Models table
-        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Models WHERE method=? AND basis=? AND cp=?)", (method,
-                basis, cp)).fetchone()[0]:
-
-            # create entry in Models table
-            self.cursor.execute("INSERT INTO Models (method, basis, cp) VALUES (?, ?, ?)", (method, basis, cp))
-            
-            # get id of this model
-            model_id = self.cursor.lastrowid
-
-        else:
-
-            # get id of this model
-            model_id = self.cursor.execute("SELECT ROWID FROM Models WHERE method=? AND basis=? AND cp=?", (method,
-                    basis, cp)).fetchone()[0]
-
-        # get the SHA1 hash of this molecule
-        molecule_hash = molecule.get_SHA1()
-
-        # check if this molecule is not already in Molecules table
-        if not self.cursor.execute("SELECT EXISTS(SELECT * FROM Molecules WHERE name=? AND hash=?)",
-                (molecule.get_name(), molecule_hash)).fetchone()[0]:
-
-            # create entry in Molecules table
-            self.cursor.execute("INSERT INTO Molecules (name, hash) VALUES (?, ?)", (molecule.get_name(),
-                    molecule_hash))
-        
-            # get id of this molecule
-            molecule_id = self.cursor.lastrowid
-
-            # insert molecule's fragments into the table
-            for fragment in molecule.get_fragments():
-                self.cursor.execute("INSERT INTO Fragments (molecule_id, frag_index, name, charge, spin) VALUES (?, ?, ?, ?, ?)",
-                        (molecule_id, fragment.get_index(), fragment.get_name(), fragment.get_charge(), fragment.get_spin_multiplicity()))
-                
-                # get id of this fragment
-                fragment_id = self.cursor.lastrowid
-
-                # insert fragment's atoms into the table
-                for atom in fragment.get_atoms():
-                   self.cursor.execute(
-                            "INSERT INTO Atoms (fragment_id, symbol, symmetry_class, x, y, z) VALUES "
-                            + "(?, ?, ?, ?, ?, ?)", (fragment_id, atom.get_name(), atom.get_symmetry_class(),
-                            atom.get_x(), atom.get_y(), atom.get_z())) 
-
-        else:
-            
-            # get id of this molecule
-            molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=? AND hash=?",
-                    (molecule.get_name(), molecule_hash)).fetchone()[0]
-
-        # check if the calculation is not already in the Calculations table
-
-        # alphabetize the tags
-        tag_string = " ".join(sorted(set(tags)))
-
-        if not self.cursor.execute(
-                "SELECT EXISTS(SELECT * FROM Calculations WHERE molecule_id=? AND model_id=? AND tag LIKE ? AND "
-                + "optimized=?)", (molecule_id, model_id, "%", optimized)).fetchone()[0]:
-            
-            # create entry in Calculations table
-            self.cursor.execute("INSERT INTO Calculations (molecule_id, model_id, tag, optimized) VALUES (?, ?, ?, ?)",
-                    (molecule_id, model_id, tag_string, optimized))
-
-            # get id of this calculation
-            calculation_id = self.cursor.lastrowid
-
-            # add rows to the Energies table
-            for energy_index in range(number_of_energies(molecule.get_num_fragments(), cp)):
-                # create a job for this energy
-                self.cursor.execute("INSERT INTO Jobs (status) VALUES (?)", ("pending",))
-
-                # get the id of this job
-                job_id = self.cursor.lastrowid
-        
-                # insert row into Energies table for this energy
-                self.cursor.execute("INSERT INTO Energies (calculation_id, energy_index, job_id) VALUES (?, ?, ?)",
-                        (calculation_id, energy_index, job_id))
-
-        else:
-            calc_id, existing_tags = self.cursor.execute(
-                    "SELECT ROWID, TAG FROM Calculations WHERE molecule_id=? AND model_id=? AND tag LIKE ? AND "
-                    + "optimized=?", (molecule_id, model_id, "%", optimized)).fetchone()
-
-            tags = tags + tuple(existing_tags.split(" "))
-            tag_string = " ".join(sorted(set(tags)))
-
-            self.cursor.execute("UPDATE Calculations SET tag=? WHERE ROWID=?", (tag_string, calc_id))
-
-
-    def get_missing_energy(self):
-        """
-        Returns a single Job object, which contains the info a user needs to calculate a pending energy in the table.
-
-        The user should calculate the energy, then call either set_energy() if the calculation converged, or 
-        set_failed() if it did not.
-
-        The Job will be updating from pending to running.
-
-        Args:
-            None.
-
-        Returns:
-            A Job object containing all the info associated with a calculation to be performed. Will instead return
-            None if there are no more energies to be calculated in the database.
-        """
-
-        # retrieve a pending job from the Jobs table
         try:
-            job_id = self.cursor.execute("SELECT ROWID FROM Jobs WHERE status=?", ("pending",)).fetchone()[0]
-        except TypeError:
-            # this error will be thrown if there are no more energies to calculate, because None[0] throws a TypeError
-            return None
-        
-        # retrieve the calculation and energy to be calculated for this job from the Energies table
-        calculation_id, energy_index = self.cursor.execute(
-                "SELECT calculation_id, energy_index FROM Energies WHERE job_id=?", (job_id,)).fetchone()
-
-        # retrieve the molecule and model from the Calculations table
-        molecule_id, model_id, tags, optimized = self.cursor.execute(
-                "SELECT molecule_id, model_id, tag, optimized FROM Calculations WHERE ROWID=?",
-                (calculation_id,)).fetchone()
-
-        # retrieve the method, basis, and cp for this model
-        method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?",
-                (model_id,)).fetchone()
-
-        # Reconstruct the molecule from the information in this database
-        molecule = self.get_molecule(molecule_id)
-
-        # get the indicies of the fragments to include in this calculation
-        fragment_indicies = energy_index_to_fragment_indicies(energy_index, molecule.get_num_fragments(),
-                True if cp == 1 else False)
-
-        # update the job with its start date and running status
-        self.cursor.execute("UPDATE Jobs SET status=?, start_date=? WHERE ROWID=?", ("running",
-                datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
-        
-        return Job(molecule, method, basis, True if cp == 1 and energy_index <
-                number_of_energies(molecule.get_num_fragments(), False) else False, fragment_indicies, job_id)
-
-    def missing_energies(self):
-        """
-        Generates Jobs for all the pending energies in the database. Each Job contains all the information needed
-        to perform one calculation.
-
-        The user should calculate each energy, then call either set_energy() if the calculation converged, or 
-        set_failed() if it did not.
-
-        Args:
-            None.
-
-        Returns:
-            Yields Job objects until one has been generated for every pending job in the database.
-        """
-        while True:
-            calculation = self.get_missing_energy()
-            
-            if calculation is None:
-                return
-
-            yield calculation
-        
-
-    def set_energy(self, job_id, energy, log_file):
-        """
-        Updates the database by filling in the energy for one Job.
-
-        The Job will be updated from running to completed.
-
-        Args:
-            job_id          - The id of the Job associated with this energy, included in the Job object retrieved by
-                    get_missing_energy() or missing_energies().
-            energy          - The calculated energy for the given Job in Hartrees.
-            log_file        - Local path to the log file for the given Job.
-
-        Returns:
-            None.
-        """
-        
-        if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0] != "running":
-            print("This job is not set to running, but tried to have its energy set. Most likely, this job was "
-                    + "dispatched a long time ago, and the database has since given up on ever getting a response. "
-                    + "Energy will be placed into the database anyways.")
-
-
-        # update the row in the Energies table corresponding to this energy
-        self.cursor.execute("UPDATE Energies SET energy=? WHERE job_id=?", (energy, job_id))
-
-        # update the information about this job
-        self.cursor.execute("UPDATE Jobs SET status=?, log_file=?, end_date=? WHERE ROWID=?", ("completed", log_file,
-                datetime.datetime.today().strftime('%Y/%m/%d'), job_id))
-
-    def set_failed(self, job_id, log_path):
-        """
-        Notifies the database that a specific Job failed to have its energy calculated. The energy could have not
-        converged, or failed for any number of reasons.
-
-        Args:
-            job_id          - The id of the job which failed, included in the Job object retrieved by
-                    get_missing_energy() or missing_energies().
-            log_file        - Local path to the log file for the given Job.
-
-        Returns:
-            None.
-        """
-
-        self.cursor.execute("UPDATE Jobs SET status=?, log_file=? WHERE ROWID=?", ("failed", log_path, job_id))
-
-    def get_complete_energies(self, molecule_name, optimized = False):
-        """
-        Generates pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, ...].
-
-        If optimized is true, this will only generate pairs corresponding to optimized geometries. Otherwise, it will
-        generate all pairs, including those with optimized geometries.
-
-        Args:
-            molecule_name   - The name of the molecule to get complete energies for.
-            optimized       - If True, only get optimized energies.
-
-        Returns:
-            Yields [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database.
-        """
-
-        yield from self.get_energies(molecule_name, "%", "%", "%", "%", optimized)
-
-    def get_energies(self, molecule_name, method, basis, cp, *tags, optimized = False):
-        """
-        Generates pairs of [molecule, energies] where energies is an array of the form [E0, E1, E2, E01, ...].
-
-        Only gets those energies computed using the given method, basis, cp, and marked with at least 1 of the given
-        tags.
-
-        If optimized is true, this will only generate pairs corresponding to optimized geometries. Otherwise, it will
-        generate all pairs, including those with optimized geometries.
-
-        % can be used as a wildcard to stand in for any method, basis, cp, or tag.
-
-        Args:
-            method          - Retrieve only energies computed with this method.
-            basis           - Retrieve only energies computed with this basis.
-            cp              - Retrieve only energies computed with this coutnerpoise correction.
-            tags            - Retrieve only energies marked with at least one of the given tags.
-            optimized       - If True, then only retrieve those energies that are associated with an optimized
-                    geometry.
-
-        Returns:
-            Yields [molecule, [E0, E1, E2, E01, ...]] pairs from the calculated energies in this database using the
-            given method, basis, cp, and marked with at least one of the given tags.
-        """
-        
-        # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchall()]
-
-        # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?",
-                (method, basis, cp)).fetchall()]
-
-        # get a list of all calculations that have the appropriate method, basis, and cp
-        calculation_ids = []
-
-        # loop over all the selected molecules
-        for molecule_id in molecule_ids:
-
-            # loop over all selected models
-            for model_id in model_ids:
-
-                if len(tags) == 0:
-                    tag_like_operation = "TRUE"
-                else:
-                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
-                print(tag_like_operation)
-
-                # if optimized is true, get only those calculations which are marked as optimized in the database
-                if optimized:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND " 
-                            + tag_like_operation + " AND optimized=?", (model_id, molecule_id, 1)).fetchall()]
-
-                # otherwise, get all energies (even those marked as optimized)
-                else:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND "
-                            + tag_like_operation, (model_id, molecule_id)).fetchall()]
-        
-        # loop over all the selected calculations
-        for calculation_id in calculation_ids:
-            
-            # get the molecule id corresponding to this calculation
-            molecule_id = self.cursor.execute("SELECT molecule_id FROM Calculations WHERE ROWID=?",
-                    (calculation_id,)).fetchone()[0]
-
-            # check if any energies are uncomputed
-            is_complete = True
-            for job_id in [job_id_tuple[0] for job_id_tuple in self.cursor.execute(
-                    "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]:
-                if self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?",
-                        (job_id,)).fetchone()[0] != "completed":
-                    is_complete = False
-                    break
-
-            # else statement is only ran if inner for loop
-            if not is_complete:
-                continue
-
-            # get the energies corresponding to this calculation
-            energies = [energy_index_value_pair[1] for energy_index_value_pair in sorted(self.cursor.execute(
-                    "SELECT energy_index, energy FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall())]
-
-            # Reconstruct the molecule from the information in this database
-            molecule = self.get_molecule(molecule_id)
-            
-            yield molecule, energies
-
-    def count_calculations(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tags = ["%"],
-            optimized = False):
-        """
-        Counts the number of calculations in the database with the given molecule, method, basis, and at least one of
-        the given tags.
-
-        % can be used as a wildcard to stand in for any molecule name, method, basis, cp, or tag. 
-
-        Args:
-            molecule_name   - Count only calculations with a molecule by this name.
-            method          - Count only calculations with this method.
-            basis           - Count only calculations with this basis.
-            cp              - Count only calculations iwth this cp.
-            tags            - Count only calculations marked with at least one of these tags.
-            optimized       - If True, then only count calculations for optimized geometries. Otherwise, counts
-                    calculations for both optimized and unoptimized geometries.
-
-        Returns:
-            The number of calculations in the database as a 4 item tuple: [pending calculations, partly calculations,
-            completed calculations, failed calculations] A partly calculation is a calculation whose energies are a
-            mixture of pending, running, completed, and failed, or all running.
-        """
-
-        # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
-
-        # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis,
-                cp)).fetchall()]
-
-        # get a list of all calculations that have the appropriate method, basis, and cp
-        calculation_ids = []
-
-        # loop over all selected molecules
-        for molecule_id in molecule_ids:
-
-            # loop over all selected models
-            for model_id in model_ids:
-
-                if len(tags) == 0:
-                    tag_like_operation = "TRUE"
-                else:
-                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
-
-                # if optimized is true, get only those calculations which are marked as optimized in the database
-                if optimized:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND " 
-                            + tag_like_operation + " AND optimized=?", (model_id, molecule_id, 1)).fetchall()]
-
-                # otherwise, get all energies (even those marked as optimized)
-                else:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND "
-                            + tag_like_operation, (model_id, molecule_id)).fetchall()]
-        
-        # count the number of calculations with each status
-        pending = 0
-        partly = 0
-        completed = 0
-        failed = 0
-
-        # loop over each selected calculation
-        for calculation_id in calculation_ids:
-
-            # get a list of all the jobs for that calculation
-            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                    "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]
-
-            # count the number of jobs with each status
-            num_pending = 0
-            num_running = 0
-            num_completed = 0
-            num_failed = 0
-
-            # loop over all the jobs for this calculation
-            for job_id in job_ids:
-
-                # get the status of this job
-                status = self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0]
-
-                # increment the corresponding counter variable
-                if status == "pending":
-                    num_pending += 1
-                elif status == "running":
-                    num_running += 1
-                elif status == "completed":
-                    num_completed += 1
-                elif status == "failed":
-                    num_failed += 1
-
-            # if any jobs from this calculation failed, the calculation is considered to have failed
-            if num_failed > 0:
-                failed += 1
-
-            # if no jobs failed, are pending, or are running, then the calculation is complete
-            elif num_pending == 0 and num_running == 0:
-                completed += 1
-
-            # if no jobs failed, are running, or are completed, then the calculation is pending
-            elif num_running == 0 and num_completed == 0:
-                pending += 1
-
-            # otherwise the calculation is considered partly done
-            else:
-                partly += 1
-
-        return pending, partly, completed, failed
-
-    def count_energies(self, molecule_name = "%", method = "%", basis = "%", cp = "%", tags = ["%"],
-            optimized = False):
-        """
-        Counts the number of energies in the database with the given molecule, method, basis, and at least one of the
-        give tags.
-
-        % can be used as a wildcard to stand in for any molecule name, method, basis, cp, or tag.
-
-        Differes from count_calculations(), because count_energies() will count each nmer energy of a calculation,
-        while count_calculations() will only count once for each calculation.
-
-        Args:
-            molecule_name   - Count only energies with a molecule by this name.
-            method          - Count only eneriges with this method.
-            basis           - Count only energies with this basis.
-            cp              - Count only energies with this cp.
-            tags            - Count only calculations marked with at least one of these tags.
-            optimized       - If True, then only count energies for optimized geometries. Otherwise, counts
-                    energies for both optimized and unoptimized geometries.
-
-        Returns:
-            The number of energies in the database as a 4 item tuple: [pending energies, running energies,
-            completed energies, failed energies]. 
-        """
-
-        # get a list of all molecules with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
-
-        # get the id of the model corresponding to the given method, basis, and cp
-        model_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis,
-                cp)).fetchall()]
-
-        # get a list of all calculations that have the appropriate method, basis, and cp
-        calculation_ids = []
-
-        # loop over all selected molecules
-        for molecule_id in molecule_ids:
-
-            # loop over all selected models
-            for model_id in model_ids:
-
-                if len(tags) == 0:
-                    tag_like_operation = "TRUE"
-                else:
-                    tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
-
-                # if optimized is true, get only those calculations which are marked as optimized in the database
-                if optimized:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND " 
-                            + tag_like_operation + " AND optimized=?", (model_id, molecule_id, 1)).fetchall()]
-
-                # otherwise, get all energies (even those marked as optimized)
-                else:
-                    calculation_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                            "SELECT ROWID FROM Calculations WHERE model_id=? AND molecule_id=? AND "
-                            + tag_like_operation, (model_id, molecule_id)).fetchall()]
-        
-        # count the number of energies with each status
-        pending = 0
-        running = 0
-        completed = 0
-        failed = 0
-
-        # loop over all selected calculations
-        for calculation_id in calculation_ids:
-
-            # get a list of all the jobs for this calculation
-            job_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                    "SELECT job_id FROM Energies WHERE calculation_id=?", (calculation_id,)).fetchall()]
-
-            # loop over all the jobs for this calculation
-            for job_id in job_ids:
-
-                # get the status of this job
-                status = self.cursor.execute("SELECT status FROM Jobs WHERE ROWID=?", (job_id,)).fetchone()[0]
-
-                # increment the corresponding counter variable
-                if status == "pending":
-                    pending += 1
-                elif status == "running":
-                    running += 1
-                elif status == "completed":
-                    completed += 1
-                elif status == "failed":
-                    failed += 1
-
-        return pending, running, completed, failed
-
-    def what_models(self, molecule_name = "%", tags = ["%"], optimized = False):
-        """
-        Given a molecule name, yields information about the models that exist for that molecule and how many
-        calculations are associated with each of them.
-
-        Args:
-            molecule_name   - The name of the molecule to get information about.
-            tags            - Only look at calculations with at least one of these tags, '%' serves as a wild-card
-            optimized       - If True, only consider calculations which are marked as optimized. Otherwise, consider
-                    both optimized and unoptimized calculations.
-
-        Returns:
-            Yields tuples of the form (method, basis, cp, (pending, partly, completed,
-            failed)), where pending, partly, completed, failed correspond to the number of calculations with each
-            status for the corresponding method, basis, cp for the queried molecule.
-        """
-
-        # get a list of all the molecules in the database with the given name
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT ROWID FROM Molecules WHERE name LIKE ?", (molecule_name,)).fetchall()]
-
-        model_ids = []
-        for molecule_id in molecule_ids:
-
-            if len(tags) == 0:
-                tag_like_operation = "TRUE"
-            else:
-                tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
-
-            model_ids += [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                    "SELECT model_id FROM Calculations WHERE molecule_id=? AND "+ tag_like_operation+" AND optimized=?",
-                    (molecule_id, optimized)).fetchall()]
-
-        model_ids = set(model_ids)
-
-        for model_id in model_ids:
-            method, basis, cp = self.cursor.execute("SELECT method, basis, cp FROM Models WHERE ROWID=?",
-                    (model_id,)).fetchone()
-            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tags, optimized)
-
-            yield method, basis, True if cp == 1 else False, calculation_count
-
-    def what_molecules(self, method = "%", basis = "%", cp = "%", tags = ["%"], optimized = False):
-        """
-        Given a model, yields information about the molecules that exist for that model and how many calculations are 
-        associated with each of them.
-
-        Args:
-            method          - The model's method.
-            basis           - The model's basis.
-            cp              - The model's cp.
-            tags            - Only consier calculations with at least one of these tags.
-            optimized       - If True, only consider calculations marked as optimized geometries. Otherwise, consider
-                    both optimized and unoptimized calculations.
-
-        Returns:
-            Yields tuples of the form (molecule_name, (pending, partly, completed,
-            failed)), where pending, partly, completed, failed correspond to the number of calculations with each
-            status for the corresponding molecule_name.
-        """
-        try:
-            model_id = self.cursor.execute(
-                    "SELECT ROWID FROM Models WHERE method LIKE ? AND basis LIKE ? AND cp LIKE ?", (method, basis,
-                    cp)).fetchone()[0]
-        except TypeError:
-            return
-
-        if len(tags) == 0:
-            tag_like_operation = "TRUE"
+            self.cursor.execute(
+                "DO $$" +
+                "   BEGIN " +
+                command +
+                "END $$",
+                params)
+        except OperationalError as e:
+            raise DatabaseOperationError(self.name, str(e))
+
+    #TODO: select, will be removed in the future.
+
+    def select(self, table, fetch_all, *values, **property_value_pairs):
+        if len(property_value_pairs) < 1:
+            # must specify at least one property
+            raise InvalidValueError("property_value_pairs", property_value_pairs, "Must specify at least one pair.")
+        if len(values) < 1:
+            # must specify at least one value
+            raise InvalidValueError("values", values, "Must specify at least one pair.")
+
+        properties = tuple(property_value_pairs)
+        properties_string = properties[0] + "=%s"
+        for property in properties[1:]:
+            properties_string += " AND "
+            properties_string += property + "=%s"
+
+        query_vals = tuple(property_value_pairs.values())
+
+        if values == ("*",):
+            values_string = "*"
+            values = ()
         else:
-            tag_like_operation = "(" + " OR ".join(["tag LIKE '{0} %' OR tag LIKE '% {0} %' OR tag LIKE '% {0}' OR tag='{0}'".format(tag) for tag in tags]) + ")"
+            values_string = values[0]
+            for value in values[1:]:
+                values_string += ", " + value
+            values_string += ""
 
-        molecule_ids = [fetch_tuple[0] for fetch_tuple in self.cursor.execute(
-                "SELECT molecule_id FROM Calculations WHERE model_id=? AND " + tag_like_operation + " AND optimized=?",
-                (model_id, optimized)).fetchall()]
+        self.cursor.execute("SELECT {} FROM {} WHERE {}".format(values_string, table, properties_string), query_vals)
 
-        molecule_names = []
+        if fetch_all:
+            return self.cursor.fetchall()
 
-        for molecule_id in molecule_ids:
-            molecule_names.append(self.cursor.execute("SELECT name FROM Molecules WHERE ROWID=?",
-                    (molecule_id,)).fetchone()[0])
-
-        molecule_names = set(molecule_names)
-
-        for molecule_name in molecule_names:
-            calculation_count = self.count_calculations(molecule_name, method, basis, cp, tags, optimized)
-
-            yield molecule_name, calculation_count
-            
-    def get_symmetry(self, molecule_name):
-        molecule_id = self.cursor.execute("SELECT ROWID FROM Molecules WHERE name=?", (molecule_name,)).fetchone()[0]
-
-        return self.get_molecule(molecule_id).get_symmetry()
-
-    def get_molecule(self, molecule_id):
-        # Reconstruct the molecule from the information in the database
-        molecule = Molecule()
-
-        index_fragment_pairs = []
+        return self.cursor.fetchone()
         
-        # loop over all rows in the Fragments table that correspond to this molecule
-        for fragment_id, index, name, charge, spin in self.cursor.execute(
-                "SELECT ROWID, frag_index, name, charge, spin FROM Fragments WHERE molecule_id=?", (molecule_id,)).fetchall():
-            fragment = Fragment(name, charge, spin)
+    def create_postgres_array(self, *values):
+        """
+        Creates a postgres array with an arbitrary number of values.
+        You should always call this before passing an array as a param
+        into execute().
 
-            # loop over all rows in the Atoms table that correspond to this fragment
-            for symbol, symmetry_class, x, y, z in self.cursor.execute(
-                    "SELECT symbol, symmetry_class, x, y, z FROM Atoms WHERE fragment_id=?",
-                    (fragment_id,)).fetchall():
-                fragment.add_atom(Atom(symbol, symmetry_class, x, y, z))
+        Args:
+            values          - Set of values which will form the elements
+                    of the postgres array.
 
-            index_fragment_pairs.append([index, fragment])
+        Returns:
+            The postgres array as a python string, ready to be passed into
+            execute() as a param.
+        """
 
-        for index, fragment in sorted(index_fragment_pairs, key=lambda pair: pair[0]):
-            molecule.add_fragment(fragment)
+        return "{" + ",".join([str(i) for i in values]) + "}"
+
+    def get_models(self):
+        self.cursor.execute("SELECT * FROM model_info;")
+        return [i[0] for i in self.cursor.fetchall()]
+
+    def get_molecule(self, hash):
+        self.cursor.execute("SELECT mol_name, atom_coordinates FROM molecule_list WHERE mol_hash=%s;", (hash,))
+        try:
+            name, atom_coordinates = self.cursor.fetchone()
+        except TypeError:
+            raise NoSuchMoleculeError(self.name, hash) from None
+
+        molecule = self.build_empty_molecule(name)
+
+        for atom in molecule.get_atoms():
+            atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+            atom_coordinates = atom_coordinates[3:]
 
         return molecule
-    
-    def reset(self):
-        self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "failed"))
 
+    def get_symmetry(self, mol_name):
+        molecule = self.build_empty_molecule(mol_name)
+        return molecule.get_symmetry()
 
-    def clean(self):
+    def add_calculations(self, molecule_list, method, basis, cp, *tags, optimized = False):
         """
-        Goes through all jobs in the database, and sets any that are "running" to "pending". Should only be used when 
-        you are prepared to give up on any currently running jobs.
+        Adds new calculations to the database.
+
+        Will queue the database to calculate the energies of each molecule in the list
+        with the given model. Does not calculate the energies.
+
+        All molecules must be of the same type.
 
         Args:
-            None.
+            molecule_list   - List of molecules whose energies are wanted.
+            method          - Method to use to calculate the molecules' energies.
+            basis           - Basis to use to calculate the molecules' energies.
+            cp              - True if counterpoise correction should be used in the calculation of the molecules' energies.
+            tags            - Set of tags to label these calculations in the database.
+            optimized       - True if all molecules represent optimized geometries.
 
         Returns:
             None.
         """
 
-        self.cursor.execute("UPDATE Jobs SET status=? WHERE status=?", ("pending", "running"))
+        command_string = ""
+        params = []
 
-class Job(object):
-    """
-    Contains all the information the user needs to be able to calculate a single energy.
-    """
-    def __init__(self, molecule, method, basis, cp, fragments, job_id):
+        batch_count = 0
+
+        order, frag_order, SMILES = None, None, None
+
+        for molecule in molecule_list:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+            coordinates = []
+            for fragment in molecule.get_fragments():
+                for atom in fragment.get_atoms():
+                    coordinates.append(atom.get_x())
+                    coordinates.append(atom.get_y())
+                    coordinates.append(atom.get_z())
+
+            command_string += "PERFORM add_calculation(%s, %s, ARRAY["
+            params += (molecule.get_SHA1(), molecule.get_name())
+
+            fragments = [fragment.get_name() for fragment in molecule.get_fragments()]
+
+            frag_names, counts = np.unique(fragments, return_counts=True, axis=0)
+            fragment_counts = [int(i) for i in counts]
+
+            for frag_name in frag_names:
+
+                fragment = None
+
+                for frag in molecule.get_fragments():
+                    if frag.get_name() == frag_name:
+                        fragment = frag
+
+                atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
+
+                symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
+                atom_counts = [int(i) for i in counts]
+
+                symbol_symmetry_count_pairs = [[symbol_symmetry_pairs[i][0], symbol_symmetry_pairs[i][1], counts[i]] for i in range(len(atom_counts))]
+                symbol_symmetry_count_pairs.sort(key = lambda x: x[1])
+
+                symbols = [symbol for symbol, symmetry, count in symbol_symmetry_count_pairs]
+                symmetries = [chr(65 + index) for index in range(len(symbol_symmetry_count_pairs))]
+                counts = [count for symbol, symmetry, count in symbol_symmetry_count_pairs]
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
+                if not frag_name == frag_names[-1]:
+                    command_string += ", "
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_SMILE(),
+                           self.create_postgres_array(*symbols),
+                           self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
+
+            command_string += "], %s, %s, %s, %s, %s, %s, %s);"
+            params += (fragment_counts, coordinates, method, basis, cp, self.create_postgres_array(*tags), optimized)
+
+            batch_count += 1
+
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def update_tags(self, mol_hash, model_name, *tags):
         """
-        Creates a new Job with the given arguments.
+        Returns a string consisting of a postgres command to
+        update the tags of a calculation in the database.
+
+        The command will add new tags, but not remove existing ones.
+
+        Pass the output into execute() to run it.
 
         Args:
-            molecule        - This Job's molecule.
-            method          - Method to use to run the energy calculation.
-            basis           - Basis to use to run the energy calculation.
-            cp              - Whether to use cointerpoise correction for this energy calculation.
-            fragments       - Fragments to include in this energy calculation, specified as an array of indicies.
-            job_id          - Id of the job corresponding to this energy. Will be needed to call set_energy().
+             mol_hash       - The hash of the molecule produced by molecule.get_SHA1().
+             model_name     - The name of the model in format method/basis/cp. cp = True or False.
+             tags           - The new tags for this molecule.
 
         Returns:
-            A new Job object.
+            (command, params)
+            command         - A string consisting of the command to run in the postgres database.
+            params          - The parameters to substitute for the %s in the command.
         """
 
-        self.molecule = molecule
-        self.method = method
-        self.basis = basis
-        self.cp = cp
-        self.fragments = fragments
-        self.job_id = job_id
+        command_string = ""
+        params = []
 
-class Calculation(object):
-    """
-    Contains all the information pertaining to a single completed Calculation.
-    """
-    def __init__(self, molecule, method, basis, cp, tags, energies):
+        for tag in tags:
+            command_string += \
+                "IF NOT EXISTS(SELECT mol_hash FROM tags WHERE mol_hash=%s AND model_name=%s AND %s=ANY(tag_names)) THEN " + \
+                "   UPDATE tags SET tag_names=(%s || tag_names) WHERE mol_hash=%s AND model_name=%s;" + \
+                "END IF;"
+
+            params += [mol_hash, model_name, tag, self.create_postgres_array(tag), mol_hash, model_name]
+
+        return command_string, params
+
+    def build_empty_molecule(self, mol_name):
         """
-        Creates a new Calculation with the given arguments.
+        Returns a copy of the mol_name molecule from inside the database with all atom
+        coordinates set to 0.
+
+        Params:
+            mol_name        - The name of the molecule to construct.
+
+        Returns:
+            a Molecule object with all coordinates set to 0.
+        """
+
+        fragments = []
+
+        self.cursor.execute("SELECT frag_name, count, charge, spin, SMILE FROM molecule_contents INNER JOIN fragment_info ON molecule_contents.frag_name=fragment_info.name where mol_name=%s", (mol_name,))
+
+        molecule_contents = self.cursor.fetchall()
+
+        next_start_symmetry = 'A'
+
+        for frag_name, frag_count, charge, spin, SMILE in molecule_contents:
+            for i in range(frag_count):
+
+                next_symmetry = next_start_symmetry
+
+                atoms = []
+
+                fragment_contents = self.select("fragment_contents", True, "atom_symbol", "symmetry", "count", frag_name = frag_name)
+
+                fragment_contents.sort(key = lambda x: x[1])
+
+                for atom_symbol, atom_symmetry, atom_count in fragment_contents:
+                    for k in range(atom_count):
+                        atom = Atom(atom_symbol, next_symmetry, 0, 0, 0)
+
+                        atoms.append(atom)
+
+                    next_symmetry = chr(ord(next_symmetry) + 1)
+
+                atoms.sort(key = lambda x: x.get_symmetry_class())
+
+                fragments.append(Fragment(atoms, frag_name, charge, spin, SMILE))
+
+            next_start_symmetry = next_symmetry
+
+        molecule = Molecule(fragments)
+
+        for index, atom in enumerate(molecule.get_atoms()):
+            atom.set_xyz(index, index, index)
+
+        return molecule
+
+    def get_all_calculations(self, client_name, *tags, calculations_to_do = sys.maxsize):
+        """
+        Gets uncalculaed energies from the database so that the user can calculate them.
+
+        Pass the output into set_properties to update the energies in the database.
 
         Args:
-            molecule        - The molecule of this Calculation.
-            method          - The method used to calculate the energies in this Calculation.
-            basis           - The basis used to calculate the energies in this Calculation.
-            cp              - Whether counterpoise correction was used to calculated the energies in this Calculation.
-            tags            - This Calculation's tags.
-            energies        - The nmer energies of this calculation as a list [E0, E1, E2, E01, ...].
+            client_name     - The name of the client that will perform these calculations.
+            tags            - Only fetch calculations with these tags.
+            calculations_to_do - Maximum number of calculations to fetch. Defualt is unlimited.
 
-        Returns:
-            A new Calculation object.
+        Yields:
+            (molecule, method, basis, cp, use_cp, frag_indices)
+            molecule        - The molecule whose energy should be calculated.
+            method          - Method to do the calculation.
+            basis           - Basis to do the calculation.
+            cp              - True if the model uses counterpoise correction.
+            use_cp          - True if counterpoise correction should be used for this calculation.
+            frag_indices    - List of indices of fragments that should be included in the calculation.
+                    If use_cp is True, then include other fragments as ghost atoms.
+
+            cp is not the same as use_cp. Some models have cp, but should not
+            use cp for some of their energies.
         """
 
-        self.molecule = molecule
-        self.method = method
-        self.basis = basis
-        self.cp = cp
-        self.tags = tags
-        self.energies = energies
+        name_to_order_dict = {}
 
-def number_of_energies(number_of_fragments, cp):
-    """
-    Returns the number of nmer energies that a molecule with number_of_fragments fragments will have.
-    1 -> 1 [E0]
-    2 -> 3 [E0, E1, E01]
-    3 -> 7 [E0, E1, E2, E01, E02, E12, E012]
-    4 -> 15 etc
+        while True:
 
-    counterpoise corrected models will cause 1 extra energy for each monomer in the molecule. Unless the molecule is a
-    monomer, in which case counterpoise correction has no affect.
+            self.cursor.execute("SELECT pending_calculations.mol_hash FROM pending_calculations INNER JOIN tags ON pending_calculations.mol_hash = tags.mol_hash AND pending_calculations.model_name = tags.model_name WHERE tags.tag_names && %s LIMIT 1", (self.create_postgres_array(*tags),))
 
-    Args:
-        number_of_fragments - The number of fragments in the molecule.
-        cp                  - If cp is enabled, then 1 additional energy will be added for each monomer for the 
-                non-cp corrected versions of the monomer energies. These will be used to compute deformation energies.
+            try:
+                mol_hash = self.cursor.fetchone()[0]
+            except TypeError:
+                break
 
-    Returns:
-        The number of nmer energies a molecule with the given number of fragments will have.
-    """
+            self.cursor.execute("SELECT mol_name FROM molecule_list WHERE mol_hash = %s", (mol_hash,))
 
-    return 2 ** number_of_fragments - 1  + (number_of_fragments if cp and number_of_fragments > 1 else 0)
+            molecule_name = self.cursor.fetchone()[0]
 
-def energy_index_to_fragment_indicies(energy_index, number_of_fragments, cp):
-    """
-    Returns an array of fragment indicies that should be included in a energy calculation with energy_index index in a
-    molecule with number_of_fragments fragments.
+            self.cursor.execute("SELECT * FROM get_pending_calculations(%s, %s, %s, %s)", (molecule_name, client_name, self.create_postgres_array(*tags), min(self.batch_size, calculations_to_do)))
 
-    The order is first all monomers, then dimers, then trimers, etc. Finally, if cp is set to True, the the non-cp
-    corrected monomers are last.
+            calculations_to_do -= self.batch_size
 
-    Args:
-        energy_index        - The index of this energy.
-        number_of_fragments - The number of fragments in the molecule that this energy belongs to.
-        cp                  - If cp-correction is on. If true then there is one additional energy per monomer, for the
-                non-cp enabled calculations.
+            pending_calcs = self.cursor.fetchall()
 
-    Returns:
-        List of the indicies of the fragments included in this energy.
-    """
+            empty_molecule = self.build_empty_molecule(molecule_name)
+            empty_molecule = empty_molecule.get_standard_copy()
 
-    if energy_index < 0 or energy_index >= number_of_energies(number_of_fragments, cp):
-        raise ValueError("energy_index", energy_index, "in range [0, {}) for {} fragments with cp={}".format(number_of_energies(number_of_fragments, cp), number_of_fragments, cp))
+            for atom_coordinates, model, frag_indices, use_cp in pending_calcs:
+                molecule = copy.deepcopy(empty_molecule)
 
-    combinations = [inner for outer in (itertools.combinations(range(number_of_fragments), combination_size) for combination_size in range(1, number_of_fragments + 1)) for inner in outer]
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
 
-    if energy_index >= len(combinations) and cp and number_of_fragments > 1:
-        return combinations[energy_index - len(combinations)]
+                method = model[:model.index("/")]
+                model = model[model.index("/") + 1:]
+                basis = model[:model.index("/")]
+                cp = model[model.index("/") + 1:] == "True"
 
-    return combinations[energy_index]
+
+                try:
+                    order, frag_orders, SMILES = name_to_order_dict[molecule.get_name()]
+                except KeyError:
+                    order, frag_orders = molecule.get_standard_order_order()
+                    SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+                    name_to_order_dict[molecule.get_name()] = order, frag_orders, SMILES
+
+                molecule = molecule.get_reordered_copy(order, frag_orders, SMILES)
+
+                yield molecule, method, basis, cp, use_cp, frag_indices
+
+            if calculations_to_do < 1:
+                return
+
+    def set_properties(self, calculation_results):
+        """
+        Sets newly calculated energies in the database.
+
+        Args:
+            calculation_results - List of tuples of format
+                    (molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text)
+                    molecule    - Molecule whose energy should be set.
+                    method      - Method used to calculate the new energy.
+                    basis       - Basis used to calculate the new energy.
+                    cp          - True if the model for this energy includes counterpoise correction.
+                    use_cp      - True if counterpoise correction was used for this calculation.
+                    frag_indices - Fragments included in this calculation.
+                    result      - True if the calculation succeeded.
+                    energy      - The calculated energy in atomic units. Not used in result is False.
+                    log_text    - The text of the log file for this calculation.
+
+        Returns:
+            None.
+        """
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+
+        name_to_order_dict = {}
+
+        for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
+            try:
+                order, frag_orders, SMILES = name_to_order_dict[molecule.get_name()]
+            except KeyError:
+                order, frag_orders = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+                name_to_order_dict[molecule.get_name()] = order, frag_orders, SMILES
+
+            molecule = molecule.get_reordered_copy(order, frag_orders, SMILES)
+
+            model_name = method + "/" + basis + "/" + str(cp)
+
+            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), model_name, use_cp, self.create_postgres_array(*frag_indices), result, energy, log_text]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def get_1B_training_set(self, molecule_name, names, SMILES, method, basis, cp, *tags):
+        """
+        Gets a 1B training set from the calculated energies in the database.
+
+        All complete calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule for which a training set is desired.
+            names           - List of name of the monomer.
+            SMILES          - List of SMILE string of the monomer, the atoms in the training set will
+                    be in this order.
+            method          - Method of this training set.
+            basis           - Basis of this training set.
+            cp              - Counterpoise correction of this training set.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, energy)
+            molecule        - One molecule in the training set.
+            energy          - Its 1B deformation energy.
+        """
+
+        model_name ="{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        order, frag_orders = None, None
+
+        while True:
+            self.cursor.execute("SELECT * FROM get_1B_training_set(%s, %s, %s, %s, %s)", (molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            training_set = self.cursor.fetchall()
+
+            for atom_coordinates, energy in training_set:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                yield molecule.get_reordered_copy(order, frag_orders, SMILES), energy
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
+
+    def get_2B_training_set(self, molecule_name, names, SMILES, method, basis, cp, *tags):
+        """
+        Gets a 2B training set from the calculated energies in the database.
+
+        All complete calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule for which a training set is desired.
+            names           - List of names of the two monomers, the training set will have the monomers
+                    in this order.
+            SMILES          - List of SMILE strings of each monomer, the atoms in the training set will
+                    be in this order.
+            method          - Method of this training set.
+            basis           - Basis of this training set.
+            cp              - Counterpoise correction of this training set.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy)
+            molecule        - One molecule in the training set.
+            binding_energy  - Its 2B binding energy.
+            interaction_energy - Its 2B interaction energy.
+            monomer1_energy - Its first monomer's deformation energy.
+            monomer2_energy - Its second monomer's deformation energy.
+        """
+
+        model_name ="{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        order, frag_orders = None, None
+
+        monomer1_name, monomer2_name = sorted([names[0], names[1]])
+
+        molecule_name = monomer1_name + "-" + monomer2_name
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+        
+        while True:
+            self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            training_set = self.cursor.fetchall()
+
+            for atom_coordinates, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in training_set:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                if order == [1, 0]:
+                    monomer1_energy, monomer2_energy = monomer2_energy, monomer1_energy
+
+                yield molecule.get_reordered_copy(order, frag_orders, SMILES), binding_energy, interaction_energy, monomer1_energy, monomer2_energy
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
+
+    def export_calculations(self, names, SMILES, method, basis, cp, *tags):
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        order, frag_orders, energies_order = None, None, None
+
+        molecule_name = "-".join(sorted(names))
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        while True:
+            self.cursor.execute("SELECT * FROM export_calculations(%s, %s, %s, %s, %s)", (
+                    molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            calculations = self.cursor.fetchall()
+
+            for atom_coordinates, energies in calculations:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+                    energies_order = self.get_energies_order(order, molecule.get_num_fragments(), cp)
+
+                yield molecule.get_reordered_copy(order, frag_orders,
+                                                  SMILES), [energies[i] for i in energies_order]
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
+
+    def import_calculations(self, molecule_energies_pairs, method, basis, cp, *tags, optimized = False):
+        """
+        Imports already completed calculations into the database.
+
+        Args:
+            molecule_energies_pairs - Array of 2-tuples (molecule, nmer_energies)
+                    each pair being a molecule and its energies in the numeric order
+                    by fragment index. If cp is true, cp energies should come before non-cp energies.
+            method              - Method used to calculate these energies.
+            basis               - Basis used to calculate these energies.
+            cp                  - True if counterpoise correction was used for these energies.
+            tags                - Tags to mark these energies with.
+            optimized           - True if all geometries in molecule_energy_pairs are optimized in
+                    the given method and basis.
+        """
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+        order, frag_order, SMILES, energies_order = None, None, None, None
+
+        for molecule, energies in molecule_energies_pairs:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+                energies_order = Database.get_energies_order(order, molecule.get_num_fragments(), cp)
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+
+            energies = [energies[index] for index in energies_order]
+
+            coordinates = []
+            for fragment in molecule.get_fragments():
+                for atom in fragment.get_atoms():
+                    coordinates.append(atom.get_x())
+                    coordinates.append(atom.get_y())
+                    coordinates.append(atom.get_z())
+
+            command_string += "PERFORM import_calculation(%s, %s, ARRAY["
+            params += (molecule.get_SHA1(), molecule.get_name())
+
+            fragments = [fragment.get_name() for fragment in molecule.get_fragments()]
+
+            frag_names, counts = np.unique(fragments, return_counts=True, axis=0)
+            fragment_counts = [int(i) for i in counts]
+
+            for frag_name in frag_names:
+
+                fragment = None
+
+                for frag in molecule.get_fragments():
+                    if frag.get_name() == frag_name:
+                        fragment = frag
+
+                atoms = [[atom.get_name(), atom.get_symmetry_class()] for atom in fragment.get_atoms()]
+
+                symbol_symmetry_pairs, counts = np.unique(atoms, return_counts=True, axis=0)
+                atom_counts = [int(i) for i in counts]
+
+                symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
+                symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
+
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
+                if not frag_name == frag_names[-1]:
+                    command_string += ", "
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_SMILE(),
+                           self.create_postgres_array(*symbols),
+                           self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
+
+            command_string += "], %s, %s, %s, %s, %s, %s, %s, %s);"
+            params += (fragment_counts, coordinates, method, basis, cp, self.create_postgres_array(*tags), optimized, self.create_postgres_array(*energies))
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def get_failed(self, molecule_name, names, SMILES, method, basis, cp, *tags, optimized = False):
+        """
+        Gets geometries of energy caclulations that have failed.
+
+        All failed calculations which match the given method, basis, cp, and tags
+        will be included.
+
+        Args:
+            molecule_name   - Name of the molecule to find failed calculations for.
+            names           - List of names of the two monomers, the molecules will have the monomers
+                    in this order.
+            SMILES          - List of SMILE strings of each monomer, the atoms in the fragments will
+                    be in this order.
+            method          - Method for the failed calculations.
+            basis           - Basis for the failed calculations.
+            cp              - Counterpoise correction for the failed calculations.
+            tags            - Only include calculations marked with at least one of these tags.
+
+        Yields:
+            (molecule, energy, used_cp)
+            molecule        - One molecule in the training set.
+            frag_indices    - The indices of the fragments used in the failed calculation.
+            used_cp         - True of fragments not in frag_indices where included as ghost
+                    atoms in this failed calculation.
+        """
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        order, frag_orders = None, None
+
+        while True:
+            self.cursor.execute("SELECT * FROM get_failed_configs(%s, %s, %s, %s, %s)", (
+            molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            training_set = self.cursor.fetchall()
+
+            for atom_coordinates, frag_indices, used_cp in training_set:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+
+                yield molecule.get_reordered_copy(order, frag_orders, SMILES), frag_indices, used_cp
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
+
+    def reset_all_calculations(self, *tags):
+        """
+        Resets all dispatched, complete, and failed calculations in the database back to pending. Their
+        energies are queued for recalculation.
+
+        Args:
+            tags            - Currently unused.
+
+        Returns:
+            None.
+        """
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "dispatched"))
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "complete"))
+        self.cursor.execute("UPDATE molecule_properties SET status=%s WHERE status=%s", ("pending", "failed"))
+
+    def reset_dispatched(self, *tags):
+        """
+        Resets all dispatched calculations in the database back to pending. Their
+        energies are queued for recalculation.
+
+        Args:
+            tags            - Currently unused.
+
+        Returns:
+            None.
+        """
+        self.execute("PERFORM reset_dispatched(%s);", [self.create_postgres_array(*tags)])
+
+    def reset_failed(self, *tags):
+        """
+        Resets all failed calculations in the database back to pending. Their
+        energies are queued for recalculation.
+
+        Args:
+            tags            - Currently unused.
+
+        Returns:
+            None.
+        """
+        self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])
+
+    def delete_calculations(self, molecule_list, method, basis, cp, *tags, delete_complete_calculations = False):
+        """
+        Removes the specified tags from any calculations in the database that matches one of the molecules in
+        molecule_list and the given method, basis, and cp.
+
+        Will never delete completed or dispatched energies unless delete_complete_calculations is True, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_list - Remove tags from calculations involving these molecules.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
+
+        Returns:
+            None.
+        """
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+
+        order, frag_order, SMILES = None, None, None
+
+        for molecule in molecule_list:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+
+            command_string += "PERFORM delete_calculation(%s, %s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), molecule.get_name(), method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def delete_all_calculations(self, molecule_name, method, basis, cp, *tags, delete_complete_calculations = False):
+        """
+        Removes tags from molecules in the database that match the molecule_name.
+
+        Will never delete completed or dispatched energies unless delete_complete_calculations is True, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_name - Only delete molecules with this name.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
+
+        """
+        self.execute("PERFORM delete_all_calculations(%s, %s, %s, %s, %s, %s);", (molecule_name, method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations))
+
+    @staticmethod
+    def get_energies_order(order, num_bodies, cp):
+        pre_energy_order = list(range(len(Database.get_permutations(num_bodies, cp))))
+
+        pre_energy_indices = [Database.energy_index_to_frag_indices(i, num_bodies, cp) for i in pre_energy_order]
+
+        post_energy_indices = [(tuple(sorted(order[i] for i in pre)), cp) for pre, cp in pre_energy_indices]
+
+        post_energy_order = [Database.frag_indices_to_energy_index(i, num_bodies, cp) for i in post_energy_indices]
+
+        return post_energy_order
+
+    @staticmethod
+    def energy_index_to_frag_indices(index, num_bodies, cp):
+
+        return Database.get_permutations(num_bodies, cp)[index]
+
+    @staticmethod
+    def frag_indices_to_energy_index(frag_indices, num_bodies, cp):
+
+        return Database.get_permutations(num_bodies, cp).index(frag_indices)
+
+    @staticmethod
+    def get_permutations(num_bodies, cp):
+        permutations = []
+        for i in range(1, num_bodies + 1):
+            perms = list(itertools.combinations(range(num_bodies), i))
+            for p in perms:
+                if cp and i < num_bodies:
+                    permutations.append((p, True))
+                permutations.append((p, False))
+
+        return permutations

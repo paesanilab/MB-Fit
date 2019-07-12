@@ -4,7 +4,7 @@ from collections import OrderedDict
 
 from potential_fitting.utils import constants, SettingsReader, files
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
-from potential_fitting.molecule import Molecule, xyz_to_molecules
+from potential_fitting.molecule import Molecule, Fragment, xyz_to_molecules
 from potential_fitting.polynomials import MoleculeInParser
 
 qchem_template = "qchem_template"
@@ -22,7 +22,12 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
         use_published_polarizabilities - use the polarizabilities from the 2018 Schwerdtfeger & Nagle paper; otherwise, use those calculated using MolPRO with ccsd(t)
     """
 
+
     settings = SettingsReader(settings_file)
+
+    print("Generating fitting config file for molecule with fragments: {}".format(settings.get("molecule", "names")))
+
+    print("Preparing qchem input...")
 
     monomer_settings = []
     names = settings.get("molecule", "names").split(",")
@@ -30,15 +35,17 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     charges = settings.get("molecule", "charges").split(",")
     spins = settings.get("molecule", "spins").split(",")
     symmetries = settings.get("molecule", "symmetry").split(",")
+    SMILES = settings.get("molecule", "SMILES").split(",")
 
 
-    for name, fragment, charge, spin, symmetry in zip(names, fragments, charges, spins, symmetries):
+    for name, fragment, charge, spin, symmetry, SMILE in zip(names, fragments, charges, spins, symmetries, SMILES):
         monomer_setting = SettingsReader(settings_file)
         monomer_setting.set("molecule", "names", name)
         monomer_setting.set("molecule", "fragments", fragment)
         monomer_setting.set("molecule", "charges", charge)
         monomer_setting.set("molecule", "spins", spin)
         monomer_setting.set("molecule", "symmetry", symmetry)
+        monomer_setting.set("molecule", "SMILES", SMILE)
         monomer_settings.append(monomer_setting)
 
     # split the molecule input string into fragments
@@ -47,7 +54,7 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     fragments = ["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_types()]) for frag in parser.get_fragments()]
 
-    molecule_in = "_".join(fragments)
+    molecule_in = "_".join(["".join([atom_type.get_atom_in() for atom_type in frag.get_atom_and_virtual_site_types()]) for frag in parser.get_fragments()])
 
     if len(geo_paths) != len(fragments):
         raise InconsistentValueError("number of geometries", "number of fragments", len(geo_paths), len(fragments), "number of geometries must be equal to the number of fragments in the A3B2_A3B2 type input")
@@ -146,8 +153,11 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     num_threads = settings.getint("qchem", "num_threads")
 
+    print("Executing qchem calculation...")
     # perform qchem system call
     os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+
+    print("Parsing qchem output...")
 
     # parse the output file
     with open(qchem_out_path, "r") as qchem_out:
@@ -403,6 +413,8 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
             charges.append(frag_charges)
 
+    print("Writing config file...")
+
     # create the config file!
     configwriter = configparser.ConfigParser()
     configwriter.add_section("common")
@@ -413,9 +425,14 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
     configwriter.set("fitting", "number_of_atoms", str(len(atomic_symbols)))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(len(atomic_symbols)))
 
-    molecule = Molecule()
+    fragments = []
+
     for geo_path, setting in zip(geo_paths, monomer_settings):
-        molecule.read_xyz_path_direct(geo_path, setting)
+        with open(geo_path, "r") as geo_file:
+            frag_string = "\n".join(geo_file.read().splitlines()[2:])
+            fragments.append(Fragment.read_xyz(frag_string, setting.get("molecule", "names"), setting.getint("molecule", "charges"), setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"), setting.get("molecule", "symmetry")))
+
+    molecule = Molecule(fragments)
 
     excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()
 
@@ -445,3 +462,5 @@ def make_config(settings_file, molecule_in, config_path, *geo_paths, distance_be
 
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)
+
+    print("Completed generating config file {}.".format(config_path))

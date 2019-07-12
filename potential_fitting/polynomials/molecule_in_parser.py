@@ -8,11 +8,9 @@ class MoleculeInParser(object):
 
     def __init__(self, molecule_in):
         self.fragment_parsers = []
-        print("molecule_init", molecule_in)
         frag_id = 'a'
 
         for fragment_in in molecule_in.split("_"):
-            print("looping...")
             self.fragment_parsers.append(FragmentParser(fragment_in, frag_id))
 
             frag_id = chr(ord(frag_id) + 1)
@@ -47,11 +45,21 @@ class FragmentParser(object):
     def __init__(self, fragment_in, frag_id):
 
         self.atom_parsers = []
-        print("fragment_init", fragment_in)
-        print(self)
+
+        start_index_dict = {}
+        
         for atom_in in self.split_fragments_in(fragment_in):
 
-            self.atom_parsers.append(AtomTypeParser(atom_in))
+            atom_type = "".join(itertools.takewhile(str.isupper, atom_in))
+            count = int(atom_in[len(atom_type):])
+            try:
+                start_index = start_index_dict[atom_type]
+                start_index_dict[atom_type] += count
+            except KeyError:
+                start_index = 1
+                start_index_dict[atom_type] = 1 + count
+
+            self.atom_parsers.append(AtomTypeParser(start_index, atom_in))
 
         self.frag_id = frag_id
 
@@ -173,8 +181,9 @@ class FragmentParser(object):
 
 class AtomTypeParser(object):
 
-    def __init__(self, atom_type_in):
-        self.atom_type= "".join(itertools.takewhile(str.isupper, atom_type_in))
+    def __init__(self, start_index, atom_type_in):
+        self.atom_type = "".join(itertools.takewhile(str.isupper, atom_type_in))
+        self.start_index = start_index
         self.count = int(atom_type_in[len(self.atom_type):])
 
     def get_atom_in(self):
@@ -199,6 +208,6 @@ class AtomTypeParser(object):
 
     def get_atoms(self):
 
-        for i in range(1, self.count + 1):
+        for i in range(self.start_index, self.start_index + self.count):
 
             yield self.atom_type + str(i)

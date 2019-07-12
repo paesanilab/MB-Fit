@@ -20,6 +20,8 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
 
     settings = SettingsReader(settings_file)
 
+    print("Generating polynomial input file for symmetry {} into file {}.".format(molecule_in, in_file_path))
+
     # file will be automatically closed after block by with open as ... syntax
     with open(files.init_file(in_file_path, files.OverwriteMethod.NONE), "w") as poly_in_file:
 
@@ -55,10 +57,14 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
         if polynomial_filtering == "purely-inter":
             # this filter filters out all terms that have any intra-molecular components
             poly_in_file.write("add_filter['degree', 'x-intra-*+*', '1+', '*']")
+            print("Filtering out terms that use ANY intramolecular variables.")
         elif polynomial_filtering == "partly-inter":
             # this filter filters out all terms that have no inter-molecular components
             poly_in_file.write("add_filter['not', 'degree', 'x-inter-*+*', '1+', '*']")
+            print("Filtering out terms that ONLY use intramolecular variables.")
 
         elif polynomial_filtering != "all":
             raise InvalidValueError("[poly_generation][accepted_terms]",polynomial_filtering,
                     "one of 'all', 'partly-inter', or 'purely-inter'")
+
+    print("Successfully generated polynomial input file!")

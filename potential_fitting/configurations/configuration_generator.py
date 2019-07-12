@@ -25,7 +25,7 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
     """
 
     if seed is None:
-        seed = random.randint(-100000, 100000)
+        seed = randint(-100000, 100000)
 
     print("Parsing normal mode input file.")
 
@@ -161,7 +161,7 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
     """
 
     if seed is None:
-        seed = random.randint(-100000, 100000)
+        seed = randint(-100000, 100000)
 
     print("Running normal distribution configuration generator...")
 
@@ -201,6 +201,8 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
         linear = False
         geometric = False
 
+    print("Will use a {} distribution to generate the configs.".format("geometric" if geometric else "linear"))
+
     # calculate the dimension of this molecule
     dim = 3 * molecule.get_num_atoms()
     # calculate the dimension of the null space of this molecule
@@ -212,8 +214,10 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
 
     # number of configs using a distribution over A
     num_A_configs = num_configs // 2
+    print("Will generate {} configs over the A distribution.".format(num_A_configs))
     # number of configs using a distribution over temp
     num_temp_configs = num_configs - num_A_configs
+    print("Will generate {} configs over the temperature distribution.".format(num_temp_configs))
 
     # deep copy the frequencies, reduced masses, and normal modes input array before we change it, and sort them so
     # that they are all sorted from lowest frequency to highest.
@@ -277,6 +281,8 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
 
     freq_cutoff = 10 * constants.cmtoau
 
+    print("Generating Temperature Distribution Configs...")
+
     # open the config file to write configurations to.
     with open(config_path, "w") as config_file:
 
@@ -329,7 +335,7 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
             else:
                 # increase temp
                 temp = temp * temp_factor + temp_addend
-
+    print("... Successfully generated temperature distribution configs!")
 
     if geometric or linear:
 
@@ -348,6 +354,11 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
             A_max = 2
             A_factor = 1
             A_addend = (A_max - A_min) / (num_A_configs - 1)
+
+    print("Generating A Distribution Configs...")
+
+    # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
+    with open(config_path, "a") as config_file:
 
         # initialize A to the A minimum, it will be increased each iteration of the loop
         A = A_min
@@ -386,6 +397,9 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
 
                 # increase A
                 A = A * A_factor + A_addend
+
+
+    print("... Successfully generated A distribution configs!")
 
     print("Normal Distribution Configuration generation complete.")
 

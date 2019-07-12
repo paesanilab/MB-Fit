@@ -25,7 +25,7 @@ class SettingsReader(object):
         """
 
         # create a new ConfigParser
-        self.configparser = configparser.ConfigParser(allow_no_value=False)
+        self.configparser = configparser.RawConfigParser(allow_no_value=False)
 
         if file_path is not None:
             # confirm that the input file exists
@@ -36,9 +36,22 @@ class SettingsReader(object):
 
         # save the filepath so that we can include it in error messages
         if file_path is None:
-            self.file_path = "None"
+            self.file_path = None
         else:
             self.file_path = file_path
+
+    def get_file_path(self):
+        """
+        Gets the file path of this SettingsReader.
+
+        Args:
+            None.
+
+        Returns:
+            The path to the file this SettingsReader was
+            generated from.
+        """
+        return self.file_path
     
     def set(self, section, prop, value):
         """
@@ -53,6 +66,8 @@ class SettingsReader(object):
             None.
         """
 
+        if not self.configparser.has_section(section):
+            self.configparser.add_section(section)
         self.configparser.set(section, prop, value)
 
     def write(self, file_path):
@@ -66,7 +81,8 @@ class SettingsReader(object):
             None.
         """
 
-        self.configparser.write(files.init_file(file), files.OverwriteMethod.BACKUP)
+        with open(files.init_file(file_path, files.OverwriteMethod.BACKUP), "w") as file:
+            self.configparser.write(file)
 
     def get(self, section, prop, default = None):
         """
@@ -208,7 +224,7 @@ class SettingsReader(object):
                 raise
             else:
                 return default
-        except NoOptionError:
+        except ConfigMissingPropertyError:
             if default is None:
                 raise
             else:

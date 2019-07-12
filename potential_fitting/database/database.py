@@ -3,7 +3,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
+from potential_fitting.exceptions import PotentialFittingError, NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
 from potential_fitting.utils import SettingsReader
 from psycopg2 import OperationalError
 
@@ -703,19 +703,16 @@ class Database():
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
-        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
-        max_count = self.cursor.fetchone()[0]
-
-        empty_molecule = self.build_empty_molecule(molecule_name)
-
         order, frag_orders = None, None
 
         monomer1_name, monomer2_name = sorted([names[0], names[1]])
 
-        if sorted(molecule_name.split("-")) != [monomer1_name, monomer2_name]:
-            raise Exception
-
         molecule_name = monomer1_name + "-" + monomer2_name
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
         
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
@@ -727,8 +724,6 @@ class Database():
                 for atom in molecule.get_atoms():
                     atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
                     atom_coordinates = atom_coordinates[3:]
-
-
 
                 if order is None:
                     order, frag_orders = molecule.get_reorder_order(names, SMILES)
@@ -743,8 +738,43 @@ class Database():
             if batch_offset > max_count:
                 return
 
-    def export_calculations(self, molecule_name, names, SMILES, method, basis, cp, *tags):
-        raise NotImplementedError # TODO: finish this
+    def export_calculations(self, names, SMILES, method, basis, cp, *tags):
+
+        model_name = "{}/{}/{}".format(method, basis, cp)
+        batch_offset = 0
+
+        order, frag_orders, energies_order = None, None, None
+
+        molecule_name = "-".join(sorted(names))
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
+
+        while True:
+            self.cursor.execute("SELECT * FROM export_calculations(%s, %s, %s, %s, %s)", (
+                    molecule_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
+            calculations = self.cursor.fetchall()
+
+            for atom_coordinates, energies in calculations:
+                molecule = copy.deepcopy(empty_molecule)
+
+                for atom in molecule.get_atoms():
+                    atom.set_xyz(atom_coordinates[0], atom_coordinates[1], atom_coordinates[2])
+                    atom_coordinates = atom_coordinates[3:]
+
+                if order is None:
+                    order, frag_orders = molecule.get_reorder_order(names, SMILES)
+                    energies_order = self.get_energies_order(order, molecule.get_num_fragments(), cp)
+
+                yield molecule.get_reordered_copy(order, frag_orders,
+                                                  SMILES), [energies[i] for i in energies_order]
+
+            batch_offset += self.batch_size
+
+            if batch_offset > max_count:
+                return
 
     def import_calculations(self, molecule_energies_pairs, method, basis, cp, *tags, optimized = False):
         """
@@ -766,30 +796,13 @@ class Database():
         params = []
 
         batch_count = 0
-        order, frag_order, SMILES = None, None, None
-        energies_order = None
+        order, frag_order, SMILES, energies_order = None, None, None, None
 
         for molecule, energies in molecule_energies_pairs:
             if order is None:
                 order, frag_order = molecule.get_standard_order_order()
                 SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
-
-                if molecule.get_num_fragments() == 1:
-                    energies_order = [0]
-                if molecule.get_num_fragments() == 2:
-                    if order == [0, 1]:
-                        if cp:
-                            energies_order = [0, 1, 2, 3, 4]
-                        else:
-                            energies_order = [0, 1, 2]
-                    else:
-                        if cp:
-                            energies_order = [1, 0, 3, 2, 4]
-                        else:
-                            energies_order = [1, 0, 2]
-                if molecule.get_num_fragments() == 3:
-                    print("For now, import calculations does not work for 3B :( sorry.")
-                    raise Error
+                energies_order = Database.get_energies_order(order, molecule.get_num_fragments(), cp)
 
             molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
 
@@ -826,10 +839,10 @@ class Database():
                 symbols = [symbol for symbol, symmetry in symbol_symmetry_pairs]
                 symmetries = [symmetry for symbol, symmetry in symbol_symmetry_pairs]
 
-                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s)"
+                command_string += "construct_fragment(%s, %s, %s, %s, %s, %s, %s)"
                 if not frag_name == frag_names[-1]:
                     command_string += ", "
-                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(),
+                params += (frag_name, fragment.get_charge(), fragment.get_spin_multiplicity(), fragment.get_SMILE(),
                            self.create_postgres_array(*symbols),
                            self.create_postgres_array(*symmetries), self.create_postgres_array(*counts))
 
@@ -945,3 +958,107 @@ class Database():
             None.
         """
         self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])
+
+    def delete_calculations(self, molecule_list, method, basis, cp, *tags, delete_complete_calculations = False):
+        """
+        Removes the specified tags from any calculations in the database that matches one of the molecules in
+        molecule_list and the given method, basis, and cp.
+
+        Will never delete completed or dispatched energies unless delete_complete_calculations is True, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_list - Remove tags from calculations involving these molecules.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
+
+        Returns:
+            None.
+        """
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+
+        order, frag_order, SMILES = None, None, None
+
+        for molecule in molecule_list:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+
+            command_string += "PERFORM delete_calculation(%s, %s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), molecule.get_name(), method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def delete_all_calculations(self, molecule_name, method, basis, cp, *tags, delete_complete_calculations = False):
+        """
+        Removes tags from molecules in the database that match the molecule_name.
+
+        Will never delete completed or dispatched energies unless delete_complete_calculations is True, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_name - Only delete molecules with this name.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
+
+        """
+        self.execute("PERFORM delete_all_calculations(%s, %s, %s, %s, %s, %s);", (molecule_name, method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations))
+
+    @staticmethod
+    def get_energies_order(order, num_bodies, cp):
+        pre_energy_order = list(range(len(Database.get_permutations(num_bodies, cp))))
+
+        pre_energy_indices = [Database.energy_index_to_frag_indices(i, num_bodies, cp) for i in pre_energy_order]
+
+        post_energy_indices = [(tuple(sorted(order[i] for i in pre)), cp) for pre, cp in pre_energy_indices]
+
+        post_energy_order = [Database.frag_indices_to_energy_index(i, num_bodies, cp) for i in post_energy_indices]
+
+        return post_energy_order
+
+    @staticmethod
+    def energy_index_to_frag_indices(index, num_bodies, cp):
+
+        return Database.get_permutations(num_bodies, cp)[index]
+
+    @staticmethod
+    def frag_indices_to_energy_index(frag_indices, num_bodies, cp):
+
+        return Database.get_permutations(num_bodies, cp).index(frag_indices)
+
+    @staticmethod
+    def get_permutations(num_bodies, cp):
+        permutations = []
+        for i in range(1, num_bodies + 1):
+            perms = list(itertools.combinations(range(num_bodies), i))
+            for p in perms:
+                if cp and i < num_bodies:
+                    permutations.append((p, True))
+                permutations.append((p, False))
+
+        return permutations

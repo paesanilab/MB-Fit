@@ -703,16 +703,16 @@ class Database():
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
-        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
-        max_count = self.cursor.fetchone()[0]
-
-        empty_molecule = self.build_empty_molecule(molecule_name)
-
         order, frag_orders = None, None
 
         monomer1_name, monomer2_name = sorted([names[0], names[1]])
 
         molecule_name = monomer1_name + "-" + monomer2_name
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
         
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))

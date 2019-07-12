@@ -1,6 +1,7 @@
 from .database import Database
 from .database_cleaner import clean_database
 from .database_cleaner import reset_database
+from .database_cleaner import delete_calculations
 from .database_filler import fill_database
 from .database_filler import generate_inputs_from_database 
 from .database_filler import run_missing_calculations

@@ -9,6 +9,7 @@ class Quaternion(object):
     Can be used to perform rotations in 3d space.
     """
 
+    @staticmethod
     def get_random_quaternion(random = Random()):
         """
         Gets a random unit Quaternion.
@@ -25,6 +26,7 @@ class Quaternion(object):
 
         return Quaternion(0.5 - random.random(), 0.5 - random.random(), 0.5 - random.random(), 0.5 - random.random()).normalize()
 
+    @staticmethod
     def get_random_rotation_quaternion(random = Random()):
         """
         Gets a random unit Quaternion such that the rotation created by this unit Quaternion is just as likely as any
@@ -58,8 +60,8 @@ class Quaternion(object):
         Args:
             r               - The real component.
             i               - The first imaginary component.
-            k               - The second imaginary component.
-            j               - The third imaginary component.
+            j               - The second imaginary component.
+            k               - The third imaginary component.
 
         Returns:
             A new Quaternion.
@@ -69,6 +71,58 @@ class Quaternion(object):
         self.i = i
         self.j = j
         self.k = k
+
+    def get_r(self):
+        """
+        Gets the real component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The real component of this Quaternion.
+        """
+
+        return self.r
+
+    def get_i(self):
+        """
+        Gets the first imaginary component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The first imaginary component of this Quaternion.
+        """
+
+        return self.i
+
+    def get_j(self):
+        """
+        Gets the second imaginary component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The second imaginary component of this Quaternion.
+        """
+
+        return self.j
+
+    def get_k(self):
+        """
+        Gets the third imaginary component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The third imaginary component of this Quaternion.
+        """
+
+        return self.k
 
     def __add__(self, other):
         """

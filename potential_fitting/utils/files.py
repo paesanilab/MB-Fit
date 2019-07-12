@@ -4,7 +4,7 @@ import datetime
 from enum import Enum
 
 # absolute package imports
-#from potential_fitting.exceptions import FileExistsError, InvalidValueError
+from potential_fitting.exceptions import FileExistsError, InvalidValueError
 from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError, NoSuchLibraryError,
         ConfigMissingSectionError, ConfigMissingPropertyError, CommandExecutionError)
 

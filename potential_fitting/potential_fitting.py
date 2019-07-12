@@ -77,7 +77,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs = 100, seed = None):
+        number_of_configs = 100, seed = None, temperature = None):
     """
     Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
 
@@ -90,13 +90,16 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         number_of_configs   - Number of configurations to generate
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
+        temperature         - Temperature at which normal mode sampling is done. If specified, configurations
+                will use clasical normal mode distribution at the specified temperature instead of either geometric
+                or linear progression.
 
     Returns:
         None.
     """
 
     configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-            number_of_configs, seed = seed)
+            number_of_configs, seed = seed, temperature=temperature)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
@@ -136,6 +139,33 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
+def generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius = 10, min_inter_distance=0.8, num_attempts=100,
+                                      seed=None, logarithmic = False):
+    """
+    Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        number_of_configs   - Number of configurations to generate.
+        config_path         - Local path to the file to write the configurations.
+        geo_paths           - Paths of all the geometries to make the nb configurations from. Can be single optimized
+                geometry or a set of distorted geometries. Will take random configs from these files to make the
+                nb configs.
+        radius              - Radius of the sphere monomers are placed within.
+        min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+                atoms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        seed                - Seed to use, the same seed will give the same configurations.
+        logarithmic         - If True, will use logarithmic progression to chose distances from center of sphere
+                for monomers.
+
+    Returns:
+        None
+    """
+
+    configurations.generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius=radius, min_inter_distance=min_inter_distance, num_attempts=num_attempts,
+                                      seed=seed, logarithmic=logarithmic)
 
 def init_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """
@@ -182,10 +212,36 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
 
     database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
 
+def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf')):
+    """"
+    Creates a training set file from the calculated energies in a database.
+
+    Args:
+        settings_path       - Local path to the ".ini" file with all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        training_set_path   - Local path to file to write training set to.
+        method              - Use energies calculated with this method. Use % for any method.
+        basis               - Use energies calculated with this basis. Use % for any basis.
+        cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.
+        tags                - Use energies marked with at least one of these tags. Use % for any tag.
+        e_bind_min          - Minimum binding energy allowed, inclusive.
+        e_bind_max          - Maximum binding energy allowed, exclusive.
+        e_mon_max           - Minimum monomer deformation energy allowed, inclusive.
+        e_mon_max           - Maximum monomer deformation energy allowed, exclusive.
+
+    Return:
+        None.
+    """
+    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max)
 
 def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
     Generates a 1b training set from the energies inside a database.
+
+    ***deprecated, please use generate_training_set instead***
 
     Specific method, basis, and cp may be specified to only use energies calculated
     with a specific model.
@@ -210,14 +266,16 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
         None.
     """
 
-    database.generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name,
-            method, basis, cp, *tags, e_min = e_min, e_max = e_max)
+    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=e_min, e_bind_max=e_max, e_mon_min=e_min, e_mon_max=e_max)
 
 
 def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags,
             e_bind_max = float('inf'), e_mon_max = float('inf')):
     """
     Generates a 2b training set from the energies inside a database.
+
+    ***deprecated, please use generate_training_set instead***
 
     Specific method, basis, and cp may be specified to only use energies calculated
     with a specific model.
@@ -240,9 +298,8 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
     Returns:
         None.
     """
-    
-    database.generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name,
-            method, basis, cp, *tags, e_bind_max = e_bind_max, e_mon_max = e_mon_max)
+    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=e_bind_max, e_mon_min=-float('inf'), e_mon_max=e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path):
     """
@@ -258,31 +315,6 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
     """
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
-
-def generate_poly_input_from_database(settings_path, database_config_path, molecule_name, in_file_path):
-    """
-    Generates an input file for polynomial generation.
-    Looks in a database to find the symmetry and creates a file in the given directory.
-
-    If the symmetry is A1B2, then the file A1B2.in containing polynomial generation input will be created inside
-    the poly_directory_path directory.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        database_config_path - .ini file containing host, port, database, username, and password.
-                    Make sure only you have access to this file or your password will be compromised!
-        molecule_name       - The name of the molecule to generate a polynomial generation input file for. At least one
-                instance of this molecule must be in the database.
-        in_file_path        - Local path to the file to write the polynomial input to.
-
-    Returns:
-        None.
-    """
-
-    with Database(database_config_path) as database:
-        symmetry = database.get_symmetry(molecule_name)
-
-        generate_poly_input(settings_path, symmetry, in_file_path)
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
     """

@@ -8,7 +8,6 @@ class PotentialFittingError(Exception):
     def __init__(self, message):
         super().__init__("The following error occured in the Potential Fitting Library: {}".format(message))
 
-
 """
 --------------------------- File Errors
 """

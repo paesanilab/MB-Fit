@@ -49,7 +49,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
             print_progress(counter)
 
             try:
-                model = Model(method, basis, cp)
+                model = Model(method, basis, use_cp)
 
                 # calculate the missing energy
                 energy, log_path = calc.calculate_energy(molecule, model, frag_indices)

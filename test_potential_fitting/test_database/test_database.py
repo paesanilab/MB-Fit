@@ -686,8 +686,7 @@ class TestDatabase(unittest.TestCase):
             molecules.append(self.get_water_trimer())
             energies.append([random.random(), random.random(), random.random(), random.random(),
                              random.random(), random.random(), random.random(), random.random(),
-                             random.random(), random.random(), random.random(), random.random(),
-                             random.random()])
+                             random.random(), random.random()])
 
         self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
         self.database.add_calculations([opt_mol], "testmethod", "testbasis", True, "database_test", optimized=True)
@@ -718,22 +717,13 @@ class TestDatabase(unittest.TestCase):
                     else:
                         energy = energies[index][5]
                 elif frag_indices == [0, 1]:
-                    if use_cp:
-                        energy = energies[index][6]
-                    else:
-                        energy = energies[index][7]
+                    energy = energies[index][6]
                 elif frag_indices == [0, 2]:
-                    if use_cp:
-                        energy = energies[index][8]
-                    else:
-                        energy = energies[index][9]
+                    energy = energies[index][7]
                 elif frag_indices == [1, 2]:
-                    if use_cp:
-                        energy = energies[index][10]
-                    else:
-                        energy = energies[index][11]
+                    energy = energies[index][8]
                 else:
-                    energy = energies[index][12]
+                    energy = energies[index][9]
             calculation_results.append(
                 [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
 
@@ -759,7 +749,7 @@ class TestDatabase(unittest.TestCase):
             monomer1 = energies[index][1] - opt_energy
             monomer2 = energies[index][3] - opt_energy
             monomer3 = energies[index][5] - opt_energy
-            interaction = energies[index][12] - energies[index][10] - energies[index][8] - energies[index][6] + \
+            interaction = energies[index][9] - energies[index][8] - energies[index][7] - energies[index][6] + \
                           energies[index][4] + energies[index][2] + energies[index][0]
             binding = monomer1 + monomer2 + monomer3 + interaction
             self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)

@@ -32,6 +32,8 @@ class Quaternion(object):
         Gets a random unit Quaternion such that the rotation created by this unit Quaternion is just as likely as any
         other rotation.
 
+        Algorithm is taken from http://planning.cs.uiuc.edu/node198.html.
+
         Args:
             random          - The random object used to generate this quaternion. Default is a new Random with a random
                     seed.
@@ -40,18 +42,28 @@ class Quaternion(object):
             A new evenly distributed unit rotation Quaternion.
         """
 
-        # first generate a random unit vector
-        # horizontal rotation of unit vector
-        theta = math.pi - random.random() * 2 * math.pi
-        # vertical rotation of unit vector
-        phi = math.asin(random.random()) * (-1 if random.random() < 0.5 else 1)
+        X0 = random.random()
+        X1 = random.random()
+        X2 = random.random()
 
-        # rotation around unit vector
-        rotation = math.pi - random.random() * 2 * math.pi
+        t1 = 2 * math.pi * X1
+        t2 = 2 * math.pi * X2
+
+        c1 = math.cos(t1)
+        s1 = math.sin(t1)
+        c2 = math.cos(t2)
+        s2 = math.sin(t2)
+
+        r1 = math.sqrt(1 - X0)
+        r2 = math.sqrt(X0)
+
+        r = r2*c2
+        i = r1*s1
+        j = r1*c1
+        k = r2*s2
 
         # now create the Quaternion of rotation
-        return Quaternion(math.cos(rotation/2), math.sin(rotation/2) * math.sin(phi) * math.cos(theta),
-                math.sin(rotation/2) * math.sin(phi) * math.sin(theta), math.sin(rotation/2) * math.cos(phi))
+        return Quaternion(r, i, j, k)
     
     def __init__(self, r, i, j, k):
         """

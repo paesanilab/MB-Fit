@@ -370,27 +370,39 @@ def execute_maple(settings_path, poly_dir_path):
 
     os.chdir(original_dir)
 
-def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = 20):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
     """
-    Generates the config file needed to perform a fit from the optimized geometries of up to 3 monomers.
+        Generates the config file needed to perform a fit.
 
-    Qchem is required for this step to work.
+        Qchem is required for this step to work for 1 and 2 b.
 
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        molecule_in         - A String of fromat "A1B2". Same as poly_in_path but without ".in".
-        config_path         - Local path to file to write the config file to.
-        opt_geometry_paths  - Local paths to the optimized geometries to include in this fit config, should be 1 to 3
-                (inclusive) of them.
-        distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-                does not converge, try different values of this.
+        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
 
-    Returns:
-        None.
-    """
+        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
+        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
 
-    fitting.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths,
-            distance_between = distance_between)
+        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
+        Intermolecular c6 constants are read from config_2b_paths.
+
+        Args:
+            settings_path       - Local path to the file containing all relevent settings information.
+            config_path         - Local path to file to write the config file to.
+            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
+            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
+                    config for each monomer.
+            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
+                    config for each combination of monomers.
+            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
+                    does not converge, try different values of this.
+            use_published_polarizabilities - use published polarizabilites from
+                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+
+        Returns:
+            None.
+        """
+
+    fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
+            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
     
 def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
     """

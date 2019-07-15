@@ -719,19 +719,46 @@ DECLARE
       END LOOP;
 
       FOR indices IN SELECT perm FROM combinations(all_frags) LOOP
-        IF cp = True AND array_length(indices, 1) != array_length(all_frags, 1) THEN
+        IF cp = True
+        THEN
+
+          IF array_length(indices, 1) = array_length(all_frags, 1)
+          THEN
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', False);
+
+            INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp)
+                VALUES (hash, model, indices, False);
+          ELSEIF array_length(indices, 1) = 1
+          THEN
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', True);
+
+            INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp)
+                VALUES (hash, model, indices, True);
+
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', False);
+
+            INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp)
+                VALUES (hash, model, indices, False);
+          ELSE
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', True);
+
+            INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp)
+                VALUES (hash, model, indices, True);
+          END IF;
+
+        ELSE
+
           INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
-              VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', True);
-
-          INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp)
-              VALUES (hash, model, indices, True);
-        END IF;
-
-        INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
               VALUES (hash, model, indices, '{}', '{}', 'pending', '{}', False);
 
           INSERT INTO pending_calculations (mol_hash, model_name, frag_indices, use_cp)
               VALUES (hash, model, indices, False);
+
+        END IF;
 
       END LOOP;
 
@@ -835,17 +862,44 @@ DECLARE
       energy_index := 1;
 
       FOR indices IN SELECT perm FROM combinations(all_frags) ORDER BY l, perm LOOP
-        IF cp = True AND array_length(indices, 1) != array_length(all_frags, 1) THEN
-          INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
-              VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', True);
 
-          energy_index := energy_index + 1;
+        IF cp = True
+        THEN
+
+          IF array_length(indices, 1) = array_length(all_frags, 1)
+          THEN
+
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', False);
+            energy_index := energy_index + 1;
+
+          ELSEIF array_length(indices, 1) = 1
+          THEN
+
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', True);
+            energy_index := energy_index + 1;
+
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', False);
+            energy_index := energy_index + 1;
+
+          ELSE
+
+            INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+                VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', True);
+            energy_index := energy_index + 1;
+
+          END IF;
+
+        ELSE
+
+          INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
+              VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', False);
+            energy_index := energy_index + 1;
+
         END IF;
 
-        INSERT INTO molecule_properties (mol_hash, model_name, frag_indices, energies, atomic_charges, status, past_log_ids, use_cp)
-              VALUES (hash, model, indices, ARRAY[nmer_energies[energy_index]], '{}', 'complete', '{}', False);
-
-        energy_index := energy_index + 1;
       END LOOP;
 
       INSERT INTO tags VALUES (hash, model, '{}');

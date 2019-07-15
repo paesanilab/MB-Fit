@@ -1100,7 +1100,7 @@ class Database():
         for i in range(1, num_bodies + 1):
             perms = list(itertools.combinations(range(num_bodies), i))
             for p in perms:
-                if cp and i < num_bodies:
+                if cp and i == 1 and i < num_bodies:
                     permutations.append((p, True))
                 permutations.append((p, False))
 

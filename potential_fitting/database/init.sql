@@ -527,7 +527,7 @@ DECLARE
               SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}' AND use_cp = False
                 INTO monomer2_energies;
 
-              IF substring(model, char_length(model) - 4, 4) = 'True' THEN
+              IF substring(model, char_length(model) - 3, 4) = 'True' THEN
                 SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}' AND use_cp = True
                   INTO monomer1_cp_energies;
                 SELECT energies FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{1}' AND use_cp = True
@@ -1271,4 +1271,252 @@ END;
 $$;
 
 alter function delete_all_calculations(varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
+
+create function export_calculations(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], energies double precision[])
+	language plpgsql
+as $$
+DECLARE
+        hash VARCHAR;
+        mol_tags VARCHAR[];
+        mol_tag VARCHAR;
+        valid_tags BOOL;
+        mol_properties molecule_properties;
+      BEGIN
+
+        <<main_loop>>
+        FOR hash IN SELECT mol_hash FROM molecule_list WHERE mol_name = molecule_name OFFSET batch_offset LIMIT batch_size
+        LOOP
+          valid_tags := FALSE;
+
+
+          SELECT tag_names FROM tags WHERE mol_hash = hash AND model_name = model LIMIT 1
+            INTO mol_tags;
+
+          IF NOT mol_tags ISNULL THEN
+            FOREACH mol_tag IN ARRAY mol_tags
+            LOOP
+
+
+              IF (SELECT mol_tag = ANY(input_tags)) THEN
+                valid_tags := TRUE;
+              END IF;
+
+            END LOOP;
+
+            IF (SELECT valid_tags) THEN
+              energies = '{}';
+              for mol_properties IN SELECT * FROM molecule_properties
+                  WHERE mol_hash = hash AND model_name = model ORDER BY array_length(frag_indices, 1) ASC, frag_indices ASC, use_cp DESC
+              LOOP
+
+                IF mol_properties.status != 'complete' THEN
+                  CONTINUE main_loop;
+                end if;
+
+                energies = energies || mol_properties.energies[1];
+
+              end loop;
+
+              SELECT atom_coordinates  FROM molecule_list WHERE mol_hash = hash
+                    INTO coords;
+
+              RETURN NEXT;
+            END IF;
+          end if;
+
+        END LOOP;
+      END;
+
+$$;
+
+alter function export_calculations(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
+
+create function get_training_set(molecule_name character varying, monomer_names character varying[], model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], binding_energy double precision, interaction_energy double precision, deformation_energies double precision[])
+	language plpgsql
+as $$
+DECLARE
+        monomer_name varchar;
+        optimized_energies FLOAT[];
+        optimized_index INT;
+        hash VARCHAR;
+        energy FLOAT;
+        stat VARCHAR;
+        deformation_index INT;
+        cp BOOLEAN;
+        n_mer INT;
+      BEGIN
+        -- monomer_names must be passed in in standard order!
+        -- First, get each of the optimized energies
+
+        optimized_energies := '{}';
+        optimized_index := 1;
+
+        FOREACH monomer_name IN ARRAY monomer_names
+        LOOP
+
+          optimized_energies = optimized_energies || NULL;
+
+          FOR hash IN SELECT optimized_geometries.mol_hash
+              FROM optimized_geometries INNER JOIN tags
+              ON optimized_geometries.mol_hash = tags.mol_hash AND optimized_geometries.model_name = tags.model_name
+              WHERE optimized_geometries.mol_name = monomer_name AND optimized_geometries.model_name = model --AND tags.tag_names && input_tags
+          LOOP
+
+            IF (SELECT optimized_energies[optimized_index] ISNULL)
+            THEN
+
+              SELECT energies[1], status FROM molecule_properties WHERE mol_hash = hash AND model_name = model AND frag_indices = '{0}'
+                INTO energy, stat;
+
+              IF stat = 'complete'
+              THEN
+
+                optimized_energies[optimized_index] := energy;
+
+              ELSE
+
+                RAISE EXCEPTION 'Optimized energy for % uncalculated in database.', monomer_name;
+
+              END IF;
+
+            ELSE
+
+              RAISE EXCEPTION 'Multiple optimized geometries for % in database.', monomer_name;
+
+            END IF;
+
+          END LOOP;
+
+          IF optimized_energies[optimized_index] ISNULL
+          THEN
+
+            RAISE EXCEPTION 'No optimized energy in database for %.', monomer_name;
+
+          END IF;
+
+
+          optimized_index = optimized_index + 1;
+
+
+        END LOOP;
+
+        raise NOTICE 'optimized energies %', optimized_energies;
+
+        -- Does the model use cp?
+
+        IF substring(model, char_length(model) - 3, 4) = 'True'
+        THEN
+          cp = True;
+        ELSE
+          cp = False;
+        END IF;
+
+        -- LOOP over each element of the training set.
+
+        <<TrainingSetLoop>>
+        FOR hash IN SELECT molecule_list.mol_hash
+            FROM molecule_list INNER JOIN tags
+            ON molecule_list.mol_hash = tags.mol_hash
+            WHERE molecule_list.mol_name = molecule_name AND tags.model_name = model AND tags.tag_names && input_tags
+            AND 'complete'=ALL(SELECT status FROM molecule_properties WHERE molecule_properties.mol_hash = molecule_list.mol_hash AND molecule_properties.model_name
+            = model)
+            OFFSET batch_offset LIMIT batch_size
+        LOOP
+
+          -- Get the deformation energy for each monomer
+          deformation_energies := '{}';
+          deformation_index := 1;
+          FOR energy, stat in SELECT energies[1], status
+              FROM molecule_properties
+              WHERE mol_hash = hash AND model_name = model AND array_length(frag_indices, 1) = 1 AND use_cp = False
+              ORDER BY frag_indices ASC
+          LOOP
+            IF stat != 'complete'
+            THEN
+              CONTINUE TrainingSetLoop;
+            END IF;
+            deformation_energies := deformation_energies || energy - optimized_energies[deformation_index];
+            deformation_index := deformation_index + 1;
+          END LOOP;
+
+          -- Calculate the interaction energy.
+
+          IF array_length(monomer_names, 1) = 1
+          THEN
+            -- For monomers, the interaction energy and binding energy are both the monomer deformation energy.
+            interaction_energy := deformation_energies[1];
+            binding_energy := interaction_energy;
+          ELSE
+            -- For non-monomers, calculate the interaction energy normally.
+            SELECT energies[1], status
+                FROM molecule_properties
+                WHERE mol_hash = hash AND model_name = model AND array_length(frag_indices, 1) = array_length(monomer_names, 1)
+            INTO interaction_energy, stat;
+
+            IF stat != 'complete'
+            THEN
+              CONTINUE TrainingSetLoop;
+            END IF;
+
+            FOR energy, stat, n_mer IN SELECT energies[1], status, array_length(frag_indices, 1)
+                FROM molecule_properties
+                WHERE mol_hash = hash AND model_name = model AND array_length(frag_indices, 1) < array_length(monomer_names, 1) AND use_cp = cp
+            LOOP
+
+              IF stat != 'complete'
+              THEN
+                CONTINUE TrainingSetLoop;
+              END IF;
+
+              IF (array_length(monomer_names, 1) - n_mer) % 2 = 1
+              THEN
+                interaction_energy := interaction_energy - energy;
+              ELSE
+                interaction_energy := interaction_energy + energy;
+              END IF;
+
+            END LOOP;
+
+            -- For non-monomers, calculate the binding energy normally.
+
+            binding_energy := interaction_energy;
+            FOREACH energy IN ARRAY deformation_energies
+            LOOP
+              binding_energy := binding_energy + energy;
+            END LOOP;
+          END IF;
+
+
+          SELECT atom_coordinates
+              FROM molecule_list
+              WHERE mol_hash = hash
+          INTO coords;
+
+          RETURN NEXT;
+
+        END LOOP;
+
+      END;
+$$;
+
+alter function get_training_set(varchar, character varying[], varchar, character varying[], integer, integer) owner to ebullvul;
+
+create function count_training_set_size(molecule_name character varying, model character varying, input_tags character varying[]) returns integer
+	language plpgsql
+as $$
+DECLARE
+    count integer;
+  BEGIN
+    SELECT COUNT(*) FROM molecule_list INNER JOIN tags
+            ON molecule_list.mol_hash = tags.mol_hash
+            WHERE molecule_list.mol_name = molecule_name AND tags.model_name = model_name AND tags.tag_names && input_tags
+            AND 'complete'=ALL(SELECT status FROM molecule_properties WHERE molecule_properties.mol_hash = molecule_list.mol_hash AND molecule_properties.model_name
+            = model)
+      into count;
+    RETURN count;
+  END;
+
+$$;
+
+alter function count_training_set_size(varchar, varchar, character varying[]) owner to ebullvul;
 

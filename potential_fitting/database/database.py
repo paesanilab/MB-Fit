@@ -941,3 +941,75 @@ class Database():
             None.
         """
         self.execute("PERFORM reset_failed(%s);", [self.create_postgres_array(*tags)])
+
+    def delete_calculations(self, molecule_list, method, basis, cp, *tags, delete_complete_calculations = False):
+        """
+        Removes the specified tags from any calculations in the database that matches one of the molecules in
+        molecule_list and the given method, basis, and cp.
+
+        Will never delete completed or dispatched energies unless delete_complete_calculations is True, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_list - Remove tags from calculations involving these molecules.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
+
+        Returns:
+            None.
+        """
+
+        command_string = ""
+        params = []
+
+        batch_count = 0
+
+        order, frag_order, SMILES = None, None, None
+
+        for molecule in molecule_list:
+            if order is None:
+                order, frag_order = molecule.get_standard_order_order()
+                SMILES = [frag.get_standard_SMILE() for frag in molecule.get_standard_order()]
+
+            molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
+
+            command_string += "PERFORM delete_calculation(%s, %s, %s, %s, %s, %s, %s);"
+            params += [molecule.get_SHA1(), molecule.get_name(), method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations]
+
+            batch_count += 1
+
+            if batch_count == self.batch_size:
+                self.execute(command_string, params)
+                command_string = ""
+                params = []
+                batch_count = 0
+
+        if batch_count != 0:
+            self.execute(command_string, params)
+
+    def delete_all_calculations(self, molecule_name, method, basis, cp, *tags, delete_complete_calculations = False):
+        """
+        Removes tags from molecules in the database that match the molecule_name.
+
+        Will never delete completed or dispatched energies unless delete_complete_calculations is True, only remove tags from them.
+
+        Will fully delete uncomplete calculations from the database.
+
+        Args:
+            molecule_name - Only delete molecules with this name.
+            method  - Remove tags from calculations with this method.
+            basis   - Remove tags from calculations with this basis.
+            cp      - Remove tags from calculations with this cp.
+            tags    - The tags to remove.
+            delete_complete_calculations - If True, delete calculations even if their energy is already
+                calculated.
+
+        """
+        self.execute("PERFORM delete_all_calculations(%s, %s, %s, %s, %s, %s);", (molecule_name, method, basis, cp, self.create_postgres_array(*tags), delete_complete_calculations))
+
+

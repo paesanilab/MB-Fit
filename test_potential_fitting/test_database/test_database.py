@@ -48,6 +48,30 @@ class TestDatabase(unittest.TestCase):
         return molecule
 
     @staticmethod
+    def get_water_trimer():
+        H1 = Atom("H", "A", random.random(), random.random(), random.random())
+        H2 = Atom("H", "A", random.random(), random.random(), random.random())
+        O1 = Atom("O", "B", random.random(), random.random(), random.random())
+
+        frag1 = Fragment([H1, H2, O1], "H2O", 0, 1, "H1.HO1")
+
+        H1 = Atom("H", "A", random.random(), random.random(), random.random())
+        H2 = Atom("H", "A", random.random(), random.random(), random.random())
+        O1 = Atom("O", "B", random.random(), random.random(), random.random())
+
+        frag2 = Fragment([H1, H2, O1], "H2O", 0, 1, "H1.HO1")
+
+        H1 = Atom("H", "A", random.random(), random.random(), random.random())
+        H2 = Atom("H", "A", random.random(), random.random(), random.random())
+        O1 = Atom("O", "B", random.random(), random.random(), random.random())
+
+        frag3 = Fragment([H1, H2, O1], "H2O", 0, 1, "H1.HO1")
+
+        molecule = Molecule([frag1, frag2, frag3])
+
+        return molecule
+
+    @staticmethod
     def get_I_water_dimer():
 
         I = Atom("I", "A", random.random(), random.random(), random.random())
@@ -63,7 +87,6 @@ class TestDatabase(unittest.TestCase):
         molecule = Molecule([frag1, frag2])
 
         return molecule
-
 
     def setUp(self):
         self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.ini")
@@ -372,9 +395,10 @@ class TestDatabase(unittest.TestCase):
 
         self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test_2")
         self.database.add_calculations([opt_I], "testmethod", "testbasis", False, "database_test_2", optimized=True)
-        self.database.add_calculations([opt_water], "testmethod", "testbasis", False, "database_test_2", optimized=True)
+        self.database.add_calculations([opt_water], "testmethod", "testbasis", False, "database_test_2",
+                                       optimized=True)
 
-        calculations = self.database.get_all_calculations("testclient", "database_test_2", calculations_to_do = 301)
+        calculations = self.database.get_all_calculations("testclient", "database_test_2", calculations_to_do=301)
 
         calculation_results = []
 
@@ -391,11 +415,14 @@ class TestDatabase(unittest.TestCase):
                     energy = energies[index][0]
                 else:
                     energy = energies[index][2]
-            calculation_results.append([molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
 
         self.database.set_properties(calculation_results)
 
-        training_set = list(self.database.get_2B_training_set("H2O-I", ["I", "H2O"], ["I", "H1.HO1"], "testmethod", "testbasis", False, "database_test_2"))
+        training_set = list(
+            self.database.get_2B_training_set("H2O-I", ["I", "H2O"], ["I", "H1.HO1"], "testmethod", "testbasis",
+                                              False, "database_test_2"))
         self.assertEqual(len(training_set), 10)
 
         for index in range(len(training_set)):
@@ -412,7 +439,330 @@ class TestDatabase(unittest.TestCase):
             monomer2 = energies[index][1] - opt_water_energy
             interaction = energies[index][2] - energies[index][1] - energies[index][0]
             binding = monomer1 + monomer2 + interaction
-            self.assertIn((molecule, round(binding, 5), round(interaction, 5), round(monomer1, 5), round(monomer2, 5)), training_set)
+            self.assertIn(
+                (molecule, round(binding, 5), round(interaction, 5), round(monomer1, 5), round(monomer2, 5)),
+                training_set)
+
+    def test_set_properties_and_get_training_set_1B(self):
+
+        # no cp
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O"], ["H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 101)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            binding = energies[index][0] - opt_energy
+            self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
+
+    def test_set_properties_and_get_training_set_2B(self):
+
+        # no cp
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_dimer())
+            energies.append([random.random(), random.random(), random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 301)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O", "H2O"], ["H1.HO1", "H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append([molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(self.database.get_training_set(["H2O", "H2O"], ["H1.HO1", "H1.HO1"], "testmethod", "testbasis", False, "database_test"))
+
+        self.assertEqual(len(training_set), 100)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            monomer1 = energies[index][0] - opt_energy
+            monomer2 = energies[index][1] - opt_energy
+            interaction = energies[index][2] - energies[index][1] - energies[index][0]
+            binding = monomer1 + monomer2 + interaction
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5)]), training_set)
+
+        # yes cp
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_dimer())
+            energies.append([random.random(), random.random(), random.random(), random.random(), random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", True, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=501)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O", "H2O"], ["H1.HO1", "H1.HO1"]))
+                if frag_indices == [0]:
+                    if use_cp:
+                        energy = energies[index][0]
+                    else:
+                        energy = energies[index][1]
+                elif frag_indices == [1]:
+                    if use_cp:
+                        energy = energies[index][2]
+                    else:
+                        energy = energies[index][3]
+                else:
+                    energy = energies[index][4]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O", "H2O"], ["H1.HO1", "H1.HO1"], "testmethod", "testbasis", True,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 100)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            monomer1 = energies[index][1] - opt_energy
+            monomer2 = energies[index][3] - opt_energy
+            interaction = energies[index][4] - energies[index][0] - energies[index][2]
+            binding = monomer1 + monomer2 + interaction
+
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5)]), training_set)
+
+    def test_set_properties_and_get_training_set_3B(self):
+
+        # no cp
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_trimer())
+            energies.append([random.random(), random.random(), random.random(), random.random(), random.random(), random.random(), random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 701)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O", "H2O", "H2O"], ["H1.HO1", "H1.HO1", "H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                elif frag_indices == [2]:
+                    energy = energies[index][2]
+                elif frag_indices == [0, 1]:
+                    energy = energies[index][3]
+                elif frag_indices == [0, 2]:
+                    energy = energies[index][4]
+                elif frag_indices == [1, 2]:
+                    energy = energies[index][5]
+                else:
+                    energy = energies[index][6]
+            calculation_results.append([molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(self.database.get_training_set(["H2O", "H2O", "H2O"], ["H1.HO1", "H1.HO1", "H1.HO1"], "testmethod", "testbasis", False, "database_test"))
+
+        self.assertEqual(len(training_set), 100)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
+            training_set[index][3][2] = round(training_set[index][3][2], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            monomer1 = energies[index][0] - opt_energy
+            monomer2 = energies[index][1] - opt_energy
+            monomer3 = energies[index][2] - opt_energy
+            interaction = energies[index][6] - energies[index][5] - energies[index][4] - energies[index][3] + energies[index][2] + energies[index][1] + energies[index][0]
+            binding = monomer1 + monomer2 + monomer3 + interaction
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)
+
+        # yes cp
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_trimer())
+            energies.append([random.random(), random.random(), random.random(), random.random(),
+                             random.random(), random.random(), random.random(), random.random(),
+                             random.random(), random.random(), random.random(), random.random(),
+                             random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", True, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=1301)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(
+                    molecule.get_reorder_copy(["H2O", "H2O", "H2O"], ["H1.HO1", "H1.HO1", "H1.HO1"]))
+                if frag_indices == [0]:
+                    if use_cp:
+                        energy = energies[index][0]
+                    else:
+                        energy = energies[index][1]
+                elif frag_indices == [1]:
+                    if use_cp:
+                        energy = energies[index][2]
+                    else:
+                        energy = energies[index][3]
+                elif frag_indices == [2]:
+                    if use_cp:
+                        energy = energies[index][4]
+                    else:
+                        energy = energies[index][5]
+                elif frag_indices == [0, 1]:
+                    if use_cp:
+                        energy = energies[index][6]
+                    else:
+                        energy = energies[index][7]
+                elif frag_indices == [0, 2]:
+                    if use_cp:
+                        energy = energies[index][8]
+                    else:
+                        energy = energies[index][9]
+                elif frag_indices == [1, 2]:
+                    if use_cp:
+                        energy = energies[index][10]
+                    else:
+                        energy = energies[index][11]
+                else:
+                    energy = energies[index][12]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O", "H2O", "H2O"], ["H1.HO1", "H1.HO1", "H1.HO1"], "testmethod",
+                                           "testbasis", True, "database_test"))
+
+        self.assertEqual(len(training_set), 100)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index][3][1] = round(training_set[index][3][1], 5)
+            training_set[index][3][2] = round(training_set[index][3][2], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            monomer1 = energies[index][1] - opt_energy
+            monomer2 = energies[index][3] - opt_energy
+            monomer3 = energies[index][5] - opt_energy
+            interaction = energies[index][12] - energies[index][10] - energies[index][8] - energies[index][6] + \
+                          energies[index][4] + energies[index][2] + energies[index][0]
+            binding = monomer1 + monomer2 + monomer3 + interaction
+            self.assertIn((molecule, round(binding, 5), round(interaction, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)
 
     def test_import_calculations(self):
 

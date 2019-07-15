@@ -74,16 +74,19 @@ class TestDatabase(unittest.TestCase):
 
     def test_add_calculation_and_get_all_calculations(self):
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 0))
+        self.assertEqual(len(calculations), 0)
+
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 10))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
         for i in range(100):
             molecules.append(self.get_water_monomer())
 
-        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "tag1")
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
         self.assertEqual(len(calculations), 100)
 
         mols = [calc[0] for calc in calculations]
@@ -93,16 +96,16 @@ class TestDatabase(unittest.TestCase):
         for molecule in molecules:
             self.assertIn((molecule, "testmethod", "testbasis", True, False, [0]), calculations)
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
         for i in range(100):
             molecules.append(self.get_water_monomer())
 
-        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "tag1")
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
         self.assertEqual(len(calculations), 100)
 
         molecules = [molecule.get_standard_copy() for molecule in molecules]
@@ -110,16 +113,16 @@ class TestDatabase(unittest.TestCase):
         for molecule in molecules:
             self.assertIn((molecule, "testmethod", "testbasis", False, False, [0]), calculations)
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
         for i in range(100):
             molecules.append(self.get_water_dimer())
 
-        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "tag1")
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 500))
         self.assertEqual(len(calculations), 500)
 
         molecules = [molecule.get_standard_copy() for molecule in molecules]
@@ -131,16 +134,16 @@ class TestDatabase(unittest.TestCase):
             self.assertIn((molecule, "testmethod", "testbasis", True, True, [1]), calculations)
             self.assertIn((molecule, "testmethod", "testbasis", True, False, [0, 1]), calculations)
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 100))
         self.assertEqual(len(calculations), 0)
 
         molecules = []
         for i in range(100):
             molecules.append(self.get_water_dimer())
 
-        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "tag1")
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 500))
         self.assertEqual(len(calculations), 300)
 
         molecules = [molecule.get_standard_copy() for molecule in molecules]
@@ -150,7 +153,7 @@ class TestDatabase(unittest.TestCase):
             self.assertIn((molecule, "testmethod", "testbasis", False, False, [1]), calculations)
             self.assertIn((molecule, "testmethod", "testbasis", False, False, [0, 1]), calculations)
 
-        calculations = list(self.database.get_all_calculations("testclient", "notused"))
+        calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 200))
         self.assertEqual(len(calculations), 0)
 
     def test_set_properties_and_get_1B_training_set(self):
@@ -160,10 +163,10 @@ class TestDatabase(unittest.TestCase):
         for i in range(100):
             molecules.append(self.get_water_monomer())
 
-        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "tag1")
-        self.database.add_calculations([opt_mol], "testmethod", "testbasis", True, "tag1", optimized=True)
+        self.database.add_calculations(molecules, "testmethod", "testbasis", True, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", True, "database_test", optimized=True)
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 101)
 
         calculation_results = []
 
@@ -177,7 +180,7 @@ class TestDatabase(unittest.TestCase):
 
         self.database.set_properties(calculation_results)
 
-        training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "tag1"))
+        training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
         self.assertEqual(len(training_set), 101)
 
         for index in range(len(training_set)):
@@ -198,10 +201,10 @@ class TestDatabase(unittest.TestCase):
             molecules.append(self.get_water_dimer())
             energies.append([random.random(), random.random(), random.random()])
 
-        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "tag1")
-        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "tag1", optimized=True)
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
 
-        calculations = self.database.get_all_calculations("testclient", "notused")
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 301)
 
         calculation_results = []
 
@@ -220,7 +223,8 @@ class TestDatabase(unittest.TestCase):
 
         self.database.set_properties(calculation_results)
 
-        training_set = list(self.database.get_2B_training_set("H2O-H2O", ["H2O", "H2O"], ["H1.HO1", "H1.HO1"], "testmethod", "testbasis", False, "tag1"))
+        training_set = list(self.database.get_2B_training_set("H2O-H2O", ["H2O", "H2O"], ["H1.HO1", "H1.HO1"], "testmethod", "testbasis", False, "database_test"))
+
         self.assertEqual(len(training_set), 100)
 
         for index in range(len(training_set)):

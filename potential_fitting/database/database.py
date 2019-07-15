@@ -3,7 +3,7 @@ import itertools, psycopg2, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
+from potential_fitting.exceptions import PotentialFittingError, NoSuchMoleculeError, DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
 from potential_fitting.utils import SettingsReader
 from psycopg2 import OperationalError
 
@@ -703,19 +703,16 @@ class Database():
         model_name ="{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
-        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
-        max_count = self.cursor.fetchone()[0]
-
-        empty_molecule = self.build_empty_molecule(molecule_name)
-
         order, frag_orders = None, None
 
         monomer1_name, monomer2_name = sorted([names[0], names[1]])
 
-        if sorted(molecule_name.split("-")) != [monomer1_name, monomer2_name]:
-            raise Exception
-
         molecule_name = monomer1_name + "-" + monomer2_name
+
+        self.cursor.execute("SELECT * FROM count_entries(%s)", (molecule_name,))
+        max_count = self.cursor.fetchone()[0]
+
+        empty_molecule = self.build_empty_molecule(molecule_name)
         
         while True:
             self.cursor.execute("SELECT * FROM get_2B_training_set(%s, %s, %s, %s, %s, %s, %s)", (molecule_name, monomer1_name, monomer2_name, model_name, self.create_postgres_array(*tags), batch_offset, self.batch_size))
@@ -788,8 +785,7 @@ class Database():
                         else:
                             energies_order = [1, 0, 2]
                 if molecule.get_num_fragments() == 3:
-                    print("For now, import calculations does not work for 3B :( sorry.")
-                    raise Error
+                    raise PotentialFittingError("For now, import calculations does not work for 3B :( sorry.")
 
             molecule = molecule.get_reordered_copy(order, frag_order, SMILES)
 

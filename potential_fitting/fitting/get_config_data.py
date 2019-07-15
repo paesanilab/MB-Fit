@@ -2,7 +2,7 @@ import os
 import math, configparser, itertools
 from collections import OrderedDict
 
-from potential_fitting.utils import constants, SettingsReader, files
+from potential_fitting.utils import constants, SettingsReader, files, system
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 from potential_fitting.molecule import Molecule, Fragment, xyz_to_molecules
 from potential_fitting.polynomials import MoleculeInParser
@@ -115,7 +115,7 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
     if len(geo_paths) != 1:
         # read charges, polarizabilites, and intramolecular c6 from the 1b config files.
-        print("Reading charges and polarizabilites from 1b config files")
+        print("Reading charges, polarizabilites, and intramolecular c6 from 1b config files")
         for index, config_1b_path in enumerate(config_1b_paths):
             config_1b = SettingsReader(config_1b_path)
             charges[index] = config_1b.getlist("fitting", "charges", float)[0]
@@ -124,6 +124,7 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
     if len(geo_paths) > 2:
         # read intermolecular c6 from the 2b config files
+        print("Reading intermolecular c6 from 2b config files")
         done_list = []
         index = 0
         for index1, fragment1 in enumerate(fragments):
@@ -292,7 +293,9 @@ def execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, 
 
     print("Executing qchem calculation...")
     # perform qchem system call
-    os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
+    with open(qchem_log_path, "w") as qchem_log:
+        system.call("qchem", "-nt", str(num_threads), qchem_in_path, qchem_out_path, out_file=qchem_log)
+    #os.system("qchem -nt {} {} {} > {}".format(num_threads, qchem_in_path, qchem_out_path, qchem_log_path))
 
     print("Parsing qchem output...")
 

@@ -38,13 +38,17 @@ class CommandNotFoundError(CommandError):
 class CommandExecutionError(CommandError):
     """Raised when a command fails for some reason"""
 
-    def __init__(self, command, call, exit_code, error):
-        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), error, exit_code))
-        self.error = error
+    def __init__(self, command, call, exit_code, stderr, stdout):
+        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), stderr, exit_code))
+        self.stderr = stderr
+        self.stdout = stdout
         self.call = call
 
     def get_error(self):
-        return self.error
+        return self.stderr
+
+    def get_stdout(self):
+        return self.stdout
 
 """
 --------------------------- Library Errors

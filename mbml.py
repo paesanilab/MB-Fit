@@ -50,6 +50,11 @@ parser.add_argument('--ttm_directory', '-td', dest='ttm_directory_path', type=st
 parser.add_argument('--poly_fit_directory', '-fd', dest='poly_fit_directory_path', type=str, required=False, default=None,
                     help='File path to directory in which to store all files for the polynomial fit.')
 
+parser.add_argument('--eval_script', '-es', dest='eval_script_path', type=str, required=False, default=None,
+                    help='File path to file to write the script used to evaluate a configuration with the result of a fit.')
+parser.add_argument('--fit_params', '-fp', dest='fit_params_path', type=str, required=False, default=None,
+                    help='File path to file to write the paramaters used with the eval script to evaluate a configuration using the fit.')
+
 # Properties that define the molecule
 
 parser.add_argument('--num_fragments', '-nf', dest='number_of_fragments', type=int, required=True,
@@ -128,6 +133,10 @@ if not args.perform_ttm_fit and args.ttm_directory_path is None:
     parser.error("Because --skip_ttm_fit is specified, --ttm_directory must be specified.")
 if not args.perform_poly_fit and args.poly_fit_directory_path is None:
     parser.error("Because --skip_poly_fit is specified, --poly_fit_directory must be specified.")
+if args.perform_poly_fit and args.eval_script_path is None:
+    parser.error("Because --skip_poly_fit is not specified, --eval_script must be specified.")
+if args.perform_poly_fit and args.fit_params_path is None:
+    parser.error("Because --skip_poly_fit is not specified, --fit_params must be specified.")
 if args.calculate_training_set:
     if args.model_method is None:
         parser.error("Because --skip_training_set_calculations is not specified, you must specify the method to use for training set calculations with --method.")
@@ -258,7 +267,7 @@ else:
 # STEP 4: for 2B+ run the TTM fit!
 
 if opt_molecule.get_num_fragments() == 1:
-    system.format_print("Molecule only has one fragment, no need to perform TTM fit..", bold=True, italics=True, color=system.Color.BLUE)
+    system.format_print("Molecule only has one fragment, no need to perform TTM fit.", bold=True, italics=True, color=system.Color.BLUE)
 elif args.perform_ttm_fit:
     system.format_print("Performing TTM fit...", bold=True, italics=True, color=system.Color.YELLOW)
     if opt_molecule.get_num_fragments() == 2:
@@ -278,11 +287,13 @@ if args.perform_poly_fit:
     if opt_molecule.get_num_fragments() == 1:
         potential_fitting.generate_1b_fit_code(settings_file_path, args.properties_path, molecule_in, poly_in_path, args.poly_directory_path, args.poly_order, args.poly_fit_directory_path)
         potential_fitting.compile_fit_code(settings_file_path, args.poly_fit_directory_path)
-        potential_fitting.fit_1b_training_set(settings_file_path, os.path.join(args.poly_fit_directory_path, "fit-1b"), args.training_set_output_path, args.poly_fit_directory_path, "poly_fit.nc", args.num_poly_fits)
+        system.call("mv", os.path.join(args.poly_fit_directory_path, "eval-1b"), args.eval_script_path)
+        potential_fitting.fit_1b_training_set(settings_file_path, os.path.join(args.poly_fit_directory_path, "fit-1b"), args.training_set_output_path, args.poly_fit_directory_path, args.fit_params_path, args.num_poly_fits)
     elif opt_molecule.get_num_fragments() == 2:
         potential_fitting.generate_2b_fit_code(settings_file_path, args.properties_path, poly_in_path, args.poly_directory_path, args.poly_order, args.poly_fit_directory_path)
         potential_fitting.compile_fit_code(settings_file_path, args.poly_fit_directory_path)
-        potential_fitting.fit_2b_training_set(settings_file_path, os.path.join(args.poly_fit_directory_path, "fit-2b"), args.training_set_output_path, args.poly_fit_directory_path, "poly_fit.nc", args.num_poly_fits)
+        system.call("mv", os.path.join(args.poly_fit_directory_path, "eval-2b"), args.eval_script_path)
+        potential_fitting.fit_2b_training_set(settings_file_path, os.path.join(args.poly_fit_directory_path, "fit-2b"), args.training_set_output_path, args.poly_fit_directory_path, args.fit_params_path, args.num_poly_fits)
     else:
         raise FunctionNotImplementedError("polynomial fits for 3b+")
     system.format_print("Polynomial fit successful!", bold=True, italics=True, color=system.Color.GREEN)

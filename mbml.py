@@ -3,12 +3,20 @@ import potential_fitting
 from potential_fitting import calculator
 from potential_fitting.utils import SettingsReader, system
 from potential_fitting.molecule import Molecule
-from potential_fitting.exceptions import FunctionNotImplementedError
+from potential_fitting.exceptions import FunctionNotImplementedError, InvalidValueError
+
+def string_to_boolean(string):
+    if string.lower() == "true":
+        return True
+    elif string.lower() == "false":
+        return False
+    else:
+        raise InvalidValueError("boolean", string, "'True' or 'False'")
 
 # check arguments!
 
 parser = argparse.ArgumentParser(description='Welcome to mbml! The python library for the generation of potential '
-                                             'energy functions using permutationally invariant polynomials.',
+                                             'energy functions using permutationally invariant polynomials and QM methods.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 # file path arguments.
@@ -61,11 +69,11 @@ parser.add_argument('--fragment_smiles', '-fl', dest='fragment_smiles', type=str
 
 # The QM model
 
-parser.add_argument('--method', '-mm', dest='model_method', type=str, required=True,
+parser.add_argument('--method', '-mm', dest='model_method', type=str, required=False,
                     help='QM method to use for training set calculations.')
-parser.add_argument('--basis', '-mb', dest='model_basis', type=str, required=True,
+parser.add_argument('--basis', '-mb', dest='model_basis', type=str, required=False,
                     help='QM basis set to use for training set calculations.')
-parser.add_argument('--counterpoise', '-mc', dest='model_counterpoise_correction', type=bool, required=True,
+parser.add_argument('--counterpoise', '-mc', dest='model_counterpoise_correction', type=string_to_boolean, required=False,
                     help='If True, the counterpoise correction will be used for training set calculations.')
 
 parser.add_argument('--properties_method', '-pm', dest='properties_method', type=str, required=False, default = 'wb97m-v',
@@ -86,7 +94,7 @@ skip_polynomial_generation = parser.add_mutually_exclusive_group(required=True)
 skip_polynomial_generation.add_argument('--poly_order', '-po', dest='poly_order', type=int, required=False,
                     help='Degree of polynomial to generate / use.')
 
-skip_ttm_fit = parser.add_mutually_exclusive_group(required=True)
+skip_ttm_fit = parser.add_mutually_exclusive_group(required=False)
 skip_ttm_fit.add_argument('--num_ttm_fits', '-ntf', dest='num_ttm_fits', type=int, required=False,
                     help='perform this many ttm fits and choose the best one.')
 skip_poly_fit = parser.add_mutually_exclusive_group(required=True)
@@ -120,9 +128,21 @@ if not args.perform_ttm_fit and args.ttm_directory_path is None:
     parser.error("Because --skip_ttm_fit is specified, --ttm_directory must be specified.")
 if not args.perform_poly_fit and args.poly_fit_directory_path is None:
     parser.error("Because --skip_poly_fit is specified, --poly_fit_directory must be specified.")
+if args.calculate_training_set:
+    if args.model_method is None:
+        parser.error("Because --skip_training_set_calculations is not specified, you must specify the method to use for training set calculations with --method.")
+    if args.model_basis is None:
+        parser.error("Because --skip_training_set_calculations is not specified, you must specify the basis to use for training set calculations with --basis.")
+    if args.number_of_fragments > 1 and args.model_counterpoise_correction is None:
+        parser.error("Because number of fragments is greater than 1 and --skip_training_set_calculations is not specified, you must specify the counterpoise corretion to use for training set calculations with --counterpoise.")
+
+if args.number_of_fragments == 1 and args.model_counterpoise_correction:
+    parser.error("Because number of fragments is 1, counterpoise correction cannot be True")
 
 if not args.perform_ttm_fit and args.calculate_properties:
     parser.error("Because --skip_ttm_fit is specified, --skip_properties_calculations must also be specified.")
+if args.number_of_fragments > 1 and args.perform_ttm_fit and args.num_ttm_fits is None:
+    parser.error("Because number of fragments is greater than 1 and --skip_ttm_fit is not specified, you must specify the number of ttm fits to perform with --num_ttm_fits")
 
 if args.config_1b_paths is None:
     args.config_1b_paths = []

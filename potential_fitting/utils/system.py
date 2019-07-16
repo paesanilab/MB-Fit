@@ -1,5 +1,6 @@
 # external package imports
 import subprocess
+from enum import Enum
 
 # absolute module imports
 from potential_fitting.exceptions import CommandNotFoundError, CommandExecutionError
@@ -30,3 +31,22 @@ def call(command, *args, in_file = None, out_file = None):
         raise CommandExecutionError(command, e.cmd, e.returncode, e.stderr) from None
     except FileNotFoundError:
         raise CommandNotFoundError(command) from None
+
+def format_print(string, bold = False, italics = False, color = None):
+    if bold:
+        string = '\33[1m' + string + '\33[0m'
+    if italics:
+        string = '\33[3m' + string + '\33[0m'
+    if color is not None:
+        string = '\33[{}m'.format(color.value) + string + '\33[0m'
+
+    print(string)
+
+class Color(Enum):
+    RED = 31
+    GREEN = 4
+    BLUE = 34
+    NORMAL = 0
+    YELLOW = 33
+
+

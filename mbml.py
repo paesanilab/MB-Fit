@@ -1,7 +1,7 @@
 import sys, os, argparse
 import potential_fitting
 from potential_fitting import calculator
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, system
 from potential_fitting.molecule import Molecule
 
 # check arguments!
@@ -23,7 +23,7 @@ skip_training_set_calculations_group.add_argument('--training_set_output', '-to'
                                                        'and energies of the training set should be written.')
 parser.add_argument('--log_files', '-l', dest='log_path', type=str, required=True,
                     help='File path to directory in which to store log files for all calculations.')
-parser.add_argument('--properties_path', '-p', dest='properties_path',
+parser.add_argument('--properties_path', '-pp', dest='properties_path',
                                                   type=str, required=True,
                                                   help='File path to where the ".ini" file containing the properties'
                                                        'of the optimized geometry is to be written.')
@@ -33,6 +33,8 @@ parser.add_argument('--1b_config_paths', '-c1', nargs='+', dest='config_1b_paths
 parser.add_argument('--2b_config_paths', '-c2', nargs='+', dest='config_2b_paths', type=str, required=False,
                     help='List of file paths to ".ini" files containing 2b properties for each dimer. Only required '
                          'if your molecule has 3 or more fragments')
+parser.add_argument('--poly_directory', '-pd', dest='poly_directory_path', type=str, required=False, default=None,
+                    help='File path to directory in which to store all polynomial files.')
 
 # Properties that define the molecule
 
@@ -67,16 +69,27 @@ parser.add_argument('--code', '-c', dest='code', type=str, required=True,
 parser.add_argument('--num_threads', '-nt', dest='num_threads', type=str, required=False, default=1,
                     help='Number of threads to use for operations that support multithreading.')
 
+# Fitting options
+
+parser.add_argument('--poly_order', '-po', dest='poly_order', type=int, required=True,
+                    help='Degree of polynomial to generate / use.')
+
 # Optional arguments to skip various parts of the procedure.
 
-skip_training_set_calculations_group.add_argument('--skip_training_set_calculations', '-sc', dest='calculate_training_set', required=False, action='store_false', default=True,
+skip_training_set_calculations_group.add_argument('--skip_training_set_calculations', '-stc', dest='calculate_training_set', required=False, action='store_false', default=True,
                     help='If included, then the input training set will be assumed to include calculated energies already, so no'
                          'calculations will be performed to put energies into the training set.')
-parser.add_argument('--skip_properties_calculations', '-sp', dest='calculate_properties', required=False, action='store_false', default=True,
+parser.add_argument('--skip_properties_calculations', '-spc', dest='calculate_properties', required=False, action='store_false', default=True,
                     help='If included, then no calculation will be run to find the optimized geometry\'s properties. Instead, the properties path'
                          'specified with "--properties_path" will be assumed to already contain the properties.')
+parser.add_argument('--skip_polynomial_generation', '-spg', dest='generate_polynomials', required=False, action='store_false', default=True,
+                    help='If included, then no polynomials will be generated. Instead, the polynomials directory'
+                         'specified with "--poly_directory" will be assumed to already contain all required polynomial files.')
 
 args = parser.parse_args()
+
+if not args.generate_polynomials and args.poly_directory_path is None:
+    parser.error("Because --skip_polynomial_generation is specified, --poly_directory must be specified.")
 
 if args.config_1b_paths is None:
     args.config_1b_paths = []
@@ -104,8 +117,15 @@ settings.set('energy_calculator', 'code', args.code)
 settings.set('qchem', 'num_threads', args.num_threads)
 settings.set('psi4', 'num_threads', args.num_threads)
 
+molecule_in = "_".join(settings.get('molecule', 'symmetry').split(','))
+
 temp_file_path = os.path.join(settings.get('files', 'log_path'), "temp_files")
 settings_file_path = os.path.join(temp_file_path, "settings.ini")
+
+if args.poly_directory_path is None:
+    args.poly_directory_path = os.path.join(temp_file_path, "poly_directory")
+
+poly_in_path = os.path.join(args.poly_directory_path, "poly.in")
 
 settings.write(settings_file_path)
 
@@ -141,6 +161,7 @@ for i, optimized_geometry_path in enumerate(optimized_geometry_paths):
 
 # STEP 1: calculate energies in the training set.
 if args.calculate_training_set:
+    system.format_print("Finding energies of training set...", bold=True, italics=True, color=system.Color.YELLOW)
     calculator.fill_energies(settings_file_path,
                              args.training_set_input_path,
                              monomer_settings_paths,
@@ -149,10 +170,27 @@ if args.calculate_training_set:
                              args.model_method,
                              args.model_basis,
                              args.model_counterpoise_correction)
+    system.format_print("Training set energies calculated successfully!", bold=True, italics=True, color=system.Color.GREEN)
 else:
+    system.format_print("Training set energies already calculated, no need to caclulate them.", bold=True, italics=True, color=system.Color.BLUE)
     args.training_set_output_path = args.training_set_input_path
 
 # STEP 2: calculate charges, polarizabilities, and c6 constants!
 
 if args.calculate_properties:
+    system.format_print("Finding properties of optimized geometry...", bold=True, italics=True, color=system.Color.YELLOW)
     potential_fitting.generate_fitting_config_file(settings_file_path, args.properties_path, geo_paths=optimized_geometry_paths, config_1b_paths=args.config_1b_paths, config_2b_paths=args.config_2b_paths)
+    system.format_print("Optimized properties calculated successfully!", bold=True, italics=True, color=system.Color.GREEN)
+else:
+    system.format_print("Optimized properties already calculated, no need to caclulate them.", bold=True, italics=True, color=system.Color.BLUE)
+
+# STEP 3 generate polynomials
+
+if args.generate_polynomials:
+    system.format_print("Generating polynomials...", bold=True, italics=True, color=system.Color.YELLOW)
+    potential_fitting.generate_poly_input(settings_file_path, molecule_in, poly_in_path)
+    potential_fitting.generate_polynomials(settings_file_path, poly_in_path, args.poly_order, args.poly_directory_path)
+    potential_fitting.execute_maple(settings_file_path, args.poly_directory_path)
+    system.format_print("Polynomial generation successful!", bold=True, italics=True, color=system.Color.GREEN)
+else:
+    system.format_print("Polynomials already generated, no need to generate them.", bold=True, italics=True, color=system.Color.BLUE)

@@ -5,7 +5,7 @@ from enum import Enum
 # absolute module imports
 from potential_fitting.exceptions import CommandNotFoundError, CommandExecutionError
 
-def call(command, *args, in_file = None, out_file = None):
+def call(command, *args, in_file = None, out_file = subprocess.PIPE):
     """
     Performs a system call with the given command and arguments.
 
@@ -28,7 +28,7 @@ def call(command, *args, in_file = None, out_file = None):
     except subprocess.CalledProcessError as e:
         if e.returncode == 127:
             raise CommandNotFoundError(command) from None
-        raise CommandExecutionError(command, e.cmd, e.returncode, e.stderr) from None
+        raise CommandExecutionError(command, e.cmd, e.returncode, e.stderr, e.stdout) from None
     except FileNotFoundError:
         raise CommandNotFoundError(command) from None
 

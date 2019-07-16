@@ -612,7 +612,7 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
     best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "best_fit.log"))
     fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "fit.log"))
 
-    attempts = 1;
+    attempts = 1
     with open(best_fit_log_path, "w") as best_fit_log:
         system.call(fit_code_path, training_set_path, out_file = best_fit_log)
         os.rename("individual_terms.dat", "best-individual_terms.dat")

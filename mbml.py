@@ -7,7 +7,8 @@ from potential_fitting.exceptions import FunctionNotImplementedError
 
 # check arguments!
 
-parser = argparse.ArgumentParser(description="Some Description of the Code",
+parser = argparse.ArgumentParser(description='Welcome to mbml! The python library for the generation of potential '
+                                             'energy functions using permutationally invariant polynomials.',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 # file path arguments.
@@ -66,6 +67,11 @@ parser.add_argument('--basis', '-mb', dest='model_basis', type=str, required=Tru
                     help='QM basis set to use for training set calculations.')
 parser.add_argument('--counterpoise', '-mc', dest='model_counterpoise_correction', type=bool, required=True,
                     help='If True, the counterpoise correction will be used for training set calculations.')
+
+parser.add_argument('--properties_method', '-pm', dest='properties_method', type=str, required=False, default = 'wb97m-v',
+                    help='QM method to use for calculating optimized geoemtry properties.')
+parser.add_argument('--properties_basis', '-pb', dest='properties_basis', type=str, required=False, default = 'aug-cc-pvtz',
+                    help='QM basis set to use for calculating optimized geometry properties.')
 
 # Library options
 
@@ -144,6 +150,9 @@ settings.set('energy_calculator', 'code', args.code)
 settings.set('qchem', 'num_threads', args.num_threads)
 settings.set('psi4', 'num_threads', args.num_threads)
 
+settings.set('config', 'method', args.properties_method)
+settings.set('config', 'basis', args.properties_basis)
+
 molecule_in = "_".join(settings.get('molecule', 'symmetry').split(','))
 
 temp_file_path = os.path.join(settings.get('files', 'log_path'), "temp_files")
@@ -152,7 +161,9 @@ settings_file_path = os.path.join(temp_file_path, "settings.ini")
 if args.poly_directory_path is None:
     args.poly_directory_path = os.path.join(temp_file_path, "poly_directory")
 if args.ttm_directory_path is None:
-    args.poly_directory_path = os.path.join(temp_file_path, "ttm_directory")
+    args.ttm_directory_path = os.path.join(temp_file_path, "ttm_directory")
+if args.poly_fit_directory_path is None:
+    args.poly_fit_directory_path = os.path.join(temp_file_path, "poly_fit_directory")
 
 poly_in_path = os.path.join(args.poly_directory_path, "poly.in")
 
@@ -245,7 +256,9 @@ else:
 if args.perform_poly_fit:
     system.format_print("Performing Polynomial fit...", bold=True, italics=True, color=system.Color.YELLOW)
     if opt_molecule.get_num_fragments() == 1:
-        pass
+        potential_fitting.generate_1b_fit_code(settings_file_path, args.properties_path, molecule_in, poly_in_path, args.poly_directory_path, args.poly_order, args.poly_fit_directory_path)
+        potential_fitting.compile_fit_code(settings_file_path, args.poly_fit_directory_path)
+        potential_fitting.fit_1b_training_set(settings_file_path, os.path.join(args.poly_fit_directory_path, "fit-1b"), args.training_set_output_path, args.poly_fit_directory_path, "poly_fit.nc", args.num_poly_fits)
     elif opt_molecule.get_num_fragments() == 2:
         potential_fitting.generate_2b_fit_code(settings_file_path, args.properties_path, poly_in_path, args.poly_directory_path, args.poly_order, args.poly_fit_directory_path)
         potential_fitting.compile_fit_code(settings_file_path, args.poly_fit_directory_path)

@@ -183,10 +183,10 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
         molecules = [i[0] for i in energy_molecule_pairs]
 
          #calculating the required interaction energy from the energy-molecule pairs
-        calc = [interaction_energy for molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in energy_molecule_pairs]
+        calc = [interaction_energy for molecule, binding_energy, interaction_energy, deformation_energies in energy_molecule_pairs]
 
         #getting the binding energies
-        binding_energies = [binding_energy for molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in energy_molecule_pairs]
+        binding_energies = [binding_energy for molecule, binding_energy, interaction_energy, deformation_energies in energy_molecule_pairs]
 
         calc = [i * constants.au_to_kcal for i in calc]
         binding_energies = [i * constants.au_to_kcal for i in binding_energies]

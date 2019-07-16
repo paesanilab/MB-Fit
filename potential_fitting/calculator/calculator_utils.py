@@ -18,7 +18,8 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
     calculator = get_calculator(settings_path)
 
     files.init_file(output_configs_path)
-
+    print("Calculating energies of optimized geometries...")
+    counter = 0
 
     optimized_energies = []
     for monomer_settings_path, optimized_geometry_path in zip(monomer_settings_paths, optimized_geometry_paths):
@@ -32,6 +33,8 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
 
         except LibraryCallError as e:
             raise PotentialFittingError("Energy calculation failed for optimized monomer {} with method {} and basis {}".format(molecule.get_name(), method, basis))
+        counter += 1
+        print("Completed optimized energy calculation for fragment number {}".format(counter))
 
     calc_successes, calc_failures = 0, 0
     total_successes, total_failures = 0, 0
@@ -85,8 +88,17 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
 
         with open(output_configs_path, "a") as output_configs_file:
             output_configs_file.write("{}\n".format(molecule.get_num_atoms()))
-            output_configs_file.write("{} {}\n".format(binding_energy, interaction_energy))
+            if molecule.get_num_fragments() == 1:
+                output_configs_file.write("{}\n".format(binding_energy))
+            elif molecule.get_num_fragments() == 2:
+                output_configs_file.write("{} {} {} {}\n".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
+            else:
+                output_configs_file.write("{} {}\n".format(binding_energy, interaction_energy))
             output_configs_file.write(molecule.to_xyz())
+            output_configs_file.write("\n")
+
+        if (total_successes + total_failures) % 10 == 0:
+            print("{} Geometries complete!".format(total_successes + total_failures))
 
     print("Completed finding energies in training set. {} configurations included in training set, {} configurations not included".format(total_successes, total_failures)
           + " due to at least one failed calculation.")

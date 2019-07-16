@@ -218,13 +218,13 @@ for monomer_settings_path, name, fragment, charge, spin, symmetry, SMILE in zip(
     monomer_setting.set("molecule", "SMILES", SMILE)
     monomer_setting.write(monomer_settings_path)
 
-optimized_geometry_paths = [os.path.join(temp_file_path, "opt_geo{}.ini".format(i)) for i in range(args.number_of_fragments)]
+optimized_geometry_paths = [os.path.join(temp_file_path, "opt_geo{}.xyz".format(i)) for i in range(args.number_of_fragments)]
 
 opt_molecule = Molecule.read_xyz_path_direct(args.optimized_geometry_path, settings)
 
 for i, optimized_geometry_path in enumerate(optimized_geometry_paths):
     with open(optimized_geometry_path, "w") as optimized_geometry_file:
-        optimized_geometry_file.write("{}\n".format(opt_molecule.get_fragments()[0].get_num_atoms()))
+        optimized_geometry_file.write("{}\n".format(opt_molecule.get_fragments()[i].get_num_atoms()))
         optimized_geometry_file.write("optimized geometry for fragment {}\n".format(i))
         optimized_geometry_file.write("{}\n".format(opt_molecule.to_xyz(fragments=[i])))
 

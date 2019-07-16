@@ -16,8 +16,7 @@ def string_to_boolean(string):
 # check arguments!
 
 parser = argparse.ArgumentParser(description='Welcome to mbml! The python library for the generation of potential '
-                                             'energy functions using permutationally invariant polynomials and QM methods.',
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                             'energy functions using permutationally invariant polynomials and QM methods.')
 
 # file path arguments.
 

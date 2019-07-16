@@ -208,4 +208,4 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         if count_configs == 0:
             raise Exception
 
-        print("Generated training set with " + str(count_configs) + " configurations. " + str(filtered_configs) + " configurations filtered out due to high binding or deformation energies.")
+        print("Generated training set with " + str(count_configs) + " configurations. " + str(filtered_configs) + " configurations filtered out due to binding or deformation energies outside of specified range.")

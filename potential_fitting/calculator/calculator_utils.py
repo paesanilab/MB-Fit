@@ -1,7 +1,7 @@
 import itertools
 from .psi4_calculator import Psi4Calculator
 from .qchem_calculator import QchemCalculator
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, files, constants
 from potential_fitting.exceptions import NoSuchLibraryError, LibraryCallError, PotentialFittingError
 from potential_fitting.molecule import parse_training_set_file
 from .model import Model
@@ -28,7 +28,7 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
 
             # calculate the missing energy
             energy, log_path = calculator.calculate_energy(molecule, model, [0])
-            optimized_energies.append(energy)
+            optimized_energies.append(energy * constants.au_to_kcal)
 
         except LibraryCallError as e:
             raise PotentialFittingError("Energy calculation failed for optimized monomer {} with method {} and basis {}".format(molecule.get_name(), method, basis))
@@ -48,7 +48,7 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
                 # calculate the missing energy
                 energy, log_path = calculator.calculate_energy(molecule, model, frag_indices)
                 calc_successes += 1
-                energies_dict[(frag_indices, use_cp)] = energy
+                energies_dict[(frag_indices, use_cp)] = energy * constants.au_to_kcal
 
             except LibraryCallError as e:
                 calc_failures += 1
@@ -65,7 +65,7 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
         for optimized_energy, deformed_energy in zip(optimized_energies, [item[1] for item in energies_dict.items() if len(item[0][0]) == 1 and item[0][1] is False]):
             deformation_energies.append(deformed_energy - optimized_energy)
 
-        if molecule.get_fragments() == 1:
+        if molecule.get_num_fragments() == 1:
             interaction_energy = deformation_energies[0]
             binding_energy = deformation_energies[0]
         else:

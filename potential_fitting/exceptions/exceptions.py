@@ -6,7 +6,7 @@ class PotentialFittingError(Exception):
     """Basic exception for all errors raised by our code"""
     
     def __init__(self, message):
-        super().__init__("The following error occured in the Potential Fitting Library: {}".format(message))
+        super().__init__("\33[1m\33[3m\33[31mThe following error occured in the Potential Fitting Library: {}\33[0m\33[0m\33[0m".format(message))
 
 """
 --------------------------- File Errors
@@ -43,7 +43,7 @@ class CommandExecutionError(CommandError):
         self.error = error
         self.call = call
 
-    def get_error():
+    def get_error(self):
         return self.error
 
 """
@@ -236,3 +236,9 @@ class StopLoop(Exception):
     def __init__(self, name):
         self.name = name
         super().__init__("Error, this exception should always be caught")
+
+class FunctionNotImplementedError(PotentialFittingError):
+    """Raised when the user tries to use a feature that is not implemented."""
+
+    def __init__(self, function):
+        super().__init__("Sorry, {} is not implemented yet. :(".format(function))

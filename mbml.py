@@ -3,6 +3,7 @@ import potential_fitting
 from potential_fitting import calculator
 from potential_fitting.utils import SettingsReader, system
 from potential_fitting.molecule import Molecule
+from potential_fitting.exceptions import FunctionNotImplementedError
 
 # check arguments!
 
@@ -35,6 +36,10 @@ parser.add_argument('--2b_config_paths', '-c2', nargs='+', dest='config_2b_paths
                          'if your molecule has 3 or more fragments')
 parser.add_argument('--poly_directory', '-pd', dest='poly_directory_path', type=str, required=False, default=None,
                     help='File path to directory in which to store all polynomial files.')
+parser.add_argument('--ttm_directory', '-td', dest='ttm_directory_path', type=str, required=False, default=None,
+                    help='File path to directory in which to store all files for the ttm fit.')
+parser.add_argument('--poly_fit_directory', '-fd', dest='poly_fit_directory_path', type=str, required=False, default=None,
+                    help='File path to directory in which to store all files for the polynomial fit.')
 
 # Properties that define the molecule
 
@@ -71,8 +76,16 @@ parser.add_argument('--num_threads', '-nt', dest='num_threads', type=str, requir
 
 # Fitting options
 
-parser.add_argument('--poly_order', '-po', dest='poly_order', type=int, required=True,
+skip_polynomial_generation = parser.add_mutually_exclusive_group(required=True)
+skip_polynomial_generation.add_argument('--poly_order', '-po', dest='poly_order', type=int, required=False,
                     help='Degree of polynomial to generate / use.')
+
+skip_ttm_fit = parser.add_mutually_exclusive_group(required=True)
+skip_ttm_fit.add_argument('--num_ttm_fits', '-ntf', dest='num_ttm_fits', type=int, required=False,
+                    help='perform this many ttm fits and choose the best one.')
+skip_poly_fit = parser.add_mutually_exclusive_group(required=True)
+skip_poly_fit.add_argument('--num_poly_fits', '-npf', dest='num_poly_fits', type=int, required=False,
+                    help='perform this many polynomail fits and choose the best one.')
 
 # Optional arguments to skip various parts of the procedure.
 
@@ -82,14 +95,28 @@ skip_training_set_calculations_group.add_argument('--skip_training_set_calculati
 parser.add_argument('--skip_properties_calculations', '-spc', dest='calculate_properties', required=False, action='store_false', default=True,
                     help='If included, then no calculation will be run to find the optimized geometry\'s properties. Instead, the properties path'
                          'specified with "--properties_path" will be assumed to already contain the properties.')
-parser.add_argument('--skip_polynomial_generation', '-spg', dest='generate_polynomials', required=False, action='store_false', default=True,
+skip_polynomial_generation.add_argument('--skip_polynomial_generation', '-spg', dest='generate_polynomials', required=False, action='store_false', default=True,
                     help='If included, then no polynomials will be generated. Instead, the polynomials directory'
                          'specified with "--poly_directory" will be assumed to already contain all required polynomial files.')
+skip_ttm_fit.add_argument('--skip_ttm_fit', '-stf', dest='perform_ttm_fit', required=False, action='store_false', default=True,
+                    help='If included, then no ttm fit will be performed. Instead, the ttm directory'
+                         'specified with "--ttm_directory" will be assumed to already contain all required files. Additionally, '
+                         'if --skip_ttm_fit is specified, --skip_propertoes_calculations must also be specified.')
+skip_poly_fit.add_argument('--skip_poly_fit', '-spf', dest='perform_poly_fit', required=False, action='store_false', default=True,
+                    help='If included, then no poly fit will be performed. Instead, the poly fit directory'
+                         'specified with "--poly_fit_directory" will be assumed to already contain all required files.')
 
 args = parser.parse_args()
 
 if not args.generate_polynomials and args.poly_directory_path is None:
     parser.error("Because --skip_polynomial_generation is specified, --poly_directory must be specified.")
+if not args.perform_ttm_fit and args.ttm_directory_path is None:
+    parser.error("Because --skip_ttm_fit is specified, --ttm_directory must be specified.")
+if not args.perform_poly_fit and args.poly_fit_directory_path is None:
+    parser.error("Because --skip_poly_fit is specified, --poly_fit_directory must be specified.")
+
+if not args.perform_ttm_fit and args.calculate_properties:
+    parser.error("Because --skip_ttm_fit is specified, --skip_properties_calculations must also be specified.")
 
 if args.config_1b_paths is None:
     args.config_1b_paths = []
@@ -124,6 +151,8 @@ settings_file_path = os.path.join(temp_file_path, "settings.ini")
 
 if args.poly_directory_path is None:
     args.poly_directory_path = os.path.join(temp_file_path, "poly_directory")
+if args.ttm_directory_path is None:
+    args.poly_directory_path = os.path.join(temp_file_path, "ttm_directory")
 
 poly_in_path = os.path.join(args.poly_directory_path, "poly.in")
 
@@ -194,3 +223,38 @@ if args.generate_polynomials:
     system.format_print("Polynomial generation successful!", bold=True, italics=True, color=system.Color.GREEN)
 else:
     system.format_print("Polynomials already generated, no need to generate them.", bold=True, italics=True, color=system.Color.BLUE)
+
+# STEP 4: for 2B+ run the TTM fit!
+
+if opt_molecule.get_num_fragments() == 1:
+    system.format_print("Molecule only has one fragment, no need to perform TTM fit..", bold=True, italics=True, color=system.Color.BLUE)
+elif args.perform_ttm_fit:
+    system.format_print("Performing TTM fit...", bold=True, italics=True, color=system.Color.YELLOW)
+    if opt_molecule.get_num_fragments() == 2:
+        potential_fitting.generate_2b_ttm_fit_code(settings_file_path, args.properties_path, molecule_in, args.ttm_directory_path)
+        potential_fitting.compile_fit_code(settings_file_path, args.ttm_directory_path)
+        potential_fitting.fit_2b_ttm_training_set(settings_file_path, os.path.join(args.ttm_directory_path, "fit-2b-ttm"), args.training_set_output_path, args.ttm_directory_path, args.properties_path, args.num_ttm_fits)
+    else:
+        raise FunctionNotImplementedError("ttm fits for 3b+")
+    system.format_print("TTM fit successful!", bold=True, italics=True, color=system.Color.GREEN)
+else:
+    system.format_print("TTM fit already perfomed, no need to run it again.", bold=True, italics=True, color=system.Color.BLUE)
+
+# STEP 5: run the polynomial fit!
+
+if args.perform_poly_fit:
+    system.format_print("Performing Polynomial fit...", bold=True, italics=True, color=system.Color.YELLOW)
+    if opt_molecule.get_num_fragments() == 1:
+        pass
+    elif opt_molecule.get_num_fragments() == 2:
+        potential_fitting.generate_2b_fit_code(settings_file_path, args.properties_path, poly_in_path, args.poly_directory_path, args.poly_order, args.poly_fit_directory_path)
+        potential_fitting.compile_fit_code(settings_file_path, args.poly_fit_directory_path)
+        potential_fitting.fit_2b_training_set(settings_file_path, os.path.join(args.poly_fit_directory_path, "fit-2b"), args.training_set_output_path, args.poly_fit_directory_path, "poly_fit.nc", args.num_poly_fits)
+    else:
+        raise FunctionNotImplementedError("polynomial fits for 3b+")
+    system.format_print("Polynomial fit successful!", bold=True, italics=True, color=system.Color.GREEN)
+else:
+    system.format_print("Polynomial fit already perfomed, no need to run it again.", bold=True, italics=True, color=system.Color.BLUE)
+
+
+# STEP 6: test the fit!

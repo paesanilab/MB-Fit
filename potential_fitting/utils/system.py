@@ -44,7 +44,7 @@ def format_print(string, bold = False, italics = False, color = None):
 
 class Color(Enum):
     RED = 31
-    GREEN = 4
+    GREEN = 92
     BLUE = 34
     NORMAL = 0
     YELLOW = 33

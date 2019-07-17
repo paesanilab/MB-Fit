@@ -347,6 +347,8 @@ def execute_maple(settings_path, poly_dir_path):
         None.
     """
 
+    print("Executing maple to create c polynomial files...")
+
     this_file_path = os.path.dirname(os.path.abspath(__file__))
 
     original_dir = os.getcwd()
@@ -363,10 +365,15 @@ def execute_maple(settings_path, poly_dir_path):
     system.call("maple", "poly-grd.maple")
     system.call("maple", "poly-nogrd.maple")
 
+    print("Maple executed successfully!")
+    print("Converting c polynomial files to cpp polynomial files")
+
     with open("poly-grd.c", "r") as in_file, open("poly-grd.cpp", "w") as out_file:
         system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
     with open("poly-nogrd.c", "r") as in_file, open("poly-nogrd.cpp", "w") as out_file:
         system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
+
+    print("cpp files generated successfully!")
 
     os.chdir(original_dir)
 
@@ -493,6 +500,8 @@ def compile_fit_code(settings_path, fit_dir_path):
         None.
     """
 
+    print("Compiling fit code...")
+
     original_dir = os.getcwd()
 
     os.chdir(fit_dir_path)
@@ -501,6 +510,8 @@ def compile_fit_code(settings_path, fit_dir_path):
     system.call("make")
 
     os.chdir(original_dir)
+
+    print("Fit code compilation successful!")
 
 def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
@@ -612,7 +623,7 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
     best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "best_fit.log"))
     fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "fit.log"))
 
-    attempts = 1;
+    attempts = 1
     with open(best_fit_log_path, "w") as best_fit_log:
         system.call(fit_code_path, training_set_path, out_file = best_fit_log)
         os.rename("individual_terms.dat", "best-individual_terms.dat")

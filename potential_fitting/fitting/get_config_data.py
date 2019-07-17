@@ -289,7 +289,7 @@ def execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, 
     qchem_out_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.out")
     qchem_log_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.log")
 
-    num_threads = settings.getint("qchem", "num_threads")
+    num_threads = settings.getint("qchem", "num_threads", 1)
 
     print("Executing qchem calculation...")
     # perform qchem system call

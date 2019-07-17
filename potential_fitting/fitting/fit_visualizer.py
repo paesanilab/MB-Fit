@@ -101,7 +101,7 @@ class Dataset_2b(Dataset):
         return Dataset_2b(low_calc, low_fit, self.method + " below {} kcal/mol".format(threshold), low_bind), Dataset_2b(high_calc, high_fit, self.method + " above {} kcal/mol".format(threshold), high_bind)
 
 
-def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, molecule_name, names, SMILES, method, basis, cp, tag):
+def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, names, SMILES, method, basis, cp, tag):
     '''
     This method returns the molecules, the required calculated energies, and the list of mb_data points 
     using the provided parameters, method, basis, cp and tag. 
@@ -111,7 +111,6 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, mole
         file_path_MB_params - The file path containing the list of MB parameters.
         database_config_path - .ini file containing host, port, database, username, and password.
                     Make sure only you have access to this file or your password will be compromised!
-        molecule_name - The name of the molecule for which the calculations must be made,
         names         - List of name of the monomer.
         SMILES        - List of SMILE string of the monomer, the atoms in the training set will
                 be in this order.
@@ -124,7 +123,7 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, mole
 
     with Database(database_config_path) as database:
 
-        energy_molecule_pairs = list(database.get_1B_training_set(molecule_name, names, SMILES, method, basis, cp, tag))
+        energy_molecule_pairs = list(database.get_training_set(names, SMILES, method, basis, cp, tag))
 
     # getting the molecules
     molecules = [i[0] for i in energy_molecule_pairs]
@@ -152,7 +151,7 @@ def get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, mole
 
     return molecules, calc, mb
 
-def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, molecule_name, names, SMILES, method, basis, cp, tag):
+def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, names, SMILES, method, basis, cp, tag):
 
     '''
     This method returns the molecules, the required calculated energies, list of mb_data points, 
@@ -166,7 +165,6 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
         file_path_MB_params - The file path containing the list of MB parameters.
         database_config_path - .ini file containing host, port, database, username, and password.
                     Make sure only you have access to this file or your password will be compromised!
-        molecule_name - name of the molecule.
         names - names of the two monomers.
         SMILES - SMILE strings of the two monomers
         method - The specified basis for the calculations/fit.
@@ -179,16 +177,16 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
 
     with Database(database_config_path) as database:
 
-        energy_molecule_pairs = list(database.get_2B_training_set(molecule_name, names, SMILES, method, basis, cp, tag))
+        energy_molecule_pairs = list(database.get_training_set(names, SMILES, method, basis, cp, tag))
 
         #getting the molecules
         molecules = [i[0] for i in energy_molecule_pairs]
 
          #calculating the required interaction energy from the energy-molecule pairs
-        calc = [interaction_energy for molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in energy_molecule_pairs]
+        calc = [interaction_energy for molecule, binding_energy, interaction_energy, deformation_energies in energy_molecule_pairs]
 
         #getting the binding energies
-        binding_energies = [binding_energy for molecule, binding_energy, interaction_energy, monomer1_energy, monomer2_energy in energy_molecule_pairs]
+        binding_energies = [binding_energy for molecule, binding_energy, interaction_energy, deformation_energies in energy_molecule_pairs]
 
         calc = [i * constants.au_to_kcal for i in calc]
         binding_energies = [i * constants.au_to_kcal for i in binding_energies]
@@ -217,7 +215,7 @@ def get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_
     return molecules, calc, mb, ttm, binding_energies
 
 
-def make_1b_graphs(settings_path, file_path_MB, file_path_MB_params, database_config_path, molecule_name, method, basis, cp, tag,
+def make_1b_graphs(settings_path, file_path_MB, file_path_MB_params, database_config_path, method, basis, cp, tag,
         low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
     '''
@@ -231,7 +229,6 @@ def make_1b_graphs(settings_path, file_path_MB, file_path_MB_params, database_co
         file_path_MB_params - The file path containing the list of MB parameters.
         database_config_path - .ini file containing host, port, database, username, and password.
                     Make sure only you have access to this file or your password will be compromised!
-        molecule_name - The name of the first monomer from which the calculations must be made. 
         method - The specified basis for the calculations/fit.
         cp - The specified cp for the calculations/fit.
         tag - A set of tags associated with the data during the calculations/fit.
@@ -246,12 +243,12 @@ def make_1b_graphs(settings_path, file_path_MB, file_path_MB_params, database_co
     names = settings.get("molecule", "names").split(",")
     SMILES = settings.get("molecule", "SMILES").split(",")
 
-    molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, molecule_name, names, SMILES, method, basis, cp, tag)
+    molecules, calc, mb = get_1b_dataset(file_path_MB, file_path_MB_params, database_config_path, names, SMILES, method, basis, cp, tag)
     if file_data == None: file_data = "correlation_1b_" + "METHOD" + str(tag) + ".dat"
     make_graphs(Dataset_1b(calc, mb, "{}/{}/{}".format(method, basis, cp)), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 
 
-def make_2b_graphs(settings_path, file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, molecule_name, method, basis, cp, tag, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
+def make_2b_graphs(settings_path, file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, method, basis, cp, tag, low_threshold = 50, min_cutoff = float('-inf'), max_cutoff = float('inf'), file_data = None):
 
     '''
     This method creates the plots for 2-body fits.  
@@ -282,7 +279,7 @@ def make_2b_graphs(settings_path, file_path_TTM, file_path_TTM_params, file_path
 
     if file_data == None: file_data = "correlation_2b_" + "METHOD" + str(tag) + ".dat"
     
-    molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, molecule_name, names, SMILES, method, basis, cp, tag)
+    molecules, calc, mb, ttm, binding_energies = get_2b_dataset(file_path_TTM, file_path_TTM_params, file_path_MB, file_path_MB_params, database_config_path, names, SMILES, method, basis, cp, tag)
 
     make_graphs(Dataset_2b(calc, ttm, "ttm", binding_energies), Dataset_2b(calc, mb, "{}/{}/{}".format(method, basis, cp), binding_energies), min_cutoff = min_cutoff, max_cutoff = max_cutoff, file_data = file_data, low_threshold = low_threshold)
 

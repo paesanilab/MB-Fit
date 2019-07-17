@@ -190,7 +190,12 @@ def generate_training_set(settings_path, database_config_path, training_set_path
                 # write the number of atoms to the output file
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
-                output.write("{} {}".format(binding_energy, interaction_energy))
+                if molecule.get_num_fragments() == 1:
+                    output.write("{}".format(binding_energy))
+                elif molecule.get_num_fragments() == 2:
+                    output.write("{} {} {} {}".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
+                else:
+                    output.write("{} {}".format(binding_energy, interaction_energy))
 
                 output.write("\n")
 
@@ -203,4 +208,4 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         if count_configs == 0:
             raise Exception
 
-        print("Generated training set with " + str(count_configs) + " configurations. " + str(filtered_configs) + " configurations filtered out due to high binding or deformation energies.")
+        print("Generated training set with " + str(count_configs) + " configurations. " + str(filtered_configs) + " configurations filtered out due to binding or deformation energies outside of specified range.")

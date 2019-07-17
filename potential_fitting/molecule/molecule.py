@@ -814,9 +814,9 @@ class Molecule(object):
         # if settings is defined, read values from xyz file
         else:
             atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
-            name_per_fragment = settings.get("molecule", "name").split(",")
+            name_per_fragment = settings.get("molecule", "names").split(",")
             charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
-            spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spin").split(",")]
+            spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spins").split(",")]
             symmetry_per_fragment = settings.get("molecule", "symmetry").split(",")
             SMILE_per_fragment = settings.get("molecule", "SMILES").split(",")
 

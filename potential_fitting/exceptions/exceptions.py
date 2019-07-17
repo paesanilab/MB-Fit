@@ -6,8 +6,7 @@ class PotentialFittingError(Exception):
     """Basic exception for all errors raised by our code"""
     
     def __init__(self, message):
-        super().__init__("The following error occured in the Potential Fitting Library: {}".format(message))
-
+        super().__init__("\33[1m\33[3m\33[31mThe following error occured in the Potential Fitting Library: {}\33[0m\33[0m\33[0m".format(message))
 
 """
 --------------------------- File Errors
@@ -39,13 +38,17 @@ class CommandNotFoundError(CommandError):
 class CommandExecutionError(CommandError):
     """Raised when a command fails for some reason"""
 
-    def __init__(self, command, call, exit_code, error):
-        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), error, exit_code))
-        self.error = error
+    def __init__(self, command, call, exit_code, stderr, stdout):
+        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), stderr, exit_code))
+        self.stderr = stderr
+        self.stdout = stdout
         self.call = call
 
-    def get_error():
-        return self.error
+    def get_error(self):
+        return self.stderr
+
+    def get_stdout(self):
+        return self.stdout
 
 """
 --------------------------- Library Errors
@@ -237,3 +240,9 @@ class StopLoop(Exception):
     def __init__(self, name):
         self.name = name
         super().__init__("Error, this exception should always be caught")
+
+class FunctionNotImplementedError(PotentialFittingError):
+    """Raised when the user tries to use a feature that is not implemented."""
+
+    def __init__(self, function):
+        super().__init__("Sorry, {} is not implemented yet. :(".format(function))

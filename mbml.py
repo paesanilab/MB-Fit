@@ -137,7 +137,7 @@ if args.perform_poly_fit and args.eval_script_path is None:
     parser.error("Because --skip_poly_fit is not specified, --eval_script must be specified.")
 if args.perform_poly_fit and args.fit_params_path is None:
     parser.error("Because --skip_poly_fit is not specified, --fit_params must be specified.")
-if args.generate_polynomials or args.perform_poly_fit and args.poly_order is None:
+if (args.generate_polynomials or args.perform_poly_fit) and args.poly_order is None:
     parser.error("Because either --skip_polynomial_generation or --skip_poly_fit are not specified, you must specify the order of the polynomial with --poly_order")
 if args.calculate_training_set:
     if args.model_method is None:

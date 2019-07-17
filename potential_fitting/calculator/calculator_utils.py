@@ -75,8 +75,8 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
 
             interaction_energy = energies_dict[(tuple(range(molecule.get_num_fragments())), False)]
 
-            for m, energy in [(len(item[0]), item[1]) for item in energies_dict.items() if len(item[0][0]) < molecule.get_num_atoms() and item[0][1] is cp]:
-                if molecule.get_fragments() - m % 2 == 1:
+            for m, energy in [(len(item[0][0]), item[1]) for item in energies_dict.items() if len(item[0][0]) < molecule.get_num_fragments() and item[0][1] is cp]:
+                if (molecule.get_num_fragments() - m) % 2 == 1:
                     interaction_energy -= energy
                 else:
                     interaction_energy += energy

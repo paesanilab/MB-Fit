@@ -70,6 +70,8 @@ parser.add_argument('--fragment_symmetries', '-fm', dest='fragment_symmetries', 
                     help='Comma delimited list of the symmetry string of each fragment. For example "A1B2X2" or "A3B2".')
 parser.add_argument('--fragment_smiles', '-fl', dest='fragment_smiles', type=str, required=True,
                     help='Comma delimited list of the SMILE string of each fragment. Must explicitly include each H.')
+parser.add_argument('--use_mbpol', '-um', dest='use_mbpol', type=str, required=True,
+                    help='Comma delimited list of whether each fragment is water that should be modeled with lone pairs via mbpol.')
 
 # The QM model
 
@@ -94,8 +96,7 @@ parser.add_argument('--num_threads', '-nt', dest='num_threads', type=str, requir
 
 # Fitting options
 
-skip_polynomial_generation = parser.add_mutually_exclusive_group(required=True)
-skip_polynomial_generation.add_argument('--poly_order', '-po', dest='poly_order', type=int, required=False,
+parser.add_argument('--poly_order', '-po', dest='poly_order', type=int, required=False,
                     help='Degree of polynomial to generate / use.')
 
 skip_ttm_fit = parser.add_mutually_exclusive_group(required=False)
@@ -113,7 +114,7 @@ skip_training_set_calculations_group.add_argument('--skip_training_set_calculati
 parser.add_argument('--skip_properties_calculations', '-spc', dest='calculate_properties', required=False, action='store_false', default=True,
                     help='If included, then no calculation will be run to find the optimized geometry\'s properties. Instead, the properties path'
                          'specified with "--properties_path" will be assumed to already contain the properties.')
-skip_polynomial_generation.add_argument('--skip_polynomial_generation', '-spg', dest='generate_polynomials', required=False, action='store_false', default=True,
+parser.add_argument('--skip_polynomial_generation', '-spg', dest='generate_polynomials', required=False, action='store_false', default=True,
                     help='If included, then no polynomials will be generated. Instead, the polynomials directory'
                          'specified with "--poly_directory" will be assumed to already contain all required polynomial files.')
 skip_ttm_fit.add_argument('--skip_ttm_fit', '-stf', dest='perform_ttm_fit', required=False, action='store_false', default=True,
@@ -136,6 +137,8 @@ if args.perform_poly_fit and args.eval_script_path is None:
     parser.error("Because --skip_poly_fit is not specified, --eval_script must be specified.")
 if args.perform_poly_fit and args.fit_params_path is None:
     parser.error("Because --skip_poly_fit is not specified, --fit_params must be specified.")
+if args.generate_polynomials or args.perform_poly_fit and args.poly_order is None:
+    parser.error("Because either --skip_polynomial_generation or --skip_poly_fit are not specified, you must specify the order of the polynomial with --poly_order")
 if args.calculate_training_set:
     if args.model_method is None:
         parser.error("Because --skip_training_set_calculations is not specified, you must specify the method to use for training set calculations with --method.")
@@ -169,6 +172,7 @@ settings.set('molecule', 'charges', args.fragment_charges)
 settings.set('molecule', 'spins', args.fragment_spin_multiplicities)
 settings.set('molecule', 'symmetry', args.fragment_symmetries)
 settings.set('molecule', 'SMILES', args.fragment_smiles)
+settings.set('molecule', 'use_mbpol', args.use_mbpol)
 
 settings.set('model', 'method', args.model_method)
 settings.set('model', 'basis', args.model_basis)

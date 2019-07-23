@@ -9,6 +9,7 @@ class Quaternion(object):
     Can be used to perform rotations in 3d space.
     """
 
+    @staticmethod
     def get_random_quaternion(random = Random()):
         """
         Gets a random unit Quaternion.
@@ -25,10 +26,13 @@ class Quaternion(object):
 
         return Quaternion(0.5 - random.random(), 0.5 - random.random(), 0.5 - random.random(), 0.5 - random.random()).normalize()
 
+    @staticmethod
     def get_random_rotation_quaternion(random = Random()):
         """
         Gets a random unit Quaternion such that the rotation created by this unit Quaternion is just as likely as any
         other rotation.
+
+        Algorithm is taken from http://planning.cs.uiuc.edu/node198.html.
 
         Args:
             random          - The random object used to generate this quaternion. Default is a new Random with a random
@@ -38,18 +42,28 @@ class Quaternion(object):
             A new evenly distributed unit rotation Quaternion.
         """
 
-        # first generate a random unit vector
-        # horizontal rotation of unit vector
-        theta = math.pi - random.random() * 2 * math.pi
-        # vertical rotation of unit vector
-        phi = math.asin(random.random()) * (-1 if random.random() < 0.5 else 1)
+        X0 = random.random()
+        X1 = random.random()
+        X2 = random.random()
 
-        # rotation around unit vector
-        rotation = math.pi - random.random() * 2 * math.pi
+        t1 = 2 * math.pi * X1
+        t2 = 2 * math.pi * X2
+
+        c1 = math.cos(t1)
+        s1 = math.sin(t1)
+        c2 = math.cos(t2)
+        s2 = math.sin(t2)
+
+        r1 = math.sqrt(1 - X0)
+        r2 = math.sqrt(X0)
+
+        r = r2*c2
+        i = r1*s1
+        j = r1*c1
+        k = r2*s2
 
         # now create the Quaternion of rotation
-        return Quaternion(math.cos(rotation/2), math.sin(rotation/2) * math.sin(phi) * math.cos(theta),
-                math.sin(rotation/2) * math.sin(phi) * math.sin(theta), math.sin(rotation/2) * math.cos(phi))
+        return Quaternion(r, i, j, k)
     
     def __init__(self, r, i, j, k):
         """
@@ -58,8 +72,8 @@ class Quaternion(object):
         Args:
             r               - The real component.
             i               - The first imaginary component.
-            k               - The second imaginary component.
-            j               - The third imaginary component.
+            j               - The second imaginary component.
+            k               - The third imaginary component.
 
         Returns:
             A new Quaternion.
@@ -69,6 +83,58 @@ class Quaternion(object):
         self.i = i
         self.j = j
         self.k = k
+
+    def get_r(self):
+        """
+        Gets the real component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The real component of this Quaternion.
+        """
+
+        return self.r
+
+    def get_i(self):
+        """
+        Gets the first imaginary component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The first imaginary component of this Quaternion.
+        """
+
+        return self.i
+
+    def get_j(self):
+        """
+        Gets the second imaginary component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The second imaginary component of this Quaternion.
+        """
+
+        return self.j
+
+    def get_k(self):
+        """
+        Gets the third imaginary component of this Quaternion.
+
+        Args:
+            None.
+
+        Returns:
+            The third imaginary component of this Quaternion.
+        """
+
+        return self.k
 
     def __add__(self, other):
         """

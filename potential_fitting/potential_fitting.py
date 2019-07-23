@@ -1,12 +1,46 @@
 # external package imports
-import os, subprocess, contextlib, random
+import os, sys, contextlib
 
 # local module imports
 from .utils import SettingsReader, files, system
 from . import configurations, database, polynomials, fitting
 from .database import Database
+from .molecule import xyz_to_molecules
 
-def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path):
+
+def apply_standard_order(settings_path, geo_path):
+
+    settings = SettingsReader(settings_path)
+    molecule = xyz_to_molecules(geo_path, settings)[0]
+    names, fragments, charges, spins, symmetry, SMILES = molecule.get_config_molecule_section()
+    settings.set("molecule", "names", names)
+    settings.set("molecule", "fragments", fragments)
+    settings.set("molecule", "charges", charges)
+    settings.set("molecule", "spins", spins)
+    settings.set("molecule", "symmetry", symmetry)
+    settings.set("molecule", "SMILES", SMILES)
+
+    standard_settings_path = settings_path + "_standard"
+    standard_geo_path = geo_path + "_standard"
+    
+    files.init_file(standard_settings_path, files.OverwriteMethod.BACKUP)
+    settings.write(standard_settings_path)
+
+    with open(geo_path, "r") as geo_file:
+        geo_file.readline()
+        comment_line = geo_file.readline()
+
+    files.init_file(standard_geo_path, files.OverwriteMethod.BACKUP)
+
+    with open(standard_geo_path, "w") as geo_file:
+        geo_file.write("{}\n".format(molecule.get_num_atoms()))
+        geo_file.write(comment_line)
+        geo_file.write("{}\n".format(molecule.to_standard_xyz()))
+
+    return standard_settings_path, standard_geo_path
+
+
+def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
     """
     Optimizes the geometry of the given molecule.
 
@@ -14,14 +48,16 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path):
         settings_path       - Local path to the file containing all relevent settings information.
         unopt_geo_path      - Local path to the file to read the unoptimized geoemtry from.
         opt_geo_path        - Local path to the file to write the optimized geometry to.
+        method              - The method to use for this geometry optimization.
+        basis               - The basis to use for this geometry optimization.
 
     Returns:
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis)
 
-def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
+def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis):
     """
     Generates the normal modes for the given molecule.
 
@@ -29,12 +65,14 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path):
         settings_path       - Local path to the file containing all relevent settings information.
         opt_geo_path        - Local path to the file to read the optimized geometry from.
         normal_modes_path   - Local path to the file to write the normal modes to.
+        method              - The method to use for this normal modes calculation.
+        basis               - The basis to use for this normal modes calculation.
 
     Returns:
         Null dimension of normal modes.
     """
     
-    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path)
+    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis)
 
     return dim_null
 
@@ -101,76 +139,109 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
     configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
             min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
 
-def init_database(settings_path, database_path, configurations_path, *tags):
+def generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius = 10, min_inter_distance=0.8, num_attempts=100,
+                                      seed=None, logarithmic = False):
+    """
+    Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        number_of_configs   - Number of configurations to generate.
+        config_path         - Local path to the file to write the configurations.
+        geo_paths           - Paths of all the geometries to make the nb configurations from. Can be single optimized
+                geometry or a set of distorted geometries. Will take random configs from these files to make the
+                nb configs.
+        radius              - Radius of the sphere monomers are placed within.
+        min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+                atoms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        seed                - Seed to use, the same seed will give the same configurations.
+        logarithmic         - If True, will use logarithmic progression to chose distances from center of sphere
+                for monomers.
+
+    Returns:
+        None
+    """
+
+    configurations.generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius=radius, min_inter_distance=min_inter_distance, num_attempts=num_attempts,
+                                      seed=seed, logarithmic=logarithmic)
+
+def init_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """
     Creates a database from the given configuration .xyz files. Can be called on a new database
     to create a new database, or an existing database to add more energies to be calculated
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file to add the configurations to. ".db" will automatically
-                be added to the end if it does not already end in ".db".
-        configurations_path - Local path to a single .xyz file or a directory containing ".xyz" files. If this argument
-                is a directory, any non .xyz files will be ignored.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        configurations_path - Local path to a single .xyz file.
+        method              - QM method to use to calculate the energy of these configurations.
+        basis               - QM basis to use to calculate the energy of these configurations.
+        cp                  - Use counterpoise correction for these configurations?
         tags                - Mark the new configurations with these tags.
+        optimized           - Are these configurations optimized geometries? Defualt is False.
 
     Returns:
         None.
     """
 
-    database.initialize_database(settings_path, database_path, configurations_path, *tags)
+    database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
-def fill_database(settings_path, database_path):
+
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
     
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing uncaculated energies. ".db" will
-                automatically be added to the end if it does not already end in ".db".
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        client_name         - Name of the client performing these calculations.
+        tags                - Only perform calculations marked with at least one of these tags.
+        calculation_count   - Maximum number of calculations to perform. Unlimited if None.
 
     Returns:
         None.
     """
 
-    database.fill_database(settings_path, database_path)
+    if calculation_count is None:
+        calculation_count = sys.maxsize
 
-def generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name, *tags, method = "%", basis = "%",
-            cp = "%", e_min = 0, e_max = float('inf')):
+    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
+
+def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf')):
+    """"
+    Creates a training set file from the calculated energies in a database.
+
+    Args:
+        settings_path       - Local path to the ".ini" file with all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        training_set_path   - Local path to file to write training set to.
+        method              - Use energies calculated with this method. Use % for any method.
+        basis               - Use energies calculated with this basis. Use % for any basis.
+        cp                  - Use energies calculated with this cp. Use 0 for False, 1 for True, or % for any cp.
+        tags                - Use energies marked with at least one of these tags. Use % for any tag.
+        e_bind_min          - Minimum binding energy allowed, inclusive.
+        e_bind_max          - Maximum binding energy allowed, exclusive.
+        e_mon_max           - Minimum monomer deformation energy allowed, inclusive.
+        e_mon_max           - Maximum monomer deformation energy allowed, exclusive.
+
+    Return:
+        None.
+    """
+    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max)
+
+def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
     Generates a 1b training set from the energies inside a database.
 
-    Specific method, bnasis, and cp may be specified to only use energies calculated
-    with a specific model.
-
-    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing energies to put in the training set. ".db"
-                will automatically be added to the end if it does not already end in ".db".
-        training_set_path   - Local path to the file to write the training set to.
-        molecule_name       - The name of the moelcule to generate a training set for.
-        tags                - Only use energies marked with one or more of these tags.
-        method              - Only use energies calcualted by this method.
-        basis               - Only use energies calculated in this basis.
-        cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
-                effect on 1b energies.
-        e_min               - Minimum (inclusive) energy of any config to include in this training set.
-        e_max               - Maximum (exclusive) energy of any config to include in this training set.
-
-    Returns:
-        None.
-    """
-
-    database.generate_1b_training_set(settings_path, database_path, training_set_path, molecule_name,
-            method, basis, cp, *tags, e_min = e_min, e_max = e_max)
-
-def generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name, *tags,
-        method = "%", basis = "%", cp = "%", e_bind_max = float('inf'), e_mon_max = float('inf')):
-    """
-    Generates a 2b training set from the energies inside a database.
+    ***deprecated, please use generate_training_set instead***
 
     Specific method, basis, and cp may be specified to only use energies calculated
     with a specific model.
@@ -179,24 +250,56 @@ def generate_2b_training_set(settings_path, database_path, training_set_path, mo
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing energies to put in the training set. ".db"
-                will automatically be added to the end if it does not already end in ".db".
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
         training_set_path   - Local path to the file to write the training set to.
-        monomer1_name       - The Name of first monomer in the dimer.
-        monomer2_name       - The Name of the second monomer in the dimer.
-        tags                - Only use energies marked with one or more of these tags.
+        molecule_name       - The name of the moelcule to generate a training set for.
         method              - Only use energies calcualted by this method.
         basis               - Only use energies calculated in this basis.
+        cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
+                effect on 1b energies.
+        tags                - Only use energies marked with one or more of these tags.
+        e_min               - Minimum (inclusive) energy of any config to include in this training set.
+        e_max               - Maximum (exclusive) energy of any config to include in this training set.
+
+    Returns:
+        None.
+    """
+
+    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=e_min, e_bind_max=e_max, e_mon_min=e_min, e_mon_max=e_max)
+
+
+def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags,
+            e_bind_max = float('inf'), e_mon_max = float('inf')):
+    """
+    Generates a 2b training set from the energies inside a database.
+
+    ***deprecated, please use generate_training_set instead***
+
+    Specific method, basis, and cp may be specified to only use energies calculated
+    with a specific model.
+
+    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        training_set_path   - Local path to the file to write the training set to.
+        molecule_name       - The name of the dimer.
+        method              - Only use energies calculated by this method.
+        basis               - Only use energies calculated in this basis.
         cp                  - Only use energies calculated with this cp.
+        tags                - Only use energies marked with one or more of these tags.
         e_bind_max          - Maximum binding energy allowed
         e_mon_max           - Maximum monomer deformation energy allowed
 
     Returns:
         None.
     """
-    
-    database.generate_2b_training_set(settings_path, database_path, training_set_path, monomer1_name, monomer2_name,
-            method, basis, cp, *tags, e_bind_max = e_bind_max, e_mon_max = e_mon_max)
+    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=e_bind_max, e_mon_min=-float('inf'), e_mon_max=e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path):
     """
@@ -212,31 +315,6 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
     """
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
-
-def generate_poly_input_from_database(settings_path, database_path, molecule_name, in_file_path):
-    """
-    Generates an input file for polynomial generation.
-    Looks in a database to find the symmetry and creates a file in the given directory.
-
-    If the symmetry is A1B2, then the file A1B2.in containing polynomial generation input will be created inside
-    the poly_directory_path directory.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        database_path       - Local path to the database file containing the molecular symmetry. ".db" will
-                automatically be added to the end if it does not already end in ".db".
-        molecule_name       - The name of the molecule to generate a polynomial generation input file for. At least one
-                instance of this molecule must be in the database.
-        in_file_path        - Local path to the file to write the polynomial input to.
-
-    Returns:
-        None.
-    """
-
-    with Database(database_path) as database:
-        symmetry = database.get_symmetry(molecule_name)
-
-        generate_poly_input(settings_path, symmetry, in_file_path)
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
     """
@@ -269,6 +347,8 @@ def execute_maple(settings_path, poly_dir_path):
         None.
     """
 
+    print("Executing maple to create c polynomial files...")
+
     this_file_path = os.path.dirname(os.path.abspath(__file__))
 
     original_dir = os.getcwd()
@@ -285,34 +365,51 @@ def execute_maple(settings_path, poly_dir_path):
     system.call("maple", "poly-grd.maple")
     system.call("maple", "poly-nogrd.maple")
 
+    print("Maple executed successfully!")
+    print("Converting c polynomial files to cpp polynomial files")
+
     with open("poly-grd.c", "r") as in_file, open("poly-grd.cpp", "w") as out_file:
         system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
     with open("poly-nogrd.c", "r") as in_file, open("poly-nogrd.cpp", "w") as out_file:
         system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
 
+    print("cpp files generated successfully!")
+
     os.chdir(original_dir)
 
-def generate_fit_config(settings_path, molecule_in, config_path, *opt_geometry_paths, distance_between = 20):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
     """
-    Generates the config file needed to perform a fit from the optimized geometries of up to 3 monomers.
+        Generates the config file needed to perform a fit.
 
-    Qchem is required for this step to work.
+        Qchem is required for this step to work for 1 and 2 b.
 
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        molecule_in         - A String of fromat "A1B2". Same as poly_in_path but without ".in".
-        config_path         - Local path to file to write the config file to.
-        opt_geometry_paths  - Local paths to the optimized geometries to include in this fit config, should be 1 to 3
-                (inclusive) of them.
-        distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-                does not converge, try different values of this.
+        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
 
-    Returns:
-        None.
-    """
+        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
+        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
 
-    fitting.make_config(settings_path, molecule_in, config_path, *opt_geometry_paths,
-            distance_between = distance_between)
+        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
+        Intermolecular c6 constants are read from config_2b_paths.
+
+        Args:
+            settings_path       - Local path to the file containing all relevent settings information.
+            config_path         - Local path to file to write the config file to.
+            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
+            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
+                    config for each monomer.
+            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
+                    config for each combination of monomers.
+            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
+                    does not converge, try different values of this.
+            use_published_polarizabilities - use published polarizabilites from
+                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+
+        Returns:
+            None.
+        """
+
+    fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
+            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
     
 def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
     """
@@ -403,6 +500,8 @@ def compile_fit_code(settings_path, fit_dir_path):
         None.
     """
 
+    print("Compiling fit code...")
+
     original_dir = os.getcwd()
 
     os.chdir(fit_dir_path)
@@ -412,7 +511,11 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     os.chdir(original_dir)
 
+    print("Fit code compilation successful!")
+
 def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
+
+    print("Performing {} fits from which the best will be chosen...".format(num_fits))
 
     settings = SettingsReader(settings_path)
 
@@ -511,6 +614,8 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
 def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
+    print("Performing {} fits from which the best will be chosen...".format(num_fits))
+
     settings = SettingsReader(settings_path)
 
     files.init_directory(fit_dir_path)
@@ -518,7 +623,7 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
     best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "best_fit.log"))
     fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "fit.log"))
 
-    attempts = 1;
+    attempts = 1
     with open(best_fit_log_path, "w") as best_fit_log:
         system.call(fit_code_path, training_set_path, out_file = best_fit_log)
         os.rename("individual_terms.dat", "best-individual_terms.dat")
@@ -625,6 +730,8 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
 
 
 def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
+
+    print("Performing {} fits from which the best will be chosen...".format(num_fits))
     
     settings = SettingsReader(settings_path)
 

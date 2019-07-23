@@ -77,7 +77,7 @@ excl14_b = excluded_pairs_14[1]
 #Obtain charges (in the order of input), pols and polfacs
 charges = config.getlist("fitting", "charges")
 polarizabilities = config.getlist("fitting", "polarizabilities")
-polarizability_fractions = config.getlist("fitting", "polarizability_fractions")
+polarizability_fractions = config.getlist("fitting", "polarizability_factors")
 chg_a = charges[0]
 chg_b = charges[1]
 pol_a = polarizabilities[0]

@@ -1,4 +1,5 @@
 from .configuration_generator_2b import generate_2b_configurations
+from .configuration_generator_nb import generate_configurations
 from .configurations_splitter import split_configurations, MolecularDescriptor, RMSDDescriptor, RMSDDistanceDescriptor, RandomDescriptor
 from .configuration_generator import generate_normal_mode_configurations
 from .geometry_optimizer import optimize_geometry

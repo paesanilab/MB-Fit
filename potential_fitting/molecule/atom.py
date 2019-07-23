@@ -1,5 +1,6 @@
-import math
+import math, numpy as np
 from potential_fitting.utils import constants
+from potential_fitting.utils.math import test_difference_under_threshold
 
 class Atom(object):
     """
@@ -22,9 +23,7 @@ class Atom(object):
 
         self.name = name
         self.symmetry_class = symmetry_class
-        self.x = x
-        self.y = y
-        self.z = z
+        self.set_xyz(x, y, z)
 
     def get_name(self):
         """
@@ -129,6 +128,20 @@ class Atom(object):
         """
         return constants.symbol_to_vdw_radius(self.name)
 
+    def get_base_priority(self):
+        """
+        Gets the base priority of this atom.
+        This is equal to its atomic number.
+
+        Args:
+            None
+
+        Returns:
+            The priority of this atom.
+        """
+
+        return constants.symbol_to_number(self.name)
+
 
     def get_x(self):
         """
@@ -180,6 +193,8 @@ class Atom(object):
             None
         """
 
+        if x == -0.0:
+            x = 0.0
         self.x = x
 
     def set_y(self, y):
@@ -193,6 +208,8 @@ class Atom(object):
             None
         """
 
+        if y == -0.0:
+            y = 0.0
         self.y = y
 
     def set_z(self, z):
@@ -206,6 +223,8 @@ class Atom(object):
             None
         """
 
+        if z == -0.0:
+            z = 0.0
         self.z = z
 
     def set_xyz(self, x, y, z):
@@ -221,9 +240,9 @@ class Atom(object):
             None
         """
 
-        self.x = x
-        self.y = y
-        self.z = z
+        self.set_x(x)
+        self.set_y(y)
+        self.set_z(z)
 
     def translate(self, x, y, z):
         """
@@ -312,4 +331,9 @@ class Atom(object):
         """
         return "@{}".format(self.to_xyz())
 
+    def __eq__(self, other):
+        return (self.get_name() == other.get_name() and self.get_symmetry_class() == other.get_symmetry_class()
+                and test_difference_under_threshold(self.get_x(), other.get_x(), 0.00001) and test_difference_under_threshold(self.get_y(), other.get_y(), 0.00001) and test_difference_under_threshold(self.get_z(), other.get_z(), 0.00001))
 
+    def __ne__(self, other):
+        return not self == other

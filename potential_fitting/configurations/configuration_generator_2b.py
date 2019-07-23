@@ -51,7 +51,6 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
 
 def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
         max_distance = 5, min_inter_distance = 0.8, num_attempts = 100, logarithmic = False, seed = None):
-
     """
     Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
     outputs them to an xyz file.
@@ -90,6 +89,8 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
     
     #setting the total number of configs
     total_configs = number_of_configs
+
+    print("Beginning 2B configurations generation with random distribution.")
    
     # open the config file to write to
     with open(files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings)), "w") as config_file:
@@ -126,10 +127,13 @@ def generate_2b_configurations_random(settings_path, geo1_path, geo2_path, numbe
             
             #decrementing required number of configs
             total_configs -= 1
+
+            if (number_of_configs - total_configs) % 100 == 0:
+                print("{} configs done...".format(number_of_configs - total_configs))
             
             
     # if we have hit our target number of configs, return
-    print("Generated {} configurations".format(number_of_configs))
+    print("Done! Generated {} configurations".format(number_of_configs))
     return 
 
 def generate_2b_configurations_smooth(settings_path, geo1_path, geo2_path, number_of_configs, config_path, min_distance = 1, 
@@ -186,6 +190,8 @@ def generate_2b_configurations_smooth(settings_path, geo1_path, geo2_path, numbe
 
     # construct a psuedo-random number generator
     random = Random(seed)
+
+    print("Beginning 2B configurations generation with smooth distribution.")
     
     # open the config file to write to
     with open(files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings)), "w") as config_file:
@@ -224,9 +230,12 @@ def generate_2b_configurations_smooth(settings_path, geo1_path, geo2_path, numbe
         
                 total_configs += 1
 
+                if total_configs % 100 == 0:
+                    print("{} configs done...".format(total_configs))
+
                 # if we have hit our target number of configs, return
                 if total_configs == number_of_configs:
-                    print("Generated {} configurations".format(total_configs))
+                    print("Done! Generated {} configurations".format(total_configs))
                     return
 
 def logarithmic_progression(min, max, num_configs, config_num):

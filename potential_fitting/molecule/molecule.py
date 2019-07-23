@@ -10,7 +10,7 @@ class Molecule(object):
     Stores the fragments of a Molecule
     """
 
-    def __init__(self):
+    def __init__(self, fragments):
         """
         Creates a new Molecule
 
@@ -23,6 +23,8 @@ class Molecule(object):
 
         # list of fragments in this molecule
         self.fragments = []
+        for fragment in fragments:
+        	self.fragments.append(fragment)
         # list of energies for this molecule, filled in by get_nmer_energies
         self.energies = {}
         # list of nmer_energies for this molecule, filled by get_nmer_energies
@@ -82,15 +84,39 @@ class Molecule(object):
 
         # make sure the symmetry class of the atoms in this fragment doesn't violate the 1 symmetry class -> 1 atom type rule
         for existing_fragment in self.get_fragments():
-            for atom1 in existing_fragment.get_atoms():
-                for atom2 in fragment.get_atoms():
-                    if atom1.get_symmetry_class() == atom2.get_symmetry_class() and atom1.get_name() != atom2.get_name():
-                        raise InconsistentValueError("symmetry class of {}".format(atom1.get_name()), "symmetry class of {}".format(atom2.get_name()), atom1.get_symmetry_class(), atom2.get_symmetry_class(), "atoms with a different atomic symbol in the same molecule (even if different fragments) cannot have the same symmetry class.")
+            if fragment.get_name() == existing_fragment.get_name():
 
-        fragment.index = self.get_num_fragments()
+                new_prev_sym = "None"
+                old_prev_sym = "None"
+
+                for atom_new, atom_old in zip(fragment.get_atoms(), existing_fragment.get_atoms()):
+                    if atom_new.get_name() != atom_old.get_name():
+                        raise Exception
+
+                    if (atom_new.get_symmetry_class() != new_prev_sym) ^ (atom_old.get_symmetry_class() != old_prev_sym):
+                        raise Exception
+
+                    new_prev_sym = atom_new.get_symmetry_class()
+                    old_prev_sym = atom_old.get_symmetry_class()
+
+                    atom_new.set_symmetry_class(atom_old.get_symmetry_class())
+
+                self.fragments.append(fragment)
+                return
+
+        try:
+            next_symmetry = self.get_atoms()[-1].get_symmetry_class()
+        except IndexError:
+            next_symmetry = "A"
+        prev_sym = "None"
+
+        for atom in fragment.get_atoms():
+            if atom.get_symmetry_class() != prev_sym:
+                next_symmetry = chr(ord(next_symmetry) + 1)
+            prev_sym = atom.get_symmetry_class()
+            atom.set_symmetry_class(next_symmetry)
 
         self.fragments.append(fragment)
-
 
         # adjust the symmetry class of atoms to be in the right order
         next_symmetry = 65
@@ -116,7 +142,7 @@ class Molecule(object):
             List of fragments in this molecule in standard order
         """
 
-        return sorted(self.fragments, key=lambda fragment: fragment.get_index())
+        return self.fragments
 
     def get_atoms(self):
         """
@@ -503,6 +529,33 @@ class Molecule(object):
 
         return string[:-1] # removes last character of string (extra newline)
 
+    def to_standard_xyz(self, fragments = None, cp = False):
+        """
+        Gets a string representation of the fragments in this molecule in the xyz file format.
+        The order of the fragments and atoms is in standard order.
+
+        Args:
+            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments
+            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments
+
+        Returns:
+            String representation of the fragments in this molecule in the xyz format in standard order.
+        """
+
+        # by default, use all fragments
+        if fragments == None:
+            fragments = range(self.get_num_fragments())
+
+        string = ""
+
+        for index in range(len(self.get_standard_order())):
+            if index in fragments:
+                string += self.get_standard_order()[index].to_standard_xyz()
+            elif cp:
+                string += self.get_standard_order()[index].to_standard_ghost_xyz() 
+
+        return string[:-1] # removes last character of string (extra newline)
+
     '''
     Returns a string containing indicies and energies of nbody fragment
     combinations in the format of the log file
@@ -579,39 +632,22 @@ class Molecule(object):
 
         return [(atom.get_x(), atom.get_y(), atom.get_z()) for atom in self.get_atoms()]
 
-    def read_fragment_from_xyz(self, string, name, charge, spin_multiplicity, symmetry):
+    @staticmethod
+    def read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
         """
-        Reads a single fragment from the given string and adds it to this molecule
+        Reads fragments from an xyz string and creates a new Molecule.
 
         Args:
-            string - the string in the xyz file format, should include just the atom lines, no total atom line or comment line
-            name - the name of this new fragment
-            charge - the charge of this new fragment
-            spin_multiplicity - the spin multiplicity of the new fragment
-            symmetry - the symmetry of the new fragment, specified as a string in form A1B2
+            string 			- The xyz format string. Including the atom count line and comment line.
+            atoms_per_fragment - List containing the number of atoms in each fragment.
+            name_per_fragment - List containing the names of each fragment.
+            charge_per_fragment - List containing the charges of each fragment.
+            spin_multiplicity_per_fragment - List containing the spin multiplicities of each fragment.
+            symmetry_per_fragment - List containing the symmetries of each fragment, in format A1B2.
+            SMILE_per_fragment - List containing the SMILE strings of each fragment.
 
         Returns:
-            self
-        """
-
-        self.add_fragment(Fragment(name, charge, spin_multiplicity).read_xyz(string, symmetry))
-
-        return self
-
-    def read_xyz(self, string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
-        """
-        Reads fragments from an xyz string into this Molecule
-
-        Args:
-            string - the xyz format string
-            atoms_per_fragment - list containing the number of atoms in each fragment
-            name_per_fragment - list containing the names of each fragment
-            charge_per_fragment - list containing the charges of each fragment
-            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
-            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
-
-        Returns:
-            self
+            The new Molecule.
         """
 
         # Error checking to make sure all lists passed in are the same length
@@ -622,7 +658,9 @@ class Molecule(object):
         if not len(atoms_per_fragment) == len(spin_multiplicity_per_fragment):
             raise InconsistentValueError("atoms per fragment", "spin multiplicities per fragment", atoms_per_fragment, spin_multiplicity_per_fragment, "lists must be same length")
         if not len(atoms_per_fragment) == len(name_per_fragment):
-            raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, names, "lists must be same length")
+            raise InconsistentValueError("atoms per fragment", "fragment names", atoms_per_fragment, name_per_fragment, "lists must be same length")
+        if not len(atoms_per_fragment) == len(SMILE_per_fragment):
+            raise InconsistentValueError("atoms per fragment", "fragment SMILES", atoms_per_fragment, SMILE_per_fragment, "lists must be same length")
 
         # break the input string apart along \n characters
         lines = string.splitlines()
@@ -644,34 +682,36 @@ class Molecule(object):
         if len(lines) != atom_total:
             raise InconsistentValueError("total atoms in xyz string", "atom lines in xyz string", atom_total, len(lines), "number of total atoms indicated in xyz string should match number of atom lines")
 
+        fragments = []
+
         # loop over each item in the lists, each iteration containing the information to assemble one fragment
-        for num_atoms, name, charge, spin, symmetry in zip(atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+        for num_atoms, name, charge, spin, symmetry, SMILE in zip(atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
 
-            # read this fragment into this Molecule
-            self.read_fragment_from_xyz("\n".join(lines[:num_atoms]), name, charge, spin, symmetry)
-
+            #
+            fragments.append(Fragment.read_xyz("\n".join(lines[:num_atoms]), name, charge, spin, SMILE, symmetry))
             # remove a number of lines from the lines list equal to the number used in the Fragment that was just read
             lines = lines[num_atoms:]
 
-        return self
+        return Molecule(fragments)
 
-    def read_xyz_file(self, file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+    @staticmethod
+    def read_xyz_file(file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
         """
-        Reads fragments from an xyz file into this Molecule
+        Reads fragments from an xyz file and creates a new Molecule.
 
-        Will attempt to read lines from the given file handle, raising a StopIteration exception if called on an empty file and a
-        
+        Will attempt to read lines from the given file handle, raising a StopIteration exception if called on an empty file.
 
         Args:
-            file - the file to read from
-            atoms_per_fragment - list containing the number of atoms in each fragment
-            name_per_fragment - list containing the names of each fragment
-            charge_per_fragment - list containing the charges of each fragment
-            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
-            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+            file 			- The file to read from.
+            atoms_per_fragment - List containing the number of atoms in each fragment.
+            name_per_fragment - List containing the names of each fragment.
+            charge_per_fragment - List containing the charges of each fragment.
+            spin_multiplicity_per_fragment - List containing the spin multiplicities of each fragment.
+            symmetry_per_fragment - List containing the symmetries of each fragment, in format A1B2.
+            SMILE_per_fragment - List containing the SMILE strings of each fragment.
 
         Returns:
-            self
+            The new Molecule.
         """
         
         # build the xyz string
@@ -690,51 +730,51 @@ class Molecule(object):
 
             string += line
         
-        self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+        return Molecule.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
-        return self
-
-    def read_xyz_path(self, path, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment):
+    @staticmethod
+    def read_xyz_path(path, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment):
         """
-        Reads fragments from an xyz file indicated by a filepath into this Molecule
+        Reads fragments from an xyz file indicated by a filepath and constructs a new Molecule.
 
-        Will attempt to read lines from the file at the given file path, raising an exception if it runs out of lines mid-parse
+        Will attempt to read lines from the file at the given file path, raising an exception if it runs out of lines mid-parse.
 
         Args:
-            path - the path to the file to read from
-            atoms_per_fragment - list containing the number of atoms in each fragment
-            name_per_fragment - list containing the names of each fragment
-            charge_per_fragment - list containing the charges of each fragment
-            spin_multiplicity_per_fragment - list containing the spin multiplicities of each fragment
-            symmetry_per_fragment - list containing the symmetries of each fragment, in format A1B2
+            path 			- The path to the file to read from.
+            atoms_per_fragment - List containing the number of atoms in each fragment.
+            name_per_fragment - List containing the names of each fragment.
+            charge_per_fragment - List containing the charges of each fragment.
+            spin_multiplicity_per_fragment - List containing the spin multiplicities of each fragment.
+            symmetry_per_fragment - List containing the symmetries of each fragment, in format A1B2.
+            SMILE_per_fragment - List containing the SMILE strings of each fragment.
 
         Returns:
-            self
+            The new Molecule.
         """
 
         with open(path, "r") as file:
 
             try:
-                self.read_xyz_file(file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
+                return Molecule.read_xyz_file(file, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
             # if the call to read_xyz_file() raises a StopIteration, it means the file was empty
             except StopIteration:
                 raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
 
-        return self
-
-    def read_xyz_direct(self, string, settings = None):
+    @staticmethod
+    def read_xyz_direct(string, settings = None):
         """
-        Reads fragments from a string into this Molecule
+        Reads fragments from a string and constructs a new Molecule.
 
-        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+        Will infer a single fragment with charge 0, spin 1, no symmetry, and a SMILE with atoms
+        connected in the order they appear in the string if settings is None.
 
         Args:
-            string - the string to read from
-            settings - settings file containing information about the molecule
+            string 			- The string to read from.
+            settings 		- Settings object containing information about the molecule.
 
         Returns:
-            self
+            The new Molecule.
         """
 
         # if settings is None, then infer default values for molecule attributes
@@ -764,32 +804,38 @@ class Molecule(object):
 
 
             symmetry_per_fragment = [symmetry]
+
+            SMILE = ""
+            for line in string.splitlines()[2:]:
+            	SMILE += line.split()[0]
+
+            SMILE_per_fragment = [SMILE]
             
         # if settings is defined, read values from xyz file
         else:
             atoms_per_fragment = [int(count) for count in settings.get("molecule", "fragments").split(",")]
-            name_per_fragment = [name for name in settings.get("molecule", "names").split(",")]
+            name_per_fragment = settings.get("molecule", "names").split(",")
             charge_per_fragment = [int(charge) for charge in settings.get("molecule", "charges").split(",")]
             spin_multiplicity_per_fragment = [int(spin) for spin in settings.get("molecule", "spins").split(",")]
-            symmetry_per_fragment = [symmetry for symmetry in settings.get("molecule", "symmetry").split(",")]
+            symmetry_per_fragment = settings.get("molecule", "symmetry").split(",")
+            SMILE_per_fragment = settings.get("molecule", "SMILES").split(",")
 
+        return Molecule.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
-        self.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment)
-
-        return self
-
-    def read_xyz_file_direct(self, file, settings = None): 
+    @staticmethod
+    def read_xyz_file_direct(file, settings = None): 
         """
-        Reads fragments from a file into this Molecule
+        Reads fragments from a file into a new Molecule.
 
-        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+        Will infer a single fragment with charge 0, spin 1, no symmetry, and a SMILE with atoms
+        connected in the order they appear in the string if settings is None.
 
         Args:
-            string - the string to read from
-            settings - settings file containing information about the molecule
+            file 			- The file to read from.
+            settings 		- Settings object containing information about the molecule.
 
         Returns:
-            self
+            The new Molecule.
         """
         if settings is None:
             position = file.tell()
@@ -813,50 +859,47 @@ class Molecule(object):
 
             string += line
         
-        self.read_xyz_direct(string, settings)
+        return Molecule.read_xyz_direct(string, settings)
 
-        return self
-
-    def read_xyz_path_direct(self, path, settings = None):
+    @staticmethod
+    def read_xyz_path_direct(path, settings = None):
         """
         Reads fragments from an xyz_file indicated by a path into this Molecule
 
-        Will infer a single fragment with charge 0, spin 1, and no symmetry if settings is None
+        Will infer a single fragment with charge 0, spin 1, no symmetry, and a SMILE with atoms
+        connected in the order they appear in the string if settings is None.
 
         Args:
-            string - the string to read from
-            settings - settings file containing information about the molecule
+            path 			- The path to read from.
+            settings 		- Settings object containing information about the molecule.
 
         Returns:
-            self
+            The new Molecule.
         """
         
         with open(path, "r") as file:
 
             try:
-                self.read_xyz_file_direct(file, settings)
+                return Molecule.read_xyz_file_direct(file, settings)
 
             # if the call to read_xyz_file() raises a StopIteration, it means the file was empty
             except StopIteration:
                 raise XYZFormatError("xyz file {} file is empty".format(file.name), "make sure the xyz file has at least 1 molecule in it")
 
-        return self
-
-    def read_psi4_string(self, string):
+    @staticmethod
+    def read_psi4_string(string):
         """
-        Reads the string outputted by a call to psi4.molecule.save_string_xyz() into this molecule as a fragment
+        Reads the string outputted by a call to psi4.molecule.save_string_xyz() into a new Molecule.
 
-        the fragments added will not have name or symmetry saved correctly, because this information is not available
+        Molecules created this way will not have name or symmetry saved correctly, because this information is not available
         from the output of psi4.molecule.save_string_xyz(). As a result certain operations will not work on this molecule, for example
-        do not add this molecule to a database or attempt to generate its polynomial input format in style A1B2
-
-        Should never be called on a molecule that already has fragments, as this will have unexpected results
+        do not add this molecule to a database or attempt to generate its polynomial input format in style A1B2.
 
         Args:
-            output of psi4.molecule.save_string_xyz()
+            string 			- String output of psi4.molecule.save_string_xyz().
 
         Returns:
-            self
+            The new Molecule.
         """
 
         # divide the string along \n characters
@@ -887,6 +930,180 @@ class Molecule(object):
 
             symmetry_class += 1
 
-        self.read_fragment_from_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, symmetry)
+        SMILE = ""
 
-        return self
+        for line in string.splitlines()[1:]:
+        	SMILE += line.split()[0]
+
+        return Molecule([Fragment.read_xyz("\n".join(lines[1:]), name, charge, spin_multiplicity, SMILE, symmetry)])
+
+    def get_standard_order(self):
+        return sorted(self.fragments, key = lambda x: x.get_name())
+
+    def get_config_molecule_section(self):
+
+    	# TODO: update SMILE
+
+        fragments_list = self.get_standard_order()
+
+        names = "{}\n".format(",".join(fragment.get_name() for fragment in fragments_list))
+        fragments = "{}\n".format(",".join(str(fragment.get_num_atoms()) for fragment in fragments_list))
+        charges = "{}\n".format(",".join(str(fragment.get_charge()) for fragment in fragments_list))
+        spins = "{}\n".format(",".join(str(fragment.get_spin_multiplicity()) for fragment in fragments_list))
+        symmetry = "{}\n".format(",".join(fragment.get_standard_symmetry() for fragment in fragments_list))
+        SMILES = "{}\n".format(",".join(fragment.get_standard_SMILE() for fragment in fragments_list))
+
+        next_letter = "A"
+        for i in range(len(symmetry)):
+            if symmetry[i].isupper():
+                symmetry = symmetry[:i] + next_letter + symmetry[i + 1:]
+                next_letter = chr(ord(next_letter) + 1)
+
+        return names, fragments, charges, spins, symmetry, SMILES
+
+    def confirm_standard_order(self):
+        """
+        Checks if this fragment is in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            True if this fragment's atoms are in standard order.
+            False otherwise.
+        """
+        if not self.get_standard_order() == self.get_fragments():
+            return False
+
+        for fragment in self.get_fragments():
+            if not fragment.confirm_standard_order():
+                return False
+        
+        return True
+
+    def get_standard_copy(self):
+        """
+        Gets a copy of this molecule, with fragments and atoms in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            A copy of this molecule in standard order.
+        """
+
+        order, frag_orders = self.get_standard_order_order()
+        return self.get_reordered_copy(order, frag_orders, [frag.get_standard_SMILE() for frag in self.get_standard_order()])
+
+    def get_reorder_copy(self, names, SMILES):
+        """
+        Gets a copy of this molecule, with fragments in the order specified by the names list and
+        atoms in the order specified in the SMILE strings.
+
+        Args:
+            names - names of the fragments in the new order.
+            SMILE - list of SMILE strings corresponding to the new order of fragments.
+                    Order the atoms of each fragment to match the order in these SMILE strings.
+
+        Returns:
+            A copy of this molecule in the order specified by names and SMILES.
+        """
+        order, frag_orders = self.get_reorder_order(names, SMILES)
+        return self.get_reordered_copy(order, frag_orders, SMILES)
+
+    def get_standard_order_order(self):
+        """
+        Gets the order the fragments and atoms in this molecule must be in to be in standard order.
+
+        Args:
+            None.
+
+        Returns:
+            (order, frag_orders)
+            order   - A list of indices, where indices[i] = index of fragment that should be in index i to put the molecule in standard order.
+            frag_orders - A list of lists, where each list corresponds to one fragment.
+                    where frag_orders[j][i] = index of atom that should be in index i to put the fragment j of the new order in standard order.
+        """
+        order = [self.get_fragments().index(frag) for frag in self.get_standard_order()]
+        frag_orders = [frag.get_standard_order_order() for frag in [self.get_fragments()[index] for index in order]]
+        return order, frag_orders
+
+    def get_reorder_order(self, names, SMILES):
+        """
+        Gets the order the fragments and atoms in this molecule must be in to match the SMILE string.
+
+        Args:
+            names - order the fragments to match the order in this list.
+            SMILE - order the atoms of each fragment to match the orders in these SMILE strings.
+
+        Returns:
+            (order, frag_orders)
+            order   - A list of indices, where indices[i] = index of fragment that should be in index i to put the fragments in the order specified.
+            frag_orders - A list of lists, where each list corresponds to one fragment.
+                    where frag_orders[j][i] = index of atom that should be in index i to put the fragment j of the new order in the order specified.
+        """
+        order = []
+
+        for name in names:
+            for index, fragment in enumerate(self.get_fragments()):
+                if fragment.get_name() == name and index not in order:
+                    order.append(index)
+
+        frag_orders = [frag.get_reorder_order(SMILE) for frag, SMILE in zip([self.get_fragments()[index] for index in order], SMILES)]
+
+        return order, frag_orders
+
+    def get_reordered_copy(self, order, frag_orders, SMILES):
+        """
+        Gets a copy of this molecule, the fragments and atoms are reordered according to the input.
+
+        Args:
+            order - New order of the fragments.
+            frag_orders - New order of the atoms within each fragment.
+            SMILES  -   new SMILE strings for each of the fragments.
+        Returns:
+            A copy of this molecule, reordered to match the input.
+
+        """
+        fragments = []
+
+        prev_frag_name = None
+
+        next_starting_symmetry = 'A'
+        next_symmetry = None
+
+        for fragment, frag_order, SMILE in zip([self.get_fragments()[index] for index in order], frag_orders, SMILES):
+
+            if prev_frag_name is not None and fragment.get_name() != prev_frag_name:
+                next_starting_symmetry = chr(ord(next_symmetry) + 1)
+            prev_frag_name = fragment.get_name()
+
+            next_symmetry = next_starting_symmetry
+
+            fragments.append(fragment.get_reordered_copy(frag_order, SMILE))
+
+            prev_symmetry = None
+
+            for atom in fragments[-1].get_atoms():
+
+                if prev_symmetry is not None and atom.get_symmetry_class() != prev_symmetry:
+                    next_symmetry = chr(ord(next_symmetry) + 1)
+
+                prev_symmetry = atom.get_symmetry_class()
+
+                atom.set_symmetry_class(next_symmetry)
+
+        return Molecule(fragments)
+
+    def __eq__(self, other):
+        if not self.get_name() == other.get_name():
+            return False
+
+        for self_frag, other_frag in zip(self.get_fragments(), other.get_fragments()):
+            if self_frag != other_frag:
+                return False
+
+        return True
+
+    def __ne__(self, other):
+        return not self == other

@@ -6,8 +6,7 @@ class PotentialFittingError(Exception):
     """Basic exception for all errors raised by our code"""
     
     def __init__(self, message):
-        super().__init__("The following error occured in the Potential Fitting Library: {}".format(message))
-
+        super().__init__("\33[1m\33[3m\33[31mThe following error occured in the Potential Fitting Library: {}\33[0m\33[0m\33[0m".format(message))
 
 """
 --------------------------- File Errors
@@ -39,13 +38,17 @@ class CommandNotFoundError(CommandError):
 class CommandExecutionError(CommandError):
     """Raised when a command fails for some reason"""
 
-    def __init__(self, command, call, exit_code, error):
-        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), error, exit_code))
-        self.error = error
+    def __init__(self, command, call, exit_code, stderr, stdout):
+        super().__init__(command, "entire command: '{}', error: {} (exit code {})".format(" ".join(call), stderr, exit_code))
+        self.stderr = stderr
+        self.stdout = stdout
         self.call = call
 
-    def get_error():
-        return self.error
+    def get_error(self):
+        return self.stderr
+
+    def get_stdout(self):
+        return self.stdout
 
 """
 --------------------------- Library Errors
@@ -60,8 +63,13 @@ class LibraryError(PotentialFittingError):
 class LibraryCallError(LibraryError):
     """Exception for all errors caused by calls to Libraries"""
 
-    def __init__(self, library, call, message):
-        super().__init__(library, "Error during call to '{}': {}".format(call, message))
+    # If there is a log file containing more info about the error, specify it in the log_path parameter.
+    def __init__(self, library, call, message, log_path = None):
+        if log_path is not None:
+            super().__init__(library, "Error during call to '{}': {}. Log File Path: {}".format(call, message, log_path))
+        else:
+            super().__init__(library, "Error during call to '{}': {}".format(call, message))
+        self.log_path = log_path
 
 class LibraryNotAvailableError(LibraryError):
     """Exception when a user tries to use a library that is not installed"""
@@ -78,6 +86,30 @@ class DatabaseError(PotentialFittingError):
     
     def __init__(self, database, message):
         super().__init__("Error during access to database '{}': {}".format(database, message))
+
+class DatabaseConnectionError(DatabaseError):
+    """Raised when there is a problem connecting to the database."""
+
+    def __init__(self, database, problem):
+        super().__init__(database, "Problem connecting to the database: {}".format(problem))
+
+class DatabaseNotEmptyError(DatabaseError):
+    """Raised when a database is attempted to be created in a database that already has tables."""
+
+    def __init__(self, database, table_names):
+        super().__init__(database, "Attempting to initialize database, but database already contains tables: {}".format(table_names))
+
+class DatabaseInitializationError(DatabaseError):
+    """Raised when a database initialization fails."""
+
+    def __init__(self, database, msg):
+        super().__init__(database, "Problem while initializing the database: {}".format(msg))
+
+class DatabaseOperationError(DatabaseError):
+    """Raised when an error occurs during the performing of an sql statement in the database."""
+
+    def __init__(self, database, msg):
+        super().__init__(database, "Problem while executing sql statement in database: {}".format(msg))
 
 class InconsistentDatabaseError(DatabaseError):
     """Raised when a database contains inconsistent informaiton that should not be possible"""
@@ -109,6 +141,23 @@ class NoEnergyInRangeError(DatabaseError):
     def __init__(self, database, molecule_name, method, basis, cp, tag, e_min, e_max):
         super().__init__(database, "Unable to generate training set for molecule'{}' with the model '{}/{}' with e_min = '{}' and e_max = '{}'".format(molecule_name, method, basis, e_min, e_max))
 
+class NoPendingCalculationsError(DatabaseError):
+    """Raised when a user asks for a new calculation to run but all calculations in the database are either running, completed, or failed"""
+
+    def __init__(self, database):
+        super().__init__(database, "No more pending calculations in the database.")
+
+class NoSuchMoleculeError(DatabaseError):
+    """Raised when a user tries to query for a molecule that does not exist"""
+
+    def __init__(self, database, mol_hash):
+        super().__init__(database, "No molecule in database with hash {}".format(mol_hash))
+
+class StandardOrderError(DatabaseError):
+    """Raised when a user tries to put a configuration into the database not in standard order."""
+
+    def __init__(self, database, molecule):
+        super().__init__(database, "User attempted to put molecule in database which was not in standard order.  XYZ: {}".format(molecule.to_xyz()))
 """
 --------------------------- InputException
 """
@@ -191,3 +240,9 @@ class StopLoop(Exception):
     def __init__(self, name):
         self.name = name
         super().__init__("Error, this exception should always be caught")
+
+class FunctionNotImplementedError(PotentialFittingError):
+    """Raised when the user tries to use a feature that is not implemented."""
+
+    def __init__(self, function):
+        super().__init__("Sorry, {} is not implemented yet. :(".format(function))

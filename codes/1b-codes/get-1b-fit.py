@@ -60,7 +60,7 @@ excl14 = config.getlist("fitting", "excluded_pairs_14", int)[0]
 # Obtain charges (in the order of input), pols and polfacs
 chg = config.getlist("fitting", "charges", float)[0]
 pol = config.getlist("fitting", "polarizabilities", float)[0]
-polfac = config.getlist("fitting", "polarizability_fractions", float)[0]
+polfac = config.getlist("fitting", "polarizability_factors", float)[0]
 
 # Max and min values of k and d (even if you don't use d)
 k_min = config.getfloat("fitting", "k_min")

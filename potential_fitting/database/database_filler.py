@@ -1,56 +1,86 @@
 # external package imports
-import sys, os, sqlite3
+import sys
 
 # absolute module imports
 from potential_fitting import calculator
+from potential_fitting.calculator import Model
 from potential_fitting.exceptions import LibraryCallError
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, files
 
 # local module imports
 from .database import Database
 
-def fill_database(settings_path, database_path):
-    """
-    Loops over all the uncalculated energies in a database and calculates them.
 
-    Can be interrupted, however the energy running when the interrupt occured will be stuck set to running. Call
-    clean_database() to reset it to pending.
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=sys.maxsize):
+    """
+    Loops over uncalculated energies in a database and calculates them.
+
+    Results are submitted to the database in batches. If interrupted
+    all results since the last batch will be stuck on "running".
+    call clean_database() to set them back to pending.
 
     Args:
         settings_path       - Local path to the file with all relevant settings information.
-        database_path       - Local path to the database file. ".db" will be appending if it does not already end in
-                ".db".
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        client_name         - Name of the client performing these calculations.
+        calculation_count   - Maximum number of calculations to perform. Default is unlimited.
 
     Returns:
         None.
     """
 
     # open the database
-    with Database(database_path) as database:
+    with Database(database_config_path) as database:
 
-        print("Filling database {}".format(database_path))
-        # parse settings file
-        settings = SettingsReader(settings_path)
+        print("Calculating Missing Energies...")
+
+        calc = calculator.get_calculator(settings_path)
 
         counter = 0
+        successes = 0
+        failures = 0
+
+        calculation_results = []
         
-        for calculation in database.missing_energies():
+        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=calculation_count):
             
             counter += 1
             print_progress(counter)
 
             try:
-                # calculate the missing energy
-                energy = calculator.calculate_energy(calculation.molecule, calculation.fragments, calculation.method + "/" + calculation.basis, calculation.cp, settings)
-                # update the energy in the database
-                database.set_energy(calculation.job_id, energy, "some/log/path")
-            except LibraryCallError:
-                database.set_failed(calculation.job_id, "some/log/path")
-            
-            # save changes to the database
-            database.save()
+                model = Model(method, basis, use_cp)
 
-        print("\nFilling of database {} successful".format(database_path))
+                # calculate the missing energy
+                energy, log_path = calc.calculate_energy(molecule, model, frag_indices)
+                with open(log_path, "r") as log_file:
+                    log_text = log_file.read()
+                calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, True, energy, log_text))
+                successes += 1
+            
+            except LibraryCallError as e:
+                if e.log_path is not None:
+                    with open(e.log_path, "r") as log_file:
+                        log_text = log_file.read()
+                    if log_text is "":
+                        log_text = "<Log file was empty.>"
+                    calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, log_text))
+                else:
+                    log_text = "<Error occurred without producing log file.>"
+                    calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, False, 0, log_text))
+                failures += 1
+
+
+            if len(calculation_results) >= database.get_batch_size():
+                database.set_properties(calculation_results)
+                calculation_results = []
+                # save changes to the database
+                database.save()
+
+        database.set_properties(calculation_results)
+
+        print("Done! Performed {} calculations. {} Successes and {} Failures.".format(counter, successes, failures))
+
 
 def generate_inputs_from_database(settings_path, database_path):
     """
@@ -168,7 +198,7 @@ def print_progress(counter):
         None.
     """
 
-    s = "{:6d}".format(counter)
     if counter % 10 == 0:
-       s += "\n" 
-    print(s, end="", flush=True)
+        s = "Beginning calculation number {:6d}.".format(counter)
+        s += "\n"
+        print(s, end="", flush=True)

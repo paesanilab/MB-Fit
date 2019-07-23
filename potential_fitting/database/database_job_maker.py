@@ -1,56 +1,55 @@
+# external package imports
+import os, sys
+
 # absolute module imports
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, files
 from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
 
 # local module imports
 from .database import Database
 
-def make_all_jobs(settings_path, database_path, job_dir):
+
+def make_all_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
     Args:
         settings_path       - Local path to the ".ini" file with relevent settings.
-        database_path       - Local path to the database file. ".db" will be appended if it does not already end in
-                ".db".
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        client_name         - Name of the client that will perform these jobs
         job_dir             - Local path to the directory to place the job files in.
+        tags                - Onlt  make jobs for calculations marked with at least one of these tags.
+        num_jobs            - The number of jobs to generate. Unlimted if None.
 
     Returns:
         None.
     """
 
+    if num_jobs is None:
+        num_jobs = sys.maxsize
+
     # open the database
-    with Database(database_path) as database:
+    with Database(database_config_path) as database:
+        for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=num_jobs):
+            write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir)
 
-        for calculation in database.missing_energies():
-            write_job(settings_path, calculation, job_dir)
 
-def make_job(settings_path, database_path, job_dir):   
+def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir):
     """
-    Makes a single Job file for an energy that still needs to be calculated in this Database.
+    Makes a Job file for a specific calculation.
+
+    cp is not the same as use_cp. Some models have cp, but should not
+    use cp for some of their energies.
 
     Args:
         settings_path       - Local path to the ".ini" file with relevent settings
-        database_path       - Local path to the database file. ".db" will be appended if it does not already end in
-                ".db".
-        job_dir             - Local path to the directory to place the job file in.
-
-    Returns:
-        None.
-    """
-
-    # open the database
-    with Database(database_path) as database:
-
-        write_job(settings_path, database.get_missing_energy(), job_dir)
-
-def write_job(settings_path, job, job_dir):
-    """
-    Makes a Job file for a specific Calculation.
-
-    Args:
-        settings_path       - Local path to the ".ini" file with relevent settings
-        job                 - The Job object (see database.py) with the information needed to make a job
+        molecule            - The molecule of this calculation.
+        method              - Method to use to calculate the energy.
+        basis               - Basis to use to calculate the energy.
+        cp                  - True if the model has counterpoise correction.
+        use_cp              - True if counterpoise correction should be used for this calculation.
+        frag_indices        - List of indices of fragments to include in the calculation.
         job_dir             - Local path to the directory to place the job file in.
 
     Returns:
@@ -61,15 +60,39 @@ def write_job(settings_path, job, job_dir):
     # parse settings file
     settings = SettingsReader(settings_path)
 
-    with open(job_dir + "/job_{}.py".format(job.job_id), "w") as job_file, open("job_template.py", "r") as job_template:
+    i = 1
+
+    file_path = job_dir + "/job_{}.py".format(i)
+
+    while os.path.exists(file_path):
+        i += 1
+
+        file_path = job_dir + "/job_{}.py".format(i)
+
+    files.init_file(file_path)
+
+    with open(file_path, "w") as job_file, open(os.path.dirname(os.path.abspath(__file__)) + "/job_template.py", "r") as job_template:
         job_string = "".join(job_template.readlines())
 
         job_file.write(job_string.format(**{
-            "job_id":       job.job_id,
-            "molecule":     job.molecule.to_xyz(job.fragments, job.cp).replace("\n", "\\n"),
-            "method":       job.method,
-            "basis":        job.basis,
+            # TODO
+            "whole_molecule": molecule.to_xyz().replace("\n", "\\n"),
+            "charges": [frag.get_charge() for frag in molecule.get_fragments()],
+            "spins": [frag.get_spin_multiplicity() for frag in molecule.get_fragments()],
+            "symmetries": [frag.get_symmetry() for frag in molecule.get_fragments()],
+            "SMILES": ",".join([frag.get_SMILE() for frag in molecule.get_fragments()]),
+            "atom_counts": [frag.get_num_atoms() for frag in molecule.get_fragments()],
+            "names": [frag.get_name() for frag in molecule.get_fragments()],
+            "total_atoms": molecule.get_num_atoms(),
+            "molecule":     molecule.to_xyz(frag_indices, cp).replace("\n", "\\n"),
+            "frag_indices": frag_indices,
+            "method":       method,
+            "basis":        basis,
+            "cp":           cp,
+            "use_cp":       use_cp,
             "num_threads":  settings.get("psi4", "num_threads"),
             "memory":       settings.get("psi4", "memory"),
-            "format":       "{}"
+            "format":       "{}",
+            "total_charge": sum([frag.get_charge() for frag in molecule.get_fragments()]),
+            "total_spin": sum([frag.get_spin_multiplicity() for frag in molecule.get_fragments()])
         }))

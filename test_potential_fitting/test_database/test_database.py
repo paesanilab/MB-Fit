@@ -1,10 +1,23 @@
-import unittest, os, psycopg2, random
+import unittest, os, random
 
 from potential_fitting.database import Database
 from potential_fitting.exceptions import InvalidValueError
 from potential_fitting.molecule import Atom, Fragment, Molecule
 
+# only import psycopg2 if it is installed.
+try:
+	import psycopg2
+except ModuleNotFoundError:
+    pass
 
+def psycopg2_installed():
+    try:
+        import psycopg2
+        return True
+    except ModuleNotFoundError:
+        return False
+
+@unittest.skipUnless(psycopg2_installed(), "psycopg2 is not installed, so database cannot be tested.")
 class TestDatabase(unittest.TestCase):
 
     @staticmethod

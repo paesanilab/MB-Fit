@@ -2,8 +2,12 @@
 import itertools
 from math import factorial
 
+# absolute module imports
+from potential_fitting.utils import SettingsReader
+
 # local module imports
-from . import calculator
+from .calculator_utils import get_calculator
+from .model import Model
 
 # ****** I'm not gonna clean this up because its on the top of the rework/remove chopping block ******
 # ****** currently only used by driver.py ******
@@ -44,7 +48,7 @@ def build_frag_indices(index_list, mbdecomp):
         combinations_arr.append(size_n_combinations)
     return combinations_arr
 
-def get_nmer_energies(molecule, settings):
+def get_nmer_energies(settings_path, molecule):
 
     """ 
     Computes the energy of a molecule and the MB decomposition,
@@ -54,6 +58,7 @@ def get_nmer_energies(molecule, settings):
     Output: The calculated energy of the molecule. This can either have
             only one energy or many energies (from MB decomposition).
     """
+    settings = SettingsReader(settings_path)
     if settings.getboolean("MBdecomp", "mbdecomp"):
         # if multibody decomposition is requested, get a list of all possible combinations of fragment indices sorted into sub lists by size
         combinations = build_frag_indices(range(len(molecule.fragments)), True)
@@ -72,8 +77,10 @@ def get_nmer_energies(molecule, settings):
         # for each combination of size n...
         for combination in size_n_combinations:
             # calculate the energy of this set of fragments
-            energy = calculator.calculate_energy(molecule, combination, settings.get("model", "method") + "/" + settings.get("model", "basis"), settings.getboolean("model", "cp"), settings)
-            
+            calc = get_calculator(settings_path, logging=True)
+            energy, log_path = calc.calculate_energy(molecule, Model(settings.get("model", "method"),
+                                                                     settings.get("model", "basis"),
+                                                                     settings.getboolean("model", "cp")), combination)
             # build output_str with 9
             output_str += "%.8f"%energy + " "
             molecule.energies[combination] = energy

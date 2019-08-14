@@ -1,0 +1,49 @@
+<> fragments(1) <>
+
+A1B2C2
+
+<> atoms (5) <>
+
+A1a:B1a:B2a:C1a:C2a
+
+<> permutations (4) <>
+
+0:1:2:3:4
+0:1:2:4:3
+0:2:1:3:4
+0:2:1:4:3
+
+<> variables (10) <>
+
+ 0 :  B1(a) <===>  B2(a) : x-intra-B+B
+ 1 :  C1(a) <===>  C2(a) : x-intra-C+C
+ 2 :  A1(a) <===>  B1(a) : x-intra-A+B
+ 3 :  A1(a) <===>  B2(a) : x-intra-A+B
+ 4 :  A1(a) <===>  C1(a) : x-intra-A+C
+ 5 :  A1(a) <===>  C2(a) : x-intra-A+C
+ 6 :  B1(a) <===>  C1(a) : x-intra-B+C
+ 7 :  B1(a) <===>  C2(a) : x-intra-B+C
+ 8 :  B2(a) <===>  C1(a) : x-intra-B+C
+ 9 :  B2(a) <===>  C2(a) : x-intra-B+C
+
+<> 1 degree <>
+
+10 possible 1 degree monomials
+5 <<== accepted 1 degree terms
+
+<> 2 degree <>
+
+55 possible 2 degree monomials
+22 <<== accepted 2 degree terms
+
+<> 3 degree <>
+
+220 possible 3 degree monomials
+0 <<== accepted 3 degree terms
+
+<> 4 degree <>
+
+715 possible 4 degree monomials
+221 <<== accepted 4 degree terms
+
+ Total number of terms: 248

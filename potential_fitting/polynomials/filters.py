@@ -168,8 +168,9 @@ class AndFilter(Filter):
             False if this Filter filters out this monomial, True otherwise.
         """
 
-        # simply check if this monomial would be filtered by both filter1 and filter2
-        return self.filter1.keep(monomial, variables) and self.filter2.keep(monomial, variables)
+        # if this monomial is kept by either filter1 or filter2, then it is not filtered out by both of them,
+        # so keep this monomial.
+        return self.filter1.keep(monomial, variables) or self.filter2.keep(monomial, variables)
 
 class OrFilter(Filter):
     """
@@ -201,8 +202,9 @@ class OrFilter(Filter):
             False if this Filter filters out this monomial, True otherwise.
         """
 
-        # simply check if this monomial would be filtered by either filter1 or filter2
-        return self.filter1.keep(monomial, variables) or self.filter2.keep(monomial, variables)
+        # if this monomial is kept by both filter1 and filter2, then it is not filtered out by either of them,
+        # so keep this monomial.
+        return self.filter1.keep(monomial, variables) and self.filter2.keep(monomial, variables)
 
 class IndividualDegreeFilter(Filter):
     """

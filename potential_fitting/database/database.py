@@ -1,11 +1,19 @@
 # external package imports
-import itertools, psycopg2, numpy as np, copy, sys, os
+import itertools, numpy as np, copy, sys, os
 
 # absolute module imports
 from potential_fitting.molecule import Atom, Fragment, Molecule
-from potential_fitting.exceptions import DatabaseOperationError, DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, NoPendingCalculationsError, StandardOrderError
+from potential_fitting.exceptions import PotentialFittingError, NoSuchMoleculeError, DatabaseOperationError, \
+        DatabaseInitializationError, DatabaseNotEmptyError, DatabaseConnectionError, InvalidValueError, \
+        NoPendingCalculationsError, StandardOrderError, LibraryNotAvailableError
 from potential_fitting.utils import SettingsReader
-from psycopg2 import OperationalError
+
+# only import psycopg2 if it is installed.
+try:
+    import psycopg2
+    from psycopg2 import OperationalError
+except ModuleNotFoundError:
+    pass
 
 class Database():
 
@@ -27,6 +35,12 @@ class Database():
         Returns:
             A new Database object.
         """
+
+        # Check if psycopg2 is installed.
+        try:
+            import psycopg2
+        except ModuleNotFoundError:
+            raise LibraryNotAvailableError("psycopg2")
 
         self.batch_size = 0
         self.set_batch_size(batch_size)

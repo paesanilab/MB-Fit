@@ -3,7 +3,7 @@ from potential_fitting.utils import files
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import (LibraryNotAvailableError, LibraryCallError)
 
-from . import Calculator
+from .calculator import Calculator
 
 try:
     import psi4

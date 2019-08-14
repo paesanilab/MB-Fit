@@ -1,9 +1,33 @@
-import unittest, os, random, psycopg2
+
+import unittest, os, random
 
 from potential_fitting.database import Database
-from potential_fitting.exceptions import InvalidValueError
+from potential_fitting.exceptions import InvalidValueError, DatabaseConnectionError
 from potential_fitting.molecule import Atom, Fragment, Molecule
 
+# only import psycopg2 if it is installed.
+try:
+	import psycopg2
+except ModuleNotFoundError:
+    pass
+
+def psycopg2_installed():
+    try:
+        import psycopg2
+        return True
+    except ModuleNotFoundError:
+        return False
+
+def local_db_installed():
+    try:
+        config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user1.ini")
+        database = Database(config)
+        database.close()
+        return True
+    except DatabaseConnectionError:
+        return False
+
+@unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
 class TestDatabase(unittest.TestCase):
 
     @staticmethod
@@ -907,7 +931,6 @@ class TestDatabase(unittest.TestCase):
         for molecule, energies in molecule_energies_pairs:
             self.assertIn((molecule.get_reorder_copy(["I", "H2O"], ["I", "H1.HO1"]), [round(energies[0], 5), round(energies[1], 5), round(energies[2], 5), round(energies[3], 5), round(energies[4], 5)]),
                           calculations)
-
 
     def test_read_privileges(self):
 

@@ -214,10 +214,8 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
 
     # number of configs using a distribution over A
     num_A_configs = num_configs // 2
-    print("Will generate {} configs over the A distribution.".format(num_A_configs))
     # number of configs using a distribution over temp
     num_temp_configs = num_configs - num_A_configs
-    print("Will generate {} configs over the temperature distribution.".format(num_temp_configs))
 
     # deep copy the frequencies, reduced masses, and normal modes input array before we change it, and sort them so
     # that they are all sorted from lowest frequency to highest.
@@ -273,9 +271,12 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
     else:
         temp_min = frequencies[-1] / 100
         num_temp_configs = num_configs
+        num_A_configs = 0
         if temperature is not None:
             temp_min = temperature
 
+    print("Will generate {} configs over the A distribution.".format(num_A_configs))
+    print("Will generate {} configs over the temperature distribution.".format(num_temp_configs))
     # initialize temp to the temp minimum, it will be increased each iteration of the loop
     temp = temp_min
 
@@ -355,51 +356,51 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
             A_factor = 1
             A_addend = (A_max - A_min) / (num_A_configs - 1)
 
-    print("Generating A Distribution Configs...")
-
-    # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
-    with open(config_path, "a") as config_file:
-
-        # initialize A to the A minimum, it will be increased each iteration of the loop
-        A = A_min
+        print("Generating A Distribution Configs...")
 
         # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
         with open(config_path, "a") as config_file:
 
-            # loop over each A distribution config to generate
-            for config_index in range(num_A_configs):
+            # initialize A to the A minimum, it will be increased each iteration of the loop
+            A = A_min
 
-                # fill G with all 0s
-                G = [[0 for i in range(dim)] for k in range(dim)] # sqrt of the mass scaled covariance matrix
+            # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
+            with open(config_path, "a") as config_file:
 
-                # for each normal mode, frequency pair, update d and G.
-                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
-                        reduced_masses, normal_modes):
+                # loop over each A distribution config to generate
+                for config_index in range(num_A_configs):
 
-                    # check if frequency is high enough to have an effect
-                    if frequency >= freq_cutoff:
+                    # fill G with all 0s
+                    G = [[0 for i in range(dim)] for k in range(dim)] # sqrt of the mass scaled covariance matrix
 
-                        # if A is significantly larger than 0, then set this normal mode's d by the formula
-                        if A > 1.0e-8:
-                            d = 0.5 / (numpy.tanh(0.5 / A) * frequency)
+                    # for each normal mode, frequency pair, update d and G.
+                    for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
+                            reduced_masses, normal_modes):
 
-                        # if A is not significantly larger than 0 (so it is close to 0), then we must use a different
-                        # formula to avoid divide-by-zero error.
-                        else:
-                            d = 0.5 / frequency
+                        # check if frequency is high enough to have an effect
+                        if frequency >= freq_cutoff:
 
-                        # G = ( d * U * U^T )^(1/2), where U are normal modes
-                        for i in range(dim):
-                            for j in range(dim):
-                                G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
+                            # if A is significantly larger than 0, then set this normal mode's d by the formula
+                            if A > 1.0e-8:
+                                d = 0.5 / (numpy.tanh(0.5 / A) * frequency)
 
-                make_config(config_file, config_index + num_temp_configs + 1, molecule, G, random)
+                            # if A is not significantly larger than 0 (so it is close to 0), then we must use a different
+                            # formula to avoid divide-by-zero error.
+                            else:
+                                d = 0.5 / frequency
 
-                # increase A
-                A = A * A_factor + A_addend
+                            # G = ( d * U * U^T )^(1/2), where U are normal modes
+                            for i in range(dim):
+                                for j in range(dim):
+                                    G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
+
+                    make_config(config_file, config_index + num_temp_configs + 1, molecule, G, random)
+
+                    # increase A
+                    A = A * A_factor + A_addend
 
 
-    print("... Successfully generated A distribution configs!")
+        print("... Successfully generated A distribution configs!")
 
     print("Normal Distribution Configuration generation complete.")
 

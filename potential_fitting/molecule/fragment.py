@@ -105,8 +105,17 @@ class Fragment(object):
         # parse the bond of the next SMILE string
         parts = []
         while(SMILE.startswith('(')):
-            parts.append(SMILE[1:SMILE.index(')')])
-            SMILE = SMILE[SMILE.index(')') + 1:]
+            num_nested_parens = 0
+            for index, char in enumerate(SMILE[1:]):
+                if char is '(':
+                    num_nested_parens += 1
+                if char is ')':
+                    if num_nested_parens == 0:
+                        parts.append(SMILE[1:index + 1])
+                        SMILE = SMILE[index + 2:]
+                        break
+                    else:
+                        num_nested_parens -= 1
 
         if len(SMILE) > 0:
             parts.append(SMILE)

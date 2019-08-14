@@ -1,7 +1,7 @@
 import unittest, os, random
 
 from potential_fitting.database import Database
-from potential_fitting.exceptions import InvalidValueError
+from potential_fitting.exceptions import InvalidValueError, DatabaseConnectionError
 from potential_fitting.molecule import Atom, Fragment, Molecule
 
 # only import psycopg2 if it is installed.
@@ -17,7 +17,16 @@ def psycopg2_installed():
     except ModuleNotFoundError:
         return False
 
-@unittest.skipUnless(psycopg2_installed(), "psycopg2 is not installed, so database cannot be tested.")
+def local_db_installed():
+    try:
+        config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.ini")
+        database = Database(config)
+        database.close()
+        return True
+    except DatabaseConnectionError:
+        return False
+
+@unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
 class TestDatabase(unittest.TestCase):
 
     @staticmethod

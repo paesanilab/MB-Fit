@@ -57,16 +57,9 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_molecule['{}']\n".format("A1B2X2"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "B1", "a", "x-intra-A+B"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "B2", "a", "x-intra-A+B"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "X1", "a", "x-intra-A+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "X2", "a", "x-intra-A+X"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "B2", "a", "x-intra-B+B"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "X1", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "X2", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "X1", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "X2", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("X1", "a", "X2", "a", "x-intra-X+X"), lines)
 
-        self.assertEqual(len(lines), 11)
+        self.assertEqual(len(lines), 4)
 
     def test_A1B2X2_none(self):
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
@@ -77,16 +70,8 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_molecule['{}']\n".format("A1B2X2"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "B1", "a", "x-intra-A+B"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "B2", "a", "x-intra-A+B"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "X1", "a", "x-intra-A+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "X2", "a", "x-intra-A+X"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "B2", "a", "x-intra-B+B"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "X1", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "X2", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "X1", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "X2", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("X1", "a", "X2", "a", "x-intra-X+X"), lines)
-
-        self.assertEqual(len(lines), 11)
+        self.assertEqual(len(lines), 4)
 
     def test_A1B2X2_partly_inter(self):
         with self.assertRaises(InconsistentValueError):
@@ -213,14 +198,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_molecule['{}']\n".format("C1D2"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "B1", "a", "x-intra-A+B"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "B2", "a", "x-intra-A+B"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "X1", "a", "x-intra-A+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("A1", "a", "X2", "a", "x-intra-A+X"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "B2", "a", "x-intra-B+B"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "X1", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B1", "a", "X2", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "X1", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "X2", "a", "x-intra-B+X"), lines)
-        self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("X1", "a", "X2", "a", "x-intra-X+X"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("C1", "b", "D1", "b", "x-intra-C+D"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("C1", "b", "D2", "b", "x-intra-C+D"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("D1", "b", "D2", "b", "x-intra-D+D"), lines)
@@ -240,7 +218,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("X2", "a", "D1", "b", "x-inter-D+X"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("X2", "a", "D2", "b", "x-inter-D+X"), lines)
 
-        self.assertEqual(len(lines), 30)
+        self.assertEqual(len(lines), 23)
 
     def test_A1B2_A1B2_purely_inter(self):
         generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2_A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_A1B2.in"))

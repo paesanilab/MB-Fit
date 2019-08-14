@@ -1,3 +1,4 @@
+
 import unittest, os, random
 
 from potential_fitting.database import Database
@@ -19,7 +20,7 @@ def psycopg2_installed():
 
 def local_db_installed():
     try:
-        config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.ini")
+        config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user1.ini")
         database = Database(config)
         database.close()
         return True
@@ -111,12 +112,25 @@ class TestDatabase(unittest.TestCase):
         return molecule
 
     def setUp(self):
-        self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local.ini")
+        self.config = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user1.ini")
+        self.config2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user2.ini")
+        self.config3 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user3.ini")
+
         self.database = Database(self.config)
+        self.database2 = Database(self.config2)
+        self.database3 = Database(self.config3)
+
         self.database.annihilate(confirm="confirm")
+        self.database.save()
 
     def tearDown(self):
+        self.database2.close()
+        self.database3.close()
+        self.database.annihilate(confirm="confirm")
+        self.database.save()
         self.database.close()
+
+
 
     def test_set_and_get_batch_size(self):
         self.database.set_batch_size(8)
@@ -918,5 +932,483 @@ class TestDatabase(unittest.TestCase):
             self.assertIn((molecule.get_reorder_copy(["I", "H2O"], ["I", "H1.HO1"]), [round(energies[0], 5), round(energies[1], 5), round(energies[2], 5), round(energies[3], 5), round(energies[4], 5)]),
                           calculations)
 
+    def test_read_privileges(self):
+
+        # First, create the training set owned by test_user1
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O"], ["H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 101)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            binding = energies[index][0] - opt_energy
+            self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
+
+        self.database.save()
+
+        # Now, test_user2 tries to read the training set without permissions.
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                list(self.database2.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                list(self.database2.export_calculations(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                list(self.database2.get_failed("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
+                raise
+
+        # test_user2 is given read privileges, and can now perform read operations.
+        self.database.grant_read_privilege("test_user2", "database_test")
+        self.database.save()
+
+        training_set = list(self.database2.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                   "database_test"))
+        self.assertEqual(len(training_set), 101)
+
+        calculations = list(self.database2.export_calculations(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+        self.assertEqual(len(calculations), 101)
+
+        failed = list(self.database2.get_failed("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+        self.assertEqual(len(failed), 0)
+
+        # test_user2 gets their read privileges revoked, and can no longer perform read operations.
+
+        self.database.revoke_read_privilege("test_user2", "database_test")
+        self.database.save()
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                list(
+                    self.database2.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                                    "database_test"))
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                list(self.database2.export_calculations(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                                        "database_test"))
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                list(self.database2.get_failed("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
+                raise
+
+    def test_write_privileges(self):
+
+        # First, create the training set owned by test_user1
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O"], ["H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 101)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            binding = energies[index][0] - opt_energy
+            self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
+
+        self.database.save()
+
+        # Now, test_user2 tries to write to the training set without permissions.
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.import_calculations([(molecule, energy) for molecule, energy in zip(molecules, energies)], "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        # test_user2 is given write privileges, and can now perform write operations.
+        self.database.grant_write_privilege("test_user2", "database_test")
+        self.database.save()
+
+        molecules = []
+        energies = []
+        for i in range(10):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database2.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+
+        calculations = self.database2.get_all_calculations("testclient", "database_test", calculations_to_do=10)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O"], ["H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database2.set_properties(calculation_results)
+        self.database2.save()
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 111)
+
+        molecules = []
+        energies = []
+        for i in range(10):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database2.import_calculations([(molecule, energy) for molecule, energy in zip(molecules, energies)],
+                                           "testmethod", "testbasis", False, "database_test")
+        self.database2.save()
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 121)
+
+        self.database2.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
+        self.database2.save()
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 111)
+
+        self.database2.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
+        self.database2.save()
+
+        # with all calculations deleted, there will be no optimized energy for H2O
+        with self.assertRaises(psycopg2.InternalError):
+            training_set = list(
+                self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                               "database_test"))
+
+        self.database2.import_calculations([(molecule, energy) for molecule, energy in zip(molecules, energies)],
+                                           "testmethod", "testbasis", False, "database_test")
+        self.database2.save()
+
+        # test_user2 gets their write privileges revoked, and can no longer perform write operations.
+        self.database.revoke_write_privilege("test_user2", "database_test")
+        self.database.save()
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.import_calculations([(molecule, energy) for molecule, energy in zip(molecules, energies)], "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
+                raise
+
+    def test_admin_privileges(self):
+
+        # First, create the training set owned by test_user1
+
+        opt_mol = self.get_water_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(100):
+            molecules.append(self.get_water_monomer())
+            energies.append([random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=101)
+
+        calculation_results = []
+
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["H2O"], ["H1.HO1"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 101)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            binding = energies[index][0] - opt_energy
+            self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
+
+        self.database.save()
+
+        # Now, test_user2 tries to change permissions to the training set without admin permissions.
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.grant_read_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.grant_write_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.grant_admin_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_read_privilege("test_user1", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_write_privilege("test_user1", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_admin_privilege("test_user1", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+
+        # test_user2 is given admin privileges, and can now perform admin operations.
+        self.database.grant_admin_privilege("test_user2", "database_test")
+        self.database.save()
+
+        self.database2.revoke_admin_privilege("test_user1", "database_test")
+        self.database2.revoke_write_privilege("test_user1", "database_test")
+        self.database2.revoke_read_privilege("test_user1", "database_test")
+
+        # Admins cannot revoke the last admin's privileges.
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_admin_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 is the last admin of this training set and many not be removed", str(e))
+                raise
+
+        self.database2.grant_admin_privilege("test_user1", "database_test")
+        self.database2.grant_write_privilege("test_user1", "database_test")
+        self.database2.grant_read_privilege("test_user1", "database_test")
+
+        # test_user2 gets their write privileges revoked, and can no longer perform write operations.
+        self.database.revoke_admin_privilege("test_user2", "database_test")
+        self.database.save()
+
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.grant_read_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.grant_write_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.grant_admin_privilege("test_user2", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_read_privilege("test_user1", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_write_privilege("test_user1", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
+        with self.assertRaises(psycopg2.InternalError):
+            try:
+                self.database2.revoke_admin_privilege("test_user1", "database_test")
+            except psycopg2.InternalError as e:
+                self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
+                raise
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestDatabase)

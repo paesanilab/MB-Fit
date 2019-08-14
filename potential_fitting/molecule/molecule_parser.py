@@ -34,7 +34,7 @@ def xyz_to_molecules(file_path, settings = None):
 
         with open(file_path, "r") as xyz_file:
             for line in xyz_file.readlines()[2:2 + total_atoms]:
-                SMILE += line.split()[0]
+                SMILE += "[" + line.split()[0] + "]"
 
         SMILE_per_fragment = [SMILE]
 
@@ -93,7 +93,7 @@ def parse_training_set_file(file_path, settings = None):
 
         with open(file_path, "r") as xyz_file:
             for line in xyz_file.readlines()[2:2 + total_atoms]:
-                SMILE += line.split()[0]
+                SMILE += "[" + line.split()[0] + "]"
 
         SMILE_per_fragment = [SMILE]
 

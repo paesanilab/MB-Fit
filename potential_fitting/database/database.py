@@ -174,6 +174,44 @@ class Database():
 
         return self.batch_size
 
+    def get_notices(self):
+        """
+        Gets a list of all notices received from the Database. A notice is a logging message or warning that does
+        not crash the program.
+        Args:
+            None.
+        Returns:
+            A list of all notices that have been received since this Database object was created.
+        """
+
+        return self.connection.notices
+
+    def get_last_notice(self):
+        """
+        Gets the last notice received from the Database. A notice is a logging message or warning that does not crash
+        the program.
+        Args:
+            None.
+        Returns:
+            The last notice received from the Database.
+        """
+
+        if len(self.connection.notices) > 0:
+            return self.connection.notices[-1]
+        else:
+            return None
+
+    def clear_notices(self):
+        """
+        Clears the list of notices for this Database. A notice is a logging message or warning that does not crash
+        the program.
+        Args:
+            None.
+        Returns:
+            None.
+        """
+        self.connection.notices = []
+
     def create(self):
         """
         Creates all the tables, procedures, and sequences in the database.
@@ -689,6 +727,8 @@ class Database():
 
     def get_training_set(self, names, SMILES, method, basis, cp, *tags):
 
+        self.clear_notices()
+
         model_name = "{}/{}/{}".format(method, basis, cp)
         batch_offset = 0
 
@@ -727,7 +767,10 @@ class Database():
 
             batch_offset += self.batch_size
 
-            if batch_offset > max_count:
+            if batch_offset > max_count:                
+                if self.get_last_notice() is not None and "Multiple optimized geometries" in self.get_last_notice():
+                    print(self.get_last_notice(), "Using the lowest energy optimized geometry to calculate deformation"
+                                                              " energies for this training set.")
                 return
 
     def get_2B_training_set(self, molecule_name, names, SMILES, method, basis, cp, *tags):

@@ -460,7 +460,12 @@ def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_pa
 
     ttm_script_path = os.path.join(codes_path, "get_2b_TTM_codes.py")
 
-    system.call("python", ttm_script_path, "{}/{}".format(original_dir, settings_path), "{}/{}".format(original_dir, config_path), molecule_in)
+    if not settings_path.startswith("/"):
+        settings_path = "{}/{}".format(original_dir, settings_path)
+    if not config_path.startswith("/"):
+        config_path = "{}/{}".format(original_dir, config_path)
+
+    system.call("python", ttm_script_path, settings_path, config_path, molecule_in)
 
     os.chdir(original_dir)   
  

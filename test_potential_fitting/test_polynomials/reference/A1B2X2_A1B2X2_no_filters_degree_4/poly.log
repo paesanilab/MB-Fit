@@ -1,0 +1,99 @@
+<> fragments(2) <>
+
+A1B2X2
+A1B2X2
+
+<> atoms (10) <>
+
+A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b
+
+<> permutations (32) <>
+
+0:1:2:3:4:5:6:7:8:9
+0:1:2:3:4:5:6:7:9:8
+0:1:2:3:4:5:7:6:8:9
+0:1:2:3:4:5:7:6:9:8
+0:1:2:4:3:5:6:7:8:9
+0:1:2:4:3:5:6:7:9:8
+0:1:2:4:3:5:7:6:8:9
+0:1:2:4:3:5:7:6:9:8
+0:2:1:3:4:5:6:7:8:9
+0:2:1:3:4:5:6:7:9:8
+0:2:1:3:4:5:7:6:8:9
+0:2:1:3:4:5:7:6:9:8
+0:2:1:4:3:5:6:7:8:9
+0:2:1:4:3:5:6:7:9:8
+0:2:1:4:3:5:7:6:8:9
+0:2:1:4:3:5:7:6:9:8
+5:6:7:8:9:0:1:2:3:4
+5:6:7:8:9:0:1:2:4:3
+5:6:7:8:9:0:2:1:3:4
+5:6:7:8:9:0:2:1:4:3
+5:6:7:9:8:0:1:2:3:4
+5:6:7:9:8:0:1:2:4:3
+5:6:7:9:8:0:2:1:3:4
+5:6:7:9:8:0:2:1:4:3
+5:7:6:8:9:0:1:2:3:4
+5:7:6:8:9:0:1:2:4:3
+5:7:6:8:9:0:2:1:3:4
+5:7:6:8:9:0:2:1:4:3
+5:7:6:9:8:0:1:2:3:4
+5:7:6:9:8:0:1:2:4:3
+5:7:6:9:8:0:2:1:3:4
+5:7:6:9:8:0:2:1:4:3
+
+<> variables (31) <>
+
+ 0 :  B1(a) <===>  B2(a) : x-intra-B+B
+ 1 :  A1(a) <===>  B1(a) : x-intra-A+B
+ 2 :  A1(a) <===>  B2(a) : x-intra-A+B
+ 3 :  B1(b) <===>  B2(b) : x-intra-B+B
+ 4 :  A1(b) <===>  B1(b) : x-intra-A+B
+ 5 :  A1(b) <===>  B2(b) : x-intra-A+B
+ 6 :  A1(a) <===>  A1(b) : x-inter-A+A
+ 7 :  A1(a) <===>  B1(b) : x-inter-A+B
+ 8 :  A1(a) <===>  B2(b) : x-inter-A+B
+ 9 :  A1(a) <===>  X1(b) : x-inter-A+X
+10 :  A1(a) <===>  X2(b) : x-inter-A+X
+11 :  B1(a) <===>  A1(b) : x-inter-A+B
+12 :  B2(a) <===>  A1(b) : x-inter-A+B
+13 :  B1(a) <===>  B1(b) : x-inter-B+B
+14 :  B1(a) <===>  B2(b) : x-inter-B+B
+15 :  B2(a) <===>  B1(b) : x-inter-B+B
+16 :  B2(a) <===>  B2(b) : x-inter-B+B
+17 :  B1(a) <===>  X1(b) : x-inter-B+X
+18 :  B1(a) <===>  X2(b) : x-inter-B+X
+19 :  B2(a) <===>  X1(b) : x-inter-B+X
+20 :  B2(a) <===>  X2(b) : x-inter-B+X
+21 :  X1(a) <===>  A1(b) : x-inter-A+X
+22 :  X2(a) <===>  A1(b) : x-inter-A+X
+23 :  X1(a) <===>  B1(b) : x-inter-B+X
+24 :  X1(a) <===>  B2(b) : x-inter-B+X
+25 :  X2(a) <===>  B1(b) : x-inter-B+X
+26 :  X2(a) <===>  B2(b) : x-inter-B+X
+27 :  X1(a) <===>  X1(b) : x-inter-X+X
+28 :  X1(a) <===>  X2(b) : x-inter-X+X
+29 :  X2(a) <===>  X1(b) : x-inter-X+X
+30 :  X2(a) <===>  X2(b) : x-inter-X+X
+
+<> 1 degree <>
+
+31 possible 1 degree monomials
+8 <<== accepted 1 degree terms
+
+<> 2 degree <>
+
+496 possible 2 degree monomials
+70 <<== accepted 2 degree terms
+
+<> 3 degree <>
+
+5456 possible 3 degree monomials
+505 <<== accepted 3 degree terms
+
+<> 4 degree <>
+
+46376 possible 4 degree monomials
+3260 <<== accepted 4 degree terms
+
+ Total number of terms: 3843

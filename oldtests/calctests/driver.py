@@ -59,7 +59,7 @@ with open(tr_set, "w") as training_set_file:
         mol_nfrags = molecule.get_num_fragments()
 
         # calculate energy
-        energy = mbdecomp.get_nmer_energies(molecule, settings)
+        energy = mbdecomp.get_nmer_energies("driver_settings.ini", molecule)
         
         # calculate mb_energies
         molecule.mb_energies = mbdecomp.mbdecomp(molecule.nmer_energies)

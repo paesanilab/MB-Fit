@@ -1,7 +1,10 @@
 import unittest
+import os
 
 from potential_fitting.molecule import Atom
 from potential_fitting.molecule import Fragment
+from potential_fitting.molecule import parse_training_set_file
+from potential_fitting.utils import SettingsReader
 
 """
 Test cases for Fragment class
@@ -122,5 +125,19 @@ class TestFragment(unittest.TestCase):
 
         # to_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom2.to_xyz() + "\n")
+
+    """
+    Test the get_SMILE() function of the Fragment class
+    """
+    def test_get_SMILE(self):
+        # A4B2C2D4E4
+        fragment1 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc.ini"))))[0].get_fragments()[0]
+        self.assertEqual(fragment1.get_SMILE(), "[C]%1%2[C]%3%4.[C]%5%6[C]%7%8.[C]%3%5%9.[C]%1%7%10.[H]%2.[H]%4.[H]%6.[H]%8.[C]%9%11%12.[C]%10%13%14.[O]%11.[O]%12.[O]%13.[O]%14")
+
+        # A4B2C2D4E4
+        fragment2 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.ini"))))[0].get_fragments()[0]
+        self.assertEqual(fragment2.get_SMILE(), "[C]%1%2[H].[C]%1%3[H].[C]%3%4[C]%5[H].[C]%5%6[H].[C]%2%6[C]%7[O].[O]%7.[C]%4%8[O].[O]%8")
+
+
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFragment)

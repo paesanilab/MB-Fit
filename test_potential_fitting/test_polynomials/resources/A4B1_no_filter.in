@@ -1,0 +1,12 @@
+add_molecule['A4B1']
+
+add_variable['A1', 'a', 'A2', 'a', 'x-intra-A+A']
+add_variable['A1', 'a', 'A3', 'a', 'x-intra-A+A']
+add_variable['A1', 'a', 'A4', 'a', 'x-intra-A+A']
+add_variable['A2', 'a', 'A3', 'a', 'x-intra-A+A']
+add_variable['A2', 'a', 'A4', 'a', 'x-intra-A+A']
+add_variable['A3', 'a', 'A4', 'a', 'x-intra-A+A']
+add_variable['A1', 'a', 'B1', 'a', 'x-intra-A+B']
+add_variable['A2', 'a', 'B1', 'a', 'x-intra-A+B']
+add_variable['A3', 'a', 'B1', 'a', 'x-intra-A+B']
+add_variable['A4', 'a', 'B1', 'a', 'x-intra-A+B']

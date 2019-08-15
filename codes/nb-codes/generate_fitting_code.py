@@ -73,8 +73,8 @@ d6_constants = config.getlist("fitting", "d6")
 d6 = d6_constants[len(d6_constants) - 1]
 
 # last element of A_constants is list of the inter_molecular A constants
-A_constants = config.getlist("fitting", "A")
-Abuck = A_constants[len(A_constants) - 1]
+#A_constants = config.getlist("fitting", "A")
+#Abuck = A_constants[len(A_constants) - 1]
 
 
 ################################################################################

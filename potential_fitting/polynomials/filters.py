@@ -46,6 +46,7 @@ def parse_filter(*args):
                 filter1 = DegreeFilter(*args[1:4])
             except FilterBadSyntaxError as e:
                 raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
+            # TODO: add raise for when there are not enough arguments!
             index = 3
             args = args[index + 1:]
         elif args[0] == "ind-degree":
@@ -58,6 +59,13 @@ def parse_filter(*args):
         elif args[0] == "sum-degree":
             try:
                 filter1 = SumDegreeFilter(*args[1:3])
+            except FilterBadSyntaxError as e:
+                raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
+            index = 2
+            args = args[index + 1:]
+        elif args[0] == "num-fragments":
+            try:
+                filter1 = NumFragmentsFilter(*args[1:3])
             except FilterBadSyntaxError as e:
                 raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
             index = 2
@@ -246,7 +254,7 @@ class IndividualDegreeFilter(Filter):
                     y and z can be any integer >= 0.
 
         Returns:
-            A new DegreeFilter.
+            A new IndividualDegreeFilter.
 
         """
 
@@ -326,7 +334,7 @@ class IndividualDegreeFilter(Filter):
                         applicable_variable = True
                         break
 
-                        # otherwise, this string simply specifies an exact variable
+                # otherwise, this string simply specifies an exact variable
                 elif variable_string == variable.category:
                     applicable_variable = True
                     break
@@ -406,7 +414,7 @@ class SumDegreeFilter(Filter):
                     y and z can be any integer >= 0.
 
         Returns:
-            A new DegreeFilter.
+            A new SumDegreeFilter.
 
         """
 
@@ -489,12 +497,12 @@ class SumDegreeFilter(Filter):
                         applicable_variable = True
                         break
 
-                        # otherwise, this string simply specifies an exact variable
+                # otherwise, this string simply specifies an exact variable
                 elif variable_string == variable.category:
                     applicable_variable = True
                     break
 
-            # if this filter is not applicable to the current variable, go to the next one
+            # if this filter is  applicable to the current variable, add its degree to total_degree
             if applicable_variable:
                 total_degree += degree
 
@@ -529,7 +537,183 @@ class SumDegreeFilter(Filter):
                 if total_degree == int(degree_string):
                     return False
 
-        # if the degree of one of this monomial's variables did not cause it to be filtered out, then it is a keeper!
+        # if the total_degree of this monomial's variables did not cause it to be filtered out, then it is a keeper!
+        return True
+
+class NumFragmentsFilter(Filter):
+    """
+    Filters out monomials based on the number of fragments in a monomial.
+    """
+
+    def __init__(self, variable_string, fragment_string):
+        """
+        Creates a new NumFragmentsFilter from the given parameters.
+
+        This filter will filter OUT any monomials with total fragments as specified by fragment_string in all of the variables as
+        specified by variable_string.
+
+        A variable is considered to include a fragment if one if its atoms are in that fragment.
+
+        The number of fragments of all variables matching variable_string are summed, and the compared to fragment_string.
+
+        Args:
+            variable_string - '/' delimited list of variables to apply this filter to. Each item seperated by a '/'
+                    should be in the following format:
+                        * TYPE-ATOMS
+                    where TYPE is one of:
+                        * x         -- Only affects intermolecular variables.
+                        * x-intra   -- Only affects intramolecular variables.
+                        * x-*       -- Affects both intermolecular and intramolecular variables.
+                    and ATOMS is one of:
+                        * A+B        -- Affects variables describing the distance between A and B.
+                        * *+A or A+*  -- Affects variables describing the distance between A and any other atom.
+                        * *+*        -- Affects variables regardless of the atom types involved.
+                    A and B can be substituted for any other atom type.
+            fragment_string   - '/' delimited list of fragment numbers to apply this filter to. Each item seperated by a '/'
+                    should be in one of the following formats:
+                        * y-        -- Affects monomials with total fragments equal to or less than y in one or more of the
+                                specified variables.
+                        * y+        -- Affects monomials with total fragments equal to or greater than y in one or more of the
+                                specified variables.
+                        * y-z       -- Affects monomials with total fragments in the range [y, z] (inclusive) in one or more of
+                                the specified variables.
+                        * y         -- Affects monomials with total fragments y in one or more of the specified variables.
+                        * *         -- Affects monomials regardless of their degrees.
+                    y and z can be any integer >= 0.
+
+        Returns:
+            A new NumFragmentsFilter.
+
+        """
+
+        self.variables = variable_string.split("/")
+        self.fragment_nums = fragment_string.split("/")
+
+    def keep(self, monomial, variables):
+        """
+        Tells whether the input monomial formed by the input variables is not filtered out by this filter.
+
+        Args:
+            monomial        - The monomial to filter, specified as list of degrees of length len(variables).
+            variables       - List of variables in this monomial, should be same length as monomial.
+
+        Returns:
+            False if this Filter filters out this monomial, True otherwise.
+        """
+
+        # keep track of all fragments used in this monomial
+        unique_fragments = set()
+
+        # loop over each degree, variable pair in this monomial
+        for degree, variable in zip(monomial, variables):
+
+            # if this variable is not used in the monomial, do not add its fragments to unique_fragments.
+            if degree == 0:
+                continue
+
+            # used to track whether this variable matches one of this filter's applicable variables
+            applicable_variable = False
+
+            # loop over each variable this filter effects
+            for variable_string in self.variables:
+
+                # if the variable string is the wildcard, this filter is applicable to all variables
+                if variable_string == "*":
+                    applicable_variable = True
+                    break
+
+                # if the variable string has an *, we must perform detailed analysis to figure out what it does
+                if "*" in variable_string:
+
+                    # tracks if the atom portion of this variable string matches the current variable's
+                    fits_atoms = False
+                    # tracks if the type portion of this variable string matches the current variable's (inter or
+                    # intra)
+                    fits_type = False
+
+                    var_type, atoms_string = variable_string.split("-")[1:]
+                    atom1, atom2 = atoms_string.split("+")
+
+                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
+                    # variables regardless of atom type
+                    if atom1 == "*" and atom2 == "*":
+                        fits_atoms = True
+
+                    # if the second to last character or the last character of the variable string is a wildcard (but
+                    # not both), then this filter is eligable to apply to all variables where one of the atoms is the
+                    # other atom specified by the variable string
+                    elif atom1 == "*":
+                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom2
+                                      or variable.category.split("-")[-1].split("+")[1] == atom2)
+                    elif atom2 == "*":
+                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom1
+                                      or variable.category.split("-")[-1].split("+")[1] == atom1)
+
+                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
+                    # filter
+                    else:
+                        fits_atoms = variable.category.split("-")[-1].split("+")[0] == atom1 and \
+                                     variable.category.split("-")[-1].split("+")[1] == atom2
+
+                    # check if the middle bit of this filter is an "*"
+                    if variable_string.split("-")[1] == "*":
+                        fits_type = True
+
+                    # otherwise, this variable string specifies an exact inter/intra type (x- or x-intra-)
+                    else:
+                        fits_type = variable_string.split("-")[1] == variable.category.split("-")[1]
+
+                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
+                    # this variable!
+                    if fits_type and fits_atoms:
+                        applicable_variable = True
+                        break
+
+                # otherwise, this string simply specifies an exact variable
+                elif variable_string == variable.category:
+                    applicable_variable = True
+                    break
+
+            # if this filter is  applicable to the current variable, record the fragments it uses.
+            if applicable_variable:
+                unique_fragments.add(variable.atom1_fragment)
+                unique_fragments.add(variable.atom2_fragment)
+
+        # count the number of fragments used by this monomial in all filtered variables
+        num_fragments = len(unique_fragments)
+
+        # now that we have found the number of fragments of all filtered variables, check if that number is filtered
+        # by this filter.
+
+        # loop over each fragment number affected by this filter
+        for fragment_string in self.fragment_nums:
+
+            # if this fragment_num string is the wildcard, then it affects all variables regardless of their fragment number
+            if fragment_string == "*":
+                return False
+
+            # if this fragment_num string ends in a "-", then it is a less than or equal to specifier
+            elif fragment_string.endswith("-"):
+                if num_fragments <= int(fragment_string[:-1]):
+                    return False
+
+            # if this fragment_num string ends in a "+", then it is a greater than or equal to specifier
+            elif fragment_string.endswith("+"):
+                if num_fragments >= int(fragment_string[:-1]):
+                    return False
+
+            # if this fragment_num contains a "-" (but does not end in "-") then it is a range specifier
+            elif "-" in fragment_string:
+                if (num_fragments >= int(fragment_string[:fragment_string.index("-")]) and degree <=
+                        int(fragment_string[fragment_string.index("-") + 1:])):
+                    return False
+
+            # otherwise, it is an exact value specifier
+            else:
+                if num_fragments == int(fragment_string):
+                    return False
+
+        # if the fragment number of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True
 
 class DegreeFilter(Filter):

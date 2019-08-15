@@ -39,11 +39,15 @@ add_variable['B1', 'b', 'B2', 'c', 'x-inter-B+B']
 add_variable['B2', 'b', 'B1', 'c', 'x-inter-B+B']
 add_variable['B2', 'b', 'B2', 'c', 'x-inter-B+B']
 
-add_filter['sum-degree', '*', '1']
-add_filter['sum-degree', '*', '2', 'and', 'sum-degree', 'x-intra-*+*', '0+']
-add_filter['sum-degree', '*', '3', 'and', 'sum-degree', 'x-intra-B+B', '2+']
-add_filter['sum-degree', '*', '3', 'and', 'sum-degree', 'x-intra-A+B', '2+']
-add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-intra-B+B', '2+']
-add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-intra-A+B', '2+']
-add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-inter-B+B', '2+']
-add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-inter-A+A', '2+']
+add_filter[num-fragments', 'x-inter-*+*', '2-']
+
+add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-A+B', '1+']
+add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-B+B', '1+']
+
+add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-A+B', '2+']
+add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-A+B', '2+']
+
+add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-A+B', '2+']
+add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-B+B', '2+']
+add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-inter-A+A', '2+']
+add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-inter-B+B', '2+']

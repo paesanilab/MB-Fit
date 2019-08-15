@@ -45,7 +45,7 @@ add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-A+B', '1+']
 add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-B+B', '1+']
 
 add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-A+B', '2+']
-add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-A+B', '2+']
+add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-B+B', '2+']
 
 add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-A+B', '2+']
 add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-B+B', '2+']

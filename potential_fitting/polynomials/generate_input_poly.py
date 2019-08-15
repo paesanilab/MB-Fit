@@ -38,7 +38,8 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
         virtual_sites = ['X', 'Y', 'Z']
 
         for variable in molecule_in_parser.get_variables():
-            poly_in_file.write("add_variable['{}', '{}', '{}', '{}', '{}']\n".format(*variable))
+            if not "intra" in variable[4] or not any([(vsite in variable[0] or vsite in variable[2]) for vsite in virtual_sites]):
+                poly_in_file.write("add_variable['{}', '{}', '{}', '{}', '{}']\n".format(*variable))
 
         # newline between variables and filters
         poly_in_file.write("\n")

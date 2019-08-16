@@ -173,10 +173,12 @@ Because of this, 'degree' filters may be depricated at some point in the future.
 
 `add_filter['sum-degree', '*', '1', 'and', 'sum-degree', 'x-intra-*+*', '1+']` <br>
 Filters out all degree 1 monomials that have any intramolecular variables. <br>
-`add_filter['sum-degree', '*', '2', 'and', 'sum-degree', 'x-intra-*+*', '2+']` <br>
-Filters out all degree 2 monomials that have sum degree of 2 or more between all intramolecular variables. <br>
-`add_filter['sum-degree', '*', '3', 'and', 'sum-degree', 'x-intra-*+*', '3+']` <br>
-Filters out all degree 3 monomials that have sum degree of 3 or more between all intramolecular variables. <br>
+`add_filter['sum-degree', '*', '2', 'and', 'sum-degree', 'x-intra-*+*', '2']` <br>
+Filters out all degree 2 monomials that have sum degree 2 between all intramolecular variables. 
+This leaves all degree 2 monomials that are at most linear in intramolecular variables. <br>
+`add_filter['sum-degree', '*', '3', 'and', 'sum-degree', 'x-intra-*+*', '3']` <br>
+Filters out all degree 3 monomials that have sum degree 3 between all intramolecular variables.
+This leaves all degree 3 monomials that are at most quadratic in intramolecular variables. <br>
 `add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-intra-*+*', '1-/3+']` <br>
 Filters out all degree 4 monomials that have sum degree of 1 or less or 3 or more between all intramolecular variables. <br>
 

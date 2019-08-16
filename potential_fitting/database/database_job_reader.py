@@ -37,8 +37,9 @@ def read_all_jobs(database_config_path, job_dir):
         calculation_results.append(read_job(directory + "/output.ini", directory + "/output.log"))
 
         if len(calculation_results) > 1000:
-            with Database() as db:
+            with Database(database_config_path) as db:
                 db.set_properties(calculation_results)
+            calculation_results = []
 
     with Database(database_config_path) as db:
         db.set_properties(calculation_results)
@@ -50,7 +51,7 @@ def read_all_jobs(database_config_path, job_dir):
             continue
 
         i = 1
-
+        
         job_dir = directory + "_done"
 
         while os.path.exists(job_dir):

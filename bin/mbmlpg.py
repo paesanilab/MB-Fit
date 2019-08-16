@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import division
 
 import sys, os, argparse
 import potential_fitting

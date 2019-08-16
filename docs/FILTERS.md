@@ -21,7 +21,7 @@ Simple or compound statements can be combined into compound statements by using
 one of the conjunctions 'and' or 'or'. Example:" <br>
 `'nameOfFilter', 'arg1', 'arg2', 'and', 'nameOfFilter', 'arg1', arg2'`
 
-You may wrap simple or comples statements in parenthesis to group conjunctions: <br>
+You may wrap simple or complex statements in parenthesis to group conjunctions: <br>
 `'nameOfFilter', 'arg1', 'arg2', 'and', '(', 'nameOfFilter', 'arg1', 'or', 'nameOfFilter', 'arg1', ')'`
 
 Using multiple conjunctions without parenthesis leads to the statements being evaluated
@@ -148,10 +148,10 @@ Here are some example filters and descriptions of what they do.
 `add_filter['ind-degree', '*', '2']` <br>
 Filters out all monomials that have degree two in at least one variable.
 
-`add_filter['sum-degree', 'x-intra-*+*'. '2+']`
+`add_filter['sum-degree', 'x-intra-*+*', '2+']`
 Filters out all monomials that have sum degree two or more between all intramolecular variables.
 
-`add_filter['num-fragments', 'x-inter-*+*'. '2-']`
+`add_filter['num-fragments', 'x-inter-*+*', '2-']`
 Filters out all monomials that have 2 or fewer unique fragments between all intermolecular variables.
 
 `add_filter['not', 'ind-degree', 'x-inter-*+*', '2+']`

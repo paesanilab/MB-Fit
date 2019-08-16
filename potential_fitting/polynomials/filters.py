@@ -46,7 +46,8 @@ def parse_filter(*args):
                 filter1 = DegreeFilter(*args[1:4])
             except FilterBadSyntaxError as e:
                 raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
-            # TODO: add raise for when there are not enough arguments!
+            except TypeError:
+                raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "three arguments for 'degree' filter") from None
             index = 3
             args = args[index + 1:]
         elif args[0] == "ind-degree":
@@ -54,6 +55,8 @@ def parse_filter(*args):
                 filter1 = IndividualDegreeFilter(*args[1:3])
             except FilterBadSyntaxError as e:
                 raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
+            except TypeError:
+                raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'ind-degree' filter") from None
             index = 2
             args = args[index + 1:]
         elif args[0] == "sum-degree":
@@ -61,6 +64,8 @@ def parse_filter(*args):
                 filter1 = SumDegreeFilter(*args[1:3])
             except FilterBadSyntaxError as e:
                 raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
+            except TypeError:
+                raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'sum-degree' filter") from None
             index = 2
             args = args[index + 1:]
         elif args[0] == "num-fragments":
@@ -68,10 +73,12 @@ def parse_filter(*args):
                 filter1 = NumFragmentsFilter(*args[1:3])
             except FilterBadSyntaxError as e:
                 raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
+            except TypeError:
+                raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'num-fragments' filter") from None
             index = 2
             args = args[index + 1:]
         else:
-            raise FilterBadSyntaxError(input_args, 0, args[0], "either 'not' or 'degree'")
+            raise FilterBadSyntaxError(input_args, 0, args[0], "a valid filter name: 'not', 'degree', 'ind-degree', 'sum-degree', or 'num-fragments'")
 
 
     if len(args) == 0:

@@ -1,4 +1,5 @@
 import psi4
+from psi4.driver.qcdb.exceptions import QcdbException
 import subprocess, os
 
 """
@@ -69,9 +70,12 @@ def execute_job():
         energy = psi4.energy("{format}/{format}".format(method, basis))
         print("Energy: {format}".format(energy))
         success = True
-    except ValueError:
+    except (ValueError, SystemError):
         success = False
-        print("Iterations failed to Converge")
+        print("Something went wrong...")
+    except QcdbException:
+        success = False
+        print("The calculation failed.")
 
 
     with open(output_file, "w") as out_file:

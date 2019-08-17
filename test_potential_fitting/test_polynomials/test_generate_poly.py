@@ -138,5 +138,60 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+    def test_A1B2C2_degree4_custom_filters(self):
+
+        input_path = os.path.join(TestGeneratePoly.resources_dir, "A1B2C2_custom_filters.in")
+        output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2C2_custom_filters_degree_4")
+        reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2C2_custom_filters_degree_4")
+
+        generate_poly(TestGeneratePoly.settings_path,
+                      input_path,
+                      4,
+                      output_dir
+                      )
+
+        out_log_path = os.path.join(output_dir, "poly.log")
+        ref_log_path = os.path.join(reference_dir, "poly.log")
+
+        with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
+            self.assertEqual(out_log.readlines(), ref_log.readlines())
+
+    def test_A1B2X2_A1B2X2_degree4_mbpol_filters(self):
+
+        input_path = os.path.join(TestGeneratePoly.resources_dir, "A1B2X2_A1B2X2_mbpol_filters.in")
+        output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2X2_A1B2X2_mbpol_filters_degree_4")
+        reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2X2_A1B2X2_mbpol_filters_degree_4")
+
+        generate_poly(TestGeneratePoly.settings_path,
+                      input_path,
+                      4,
+                      output_dir
+                      )
+
+        out_log_path = os.path.join(output_dir, "poly.log")
+        ref_log_path = os.path.join(reference_dir, "poly.log")
+
+        with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
+            self.assertEqual(out_log.readlines(), ref_log.readlines())
+
+    def test_A1B2_A1B2_A1B2_degree4_mbpol_filters(self):
+
+        input_path = os.path.join(TestGeneratePoly.resources_dir, "A1B2_A1B2_A1B2_mbpol_filters.in")
+        output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2_A1B2_A1B2_mbpol_filters_degree_4")
+        reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2_A1B2_A1B2_mbpol_filters_degree_4")
+
+        generate_poly(TestGeneratePoly.settings_path,
+                      input_path,
+                      4,
+                      output_dir
+                      )
+
+        out_log_path = os.path.join(output_dir, "poly.log")
+        ref_log_path = os.path.join(reference_dir, "poly.log")
+
+        with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
+            self.assertEqual(out_log.readlines(), ref_log.readlines())
+
+
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestGeneratePoly)

@@ -1,5 +1,5 @@
 # external package imports
-import os, sys, contextlib
+import os, sys, contextlib, glob
 
 # local module imports
 from .utils import SettingsReader, files, system
@@ -918,10 +918,34 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
             system.call("chmod", "744", "run_fit.sh")
             fit_index += 1
             count += 1 
+            print("Succesfully created fit folder {}.".format(new_fit_folder))
 
     os.chdir(workdir)
 
+def execute_fits(settings_path):
+    # Get information
+    settings = SettingsReader(settings_path)
+    workdir = os.getcwd()
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
 
+    # A fit folder that does not have a fit.log file inside is considered not run
+    # In that case, the run_fit.sh will be executed
+    os.chdir(fit_folder_prefix)
+    all_fits = glob.glob("fit*")
+    for fit in all_fits:
+        os.chdir(fit)
+        if not os.path.exists("fit.log"):
+            print("{} is running.".format(fit))
+            system.call("./run_fit.sh")
+            print("{} is completed.".format(fit))
+        else:
+            print("{} is already done. Continuing...".format(fit))
+        os.chdir("../")
+
+    os.chdir(workdir)
+    
+def retrieve_best_fit():
+    a = 1
 
 
 

@@ -886,3 +886,56 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
     perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
     create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
+
+def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10):
+    # Get information
+    settings = SettingsReader(settings_path)
+    workdir = os.getcwd()
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+    if not os.path.exists(fit_folder_prefix):
+        os.mkdir(fit_folder_prefix)
+    
+    # initialize indexes
+    fit_index = 1
+    count = 0
+    # Prepare fits
+    while count < num_fits:
+        os.chdir(fit_folder_prefix)
+        new_fit_folder = "fit" + str(fit_index)
+        if os.path.exists(new_fit_folder):
+            print("{} folder already exists. Trying next index.".format(new_fit_folder))
+            fit_index += 1
+        else:
+            os.mkdir(new_fit_folder)
+            os.chdir(new_fit_folder)
+            # Link the training set to the fit folder
+            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), ".")
+            # Create bash script that will run the fit
+            my_bash = open("run_fit.sh",'w')
+            my_bash.write("#!/bin/bash\n")
+            my_bash.write("\n{}/{} {} {} {} > fit.log 2> fit.err \n".format(workdir,fit_executable_path,training_set_path, DE, alpha))  
+            my_bash.close()
+            system.call("chmod", "744", "run_fit.sh")
+            fit_index += 1
+            count += 1 
+
+    os.chdir(workdir)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

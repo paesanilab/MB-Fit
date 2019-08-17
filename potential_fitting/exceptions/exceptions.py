@@ -246,3 +246,13 @@ class FunctionNotImplementedError(PotentialFittingError):
 
     def __init__(self, function):
         super().__init__("Sorry, {} is not implemented yet. :(".format(function))
+
+class FilterBadSyntaxError(InvalidInputError):
+    """Raised when the user gives bad input for a filter."""
+
+    def __init__(self, filter, index, saw, expected):
+        super().__init__("Bad format in polynomial filter {} at index {}, saw {}, expected {}.".format(filter, index, saw, expected))
+        self.filter = filter
+        self.index = index
+        self.saw = saw
+        self.expected = expected

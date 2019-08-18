@@ -1156,7 +1156,13 @@ struct mbnrg_disp {
     ff.close()
 
 
-def write_dispersion_cpp(monomer_atom_types, vsites, excl12 = None, excl13 = None, excl14 = None):
+def write_dispersion_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+    # Need to select if we have 1b or 2b
+    if len(monomer_atom_types) == 1:
+        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
+    else:
+        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+
     cppname = "dispersion.cpp"
     ff = open(cppname,'w')
     a = """#include "dispersion.h"
@@ -1216,12 +1222,12 @@ double mbnrg_disp::get_dispersion() {
     ff.write(a)
 
     # Get pointer to coordinates only for real sites
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()")
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
 
     ff.write(pointer_to_coordinates)
 
     # Write the dispersion calculations that are excluded
-    atom_types = get_individual_atoms_with_type(monomer_atom_types, vsites)
+    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
     # Case in which we have a monomer
     a = ""
     if len(monomer_atom_types) == 1:

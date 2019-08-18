@@ -1049,6 +1049,33 @@ struct mbnrg_disp {
 
   double get_dispersion();
 
+  std::vector<double> get_nonlinear_terms();
+
+  inline void set_nonlinear_parameters(std::vector<double> d6) {
+"""
+    ff.write(a)
+
+    a = ""
+    for pair in pairs:
+        a += "    m_d6_" + pair + " = d6[" + str(pairs.index(pair)) + "];\n"
+
+    ff.write(a)
+
+    a = """
+  }
+
+  inline void set_linear_parameters(std::vector<double> c6) {
+"""
+    ff.write(a)
+
+    a = ""
+    for pair in pairs:
+        a += "    m_C6_" + pair + " = c6[" + str(pairs.index(pair)) + "];\n"
+
+    ff.write(a)
+
+    a = """
+  }
 
   inline double x6(const double& C6, const double& d6,
                   const double& C8, const double& d8,
@@ -1139,6 +1166,46 @@ mbnrg_disp::~mbnrg_disp() {}
 
 mbnrg_disp::mbnrg_disp(std::vector<double> c) {
   xyz = c;
+}
+
+std::vector<double> mbnrg_disp::get_nonlinear_terms() {
+    std::vector<double> nl_terms(""" + str(len(pairs)) + """,0.0);
+    """
+    ff.write(a)
+
+    # Get pointer to coordinates only for real sites
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+
+    ff.write(pointer_to_coordinates)
+
+    # Write the dispersion calculations that are excluded
+    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
+    # Case in which we have a monomer
+    a = ""
+    if len(monomer_atom_types) == 1:
+        mon = atom_types[0]
+        for i in range(len(mon)-1):
+            for j in range(i+1,len(mon)):
+                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
+                     pair = "".join(sorted([mon[i][0], mon[j][0]]))
+                     vector_index = str(pairs.index(pair))
+
+                     a += "    nl_terms[" + vector_index + "] += x6(1.0, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{}));\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
+
+    elif len(monomer_atom_types) == 2:
+        mon1 = atom_types[0]
+        mon2 = atom_types[1]
+        for i in range(len(mon1)):
+            for j in range(len(mon2)):
+                 pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
+                 vector_index = str(pairs.index(pair))
+                 a += "    nl_terms[" + vector_index + "] += x6(1.0, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+
+    ff.write(a)
+
+    a = """
+
+    return nl_terms;
 }
 
 double mbnrg_disp::get_dispersion() {

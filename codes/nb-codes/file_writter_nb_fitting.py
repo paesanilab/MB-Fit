@@ -781,6 +781,226 @@ double """ + system_keyword_polyholder + """_fit::f_switch(const double r, doubl
     ff.close()
 
 
+def write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck):
+    hname = "buckingham.h"
+    ff = open(hname,'w')
+    a = """
+#ifndef BUCKINGHAM_H
+#define BUCKINGHAM_H
+
+#include <cmath>
+#include <algorithm>
+
+struct mbnrg_buck {
+  mbnrg_buck();
+  mbnrg_buck(std::vector<double> c);
+  ~mbnrg_buck();
+
+"""
+    ff.write(a)
+
+    # Need to select if we have 1b or 2b
+    if len(monomer_atom_types) == 1:
+        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
+    else:
+        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+
+    # Write A and b declaration
+    a = ""
+    b = ""
+    for pair in pairs:
+        a += "  double m_A_" + pair + " = " + str(A_buck[pairs.index(pair)]) + ";\n"
+        b += "  double m_b_" + pair + " = " + str(b_buck[pairs.index(pair)]) + ";\n"
+
+    ff.write(a + "\n")
+    ff.write(b)
+
+    a = """
+
+  std::vector<double> xyz;
+
+  double get_buckingham();
+
+  std::vector<double> get_nonlinear_terms();
+
+  inline void set_nonlinear_parameters(std::vector<double> b) {
+"""
+    ff.write(a)
+    
+    a = ""
+    for pair in pairs:
+        a += "    m_b_" + pair + " = b[" + str(pairs.index(pair)) + "];\n"
+
+    ff.write(a)
+
+    a = """
+  }
+
+  inline void set_linear_parameters(std::vector<double> a) {
+"""
+    ff.write(a)
+
+    a = ""
+    for pair in pairs:
+        a += "    m_A_" + pair + " = a[" + str(pairs.index(pair)) + "];\n"
+
+    ff.write(a)
+
+    a = """
+  }
+
+  inline double buck_energy(const double a, const double b,
+                     const double* p1, const double* p2,
+                     double* g1, double* g2)
+  {
+
+    const double dx = p1[0] - p2[0];
+    const double dy = p1[1] - p2[1];
+    const double dz = p1[2] - p2[2];
+
+    const double rsq = dx*dx + dy*dy + dz*dz;
+    const double r = std::sqrt(rsq);
+    
+    const double fac = a*exp(-b*r);
+    const double grd = b/r*fac;
+
+    g1[0] -= dx*grd;
+    g2[0] += dx*grd;
+
+    g1[1] -= dy*grd;
+    g2[1] += dy*grd;
+
+    g1[2] -= dz*grd;
+    g2[2] += dz*grd;
+
+    return fac;
+  }
+
+  inline double buck_energy(const double a, const double b,
+                     const double* p1, const double* p2)
+  {
+
+    const double dx = p1[0] - p2[0];
+    const double dy = p1[1] - p2[1];
+    const double dz = p1[2] - p2[2];
+
+    const double rsq = dx*dx + dy*dy + dz*dz;
+    const double r = std::sqrt(rsq);
+
+    const double fac = a*exp(-b*r);
+
+    return fac;
+  }
+};
+
+#endif
+
+"""
+    ff.write(a)
+    ff.close()
+
+def write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+    # We will need the pairs:
+    # Need to select if we have 1b or 2b
+    if len(monomer_atom_types) == 1:
+        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
+    else:
+        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+
+    cppname = "buckingham.cpp"
+    ff = open(cppname,'w')
+    a = """#include "buckingham.h"
+
+mbnrg_buck::mbnrg_buck() {}
+mbnrg_buck::~mbnrg_buck() {}
+
+mbnrg_buck::mbnrg_buck(std::vector<double> c) {
+  xyz = c;
+}
+
+std::vector<double> mbnrg_buck::get_nonlinear_terms() {
+    std::vector<double> nl_terms(""" + str(len(pairs)) + """,0.0);
+    """
+    ff.write(a)
+
+    # Get pointer to coordinates only for real sites
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+
+    ff.write(pointer_to_coordinates)
+
+    # Write the dispersion calculations that are excluded
+    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
+    # Case in which we have a monomer
+    a = ""
+    if len(monomer_atom_types) == 1:
+        mon = atom_types[0]
+        for i in range(len(mon)-1):
+            for j in range(i+1,len(mon)):
+                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
+                     pair = "".join(sorted([mon[i][0], mon[j][0]]))
+                     vector_index = str(pairs.index(pair))
+                     
+                     a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
+
+    elif len(monomer_atom_types) == 2:
+        mon1 = atom_types[0]
+        mon2 = atom_types[1]
+        for i in range(len(mon1)):
+            for j in range(len(mon2)):
+                 pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
+                 vector_index = str(pairs.index(pair))
+                 a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+
+    ff.write(a)
+
+    a = """
+
+    return nl_terms;
+}
+
+double mbnrg_buck::get_buckingham() {
+
+    double buck = 0.0;
+  
+"""
+    ff.write(a)
+
+    # Get pointer to coordinates only for real sites
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+
+    ff.write(pointer_to_coordinates)
+
+    # Write the dispersion calculations that are excluded
+    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
+    # Case in which we have a monomer
+    a = ""
+    if len(monomer_atom_types) == 1:
+        mon = atom_types[0]
+        for i in range(len(mon)-1):
+            for j in range(i+1,len(mon)):
+                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
+                     pair = "".join(sorted([mon[i][0], mon[j][0]]))
+                     a += "    buck += buck_energy(m_A_{}, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
+
+    elif len(monomer_atom_types) == 2:
+        mon1 = atom_types[0]
+        mon2 = atom_types[1]
+        for i in range(len(mon1)):
+            for j in range(len(mon2)):
+                 pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
+                 a += "    buck += buck_energy(m_A_{}, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+
+    ff.write(a)
+
+    a = """
+    return buck;
+}
+        
+"""
+
+    ff.write(a)
+    ff.close()
+
 def write_dispersion_header(monomer_atom_types, virtual_sites_poly, c6, d6):
     hname = "dispersion.h"
     ff = open(hname,'w')
@@ -812,8 +1032,8 @@ struct mbnrg_disp {
     a = ""
     b = ""
     for pair in pairs:
-        a += "  const double m_C6_" + pair + " = " + str(c6[pairs.index(pair)]) + ";\n"
-        b += "  const double m_d6_" + pair + " = " + str(d6[pairs.index(pair)]) + ";\n"
+        a += "  double m_C6_" + pair + " = " + str(c6[pairs.index(pair)]) + ";\n"
+        b += "  double m_d6_" + pair + " = " + str(d6[pairs.index(pair)]) + ";\n"
 
     ff.write(a + "\n")
     ff.write(b)
@@ -942,14 +1162,16 @@ double mbnrg_disp::get_dispersion() {
         for i in range(len(mon)-1):
             for j in range(i+1,len(mon)):
                 if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
-                     a += "    disp += x6(m_C6_{}{}, m_d6_{}{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(mon[i][0], mon[j][0], mon[i][0], mon[j][0], mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
+                    pair = "".join(sorted([mon[i][0], mon[j][0]]))
+                    a += "    disp += x6(m_C6_{}, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
 
     elif len(monomer_atom_types) == 2:
         mon1 = atom_types[0]
         mon2 = atom_types[1]
         for i in range(len(mon1)):
             for j in range(len(mon2)):
-                 a += "    disp += x6(m_C6_{}{}, m_d6_{}{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(mon1[i][0], mon2[j][0], mon1[i][0], mon2[j][0], mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+                pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
+                a += "    disp += x6(m_C6_{}, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
 
     ff.write(a)
 
@@ -1453,7 +1675,7 @@ LIBDIR = ./
 INCLUDE = -I./
 
 FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
-training_set.o variable.o vsites.o water_monomer_lp.o gammq.o \\
+training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\
 electrostatics.o coulomb.o rwlsq.o ps.o mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o \\
 """ + mon_objects + """ poly_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o
 

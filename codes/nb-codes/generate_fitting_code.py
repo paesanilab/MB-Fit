@@ -73,6 +73,10 @@ d6_constants = config.getlist("fitting", "d6")
 d6 = d6_constants[len(d6_constants) - 1]
 
 # last element of A_constants is list of the inter_molecular A constants
+# Initialize A and b to 0, for now
+
+A_buck = [0.0] * len(C6)
+b_buck = [0.0] * len(C6)
 #A_constants = config.getlist("fitting", "A")
 #Abuck = A_constants[len(A_constants) - 1]
 
@@ -190,6 +194,17 @@ file_writter_nb_fitting.write_dispersion_header(monomer_atom_types, virtual_site
 
 file_writter_nb_fitting.write_dispersion_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
+
+################################################################################
+## Write buckingham header and cpp #############################################
+################################################################################
+file_writter_nb_fitting.write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck)
+
+ff = open("buckingham.cpp",'w')
+ff.write("hello\n")
+ff.close()
+file_writter_nb_fitting.write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
+
 ################################################################################
 ## Polynomial header and cpp ###################################################
 ################################################################################
@@ -217,93 +232,6 @@ file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, num
 file_writter_nb_fitting.write_makefile(number_of_monomers, system_name)
 
 
-#
-## ## Buckingham.h
-#
-## In[ ]:
-#
-#
-#hname = "buckingham.h"
-#ff = open(hname,'w')
-#a = """
-##ifndef BUCKINGHAM_H
-##define BUCKINGHAM_H
-#
-##include <cmath>
-##include <algorithm>
-#
-#
-#
-#struct x2b_buck {
-#  x2b_buck();
-#  x2b_buck(double *, double * , size_t, size_t);
-#  ~x2b_buck();
-#
-#"""
-#ff.write(a)
-#for i in range(len(complete_real_inter_pairs)):
-#    ff.write('  const double m_A_' + complete_real_inter_pairs[i] + ' = ' + Abuck[i] + ' ; \n')
-#for i in range(len(complete_real_inter_pairs)):
-#    ff.write('  const double m_b_' + complete_real_inter_pairs[i] + ' = ' + bbuck[i] + ' ; \n')
-#
-#a = """
-#
-#  double get_buckingham();
-#  double get_buckingham(double * grdx);
-#  
-#  double * xyz1;
-#  double * xyz2;
-#
-#  inline double buck(const double a, const double b,
-#                     const double* p1, const double* p2, 
-#                     double* g1, double* g2)
-#  {
-#  
-#    const double dx = p1[0] - p2[0];
-#    const double dy = p1[1] - p2[1];
-#    const double dz = p1[2] - p2[2];
-#
-#    const double rsq = dx*dx + dy*dy + dz*dz;
-#    const double r = std::sqrt(rsq);
-#    
-#    const double fac = a*exp(-b*r);
-#    const double grd = b/r*fac;
-#
-#    g1[0] -= dx*grd;
-#    g2[0] += dx*grd;
-#
-#    g1[1] -= dy*grd;
-#    g2[1] += dy*grd;
-#
-#    g1[2] -= dz*grd;
-#    g2[2] += dz*grd;
-#
-#    return fac;
-#  }
-#
-#  inline double buck(const double a, const double b,
-#                     const double* p1, const double* p2)
-#  {
-#  
-#    const double dx = p1[0] - p2[0];
-#    const double dy = p1[1] - p2[1];
-#    const double dz = p1[2] - p2[2];
-#
-#    const double rsq = dx*dx + dy*dy + dz*dz;
-#    const double r = std::sqrt(rsq);
-#    
-#    const double fac = a*exp(-b*r);
-#
-#    return fac;
-#  }
-#  
-#};
-#
-##endif
-#
-#"""
-#ff.write(a)
-#ff.close()
 #
 #
 ## ## Buckingham.cpp

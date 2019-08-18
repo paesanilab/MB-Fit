@@ -104,6 +104,7 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 
     # move files from cwd into fit directory
     os.system("mv dispersion.* " + fit_path + "/")
+    os.system("mv buckingham.* " + fit_path + "/")
     os.system("mv eval*b.cpp " + fit_path + "/")
     os.system("mv fit*b.cpp " + fit_path + "/")
     os.system("mv Makefile " + fit_path + "/")

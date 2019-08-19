@@ -1751,20 +1751,126 @@ int main(int argc, char** argv) {
     ff.close()
 
 def write_eval_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
+    # We need the pairs again to know how many linear and non linear terms we have
+    pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+
     cppname = "eval-" + str(number_of_monomers) + "b-ttm.cpp"
     ff = open(cppname,'w')
 
+    a = """#include <cmath>
+#include <cassert>
+#include <cstdlib>
+#include <ctime>
+
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <chrono>
+
+#include "fit-utils.h"
+#include "training_set.h"
+#include "mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.h"
+#include "electrostatics.h"
+#include "coulomb.h"
+#include "dispersion.h"
+#include "buckingham.h"
+#include "constants.h"
+"""
+
+    ff.write(a)
+
+    for i in range(1,number_of_monomers+1):
+        ff.write("#include \"mon" + str(i) + ".h\"\n")
+
     a = """
-int main() {
+
+int main(int argc, char** argv) {
+
+    std::vector<tset::nb_system> training_set;
+    std::vector<double> elec_e;
+    std::vector<double> disp_e;
+    std::vector<double> rep_e;
+    std::vector<double> nb_energy;
+    std::vector<double> ts_weights;
+
+    std::vector<double> l_params(""" + str(len(pairs)) + """,0.0);
+    std::vector<double> nl_params(""" + str(len(pairs)) + """,0.0);
+    
+    if (argc < 3) {
+        std::cerr << "usage: ./eval-""" + str(number_of_monomers) + """b-ttm  <parameters.dat> <test_set.xyz> "
+                  << std::endl;
+        return 0;
+    }
+
+    argv++;
+    argc--;
+
+    try {
+        std::ifstream params;
+        params.open(*argv);
+"""
+
+    ff.write(a)
+    my_assign_l = ""
+    my_assign_nl = ""
+    for i in range(len(pairs)):
+        my_assign_l += " >> l_params[{}] ".format(i)        
+        my_assign_nl += " >> nl_params[{}] ".format(i)        
+
+    a = """
+        params """ + my_assign_l + """;
+        params """ + my_assign_nl + """; 
+
+        ++argv;
+        --argc;
+
+        size_t nsys = tset::load_nb_system(*argv, training_set);
+        std::cout << "'" << *(argv++) << "' : "
+                      << nsys << " configurations" << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+
+    for (size_t n = 0; n < training_set.size(); n++) {
+"""
+
+    ff.write(a)
+
+    a = get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_of_sites, "training_set[n].xyz.data()")
+
+    ff.write(a)
+
+    a = """
+        mbnrg_disp disp(training_set[n].xyz);
+        disp.set_nonlinear_parameters(nl_params);
+        disp_e.push_back(disp.get_dispersion());
+
+        mbnrg_buck buck(training_set[n].xyz);
+        buck.set_nonlinear_parameters(nl_params);
+        buck.set_linear_parameters(l_params);
+        rep_e.push_back(buck.get_buckingham());
+
+        nb_energy.push_back(elec_e[n] + disp_e[n] + rep_e[n]);
+    }
+
+    for (size_t n = 0; n < training_set.size(); n++) {
+        std::cout << std::scientific << std::setprecision(8)
+                  << std::setw(10) << "frame[" 
+                  << std::setw(6) << std::setfill('.') << n
+                  << std::setw(3) << "]= " << std::setfill(' ') 
+                  << std::setw(25) << nb_energy[n] << std::endl;
+    }
+
     return 0;
 }
+
 """
     ff.write(a)
     ff.close()
-    
-
-
-
 
 
 

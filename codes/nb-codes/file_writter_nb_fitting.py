@@ -1399,6 +1399,375 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
               
     return electrostatics_string
 
+def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
+
+    # We need the pairs again to know how many linear and non linear terms we have
+    pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+
+    num_terms = len(pairs)
+
+    cppname = "fit-" + str(number_of_monomers) + "b-ttm.cpp"
+    ff = open(cppname,'w')
+    a = """#include <cmath>
+#include <cassert>
+#include <cstdlib>
+#include <ctime>
+
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <chrono>
+
+#include <gsl/gsl_multimin.h>
+
+#include "wlsq.h"
+
+#include "fit-utils.h"
+#include "training_set.h"
+#include "electrostatics.h"
+#include "coulomb.h"
+#include "dispersion.h"
+#include "buckingham.h"
+#include "constants.h"
+"""
+
+    ff.write(a)
+
+    for i in range(1,number_of_monomers+1):
+        ff.write("#include \"mon" + str(i) + ".h\"\n")
+
+    a = """
+namespace {
+
+double E_range = 20.0; // kcal/mol
+
+//----------------------------------------------------------------------------//
+
+static std::vector<tset::nb_system> training_set;
+static std::vector<double> elec_e;
+static std::vector<double> rep_e;
+static std::vector<double> disp_e;
+static std::vector<double> ts_weights;
+
+size_t num_linear_params;
+size_t num_non_linear_params;
+
+namespace linear {
+
+//----------------------------------------------------------------------------//
+
+static double* A(0);
+static double* y(0);
+static double* params(0);
+
+//----------------------------------------------------------------------------//
+
+void allocate()
+{
+    A = new double[training_set.size()*num_linear_params];
+    y = new double[training_set.size()];
+
+    rep_e = std::vector<double>(training_set.size());
+    disp_e = std::vector<double>(training_set.size());
+
+    params = new double[num_linear_params];
+}
+
+//----------------------------------------------------------------------------//
+
+double compute_chisq(const gsl_vector* X, void* unused) {
+
+    for (size_t i = 0; i < num_non_linear_params; i++) {
+        if (X->data[i] < 0) return 1e+06;
+    }
+
+    std::vector<double> nlp(X->data, X->data + num_non_linear_params);
+
+    for (size_t n = 0; n < training_set.size(); ++n) {
+        // Calculate dispersion
+        mbnrg_disp disp(training_set[n].xyz);
+        disp.set_nonlinear_parameters(nlp);
+        disp_e[n] = disp.get_dispersion();
+
+        // Calculate non-linear terms of buckingham
+        mbnrg_buck buck(training_set[n].xyz);
+        buck.set_nonlinear_parameters(nlp);
+        std::vector<double> nl_terms = buck.get_nonlinear_terms();
+
+        // Update energy
+        y[n] = training_set[n].nb_energy - disp_e[n];
+        
+        // Update the A matrix
+        for (size_t p = 0; p < num_linear_params; ++p) {
+            A[num_linear_params*n + p] = nl_terms[p];
+        }
+    }
+    
+    double chisq = 0.0;
+    int rank = 0;   
+
+    kit::wlsq::solve(training_set.size(), num_linear_params,
+                      A, y, ts_weights.data(), params, chisq, rank);
+
+    std::cout << "<#> chisq = " << chisq
+              << std::endl;
+
+    for (size_t i = 0; i < num_linear_params; i++)
+        if (params[i] < 0)
+            chisq += fabs(params[i] * 100000);
+
+    if (!gsl_finite (chisq)) {
+      return 10000000.0;
+    }
+
+    return chisq;
+}
+
+//----------------------------------------------------------------------------//
+
+} // namespace linear
+
+////////////////////////////////////////////////////////////////////////////////
+
+} // namespace
+
+////////////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "usage: ./fit-""" + str(number_of_monomers) + """b-ttm <training_set.xyz> [DE] > fit.log"
+                  << std::endl;
+        return 0;
+    }
+
+    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+    srand(duration);
+
+    double x0[""" + str(num_terms) + """];
+"""
+
+    ff.write(a)
+
+    for i in range(num_terms):
+        ff.write("    x0[" + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
+
+    a = """
+
+    argv++;
+    argc--;
+
+    try {
+        size_t nsys = tset::load_nb_system(*argv, training_set);
+        std::cout << "'" << *(argv++) << "' : "
+                      << nsys << " configurations" << std::endl;
+        if (--argc > 0) E_range = atof(*(argv++));
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+
+    // Allocating memory
+    num_linear_params = """ + str(num_terms) + """;
+    num_non_linear_params = """ + str(num_terms) + """;
+    linear::allocate();
+
+    ts_weights = std::vector<double>(training_set.size(),1.0);
+
+    double E_min;
+    size_t N_eff;
+    size_t index_min;
+
+    tset::setup_weights(training_set, E_range, E_min, index_min,
+                       ts_weights, N_eff);
+
+    std::cout << "\\n>>   E_min = " << E_min << " kcal/mol; index " << index_min <<
+                 "\\n>> E_range = " << E_range << " kcal/mol" <<
+                 "\\n\\n>> training set size = " << training_set.size()
+              << "\\n>>    effective size = " << N_eff << '\\n'
+              << std::endl;
+
+    std::vector<double> ts_energies(training_set.size(),0.0);
+
+        for (size_t n = 0; n < training_set.size(); n++) {
+        // Saving reference energies  
+        ts_energies[n] = training_set[n].nb_energy ;   
+"""
+
+    ff.write(a)
+
+    # Now write the many body electrostatics calculation
+    a = get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_of_sites, "training_set[n].xyz.data()")
+
+    ff.write(a)
+
+    a = """
+        training_set[n].nb_energy -= elec_e[n];
+    }
+
+    gsl_vector* x = gsl_vector_alloc(num_non_linear_params);
+    std::copy(x0, x0 + num_non_linear_params, x->data);
+
+    gsl_multimin_function chisq_func;
+
+    chisq_func.n = num_non_linear_params;
+    chisq_func.f = linear::compute_chisq;
+
+    gsl_vector* ss = gsl_vector_alloc(num_non_linear_params);
+    gsl_vector_set_all(ss, 0.1);
+
+    std::cout << "\\n<> initial simplex sides:\\n";
+    for (size_t n = 0; n < num_non_linear_params; ++n)
+        std::cout << n << " : " << ss->data[n] << "\\n";
+
+    gsl_multimin_fminimizer* s =
+        gsl_multimin_fminimizer_alloc(gsl_multimin_fminimizer_nmsimplex2rand,
+                                      num_non_linear_params);
+
+    gsl_multimin_fminimizer_set(s, &chisq_func, x, ss);
+
+    int iter(0), status(0);
+    //
+    // Main optimization loop
+    //
+
+        do {
+        ++iter;
+        status = gsl_multimin_fminimizer_iterate(s);
+
+        if (status)
+             break;
+
+        const double size = gsl_multimin_fminimizer_size(s);
+        status = gsl_multimin_test_size(size, 1e-4);
+        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+
+        if (status == GSL_SUCCESS)
+            std::cout << "!!! converged !!!" << std::endl;
+
+        std::cout << iter << ' ' << s->fval << ' ' << size << std::endl;
+        if (iter > 0 && iter%10 == 0) {
+            std::cout << "\\n<> solution:\\n";
+            for (size_t n = 0; n <  num_non_linear_params; ++n)
+                std::cout << n << " : " << s->x->data[n] << "\\n";
+            std::cout << "<>" << std::endl;
+        }
+    } while (status == GSL_CONTINUE && iter < 5000);
+
+    linear::compute_chisq(s->x, 0);
+    std::vector<double> final_l(linear::params, linear::params + num_linear_params);
+    std::vector<double> final_nl(s->x->data,s->x->data + num_non_linear_params);
+
+    gsl_vector_free(x);
+    gsl_vector_free(ss);
+    gsl_multimin_fminimizer_free(s);
+
+    //
+    // report
+    //
+
+    for (size_t i = 0; i < training_set.size(); ++i)
+        training_set[i].nb_energy += elec_e[i];
+        
+
+    std::ofstream correlation_file;
+    correlation_file.open ("correlation.dat");
+    double err_L2(0), err_wL2(0), err_Linf(0);
+    double err_L2_lo(0), err_Linf_lo(0), nlo(0);
+
+    for (size_t i = 0; i < training_set.size(); ++i) {
+        
+        // Calculate dispersion
+        mbnrg_disp disp(training_set[i].xyz);
+        disp.set_nonlinear_parameters(final_l);
+        disp_e[i] = disp.get_dispersion();
+
+        // Calculate non-linear terms of buckingham
+        mbnrg_buck buck(training_set[i].xyz);
+        buck.set_nonlinear_parameters(final_nl);
+        buck.set_linear_parameters(final_l);
+        rep_e[i] = buck.get_buckingham();
+
+        const double E_model = rep_e[i] + elec_e[i] + disp_e[i];
+        const double delta = E_model - training_set[i].nb_energy;
+        if (std::abs(delta) > err_Linf)
+            err_Linf = std::abs(delta);
+
+        correlation_file <<  std::setw(10) << i+1   
+                         << std::setw(15) << std::scientific 
+                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setw(15) <<  E_model  
+                         << std::setw(15) <<  delta*delta  << "    \\n" ;
+
+        err_L2 += delta*delta;
+        err_wL2 += ts_weights[i]*delta*delta;
+
+        if (training_set[i].binding_energy - E_min < E_range) {
+            nlo += 1.0;
+            err_L2_lo += delta*delta;
+            if (std::abs(delta) > err_Linf_lo)
+                err_Linf_lo = std::abs(delta);
+        }
+    }
+
+    correlation_file.close();
+
+    err_L2 /= training_set.size();
+    err_wL2 /= training_set.size();
+
+    err_L2_lo /= nlo;
+
+    std::cout << "      err[L2] = " << std::sqrt(err_L2) << "    #rmsd of full ts\\n"
+              << "     err[wL2] = " << std::sqrt(err_wL2) << "   #weighted rmsd of full ts\\n"
+              << "    err[Linf] = " << err_Linf << "   #highest error in full ts\\n"
+              << "  err[L2,low] = " << std::sqrt(err_L2_lo) << "   #rmsd of low-energy ts \\n"
+              << "err[Linf,low] = " << err_Linf_lo << "   #highest error in low-energy ts "
+              << std::endl;
+
+    std::cout << "\\n>> saving as '" << "ttm-nrg_params.dat" << "'\\n";
+    std::ofstream final_params;
+    final_params.open ("ttm-nrg_params.dat");
+    for (size_t i = 0; i < num_linear_params; i++) {
+        final_params << final_l[i] << " ";
+    }
+    final_params << std::endl;
+
+    for (size_t i = 0; i < num_non_linear_params; i++) {
+        final_params << final_nl[i] << " ";
+    }
+    final_params << std::endl;
+
+    final_params.close();
+
+    return 0;
+}
+
+"""
+
+    ff.write(a)
+    ff.close()
+
+def write_eval_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
+    cppname = "eval-" + str(number_of_monomers) + "b-ttm.cpp"
+    ff = open(cppname,'w')
+
+    a = """
+int main() {
+    return 0;
+}
+"""
+    ff.write(a)
+    ff.close()
+    
+
+
+
+
+
+
 def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
     cppname = "fit-" + str(number_of_monomers) + "b.cpp"
     ff = open(cppname,'w')
@@ -1735,6 +2104,10 @@ def write_makefile(number_of_monomers, system_name):
     for i in range(number_of_monomers):
         mon_files.append("mon" + str(i+1) + ".o")
 
+    fit_exes = "fit-" + str(number_of_monomers) + "b eval-" + str(number_of_monomers) + "b "
+    if number_of_monomers == 2:
+        fit_exes += " fit-" + str(number_of_monomers) + "b-ttm eval-" + str(number_of_monomers) + "b-ttm "
+
     mon_objects = " ".join(mon_files)
     ff = open("Makefile", 'w')
     a = """
@@ -1749,10 +2122,10 @@ INCLUDE = -I./
 
 FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
 training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\
-electrostatics.o coulomb.o rwlsq.o ps.o mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o \\
+electrostatics.o coulomb.o wlsq.o rwlsq.o ps.o mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o \\
 """ + mon_objects + """ poly_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o
 
-all: libfit.a fit-""" + str(number_of_monomers) + """b eval-""" + str(number_of_monomers) + """b
+all: libfit.a """ + fit_exes + """
 
 libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
 \t$(AR) cru libfit.a $(addprefix $(OBJDIR)/, $(FIT_OBJ))
@@ -1762,7 +2135,19 @@ fit-""" + str(number_of_monomers) + """b: fit-""" + str(number_of_monomers) + ""
 
 eval-""" + str(number_of_monomers) + """b: eval-""" + str(number_of_monomers) + """b.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+"""
+    ff.write(a)
 
+    if number_of_monomers == 2:
+        a = """
+fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+
+eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@    
+"""
+    ff.write(a)
+    a = """
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) -c $< $(LIBS) -o $@
 

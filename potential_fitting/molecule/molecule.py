@@ -603,7 +603,7 @@ class Molecule(object):
             SHA1 hash of this molecule
         """
 
-        hash_string = self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
+        hash_string = self.get_name() + "\n" + self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
     def get_symbols(self):

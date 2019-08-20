@@ -2,7 +2,7 @@
 import os, sys, contextlib, glob
 
 # local module imports
-from .utils import SettingsReader, files, system
+from .utils import SettingsReader, files, system, constants
 from . import configurations, database, polynomials, fitting
 from .database import Database
 from .molecule import xyz_to_molecules
@@ -98,6 +98,8 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         None.
     """
 
+    if temperature is not None:
+        temperature *= constants.kelvin_to_au
     configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
             number_of_configs, seed = seed, temperature=temperature)
 

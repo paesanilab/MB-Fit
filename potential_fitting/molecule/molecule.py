@@ -24,7 +24,7 @@ class Molecule(object):
         # list of fragments in this molecule
         self.fragments = []
         for fragment in fragments:
-        	self.fragments.append(fragment)
+        	self.add_fragment(fragment)
         # list of energies for this molecule, filled in by get_nmer_energies
         self.energies = {}
         # list of nmer_energies for this molecule, filled by get_nmer_energies
@@ -86,50 +86,34 @@ class Molecule(object):
         for existing_fragment in self.get_fragments():
             if fragment.get_name() == existing_fragment.get_name():
 
-                new_prev_sym = "None"
-                old_prev_sym = "None"
-
                 for atom_new, atom_old in zip(fragment.get_atoms(), existing_fragment.get_atoms()):
                     if atom_new.get_name() != atom_old.get_name():
-                        raise Exception
+                        raise InconsistentValueError("name of atom {} from one {} fragment".format(atom_old.get_name(), existing_fragment.get_name()),
+                                                     "name of atom {} from another {} fragment".format(atom_new.get_name(), fragment.get_name()),
+                                                     atom_old.get_name(),
+                                                     atom_new.get_name(),
+                                                     "atoms in fragments with the same name must have the same names in the same order.")
 
-                    if (atom_new.get_symmetry_class() != new_prev_sym) ^ (atom_old.get_symmetry_class() != old_prev_sym):
-                        raise Exception
-
-                    new_prev_sym = atom_new.get_symmetry_class()
-                    old_prev_sym = atom_old.get_symmetry_class()
+                    if atom_new.get_symmetry_class() != atom_old.get_symmetry_class():
+                        raise InconsistentValueError("symmetry class of atom {} from one {} fragment".format(atom_old.get_name(), existing_fragment.get_name()),
+                                                     "symmetry class of atom {} from another {} fragment".format(atom_new.get_name(), fragment.get_name()),
+                                                     atom_old.get_symmetry_class(),
+                                                     atom_new.get_symmetry_class(),
+                                                     "atoms in fragments with the same name must have the same symmetry classes in the same order.")
 
                     atom_new.set_symmetry_class(atom_old.get_symmetry_class())
-
-                self.fragments.append(fragment)
-                return
-
-        try:
-            next_symmetry = self.get_atoms()[-1].get_symmetry_class()
-        except IndexError:
-            next_symmetry = "A"
-        prev_sym = "None"
-
-        for atom in fragment.get_atoms():
-            if atom.get_symmetry_class() != prev_sym:
-                next_symmetry = chr(ord(next_symmetry) + 1)
-            prev_sym = atom.get_symmetry_class()
-            atom.set_symmetry_class(next_symmetry)
+            else:
+                for atom_new in fragment.get_atoms():
+                    for atom_old in existing_fragment.get_atoms():
+                        if atom_new.get_symmetry_class() == atom_old.get_symmetry_class():
+                            raise InconsistentValueError("symmetry class of atom {} from {} fragment".format(atom_old.get_name(), existing_fragment.get_name()),
+                                                         "symmetry class of atom {} from {} fragment".format(atom_new.get_name(), fragment.get_name()),
+                                                         atom_old.get_symmetry_class(),
+                                                         atom_new.get_symmetry_class(),
+                                                         "atoms in fragments with different names cannot be equivelent and should not have the same symmetry class.")
 
         self.fragments.append(fragment)
-
-        # adjust the symmetry class of atoms to be in the right order
-        next_symmetry = 65
-        new_symmetries = {}
-        for fragment in self.get_fragments():
-            for atom in fragment.get_atoms():
-                if atom.get_symmetry_class() not in new_symmetries:
-                    new_symmetries[atom.get_symmetry_class()] = chr(next_symmetry)
-                    next_symmetry += 1
-
-        for fragment in self.get_fragments():
-            for atom in fragment.get_atoms():
-                atom.set_symmetry_class(new_symmetries[atom.get_symmetry_class()])
+        return
 
     def get_fragments(self):
         """

@@ -7,8 +7,6 @@ from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError
 from .database import Database
 from potential_fitting.utils import system
 
-warnings.simplefilter('always', DeprecationWarning)
-
 
 def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min=0, e_max=float('inf')):
     """

@@ -4,7 +4,7 @@ from random import randint, Random
 
 # absolute module imports
 from potential_fitting.molecule import xyz_to_molecules
-from potential_fitting.utils import SettingsReader, files, constants
+from potential_fitting.utils import SettingsReader, files, constants, system
 from potential_fitting.exceptions import ParsingError, LineFormatError, InvalidValueError
 
 def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_path, config_path, num_configs, 
@@ -24,10 +24,13 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
                 or linear progression.
     """
 
+    system.format_print("Beginning normal modes configuration generation of {}.".format(geo_path),
+            bold=True, color=system.Color.GREEN)
+
     if seed is None:
         seed = randint(-100000, 100000)
 
-    print("Parsing normal mode input file.")
+    system.format_print("Parsing normal modes input file {}".format(normal_modes_path), italics=True)
 
     settings = SettingsReader(settings_path)
 
@@ -68,7 +71,7 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
 
             except ValueError:
                 raise ParsingError(normal_modes_path, 
-                        "cannot parse {} into a frequency float".format(frequecy_line.split()[2])) from None
+                        "cannot parse {} into a frequency float".format(frequency_line.split()[2])) from None
             frequencies.append(frequency)
 
             reduced_mass_line = normal_modes_file.readline()
@@ -121,7 +124,7 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
             if blank_line != "\n":
                 raise ParsingError(normal_modes_path, "expected blank line")
 
-    print("Completed parsing normal modes input file.")
+    system.format_print("Completed parsing normal modes input file.", italics=True)
 
     generate_normal_mode_distribution_configs(settings_path, geo_path, frequencies, reduced_masses, normal_modes, config_path,
             num_configs, seed = seed, temperature=temperature)
@@ -163,7 +166,7 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
     if seed is None:
         seed = randint(-100000, 100000)
 
-    print("Running normal distribution configuration generator...")
+    system.format_print("Running normal distribution configuration generator...", italics=True)
 
     num_neg_freqs = 0
     for frequency in frequencies:
@@ -171,10 +174,10 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
             num_neg_freqs += 1
 
     if num_neg_freqs == 1:
-        print("Single negative frequency detected in input. This most likely means the given geometry is a transition state.")
+        system.format_print("Single negative frequency detected in input. This most likely means the given geometry is a transition state.", italics=True)
     
     elif num_neg_freqs > 1:
-        print("Multiple ({}) negative frequencies detected in input. Proceed with caution.".format(num_neg_freqs))
+        system.format_print("Multiple ({}) negative frequencies detected in input. Proceed with caution.".format(num_neg_freqs), italics=True)
 
     # initialize any directories needed to hold config-path
     config_path = files.init_file(config_path)
@@ -201,7 +204,8 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
         linear = False
         geometric = False
 
-    print("Will use a {} distribution to generate the configs.".format("geometric" if geometric else "linear"))
+    if linear or geometric:
+        system.format_print("Will use a {} distribution to generate the configs.".format("geometric" if geometric else "linear"), italics=True)
 
     # calculate the dimension of this molecule
     dim = 3 * molecule.get_num_atoms()
@@ -274,15 +278,16 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
         num_A_configs = 0
         if temperature is not None:
             temp_min = temperature
+        system.format_print("Will use a distribution over temperature to generate the configs using temperature {} au.".format(temp_min), italics=True)
 
-    print("Will generate {} configs over the A distribution.".format(num_A_configs))
-    print("Will generate {} configs over the temperature distribution.".format(num_temp_configs))
+    system.format_print("Will generate {} configs over the A distribution.".format(num_A_configs), italics=True)
+    system.format_print("Will generate {} configs over the temperature distribution.".format(num_temp_configs), italics=True)
     # initialize temp to the temp minimum, it will be increased each iteration of the loop
     temp = temp_min
 
     freq_cutoff = 10 * constants.cmtoau
 
-    print("Generating Temperature Distribution Configs...")
+    system.format_print("Generating Temperature Distribution Configs...", italics=True)
 
     # open the config file to write configurations to.
     with open(config_path, "w") as config_file:
@@ -336,7 +341,7 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
             else:
                 # increase temp
                 temp = temp * temp_factor + temp_addend
-    print("... Successfully generated temperature distribution configs!")
+    system.format_print("... Successfully generated temperature distribution configs!", italics=True)
 
     if geometric or linear:
 
@@ -356,7 +361,7 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
             A_factor = 1
             A_addend = (A_max - A_min) / (num_A_configs - 1)
 
-        print("Generating A Distribution Configs...")
+        system.format_print("Generating A Distribution Configs...", italics=True)
 
         # open the config file to write configurations to. Open in append mode so as not to overwrite temp configs.
         with open(config_path, "a") as config_file:
@@ -399,10 +404,9 @@ def generate_normal_mode_distribution_configs(settings_path, geo_path, frequenci
                     # increase A
                     A = A * A_factor + A_addend
 
+        system.format_print("... Successfully generated A distribution configs!", italics=True)
 
-        print("... Successfully generated A distribution configs!")
-
-    print("Normal Distribution Configuration generation complete.")
+    system.format_print("Normal Distribution Configuration generation complete! Generated {} configs.".format(num_A_configs + num_temp_configs), bold=True, color=system.Color.GREEN)
 
 def sort_by_frequency(frequencies, reduced_masses, normal_modes):
     """

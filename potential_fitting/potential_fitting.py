@@ -347,7 +347,7 @@ def execute_maple(settings_path, poly_dir_path):
         None.
     """
 
-    print("Executing maple to create c polynomial files...")
+    system.format_print("Executing maple to create c polynomial files...", bold=True, color=system.Color.YELLOW)
 
     this_file_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -365,15 +365,15 @@ def execute_maple(settings_path, poly_dir_path):
     system.call("maple", "poly-grd.maple")
     system.call("maple", "poly-nogrd.maple")
 
-    print("Maple executed successfully!")
-    print("Converting c polynomial files to cpp polynomial files")
+    system.format_print("Maple executed successfully!", italics=True)
+    system.format_print("Converting c polynomial files to cpp polynomial files", italics=True)
 
     with open("poly-grd.c", "r") as in_file, open("poly-grd.cpp", "w") as out_file:
         system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
     with open("poly-nogrd.c", "r") as in_file, open("poly-nogrd.cpp", "w") as out_file:
         system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
 
-    print("cpp files generated successfully!")
+    system.format_print("cpp files generated successfully!", bold=True, color=system.Color.GREEN)
 
     os.chdir(original_dir)
 
@@ -505,7 +505,7 @@ def compile_fit_code(settings_path, fit_dir_path):
         None.
     """
 
-    print("Compiling fit code...")
+    system.format_print("Compiling fit code...", bold=True, color=system.Color.YELLOW)
 
     original_dir = os.getcwd()
 
@@ -516,11 +516,11 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     os.chdir(original_dir)
 
-    print("Fit code compilation successful!")
+    system.format_print("Fit code compilation successful!", bold=True, color=system.Color.GREEN)
 
 def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
-    print("Performing {} fits from which the best will be chosen...".format(num_fits))
+    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.YELLOW)
 
     settings = SettingsReader(settings_path)
 
@@ -544,7 +544,7 @@ def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
 
     best_rmsd = float(best_log_lines[-6].split()[2])
 
-    print("Completed first fit with rmsd {}.\n".format(best_rmsd))
+    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
 
     while(attempts < num_fits):
 
@@ -557,14 +557,13 @@ def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
 
         rmsd = float(log_lines[-6].split()[2])
 
-        print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
+        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
 
-        print("Current best fit has rmsd {}.".format(best_rmsd))
+        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
 
         # if the new fit is better than the old fit, replace the best log and best cdl files
         if rmsd < best_rmsd:
-
-            print("Replaced previous best fit with most recent one.")
+            system.format_print("Replaced previous best fit with most recent one.", italics=True)
 
             os.rename(fit_log_path, best_fit_log_path)
             os.rename("fit-1b.cdl", "best-fit-1b.cdl")
@@ -575,7 +574,7 @@ def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
             
         attempts += 1
 
-        print("\n")
+        system.format_print("\n", italics=True)
 
     # remove the most recent fit file
     try:
@@ -586,6 +585,9 @@ def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
     # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
     except FileNotFoundError:
         pass
+
+    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
+
 
 def create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
     
@@ -619,7 +621,7 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
 def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
-    print("Performing {} fits from which the best will be chosen...".format(num_fits))
+    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.color.GREEN)
 
     settings = SettingsReader(settings_path)
 
@@ -640,7 +642,7 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
 
     best_rmsd = float(best_log_lines[-4].split()[2])
 
-    print("Completed first fit with rmsd {}.\n".format(best_rmsd))
+    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
 
     while(attempts < num_fits):
 
@@ -652,13 +654,13 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
 
         rmsd = float(log_lines[-4].split()[2])
 
-        print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
+        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
 
-        print("Current best fit has rmsd {}.".format(best_rmsd))
+        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
 
         if rmsd < best_rmsd:
 
-            print("Replaced previous best fit with most recent one.")
+            system.format_print("Replaced previous best fit with most recent one.")
 
             os.rename(fit_log_path, best_fit_log_path)
             os.rename("individual_terms.dat", "best-individual_terms.dat")
@@ -670,7 +672,7 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
 
         attempts += 1
 
-        print("\n")
+        system.format_print("\n", italics=True)
 
     # remove the most recent fit file
     try:
@@ -685,6 +687,8 @@ def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir
     os.rename("best-individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
     os.rename("best-ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
     os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
+
+    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
 
 def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
     
@@ -736,7 +740,7 @@ def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit
 
 def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
-    print("Performing {} fits from which the best will be chosen...".format(num_fits))
+    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.YELLOW)
     
     settings = SettingsReader(settings_path)
 
@@ -760,7 +764,7 @@ def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
 
     best_rmsd = float(best_log_lines[-6].split()[2])
 
-    print("Completed first fit with rmsd {}.\n".format(best_rmsd))
+    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
 
     while(attempts < num_fits):
 
@@ -773,14 +777,13 @@ def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
 
         rmsd = float(log_lines[-6].split()[2])
 
-        print("Completed fit number {} with rmsd {}.".format(attempts, rmsd))
+        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
 
-        print("Current best fit has rmsd {}.".format(best_rmsd))
+        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
 
         # if the new fit is better than the old fit, replace the best log and best cdl files
         if rmsd < best_rmsd:
-
-            print("Replaced previous best fit with most recent one.")
+            system.format_print("Replaced previous best fit with most recent one.", italics=True)
 
             os.rename(fit_log_path, best_fit_log_path)
             os.rename("fit-2b.cdl", "best-fit-2b.cdl")
@@ -791,7 +794,7 @@ def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
             
         attempts += 1
 
-        print("\n")
+        system.format_print("\n", italics=True)
 
     # remove the most recent fit file
     try:
@@ -802,6 +805,8 @@ def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_pat
     # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
     except FileNotFoundError:
         pass
+
+    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
 
 def create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
     

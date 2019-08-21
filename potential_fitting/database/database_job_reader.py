@@ -49,7 +49,8 @@ def read_all_jobs(database_config_path, job_dir):
 
         counter += 1
 
-        system.format_print("Read {} jobs so far.".format(counter), italics=True)
+        if counter % 100 == 0:
+            system.format_print("Read {} jobs so far.".format(counter), italics=True)
 
     with Database(database_config_path) as db:
         db.set_properties(calculation_results)

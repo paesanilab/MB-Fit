@@ -37,7 +37,7 @@ def make_all_jobs(settings_path, database_config_path, client_name, job_dir, *ta
     with Database(database_config_path) as database:
 
         total_pending = database.count_pending_calculations(*tags)
-        system.format_print("Making jobs from database into directory {}. {} total jobs pending in database. Making jobs for {} of them.".format(job_dir, total_pending, min(num_jobs, total_pending)), bold=True, color=system.Color.YELLOW)
+        system.format_print("Making jobs from database into directory {}. {} total jobs with tags {} pending in database. Making jobs for {} of them.".format(job_dir, total_pending, tags, min(num_jobs, total_pending)), bold=True, color=system.Color.YELLOW)
 
         for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=num_jobs):
 
@@ -46,7 +46,7 @@ def make_all_jobs(settings_path, database_config_path, client_name, job_dir, *ta
             if counter % 100 == 0:
                 system.format_print("Made {} jobs so far.".format(counter), italics=True)
 
-    system.format_print("Completed job generation. {} jobs generated. {} jobs remaining to be created.".format(counter, total_pending - counter), bold=True, color=system.Color.GREEN)
+    system.format_print("Completed job generation. {} jobs generated. {} jobs with tags {} remaining to be created.".format(counter, total_pending - counter, tags), bold=True, color=system.Color.GREEN)
 
 
 def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir):

@@ -34,4 +34,4 @@ def initialize_database(settings_path, database_config_path, training_set_path, 
         database.add_calculations(molecules, method, basis, cp, *tags, optimized = optimized)
         post_pending = database.count_pending_calculations(*tags)
 
-    system.format_print("Configurations added successfully! {} new calculations to perform.".format(post_pending - pre_pending), bold=True, color=system.Color.GREEN)
+    system.format_print("Configurations added successfully! {} new calculations with tags {} to perform.".format(post_pending - pre_pending, tags), bold=True, color=system.Color.GREEN)

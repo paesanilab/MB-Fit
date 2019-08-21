@@ -25,7 +25,7 @@ def generate_normal_mode_configurations(settings_path, geo_path, normal_modes_pa
     """
 
     system.format_print("Beginning normal modes configuration generation of {}.".format(geo_path),
-            bold=True, color=system.Color.GREEN)
+            bold=True, color=system.Color.YELLOW)
 
     if seed is None:
         seed = randint(-100000, 100000)

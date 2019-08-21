@@ -34,7 +34,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     with Database(database_config_path) as database:
 
         total_pending = database.count_pending_calculations(*tags)
-        system.format_print("Beginning calculations. {} total calculations pending in database. Calculating {} of them.".format(total_pending, min(calculation_count, total_pending)),
+        system.format_print("Beginning calculations. {} total calculations with tags {} pending in database. Calculating {} of them.".format(total_pending, tags, min(calculation_count, total_pending)),
                 bold=True, color=system.Color.YELLOW)
 
 
@@ -85,7 +85,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
 
         database.set_properties(calculation_results)
 
-        system.format_print("Done! Performed {} calculations. {} Successes and {} Failures. {} calculations remain pending in database.".format(counter, successes, failures, total_pending - counter),
+        system.format_print("Done! Performed {} calculations. {} Successes and {} Failures. {} calculations with tags {} remain pending in database.".format(counter, successes, failures, total_pending - counter, tags),
                 bold=True, color=system.Color.GREEN)
 
 

@@ -5,7 +5,7 @@ import sys
 from potential_fitting import calculator
 from potential_fitting.calculator import Model
 from potential_fitting.exceptions import LibraryCallError
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, files, system
 
 # local module imports
 from .database import Database
@@ -33,7 +33,10 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     # open the database
     with Database(database_config_path) as database:
 
-        print("Calculating Missing Energies...")
+        total_pending = database.count_pending_calculations(*tags)
+        system.format_print("Beginning calculations. {} total calculations pending in database. Calculating {} of them.".format(total_pending, min(calculation_count, total_pending)),
+                bold=True, color=system.Color.YELLOW)
+
 
         calc = calculator.get_calculator(settings_path)
 
@@ -46,7 +49,6 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
         for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=calculation_count):
             
             counter += 1
-            print_progress(counter)
 
             try:
                 model = Model(method, basis, use_cp)
@@ -77,9 +79,14 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
                 # save changes to the database
                 database.save()
 
+            if counter % 10 == 0:
+                system.format_print("Performed {} calculations so far. {} Successes and {} Failures so far.".format(counter, successes, failures),
+                        italics=True)
+
         database.set_properties(calculation_results)
 
-        print("Done! Performed {} calculations. {} Successes and {} Failures.".format(counter, successes, failures))
+        system.format_print("Done! Performed {} calculations. {} Successes and {} Failures. {} calculations remain pending in database.".format(counter, successes, failures, total_pending - counter),
+                bold=True, color=system.Color.GREEN)
 
 
 def generate_inputs_from_database(settings_path, database_path):
@@ -193,7 +200,7 @@ def print_progress(counter):
 
     Args:
         counter             - The number to print.
-    
+
     Returns:
         None.
     """

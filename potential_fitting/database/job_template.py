@@ -76,6 +76,9 @@ def execute_job():
     except QcdbException:
         success = False
         print("The calculation failed.")
+    except RuntimeError:
+        success = False
+        print("The calculation failed. Iterations *probably* did not converge.")
 
 
     with open(output_file, "w") as out_file:

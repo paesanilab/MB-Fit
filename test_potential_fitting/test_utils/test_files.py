@@ -1,109 +1,130 @@
 import unittest, os
 
 from potential_fitting.utils import files
-from potential_fitting.exceptions import FileExistsError
+from potential_fitting.exceptions import FileExistsError, InvalidValueError
 
 class TestFiles(unittest.TestCase):
 
+    def setUpClass():
+        TestFiles.dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "dir")
+        TestFiles.dirdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "dir", "dir")
+
+        TestFiles.dir2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "dir2")
+        TestFiles.dir2dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "dir2", "dir")
+
+        TestFiles.file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "file1.txt")
+        TestFiles.file_backup1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "file1.txt.backup-1")
+        TestFiles.file_backup2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "file1.txt.backup-2")
+        TestFiles.file_backup3 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "file1.txt.backup-3")
+
+
+        TestFiles.deepdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "some", "file", "path")
+
+        TestFiles.deepfile = os.path.join(TestFiles.deepdir, "file.txt")
+
     def test_init_directory(self):
 
-        self.assertEqual(files.init_directory("dir"), "dir")
-        self.assertTrue(os.path.isdir("dir"))
-        self.assertEqual(files.init_directory("dir"), "dir")
-        self.assertTrue(os.path.isdir("dir"))
+        self.assertEqual(files.init_directory(TestFiles.dir), TestFiles.dir)
+        self.assertTrue(os.path.isdir(TestFiles.dir))
+        self.assertEqual(files.init_directory(TestFiles.dir), TestFiles.dir)
+        self.assertTrue(os.path.isdir(TestFiles.dir))
 
 
-        self.assertEqual(files.init_directory("dir/dir"), "dir/dir")
-        self.assertTrue(os.path.isdir("dir/dir"))
+        self.assertEqual(files.init_directory(TestFiles.dirdir), TestFiles.dirdir)
+        self.assertTrue(os.path.isdir(TestFiles.dirdir))
 
-        self.assertEqual(files.init_directory("dir2/dir"), "dir2/dir")
-        self.assertTrue(os.path.isdir("dir2/dir"))
+        self.assertEqual(files.init_directory(TestFiles.dir2dir), TestFiles.dir2dir)
+        self.assertTrue(os.path.isdir(TestFiles.dir2dir))
 
-        os.removedirs("dir/dir")
-        os.removedirs("dir2/dir")
+        os.removedirs(TestFiles.dirdir)
+        os.removedirs(TestFiles.dir2dir)
 
     def test_init_file(self):
-        self.assertEqual(files.init_file("file.txt"), "./file.txt")
-        self.assertFalse(os.path.isfile("file.txt"))
+        self.assertEqual(files.init_file(TestFiles.file), TestFiles.file)
+        self.assertFalse(os.path.isfile(TestFiles.file))
 
-        with open("file.txt", "w") as file:
+        with open(TestFiles.file, "w") as file:
             file.write("FILE #1.")
 
-        self.assertEqual(files.init_file("./file.txt"), "./file.txt")
-        self.assertFalse(os.path.isfile("file.txt"))
-        self.assertTrue(os.path.isfile("file.txt.backup-1"))
+        self.assertEqual(files.init_file(TestFiles.file), TestFiles.file)
+        self.assertFalse(os.path.isfile(TestFiles.file))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup1))
 
-        with open("file.txt.backup-1", "r") as file:
+        with open(TestFiles.file_backup1, "r") as file:
             self.assertEqual(file.read(), "FILE #1.")
 
-        with open("file.txt", "w") as file:
+        with open(TestFiles.file, "w") as file:
             file.write("FILE #2.")
 
-        self.assertEqual(files.init_file("./file.txt"), "./file.txt")
-        self.assertFalse(os.path.isfile("file.txt"))
-        self.assertTrue(os.path.isfile("file.txt.backup-1"))
-        self.assertTrue(os.path.isfile("file.txt.backup-2"))
+        self.assertEqual(files.init_file(TestFiles.file), TestFiles.file)
+        self.assertFalse(os.path.isfile(TestFiles.file))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup1))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup2))
 
-        with open("file.txt.backup-1", "r") as file:
+        with open(TestFiles.file_backup1, "r") as file:
             self.assertEqual(file.read(), "FILE #1.")
 
-        with open("file.txt.backup-2", "r") as file:
+        with open(TestFiles.file_backup2, "r") as file:
             self.assertEqual(file.read(), "FILE #2.")
 
-        with open("file.txt", "w") as file:
+        with open(TestFiles.file, "w") as file:
             file.write("FILE #3.")
 
-        self.assertEqual(files.init_file("file.txt", files.OverwriteMethod.OVERWRITE), "./file.txt")
-        self.assertTrue(os.path.isfile("file.txt"))
-        self.assertTrue(os.path.isfile("file.txt.backup-1"))
-        self.assertTrue(os.path.isfile("file.txt.backup-2"))
+        self.assertEqual(files.init_file(TestFiles.file, files.OverwriteMethod.OVERWRITE), TestFiles.file)
+        self.assertTrue(os.path.isfile(TestFiles.file))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup1))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup2))
 
-        with open("file.txt", "r") as file:
+        with open(TestFiles.file, "r") as file:
             self.assertEqual(file.read(), "FILE #3.")
 
-        with open("file.txt.backup-1", "r") as file:
+        with open(TestFiles.file_backup1, "r") as file:
             self.assertEqual(file.read(), "FILE #1.")
 
-        with open("file.txt.backup-2", "r") as file:
+        with open(TestFiles.file_backup2, "r") as file:
             self.assertEqual(file.read(), "FILE #2.")
 
-        with open("file.txt", "w") as file:
+        with open(TestFiles.file, "w") as file:
             file.write("FILE #4.")
 
         with self.assertRaises(FileExistsError):
-            files.init_file("file.txt", files.OverwriteMethod.CRASH)
+            files.init_file(TestFiles.file, files.OverwriteMethod.CRASH)
 
-        with open("file.txt", "r") as file:
+        with open(TestFiles.file, "r") as file:
             self.assertEqual(file.read(), "FILE #4.")
 
-        with open("file.txt.backup-1", "r") as file:
+        with open(TestFiles.file_backup1, "r") as file:
             self.assertEqual(file.read(), "FILE #1.")
 
-        with open("file.txt.backup-2", "r") as file:
+        with open(TestFiles.file_backup2, "r") as file:
             self.assertEqual(file.read(), "FILE #2.")
 
-        self.assertEqual(files.init_file("file.txt", files.OverwriteMethod.NONE), "./file.txt")
-        self.assertTrue(os.path.isfile("file.txt"))
-        self.assertTrue(os.path.isfile("file.txt.backup-1"))
-        self.assertTrue(os.path.isfile("file.txt.backup-2"))
+        self.assertEqual(files.init_file(TestFiles.file, files.OverwriteMethod.NONE), TestFiles.file)
+        self.assertTrue(os.path.isfile(TestFiles.file))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup1))
+        self.assertTrue(os.path.isfile(TestFiles.file_backup2))
 
-        with open("file.txt", "r") as file:
+        with open(TestFiles.file, "r") as file:
             self.assertEqual(file.read(), "FILE #4.")
 
-        with open("file.txt.backup-1", "r") as file:
+        with open(TestFiles.file_backup1, "r") as file:
             self.assertEqual(file.read(), "FILE #1.")
 
-        with open("file.txt.backup-2", "r") as file:
+        with open(TestFiles.file_backup2, "r") as file:
             self.assertEqual(file.read(), "FILE #2.")
 
 
-        self.assertEqual(files.init_file("some/path/file.txt"), "some/path/file.txt")
-        self.assertTrue(os.path.isdir("some/path/"))
+        self.assertEqual(files.init_file(TestFiles.deepfile), TestFiles.deepfile)
+        self.assertTrue(os.path.isdir(TestFiles.deepdir))
 
-        os.remove("file.txt")
-        os.remove("file.txt.backup-1")
-        os.remove("file.txt.backup-2")
-        os.removedirs("some/path/")
+        with self.assertRaises(InvalidValueError):
+            files.init_file(TestFiles.file, 8)
+
+        os.remove(TestFiles.file)
+        os.remove(TestFiles.file_backup1)
+        os.remove(TestFiles.file_backup2)
+        os.removedirs(TestFiles.deepdir)
+
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFiles)

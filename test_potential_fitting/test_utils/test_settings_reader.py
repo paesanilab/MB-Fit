@@ -6,7 +6,8 @@ from potential_fitting.exceptions import ConfigMissingFileError, ConfigMissingSe
 class TestSettingsReader(unittest.TestCase):
 
     def setUp(self):
-        self.settings_reader = settings_reader.SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "settings.ini"))
+        self.settings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "settings.ini")
+        self.settings_reader = settings_reader.SettingsReader(self.settings_file)
 
     def test_constructor_and_get_file_path(self):
 
@@ -15,7 +16,7 @@ class TestSettingsReader(unittest.TestCase):
                 os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "no_file.ini"))
 
         self.assertIsNone(settings_reader.SettingsReader().get_file_path())
-        self.assertEqual(self.settings_reader.get_file_path(), os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "settings.ini"))
+        self.assertEqual(self.settings_reader.get_file_path(), self.settings_file)
 
     def test_get(self):
 
@@ -103,9 +104,11 @@ class TestSettingsReader(unittest.TestCase):
         s_r.set("section1", "property1", "value1")
         s_r.set("section2", "property2", "value2")
 
-        s_r.write(os.path.join(os.path.dirname(os.path.abspath(__file__)), "write.ini"))
+        write_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "write.ini")
 
-        s_r = settings_reader.SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "write.ini"))
+        s_r.write(write_path)
+
+        s_r = settings_reader.SettingsReader(write_path)
 
         self.assertEqual(s_r.get("section1", "property1"), "value1")
         self.assertEqual(s_r.get("section2", "property2"), "value2")

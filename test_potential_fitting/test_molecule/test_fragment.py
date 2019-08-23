@@ -1,10 +1,10 @@
 import unittest
-import os
+import os, random
 
 from potential_fitting.molecule import Atom
 from potential_fitting.molecule import Fragment
 from potential_fitting.molecule import parse_training_set_file
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, Quaternion
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 
 """
@@ -43,7 +43,7 @@ class TestFragment(unittest.TestCase):
         with self.assertRaises(InconsistentValueError):
             Fragment([Atom("O", "A", 0, 0, 0), Atom("O", "A", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 1, "O(H)H")
 
-    def test_negative_spin(self):
+    def test_non_positive_spin(self):
 
         # test for when a fragment is given a spin multiplicity < 1
 
@@ -52,6 +52,19 @@ class TestFragment(unittest.TestCase):
 
         with self.assertRaises(InvalidValueError):
             Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, -1, "O(H)H")
+
+    def test_same_symmetry_different_type(self):
+
+        # test for when a fragment is given 2 atoms with the same symmetry but different atom type.
+
+        with self.assertRaises(InconsistentValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "A", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 1, "O(H)H")
+
+        with self.assertRaises(InconsistentValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "A", 2, 2, 2)], "frag", 0, 1, "O(H)H")
+
+        with self.assertRaises(InconsistentValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("C", "B", 2, 2, 2)], "frag", 0, 1, "O(H)H")
 
     def test_get_name(self):
         fragment = Fragment([], "HCl", 0, 1, "")
@@ -98,6 +111,157 @@ class TestFragment(unittest.TestCase):
 
         # get_atom() should return list of length 2 after 2 atoms added to fragment
         self.assertEqual(len(fragment.get_atoms()), 2)
+
+    def test_get_symmetry(self):
+        fragment = Fragment([], "", 0, 1, "")
+
+        # get_symmetry() should return an empty string for a fragment with no atoms
+        self.assertEqual(fragment.get_symmetry(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+
+        # get_symmetry() should return "A1"
+        self.assertEqual(fragment.get_symmetry(), "A1")
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+
+        # get_symmetry() should return "A2"
+        self.assertEqual(fragment.get_symmetry(), "A2")
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+
+        # get_symmetry() should return "A2B1"
+        self.assertEqual(fragment.get_symmetry(), "A2B1")
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+
+        # get_symmetry() should return "A2B2"
+        self.assertEqual(fragment.get_symmetry(), "A2B2")
+
+    def test_get_standard_symmetry(self):
+        fragment = Fragment([], "", 0, 1, "")
+
+        # get_standard_symmetry() should return an empty string for a fragment with no atoms
+        self.assertEqual(fragment.get_standard_symmetry(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+
+        # get_standard_symmetry() should return "A1"
+        self.assertEqual(fragment.get_standard_symmetry(), "A1")
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+
+        # get_standard_symmetry() should return "A2"
+        self.assertEqual(fragment.get_standard_symmetry(), "A2")
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+
+        # get_standard_symmetry() should return "B1A2"
+        self.assertEqual(fragment.get_standard_symmetry(), "B1A2")
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+
+        # get_standard_symmetry() should return "B2A2"
+        self.assertEqual(fragment.get_standard_symmetry(), "B2A2")
+
+        atom4 = Atom("O", "B", 2, 3, 4)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3, atom4], "H2O3", 0, 1, "H1.HOO1O")
+
+        # get_standard_symmetry() should return "B3A2"
+        self.assertEqual(fragment.get_standard_symmetry(), "B3A2")
+
+    def test_get_SMILE(self):
+
+        fragment = Fragment([], "", 0, 1, "")
+
+        # get_SMILE() should return an empty string for a fragment with no atoms
+        self.assertEqual(fragment.get_SMILE(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+
+        # get_SMILE() should return "[H]"
+        self.assertEqual(fragment.get_SMILE(), "[H]")
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+
+        # get_SMILE() should return "[H].[H]"
+        self.assertEqual(fragment.get_SMILE(), "[H].[H]")
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+
+        # get_SMILE() should return "[H]%1.[H][O]%1"
+        self.assertEqual(fragment.get_SMILE(), "[H]%1.[H][O]%1")
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+
+        # get_SMILE() should return "[H]%1.[H][O][O]%1"
+        self.assertEqual(fragment.get_SMILE(), "[H]%1.[H][O][O]%1")
+
+
+        # A4B2C2D4E4
+        fragment1 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc.ini"))))[0].get_fragments()[0]
+        self.assertEqual(fragment1.get_SMILE(), "[C]%1%2[C]%3%4.[C]%5%6[C]%7%8.[C]%3%5%9.[C]%1%7%10.[H]%2.[H]%4.[H]%6.[H]%8.[C]%9%11%12.[C]%10%13%14.[O]%11.[O]%12.[O]%13.[O]%14")
+
+        # A4B2C2D4E4
+        fragment2 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.ini"))))[0].get_fragments()[0]
+        self.assertEqual(fragment2.get_SMILE(), "[C]%1%2[H].[C]%1%3[H].[C]%3%4[C]%5[H].[C]%5%6[H].[C]%2%6[C]%7[O].[O]%7.[C]%4%8[O].[O]%8")
+
+    def test_get_standard_SMILE(self):
+
+        fragment = Fragment([], "", 0, 1, "")
+
+        # get_standard_SMILE() should return an empty string for a fragment with no atoms
+        self.assertEqual(fragment.get_standard_SMILE(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+
+        # get_standard_SMILE() should return "[H]"
+        self.assertEqual(fragment.get_standard_SMILE(), "[H]")
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+
+        # get_standard_SMILE() should return "[H].[H]"
+        self.assertEqual(fragment.get_standard_SMILE(), "[H].[H]")
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+
+        # get_standard_SMILE() should return "[O]%1[H].[H]%1"
+        self.assertEqual(fragment.get_standard_SMILE(), "[O]%1[H].[H]%1")
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+
+        # get_standard_SMILE() should return "[O]%1[O]%2.[H]%1.[H]%2"
+        self.assertEqual(fragment.get_standard_SMILE(), "[O]%1[O][H].[H]%1")
+
 
     """
     Tests the get_charge() function of the Fragment class
@@ -157,47 +321,270 @@ class TestFragment(unittest.TestCase):
         # get_num_atoms() should return 3 after third atom added to Fragment
         self.assertEqual(fragment.get_num_atoms(), 3)
 
+    def test_translate(self):
+
+        for i in range(1000):
+            start_x1 = random.random() * 100
+            start_y1 = random.random() * 100
+            start_z1 = random.random() * 100
+            start_x2 = random.random() * 100
+            start_y2 = random.random() * 100
+            start_z2 = random.random() * 100
+
+            trans_x = random.random() * 100
+            trans_y = random.random() * 100
+            trans_z = random.random() * 100
+
+            fragment_ref = Fragment([Atom("H", "A", start_x1 + trans_x, start_y1 + trans_y, start_z1 + trans_z),
+                                     Atom("Al", "B", start_x2 + trans_x, start_y2 + trans_y, start_z2 + trans_z)], "HAlHe", 3, 2, "H[Al]")
+
+            fragment = Fragment([Atom("H", "A", start_x1, start_y1, start_z1),
+                                      Atom("Al", "B", start_x2, start_y2, start_z2)], "HAlHe", 3, 2, "H[Al]")
+
+            fragment.translate(trans_x, trans_y, trans_z)
+
+            self.assertEqual(fragment, fragment_ref)
+
+    def test_rotate(self):
+        fragment = Fragment([Atom("H", "A", 0, 0, 0),
+                            Atom("Al", "B", 0, 0, 0)], "HAlHe", 3, 2, "H[Al]")
+
+        for i in range(1000):
+
+            ref_atom = Atom("H", "A", random.random() * 100, random.random() * 100, random.random() * 100)
+
+            pre_dist0 = fragment.get_atoms()[0].distance(ref_atom)
+            pre_dist1 = fragment.get_atoms()[1].distance(ref_atom)
+
+            fragment.rotate(Quaternion.get_random_rotation_quaternion(), origin_x=ref_atom.get_x(), origin_y=ref_atom.get_y(), origin_z=ref_atom.get_z())
+
+            post_dist0 = fragment.get_atoms()[0].distance(ref_atom)
+            post_dist1 = fragment.get_atoms()[1].distance(ref_atom)
+
+            self.assertAlmostEqual(pre_dist0, post_dist0)
+            self.assertAlmostEqual(pre_dist1, post_dist1)
+
+    def test_get_connectivity_matrix(self):
+
+        fragment = Fragment([], "", 0, 1, "")
+        self.assertEqual(fragment.get_connectivity_matrix(), [])
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+        self.assertEqual(fragment.get_connectivity_matrix(), [[False]])
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+        self.assertEqual(fragment.get_connectivity_matrix(), [[False, False],
+                                                              [False, False]])
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+        self.assertEqual(fragment.get_connectivity_matrix(), [[False, False, True],
+                                                              [False, False, True],
+                                                              [True, True, False]])
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+        self.assertEqual(fragment.get_connectivity_matrix(), [[False, False, False, True],
+                                                              [False, False, True, False],
+                                                              [False, True, False, True],
+                                                              [True, False, True, False]])
+
+    def test_get_standard_connectivity_matrix(self):
+
+        fragment = Fragment([], "", 0, 1, "")
+        self.assertEqual(fragment.get_standard_connectivity_matrix(), [])
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+        self.assertEqual(fragment.get_standard_connectivity_matrix(), [[False]])
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+        self.assertEqual(fragment.get_standard_connectivity_matrix(), [[False, False],
+                                                                       [False, False]])
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+        self.assertEqual(fragment.get_standard_connectivity_matrix(), [[False, True, True],
+                                                                       [True, False, False],
+                                                                       [True, False, False]])
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+        self.assertEqual(fragment.get_standard_connectivity_matrix(), [[False, True, False, True],
+                                                                       [True, False, True, False],
+                                                                       [False, True, False, False],
+                                                                       [True, False, False, False]])
+
+    def test_get_excluded_pairs(self):
+
+        fragment = Fragment([], "", 0, 1, "")
+        self.assertEqual(fragment.get_excluded_pairs(), [[],
+                                                         [],
+                                                         []])
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "H", 0, 1, "H")
+        self.assertEqual(fragment.get_excluded_pairs(), [[],
+                                                         [],
+                                                         []])
+
+        atom1 = Atom("H", "A", 400, 32, 23)
+
+        fragment = Fragment([atom0, atom1], "H2", 0, 1, "H.H")
+        self.assertEqual(fragment.get_excluded_pairs(), [[],
+                                                         [],
+                                                         []])
+
+        atom2 = Atom("O", "B", 34, 35, 1244)
+
+        fragment = Fragment([atom0, atom1, atom2], "H2O", 0, 1, "H1.HO1")
+        excluded12, excluded13, excluded14 = fragment.get_excluded_pairs()
+        self.assertEqual(len(excluded12), 2)
+        self.assertEqual(len(excluded13), 1)
+        self.assertEqual(len(excluded14), 0)
+        self.assertIn([0, 2], excluded12)
+        self.assertIn([1, 2], excluded12)
+        self.assertIn([0, 1], excluded13)
+
+        atom3 = Atom("O", "B", 1, 2, 3)
+
+        fragment = Fragment([atom0, atom1, atom2, atom3], "H2O2", 0, 1, "H1.HOO1")
+        excluded12, excluded13, excluded14 = fragment.get_excluded_pairs()
+        self.assertEqual(len(excluded12), 3)
+        self.assertEqual(len(excluded13), 2)
+        self.assertEqual(len(excluded14), 1)
+        self.assertIn([0, 3], excluded12)
+        self.assertIn([1, 2], excluded12)
+        self.assertIn([2, 3], excluded12)
+        self.assertIn([0, 2], excluded13)
+        self.assertIn([1, 3], excluded13)
+        self.assertIn([0, 1], excluded14)
+
     """
     Test the to_xyz() function of the Fragment class
     """
     def test_to_xyz(self):
-        fragment = Fragment([], "HClXe", -2, 2, "")
+        fragment = Fragment([], "fragment", -2, 2, "")
 
         # to_xyz() should return empty string when no atoms are added to fragment
         self.assertEqual(fragment.to_xyz(), "")
 
         atom0 = Atom("H", "A", 0, 0, 0)
 
-        fragment = Fragment([atom0], "HClXe", -2, 2, "H")
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
 
         # to_xyz() should return string of first atom after only 1 atom added
         self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n")
-        
+
         atom1 = Atom("Cl", "B", 5, 7, -3)
 
-        fragment = Fragment([atom0, atom1], "HClXe", -2, 2, "H[Cl]")
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
 
         # to_xyz() should return string of 2 atoms after 2nd atom added
         self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n" + atom1.to_xyz() + "\n")
-    
+
         atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
 
-        fragment = Fragment([atom0, atom1, atom2], "HClXe", -2, 2, "H[Cl][Xe]")
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
 
         # to_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom2.to_xyz() + "\n")
 
-    """
-    Test the get_SMILE() function of the Fragment class
-    """
-    def test_get_SMILE(self):
-        # A4B2C2D4E4
-        fragment1 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc.ini"))))[0].get_fragments()[0]
-        self.assertEqual(fragment1.get_SMILE(), "[C]%1%2[C]%3%4.[C]%5%6[C]%7%8.[C]%3%5%9.[C]%1%7%10.[H]%2.[H]%4.[H]%6.[H]%8.[C]%9%11%12.[C]%10%13%14.[O]%11.[O]%12.[O]%13.[O]%14")
+    def test_to_standard_xyz(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
 
-        # A4B2C2D4E4
-        fragment2 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.ini"))))[0].get_fragments()[0]
-        self.assertEqual(fragment2.get_SMILE(), "[C]%1%2[H].[C]%1%3[H].[C]%3%4[C]%5[H].[C]%5%6[H].[C]%2%6[C]%7[O].[O]%7.[C]%4%8[O].[O]%8")
+        # to_xyz() should return empty string when no atoms are added to fragment
+        self.assertEqual(fragment.to_standard_xyz(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+
+        # to_standard_xyz() should return string of first atom after only 1 atom added
+        self.assertEqual(fragment.to_standard_xyz(), atom0.to_xyz() + "\n")
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+
+        # to_standard_xyz() should return string of 2 atoms after 2nd atom added
+        self.assertEqual(fragment.to_standard_xyz(), atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n")
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+
+        # to_standard_xyz() should return string of 3 atoms after only 3rd atom added
+        self.assertEqual(fragment.to_standard_xyz(), atom2.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n")
+
+    """
+    Test the to_xyz() function of the Fragment class
+    """
+    def test_to_ghost_xyz(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
+
+        # to_ghost_xyz() should return empty string when no atoms are added to fragment
+        self.assertEqual(fragment.to_ghost_xyz(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+
+        # to_ghost_xyz() should return string of first atom after only 1 atom added
+        self.assertEqual(fragment.to_ghost_xyz(), atom0.to_ghost_xyz() + "\n")
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+
+        # to_ghost_xyz() should return string of 2 atoms after 2nd atom added
+        self.assertEqual(fragment.to_ghost_xyz(), atom0.to_ghost_xyz() + "\n" + atom1.to_ghost_xyz() + "\n")
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+
+        # to_ghost_xyz() should return string of 3 atoms after only 3rd atom added
+        self.assertEqual(fragment.to_ghost_xyz(), atom0.to_ghost_xyz() + "\n" + atom1.to_ghost_xyz() + "\n" + atom2.to_ghost_xyz() + "\n")
+
+    def test_to_ghost_standard_xyz(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
+
+        # to_standard_ghost_xyz() should return empty string when no atoms are added to fragment
+        self.assertEqual(fragment.to_standard_ghost_xyz(), "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+
+        # to_standard_ghost_xyz() should return string of first atom after only 1 atom added
+        self.assertEqual(fragment.to_standard_ghost_xyz(), atom0.to_ghost_xyz() + "\n")
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+
+        # to_standard_ghost_xyz() should return string of 2 atoms after 2nd atom added
+        self.assertEqual(fragment.to_standard_ghost_xyz(), atom1.to_ghost_xyz() + "\n" + atom0.to_ghost_xyz() + "\n")
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+
+        # to_standard_ghost_xyz() should return string of 3 atoms after only 3rd atom added
+        self.assertEqual(fragment.to_standard_ghost_xyz(), atom2.to_ghost_xyz() + "\n" + atom1.to_ghost_xyz() + "\n" + atom0.to_ghost_xyz() + "\n")
 
 
 

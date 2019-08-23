@@ -58,8 +58,6 @@ class Fragment(object):
             raise InvalidValueError("spin multiplicity", spin_multiplicity, "1 or greater")
         self.spin_multiplicity = spin_multiplicity
 
-        self.index = -1
-
     def parse_SMILE(self, SMILE):
 
         if len(SMILE) == 0:
@@ -227,19 +225,6 @@ class Fragment(object):
 
         return self.atoms
 
-    def get_index(self):
-        """
-        Gets the index of this fragment in the molecule
-
-        Args:
-            None
-
-        Returns:
-            The index of this framgnet
-        """
-
-        return self.index
-
     def get_symmetry(self):
         """
         Gets the symmetry of this fragment
@@ -250,6 +235,9 @@ class Fragment(object):
         Returns:
             the symmetry of this fragment in A1B2 form
         """
+
+        if len(self.get_atoms()) == 0:
+            return ""
 
         # used to build the symmetry string
         symmetry = self.get_atoms()[0].get_symmetry_class()
@@ -289,6 +277,9 @@ class Fragment(object):
         Returns:
             the symmetry of this fragment in A1B2 form in standard order.
         """
+
+        if len(self.get_atoms()) == 0:
+            return ""
 
         # used to build the symmetry string
         symmetry = self.get_standard_order()[0].get_symmetry_class()
@@ -465,23 +456,6 @@ class Fragment(object):
     def get_connectivity_matrix(self):
 
         return self.connectivity_matrix
-        """
-        # construct a matrix of size n by n where n is the number of atoms in this fragment
-        # a value of 1 in row a and column b means that atom a and b are bonded
-        connectivity_matrix = [[0 for k in range(self.get_num_atoms())] for i in range(self.get_num_atoms())]
-
-        # loop over each pair of atoms
-        for index1, atom1 in enumerate(self.get_atoms()):
-            for index2, atom2 in enumerate(self.get_atoms()[index1 + 1:]):
-                index2 += index1 + 1
-
-                # if these atoms are bonded, set their values in the connectivity matrix to 1.
-                if atom1.is_bonded(atom2):
-                    connectivity_matrix[index1][index2] = 1
-                    connectivity_matrix[index2][index1] = 1
-
-        return connectivity_matrix
-        """
 
     def get_standard_connectivity_matrix(self):
     
@@ -511,6 +485,9 @@ class Fragment(object):
         Returns:
             a tuple consisting of (excluded_12, excluded_13, ..., excluded_1x) lists
         """
+
+        if len(self.atoms) == 0:
+            return [[] for i in range(max_exclusion)]
 
         excluded_pairs = []
 
@@ -685,12 +662,6 @@ class Fragment(object):
                 atoms.append(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
 
         return Fragment(atoms, name, charge, spin_multiplicity, SMILE)
-
-        # check if there are more lines than atoms in the symmetry
-        if len(lines) != 0:
-            raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
-
-        return self
 
     def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None):
         """

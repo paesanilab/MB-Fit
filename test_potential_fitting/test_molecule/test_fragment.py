@@ -5,15 +5,76 @@ from potential_fitting.molecule import Atom
 from potential_fitting.molecule import Fragment
 from potential_fitting.molecule import parse_training_set_file
 from potential_fitting.utils import SettingsReader
+from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 
 """
 Test cases for Fragment class
 """
 class TestFragment(unittest.TestCase):
-    
+
+    def test_bad_SMILE(self):
+
+        # tests for when a fragment is given a bad SMILE string
+
+        # SMILE string that doesn't close all its bonds.
+        with self.assertRaises(InvalidValueError):
+            Fragment([Atom("O", "A", 0, 0, 0)], "frag", 0, 1, "O1")
+        with self.assertRaises(InvalidValueError):
+            Fragment([Atom("H", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("C", "C", 2, 2, 2)], "frag", 0, 1, "O12HC2")
+
+        # SMILE string that indicates an atom is bonded to itself
+        with self.assertRaises(InvalidValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 1, "O11(H)H")
+
+    def test_inconsistent_atoms_and_SMILE(self):
+
+        # tests for when atoms in the list don't match the atoms in the SMILE
+
+        # too few atoms in list
+        with self.assertRaises(InconsistentValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1)], "frag", 0, 1, "O(H)H")
+
+        # too many atoms in list
+        with self.assertRaises(InconsistentValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2), Atom("H", "B", 3, 3, 3)],
+                "frag", 0, 1, "O(H)H")
+
+        # inconsistent atom names
+        with self.assertRaises(InconsistentValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("O", "A", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 1, "O(H)H")
+
+    def test_negative_spin(self):
+
+        # test for when a fragment is given a spin multiplicity < 1
+
+        with self.assertRaises(InvalidValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 0, "O(H)H")
+
+        with self.assertRaises(InvalidValueError):
+            Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, -1, "O(H)H")
+
+    def test_get_name(self):
+        fragment = Fragment([], "HCl", 0, 1, "")
+        self.assertEqual(fragment.get_name(), "HCl")
+
+        fragment = Fragment([], "somename!", 0, 1, "")
+        self.assertEqual(fragment.get_name(), "somename!")
+
+    def test_set_name(self):
+        fragment = Fragment([], "HCl", 0, 1, "")
+        self.assertEqual(fragment.get_name(), "HCl")
+
+        fragment.set_name("somename!")
+        self.assertEqual(fragment.get_name(), "somename!")
+
+        fragment.set_name("another name")
+        self.assertEqual(fragment.get_name(), "another name")
+
+        fragment.set_name("HCl")
+        self.assertEqual(fragment.get_name(), "HCl")
 
     """
-    Tests the add_atom() and get_atoms() functions of the Fragment class
+    Tests get_atoms() functions of the Fragment class
     """
     def test_get_atoms(self):
         fragment = Fragment([], "HCl", 0, 1, "")

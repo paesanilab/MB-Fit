@@ -661,6 +661,9 @@ class Fragment(object):
 
                 atoms.append(Atom(symbol, symmetry_class, float(x), float(y), float(z)))
 
+        if len(lines) != 0:
+            raise InconsistentValueError("atom lines in fragment xyz", "symmetry of fragment", len(string.splitlines()), symmetry, "sum of numbers in symmetry must equal number of atom lines in the fragment xyz")
+
         return Fragment(atoms, name, charge, spin_multiplicity, SMILE)
 
     def compare_priority(self, atom1, atom2, visited1 = None, visited2 = None, connectivity_matrix = None):
@@ -728,10 +731,9 @@ class Fragment(object):
 
         connectivity_matrix = self.get_connectivity_matrix()
 
-        visited1 = [False for atom in self.get_atoms()]
-        visited2 = [False for atom in self.get_atoms()]
+        visited = [False for atom in self.get_atoms()]
         
-        sorted_atoms = sorted(self.get_atoms(), reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited1, visited2 = visited1, connectivity_matrix = connectivity_matrix)))
+        sorted_atoms = sorted(self.get_atoms(), reverse = True, key = functools.cmp_to_key(functools.partial(self.compare_priority, visited1 = visited, visited2 = visited, connectivity_matrix = connectivity_matrix)))
 
         return sorted_atoms
 
@@ -751,7 +753,7 @@ class Fragment(object):
     def confirm_symmetry_class(self):
         """
         Checks if the user-specified symmetry matches the 
-        auto-generated one.
+        auto-generated standard one.
 
         Args:
             None.

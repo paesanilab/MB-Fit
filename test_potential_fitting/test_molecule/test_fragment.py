@@ -5,7 +5,7 @@ from potential_fitting.molecule import Atom
 from potential_fitting.molecule import Fragment
 from potential_fitting.molecule import parse_training_set_file
 from potential_fitting.utils import SettingsReader, Quaternion
-from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
+from potential_fitting.exceptions import InvalidValueError, InconsistentValueError, XYZFormatError
 
 """
 Test cases for Fragment class
@@ -585,6 +585,149 @@ class TestFragment(unittest.TestCase):
 
         # to_standard_ghost_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_standard_ghost_xyz(), atom2.to_ghost_xyz() + "\n" + atom1.to_ghost_xyz() + "\n" + atom0.to_ghost_xyz() + "\n")
+
+    def test_read_xyz(self):
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment.read_xyz("H 0 0 0", "fragment", -2, 2, "H", "A1")
+        fragment_ref = Fragment([atom0], "fragment", -2, 2, "H")
+
+        self.assertEqual(fragment, fragment_ref)
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment.read_xyz("H 0 0 0\nCl 5 7 -3", "fragment", -2, 2, "H[Cl]", "A1B1")
+        fragment_ref = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+
+        self.assertEqual(fragment, fragment_ref)
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment.read_xyz("H 0 0 0\nCl 5 7 -3\nXe 10.234235 -0.00000234 2.353523", "fragment", -2, 2, "H[Cl][Xe]", "A1B1C1")
+        fragment_ref = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+
+        self.assertEqual(fragment, fragment_ref)
+
+    def test_read_xyz_bad_line_format(self):
+
+        # too few arguments on atom line
+
+        with self.assertRaises(XYZFormatError):
+            Fragment.read_xyz("H 0 0", "fragment", -2, 2, "H", "A1")
+
+        # too many arguments on atom line
+
+        with self.assertRaises(XYZFormatError):
+            Fragment.read_xyz("H 0 0 0 0", "fragment", -2, 2, "H", "A1")
+
+    def test_read_xyz_bad_symmetry(self):
+
+        # more atoms in symmetry than string
+
+        with self.assertRaises(InconsistentValueError):
+            Fragment.read_xyz("H 0 0 0", "fragment", -2, 2, "H", "A2")
+        with self.assertRaises(InconsistentValueError):
+            Fragment.read_xyz("H 0 0 0", "fragment", -2, 2, "H", "A1B1")
+
+        # fewer atoms in symmetry than string
+
+        with self.assertRaises(InconsistentValueError):
+            Fragment.read_xyz("H 0 0 0\nH 0 0 0", "fragment", -2, 2, "H", "A1")
+        with self.assertRaises(InconsistentValueError):
+            Fragment.read_xyz("H 0 0 0\n O 0 0 0\n O 0 0 0", "fragment", -2, 2, "H", "A1B1")
+
+    def test_get_standard_order(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
+        self.assertEqual(fragment.get_standard_order(), [])
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+        self.assertEqual(fragment.get_standard_order(), [atom0])
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+        self.assertEqual(fragment.get_standard_order(), [atom1, atom0])
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+        self.assertEqual(fragment.get_standard_order(), [atom2, atom1, atom0])
+
+    def test_confirm_standard_order(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
+        self.assertTrue(fragment.confirm_standard_order())
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+        self.assertTrue(fragment.confirm_standard_order())
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+        self.assertFalse(fragment.confirm_standard_order())
+
+        fragment = Fragment([atom1, atom0], "fragment", -2, 2, "[Cl]H")
+        self.assertTrue(fragment.confirm_standard_order())
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom0, atom2, atom1], "fragment", -2, 2, "H[Xe][Cl]")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom1, atom0, atom2], "fragment", -2, 2, "[Cl]H[Xe]")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom1, atom2, atom0], "fragment", -2, 2, "[Cl][Xe]H")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom2, atom0, atom1], "fragment", -2, 2, "[Xe]H[Cl]")
+        self.assertFalse(fragment.confirm_standard_order())
+
+        fragment = Fragment([atom2, atom1, atom0], "fragment", -2, 2, "[Xe][Cl]H")
+        self.assertTrue(fragment.confirm_standard_order())
+
+    def test_confirm_symmetry_class(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
+        self.assertTrue(fragment.confirm_symmetry_class()[0])
+        self.assertEqual(fragment.confirm_symmetry_class()[1], "")
+        self.assertEqual(fragment.confirm_symmetry_class()[2], "")
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+        self.assertTrue(fragment.confirm_symmetry_class()[0])
+        self.assertEqual(fragment.confirm_symmetry_class()[1], "A1")
+        self.assertEqual(fragment.confirm_symmetry_class()[2], "A1")
+
+        atom1 = Atom("O", "B", 1, 1, 1)
+
+        fragment = Fragment([atom1], "fragment", -2, 2, "O")
+        self.assertTrue(fragment.confirm_symmetry_class()[0])
+        self.assertEqual(fragment.confirm_symmetry_class()[1], "A1")
+        self.assertEqual(fragment.confirm_symmetry_class()[2], "A1")
+
+        atom2 = Atom("H", "A", 2, 2, 2)
+
+        fragment = Fragment([atom0, atom2, atom1], "fragment", -2, 2, "H1.HO1")
+        self.assertTrue(fragment.confirm_symmetry_class()[0])
+        self.assertEqual(fragment.confirm_symmetry_class()[1], "A1B2")
+        self.assertEqual(fragment.confirm_symmetry_class()[2], "A1B2")
+
+        fragment = Fragment([atom0, atom2, atom1], "fragment", -2, 2, "HHO")
+        self.assertFalse(fragment.confirm_symmetry_class()[0])
+        self.assertEqual(fragment.confirm_symmetry_class()[1], "A1B1C1")
+        self.assertEqual(fragment.confirm_symmetry_class()[2], "A1B2")
+
+        atom2 = Atom("H", "C", 2, 2, 2)
+
+        fragment = Fragment([atom0, atom2, atom1], "fragment", -2, 2, "H1.HO1")
+        self.assertFalse(fragment.confirm_symmetry_class()[0])
+        self.assertEqual(fragment.confirm_symmetry_class()[1], "A1B2")
+        self.assertEqual(fragment.confirm_symmetry_class()[2], "A1B1C1")
+
 
 
 

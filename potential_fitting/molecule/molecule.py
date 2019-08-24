@@ -101,7 +101,6 @@ class Molecule(object):
                                                      atom_new.get_symmetry_class(),
                                                      "atoms in fragments with the same name must have the same symmetry classes in the same order.")
 
-                    atom_new.set_symmetry_class(atom_old.get_symmetry_class())
             else:
                 for atom_new in fragment.get_atoms():
                     for atom_old in existing_fragment.get_atoms():

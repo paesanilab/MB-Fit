@@ -51,13 +51,13 @@ def read_all_jobs(database_config_path, job_dir):
             continue
 
         i = 1
-
-        job_dir = job_dir + "/job_{}_done".format(i)
+        
+        job_dir = directory + "_done"
 
         while os.path.exists(job_dir):
             i += 1
 
-            job_dir = job_dir + "/job_{}_done".format(i)
+            job_dir = directory + "_{}_done".format(i)
 
         os.rename(directory, job_dir)
 

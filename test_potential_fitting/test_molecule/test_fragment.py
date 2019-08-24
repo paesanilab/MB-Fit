@@ -728,7 +728,41 @@ class TestFragment(unittest.TestCase):
         self.assertEqual(fragment.confirm_symmetry_class()[1], "A1B2")
         self.assertEqual(fragment.confirm_symmetry_class()[2], "A1B1C1")
 
+    """
+    def test_get_standard_copy(self):
+        fragment = Fragment([], "fragment", -2, 2, "")
+        fragment_standard = Fragment([], "fragment", -2, 2, "")
+        self.assertEqual(fragment.get_st)
 
+        atom0 = Atom("H", "A", 0, 0, 0)
+
+        fragment = Fragment([atom0], "fragment", -2, 2, "H")
+        self.assertTrue(fragment.confirm_standard_order())
+
+        atom1 = Atom("Cl", "B", 5, 7, -3)
+
+        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
+        self.assertFalse(fragment.confirm_standard_order())
+
+        fragment = Fragment([atom1, atom0], "fragment", -2, 2, "[Cl]H")
+        self.assertTrue(fragment.confirm_standard_order())
+
+        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+
+        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom0, atom2, atom1], "fragment", -2, 2, "H[Xe][Cl]")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom1, atom0, atom2], "fragment", -2, 2, "[Cl]H[Xe]")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom1, atom2, atom0], "fragment", -2, 2, "[Cl][Xe]H")
+        self.assertFalse(fragment.confirm_standard_order())
+        fragment = Fragment([atom2, atom0, atom1], "fragment", -2, 2, "[Xe]H[Cl]")
+        self.assertFalse(fragment.confirm_standard_order())
+
+        fragment = Fragment([atom2, atom1, atom0], "fragment", -2, 2, "[Xe][Cl]H")
+        self.assertTrue(fragment.confirm_standard_order())
+    """
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFragment)

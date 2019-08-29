@@ -212,8 +212,9 @@ class PolynomialGenerator(object):
                 self.write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
                 monomial_index += 1
 
-                cpp_file.write("\n")
-                grd_file.write("\n")
+            cpp_file.write("\n")
+            grd_file.write("\n")
+            nogrd_file.write("\n")
 
             self.write_cpp_closing(cpp_file, len(monomials))
             self.write_grd_closing(grd_file, len(monomials), len(variables))

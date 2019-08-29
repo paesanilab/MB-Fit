@@ -1,5 +1,5 @@
 # external package imports
-import itertools
+import itertools, hashlib
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system
@@ -69,7 +69,7 @@ class PolynomialGenerator(object):
             # write each fragment to log
             for fragment in fragments:
                 log_file.write(fragment + "\n")
-                log_file.write("\n")
+            log_file.write("\n")
 
             # write number of atoms to log
             log_file.write("<> atoms ({}) <>\n".format(len(atom_names)))
@@ -125,7 +125,7 @@ class PolynomialGenerator(object):
                                                                                             variable.atom2_name,
                                                                                             variable.atom2_fragment,
                                                                                             variable.category))
-                log_file.write("\n")
+            log_file.write("\n")
 
             # generate the monomials
 
@@ -469,13 +469,13 @@ class PolynomialGenerator(object):
 
         # if number of vars is 1, then the only possible monomial is a monomial with 1 variable with the given degree
         if number_of_variables == 1:
-            yield [degree]
+            yield Monomial([degree])
             return
 
         # if degree is 0, then the only possible monomial is a monomial with all 0 degrees with the given number of
         # variables
         if degree == 0:
-            yield [0 for i in range(number_of_variables)]
+            yield Monomial([0 for i in range(number_of_variables)])
             return
 
         # loop over all possible first non-zero terms
@@ -496,7 +496,7 @@ class PolynomialGenerator(object):
 
                 # yield every monomial created by concatenating all the terms before the first non-zero term, the first
                 # non-zero term, and every possible list of terms after the first non-zero term.
-                yield from (Monomial(zero_terms + first_non_zero_term + other_term)
+                yield from (Monomial(zero_terms + first_non_zero_term + other_term.degrees)
                             for other_term
                             in other_terms)
 
@@ -527,16 +527,16 @@ class PolynomialGenerator(object):
                 break
 
             # get a list of every permutation of the monomial
-            permutated_monomials = set([tuple(permutation)
+            permutated_monomials = set(permutation
                                         for permutation
-                                        in monomial.permute(variable_permutations)])
+                                        in monomial.permute(variable_permutations))
 
             # loop over every permutation of the monomial.
             for permutated_monomial in permutated_monomials:
 
                 # if this permutation is in accepted_monomials, remove it.
                 try:
-                    accepted_monomials.remove(list(permutated_monomial))
+                    accepted_monomials.remove(permutated_monomial)
                 except ValueError:
                     pass
 
@@ -633,7 +633,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
 
         first_term = True
         for permutation in set(
-                [tuple(permutation) for permutation in monomial.permute(variable_permutations)]):
+                [permutation for permutation in monomial.permute(variable_permutations)]):
 
             if not first_term:
                 cpp_file.write(" + ")
@@ -663,7 +663,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
 
         first_term = True
         for permutation in set(
-                [tuple(permutation) for permutation in monomial.permute(variable_permutations)]):
+                [permutation for permutation in monomial.permute(variable_permutations)]):
 
             if not first_term:
                 grd_file.write("+")
@@ -693,7 +693,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
 
         first_term = True
         for permutation in set(
-                [tuple(permutation) for permutation in monomial.permute(variable_permutations)]):
+                [permutation for permutation in monomial.permute(variable_permutations)]):
 
             if not first_term:
                 nogrd_file.write("+")
@@ -837,6 +837,17 @@ class Monomial(object):
 
             yield Monomial(monomial_permutation)
 
+    def get_total_degree(self):
+        return sum(self.degrees)
+
+    def __eq__(self, other):
+        return self.degrees == other.degrees
+
+    def __hash__(self):
+        return int(hashlib.sha1(":".join([str(degree) for degree in self.degrees]).encode()).hexdigest(), 16)
+
+    def __getitem__(self, item):
+        return self.degrees[item]
 
 class Variable(object):
     """

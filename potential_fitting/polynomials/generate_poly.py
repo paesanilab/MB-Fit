@@ -9,12 +9,40 @@ from potential_fitting.exceptions import ParsingError, InvalidValueError, Incons
 from . import filters
 from .molecule_in_parser import MoleculeInParser
 
+
 class PolynomialGenerator(object):
+    """
+    Class for generating of polynomial monomials and cpp and maple files.
+    """
+
 
     def __init__(self, settings_path):
+        """
+        Constructs a new PolynomialGenerator.
+
+        Args:
+            settings_path   - Local path to '.ini' settings file containing settings for this PolynomialGenerator.
+
+
+        Returns:
+            A new PolynomialGenerator.
+        """
         self.settings = SettingsReader(settings_path)
 
     def generate_polynomial(self, input_path, order, output_dir_path):
+
+        """
+        Generates .h, .cpp, .maple, and .log polynomial files for a new polynomial based on the input file and order.
+
+        Args:
+            input_path      - Local path to '.in' polynomial input file.
+            order           - Order of the polynomial to generate.
+            output_dir_path - Local path to the directory in which to write all files.
+
+        Returns:
+            None.
+        """
+
         system.format_print("Generating polynomial files from input file {} into directory {}.".format(input_path, output_dir_path),
                             bold=True, color=system.Color.YELLOW)
 
@@ -28,6 +56,21 @@ class PolynomialGenerator(object):
                             bold=True, color=system.Color.GREEN)
 
     def get_monomials_and_variables(self, input_path, order, log_path):
+        """
+        Gets Monomials, variables, and variable permutations for a polynomial defined by the input file and given order.
+
+        Args:
+            input_path      - Local path to '.in' polynomial input file.
+            order           - Order of monomials to generate.
+            log_path        - Local path to '.log' file to write the log to.
+
+        Returns:
+            (monomials, variables, permutations)
+            monomials       - List of all Monomials in the polynomial.
+            variables       - List of all variables in the polynomial.
+            permutations    - List of all the permutations of the variables in this polynomial that can be used to
+                    permute the monomials to get the permutations of each Monomial.
+        """
 
         system.format_print("Parsing polynomial input file {}...".format(input_path),
                             italics=True)
@@ -180,6 +223,19 @@ class PolynomialGenerator(object):
             return total_monomials, variables, variable_permutations
 
     def write_cpp_files(self, monomials, variables, variable_permutations, output_dir_path):
+        """
+        Write the .cpp, .h, and .maple files for a polynomial.
+
+        Args:
+            monomials       - List of all Monomials in the polynomial.
+            variables       - List of all the Variables in the polynomial.
+            variable_permutations - List of all permutations of the Variables in this polynomial that can be used to
+                    permute the monomials to get the permutations of each Monomial.
+            output_dir_path - Local path to directory in which to write output files.
+
+        Returns:
+            None.
+        """
 
         system.format_print("Writing .h and .maple polynomial files in directory {}...".format(output_dir_path),
                             italics=True)
@@ -225,7 +281,7 @@ class PolynomialGenerator(object):
 
     def read_input_file(self, input_path):
         """
-        Reads the polynomial input file and returns a list of fragments, variables, and filters.
+        Reads the polynomial input file and returns a list of fragments, Variables, and Filters.
 
         Args:
             input_path          - Local path to the ".in" polynomial input file.
@@ -300,10 +356,11 @@ class PolynomialGenerator(object):
 
         Args:
             atom_types            - Generator that generates one AtomParser for each atom type in the fragment.
+                    Like those created by FragmentParser.get_atom_and_virtual_site_types().
 
-        Returns:
-            A list of lists of indices representing permutations of the fragment, created by forming all permutations of
-            equivalent atoms. If [0, 1] and [1, 0] are both included in the output, then atoms 0 and 1 are interchangable.
+        Generates:
+            Lists of indices representing permutations of the fragment, created by forming all permutations of
+            equivalent atoms. If [0, 1] and [1, 0] are both included in the output, then atoms 0 and 1 are interchangeable.
         """
 
         try:
@@ -340,15 +397,15 @@ class PolynomialGenerator(object):
         permutations of the molecule as a whole.
 
         Works by generating one permutation for every possible choice of 1 permutation from each fragment, but if 2
-        fragments are the same, their permutations will also be swapped with eachother to create all permutations where
-        equivelent atoms are swapped in every possible order.
+        fragments are the same, their permutations will also be swapped with each other to create all permutations where
+        equivalent atoms are swapped in every possible order.
 
         Args:
             fragments           - List of strings of format "A1B2" representing the fragments.
-            fragment_permutations - List of permutations for each fragment as generated by make_permutations().
+            fragment_permutations - List of permutations for each fragment as generated by get_fragment_permutations().
 
-        Returns:
-            A list of lists of indicies representing all permutations of the atoms in this molecule where equivelent atoms
+        Generates:
+            Lists of indices representing all permutations of the atoms in this molecule where equivalent atoms
             are swapped in every possible order.
         """
 
@@ -402,10 +459,12 @@ class PolynomialGenerator(object):
         Args:
             variables           - A list of the variables in this polynomial.
             molecule_permutations   - A list of all the molecule permutations as generated by get_molecule_permutations().
-            atom_names          - A list of the names of each atom in this molecule, unique for each atom.
+            atom_names          - A list of the names of each atom in this molecule, unique for each atom. Must match
+                    those in the variables.
 
-        Returns:
-            List of lists of indices representing the variable permutations in this fragment.
+        Generates:
+            Lists of indices representing the variable permutations in this fragment. Where if permutation[0] = 1, then
+            in that permutation, variable at index 1 is moved to index 0.
         """
 
         # there will be 1 variable permutation for every molecule permutation
@@ -460,11 +519,11 @@ class PolynomialGenerator(object):
         All entries are non-negative integers.
 
         Args:
-            number_of_variables      - The number of variables to generate monomials for.
+            number_of_variables - The number of variables to generate monomials for.
             degree              - The degree of each monomial.
 
-        Returns:
-            A list of all possible lists of length number of vars with entries adding to degree where each entry is a
+        Generates:
+            All possible lists of length number of vars with entries adding to degree where each entry is a
             non-negative integer.
         """
 
@@ -503,14 +562,14 @@ class PolynomialGenerator(object):
 
     def eliminate_redundant_monomials(self, monomials, variable_permutations):
         """
-        Eliminates any monomial that is a permutation of another monomial.
+        Eliminates any Monomial that is a permutation of another monomial.
 
         Args:
             monomials           - List of Monomials as generated by get_monomials().
             variable_permutations - Variable permutations as generated by get_variable_permutations().
 
-        Returns:
-            List of monomials, with redundant monomials filtered out.
+        Generates:
+            All Monomials in the input, with redundant Monomials removed.
         """
 
         # copies the list of accepted monomials so we can filter it without modifying the input.
@@ -580,6 +639,16 @@ class PolynomialGenerator(object):
                 yield monomial
 
     def write_variable_file(self, variable_file, variables):
+        """
+        Writes the 'variable.cpp' file.
+
+        Args:
+            variable_file   - Local path to file to write in.
+            variables       - All variables to write in the file.
+
+        Returns:
+            None.
+        """
         # variable header comment
         variable_file.write("\n// <-> variables <->\n\n")
 
@@ -591,6 +660,17 @@ class PolynomialGenerator(object):
                     variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment))
 
     def write_header_file(self, header_file, total_terms, number_of_variables):
+        """
+        Writes the '.h' polynomial file.
+
+        Args:
+            header_file     - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
         header_file.write("""#ifndef POLY_MODEL_H
 #define POLY_MODEL_H
 
@@ -620,6 +700,17 @@ public:
 #endif // POLY_MODEL_H""".format(total_terms, number_of_variables))
 
     def write_cpp_opening(self, cpp_file, total_terms, number_of_variables):
+        """
+        Writes the opening of the 'poly-direct.cpp' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
         cpp_file.write("""#include "poly-model.h"
     
 namespace mb_system {{
@@ -630,6 +721,19 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
 """.format(total_terms, number_of_variables))
 
     def write_cpp_monomial(self, cpp_file, index, monomial, variable_permutations):
+        """
+        Writes a single monomial to the 'poly-direct.cpp' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            index           - The index of this monomial.
+            monomial        - The Monomial to write.
+            variable_permutations - All permutations of the variables in this polynomial that can be used to permute
+                    the Monomial.
+
+        Returns:
+            None.
+        """
         cpp_file.write("    p[{}] = ".format(index))
 
         first_term = True
@@ -660,6 +764,19 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
         cpp_file.write(";\n")
 
     def write_grd_monomial(self, grd_file, index, monomial, variable_permutations):
+        """
+        Writes a single monomial to the 'poly-grd.maple' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            index           - The index of this monomial.
+            monomial        - The Monomial to write.
+            variable_permutations - All permutations of the variables in this polynomial that can be used to permute
+                    the Monomial.
+
+        Returns:
+            None.
+        """
         grd_file.write("    p[{}] := ".format(index + 1))
 
         first_term = True
@@ -690,6 +807,19 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
         grd_file.write(":\n")
 
     def write_nogrd_monomial(self, nogrd_file, index, monomial, variable_permutations):
+        """
+        Writes a single monomial to the 'poly-nogrd.maple' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            index           - The index of this monomial.
+            monomial        - The Monomial to write.
+            variable_permutations - All permutations of the variables in this polynomial that can be used to permute
+                    the Monomial.
+
+        Returns:
+            None.
+        """
         nogrd_file.write("    p[{}] := ".format(index + 1))
 
         first_term = True
@@ -720,6 +850,16 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
         nogrd_file.write(":\n")
 
     def write_cpp_closing(self, cpp_file, total_terms):
+        """
+        Writes the closing of the 'poly-direct.cpp' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+
+        Returns:
+            None.
+        """
         cpp_file.write("""    double energy(0);
         for(int i = 0; i < {}; ++i)
             energy += p[i]*a[i];
@@ -730,6 +870,17 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
     }} // namespace mb_system""".format(total_terms))
 
     def write_grd_closing(self, grd_file, total_terms, number_of_variables):
+        """
+        Writes the closing of the 'poly-grd.maple' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
         arg_str = "["
 
         for index in range(number_of_variables):
@@ -766,6 +917,17 @@ xxx := codegen[optimize](xxx):
 codegen[C](xxx, optimized, filename="poly-grd.c"):""".format(total_terms, arg_str))
 
     def write_nogrd_closing(self, nogrd_file, total_terms, number_of_variables):
+        """
+        Writes the closing of the 'poly-nogrd.maple' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
         arg_str = "["
 
         for index in range(number_of_variables):
@@ -801,20 +963,32 @@ codegen[C](xxx, optimized, filename="poly-nogrd.c"):""".format(total_terms, arg_
 
 
 class Monomial(object):
+    """
+    Class that stores all the information associated with a single Monomial: one term of a polynomial.
+    """
 
     def __init__(self, degrees):
+        """
+        Constructs a new Monomial.
+
+        Args:
+            degrees     - List of the degrees of each variable in this monomial.
+
+        Returns:
+            A new Monomial.
+        """
+
         self.degrees = degrees
 
     def permute(self, variable_permutations):
         """
-        Takes in a monomial, and returns all permutations of said monomial.
+        Gives all permutations of this Monomial.
 
         Args:
-            monomial           - The monomial to permute.
-            variable_permutations - Variable permutations as geneated by get_variable_permutations().
+            variable_permutations - Variable permutations as generated by get_variable_permutations().
 
-        Returns:
-            List of all Monomials created by permuting the input monomial by all the variable_permutations.
+        Generates:
+            List of all Monomials created by permuting the this Monomial by all the variable_permutations.
         """
 
         # there will be 1 permutation for each variable permutation.
@@ -839,6 +1013,15 @@ class Monomial(object):
             yield Monomial(monomial_permutation)
 
     def get_total_degree(self):
+        """
+        Gets the total degree of this Monomial by summing the degree of each variable.
+
+        Args:
+            None.
+
+        Returns:
+            The total degree of this Monomial.
+        """
         return sum(self.degrees)
 
     def __eq__(self, other):
@@ -857,7 +1040,7 @@ class Variable(object):
 
     def __init__(self, atom1_name, atom1_fragment, atom2_name, atom2_fragment, category):
         """
-        Creates a new Variable from a line from the polynomial input file.
+        Creates a new Variable from all required information.
 
         Args:
             atom1_name              - The type of the first atom in this variable.

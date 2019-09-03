@@ -53,18 +53,18 @@ class TestAtom(unittest.TestCase):
         atom.set_symmetry_class("A")
         self.assertEqual(atom.get_symmetry_class(), "A")
 
-    def test_get_number(self):
+    def test_get_atomic_number(self):
         atom = Atom("H", "A", 0, 0, 0)
-        self.assertEqual(atom.get_number(), 1)
+        self.assertEqual(atom.get_atomic_number(), 1)
 
         atom = Atom("Cl", "B", 0, 0, 0)
-        self.assertEqual(atom.get_number(), 17)
+        self.assertEqual(atom.get_atomic_number(), 17)
 
         atom = Atom("He", "C", 0, 0, 0)
-        self.assertEqual(atom.get_number(), 2)
+        self.assertEqual(atom.get_atomic_number(), 2)
 
         atom = Atom("Ar", "D", 0, 0, 0)
-        self.assertEqual(atom.get_number(), 18)
+        self.assertEqual(atom.get_atomic_number(), 18)
 
     def test_get_mass(self):
         atom = Atom("H", "A", 0, 0, 0)
@@ -120,16 +120,16 @@ class TestAtom(unittest.TestCase):
 
     def test_get_base_priority(self):
         atom = Atom("H", "A", 0, 0, 0)
-        self.assertEqual(atom.get_base_priority(), atom.get_number())
+        self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
 
         atom = Atom("Cl", "B", 0, 0, 0)
-        self.assertEqual(atom.get_base_priority(), atom.get_number())
+        self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
 
         atom = Atom("He", "C", 0, 0, 0)
-        self.assertEqual(atom.get_base_priority(), atom.get_number())
+        self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
 
         atom = Atom("Ar", "D", 0, 0, 0)
-        self.assertEqual(atom.get_base_priority(), atom.get_number())
+        self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
 
     def test_get_x_y_z(self):
         atom = Atom("H", "A", 0, 0, 0)

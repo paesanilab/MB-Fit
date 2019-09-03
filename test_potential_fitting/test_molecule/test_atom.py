@@ -225,13 +225,13 @@ class TestAtom(unittest.TestCase):
 
         atom2 = Atom("H", "A", 0.5, 0, 0)
 
-        self.assertTrue(atom1.is_bonded(atom2, 1))
+        self.assertTrue(atom1.is_bonded(atom2, bond_sensitivity=1))
 
         atom1 = Atom("H", "A", 0, 0, 0)
 
         atom2 = Atom("H", "A", 1, 0, 0)
 
-        self.assertFalse(atom1.is_bonded(atom2, 1))
+        self.assertFalse(atom1.is_bonded(atom2, bond_sensitivity=1))
 
         atom1 = Atom("H", "A", 0, 0, 0)
 

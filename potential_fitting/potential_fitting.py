@@ -377,6 +377,39 @@ def execute_maple(settings_path, poly_dir_path):
 
     os.chdir(original_dir)
 
+def generate_fitting_config_file_new(settings_file, config_path, geo_paths, distance_between = 20, use_published_polarizabilities = True):
+    """
+        Generates the config file needed to perform a fit.
+
+        Qchem is required for this step to work for 1 and 2 b.
+
+        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
+
+        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
+        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
+
+        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
+        Intermolecular c6 constants are read from config_2b_paths.
+
+        Args:
+            settings_path       - Local path to the file containing all relevent settings information.
+            config_path         - Local path to file to write the config file to.
+            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
+            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
+                    config for each monomer.
+            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
+                    config for each combination of monomers.
+            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
+                    does not converge, try different values of this.
+            use_published_polarizabilities - use published polarizabilites from
+                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+
+        Returns:
+            None.
+        """
+    fitting.generate_fitting_config_file_new(settings_file, config_path, geo_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
+
+
 def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
     """
         Generates the config file needed to perform a fit.

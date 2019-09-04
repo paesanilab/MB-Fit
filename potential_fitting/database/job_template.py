@@ -1,4 +1,5 @@
 import psi4
+from psi4.driver.qcdb.exceptions import QcdbException
 import subprocess, os
 
 """
@@ -26,6 +27,7 @@ def execute_job():
     memory = "{memory}"
     total_charge = "{total_charge}"
     total_spin = "{total_spin}"
+    job_hash = "{job_hash}"
 
     try:
         max_threads = int(subprocess.check_output(["grep", "-c", "cores", "/proc/cpuinfo"]))
@@ -45,15 +47,13 @@ def execute_job():
     print("Threads {format}".format(number_of_threads))
     print("Memory: {format}".format(memory))
 
-    i = 1
-
-    job_dir =  "job_{format}".format(i)
+    i = 8
+    job_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "job_{format}".format(job_hash[:i]))
 
     while os.path.exists(job_dir):
-
         i += 1
 
-        job_dir = "job_{format}".format(i)
+        job_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "job_{format}".format(job_hash[:i]))
 
     os.mkdir(job_dir)
     output_file = job_dir + "/output.ini"
@@ -69,9 +69,15 @@ def execute_job():
         energy = psi4.energy("{format}/{format}".format(method, basis))
         print("Energy: {format}".format(energy))
         success = True
-    except ValueError:
+    except (ValueError, SystemError):
         success = False
-        print("Iterations failed to Converge")
+        print("Something went wrong...")
+    except QcdbException:
+        success = False
+        print("The calculation failed.")
+    except RuntimeError:
+        success = False
+        print("The calculation failed. Iterations *probably* did not converge.")
 
 
     with open(output_file, "w") as out_file:
@@ -88,6 +94,7 @@ def execute_job():
         out_file.write("cp = {format}\n".format(cp))
         out_file.write("use_cp = {format}\n".format(use_cp))
         out_file.write("frag_indices = {format}\n".format(frag_indices))
+        out_file.write("job_hash = {format}\n".format(job_hash))
 
         if success:
             out_file.write("energy = {format}\n".format(energy))

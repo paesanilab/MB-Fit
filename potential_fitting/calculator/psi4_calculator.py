@@ -129,6 +129,8 @@ class Psi4Calculator(Calculator):
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
         except SystemError as e:
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
+        except RuntimeError as e:
+            raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
 
     def optimize_geometry(self, molecule, model):
         """
@@ -157,6 +159,8 @@ class Psi4Calculator(Calculator):
         except QcdbException as e:
             raise LibraryCallError("psi4", "optimize", str(e), log_path=log_path)
         except SystemError as e:
+            raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
+        except RuntimeError as e:
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
 
         if self.logging:
@@ -208,6 +212,8 @@ class Psi4Calculator(Calculator):
         except QcdbException as e:
             raise LibraryCallError("psi4", "frequency", str(e), log_path=log_path)
         except SystemError as e:
+            raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
+        except RuntimeError as e:
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
 
         # retrieve the normal modes, frequencies, and reduced masses from the psi4 output object

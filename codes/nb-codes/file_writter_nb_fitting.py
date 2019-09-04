@@ -94,7 +94,7 @@ namespace x  {
 """
     ff.write(a)
     for i in range(len(chg)):
-        ff.write('    charge[' + str(i) + '] = ' + chg[i] + '*constants::CHARGECON;\n')
+        ff.write('    charge[' + str(i) + '] = ' + str(chg[i]) + '*constants::CHARGECON;\n')
     a = """
 
     return charge;
@@ -105,7 +105,7 @@ namespace x  {
 """
     ff.write(a)
     for i in range(len(pol)):
-        ff.write('    atmpolar[' + str(i) + '] = ' + pol[i] + ';\n')
+        ff.write('    atmpolar[' + str(i) + '] = ' + str(pol[i]) + ';\n')
     a = """
     return atmpolar;
   }
@@ -116,7 +116,7 @@ namespace x  {
 """
     ff.write(a)
     for i in range(len(polfac)):
-        ff.write('    polfac[' + str(i) + '] = ' + polfac[int(i)] + ';\n')
+        ff.write('    polfac[' + str(i) + '] = ' + str(polfac[i]) + ';\n')
     a = """
     return polfac;
   }

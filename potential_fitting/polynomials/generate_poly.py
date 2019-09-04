@@ -2,7 +2,7 @@
 import itertools
 
 # absolute module imports
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.exceptions import ParsingError, InvalidValueError, InconsistentValueError
 
 # relative module imports
@@ -22,7 +22,8 @@ def generate_poly(settings_path, input_path, order, output_path):
         None.
     """
 
-    print("Generating polynomial files from input file {} into directory {}.".format(input_path, output_path))
+    system.format_print("Generating polynomial files from input file {} into directory {}.".format(input_path, output_path),
+            bold=True, color=system.Color.YELLOW)
 
     # make sure the output directory exists
     files.init_directory(output_path)
@@ -40,7 +41,7 @@ def generate_poly(settings_path, input_path, order, output_path):
     # open output file for polynomials, will automatically be closed by with open as syntax
     with open(poly_log_path, "w") as poly_log_file:
 
-        print("Parsing input...")
+        system.format_print("Parsing input file {}...".format(input_path), italics=True)
 
         # write number of fragments to log
         poly_log_file.write("<> fragments({}) <>\n".format(len(fragments)))
@@ -71,7 +72,7 @@ def generate_poly(settings_path, input_path, order, output_path):
         poly_log_file.write(":".join(atom_names) + "\n")
         poly_log_file.write("\n")
 
-        print("Finding permutations...")
+        system.format_print("Finding atom permutations...", italics=True)
 
         # build the permutation group for each fragment
         fragment_permutations = []
@@ -93,6 +94,8 @@ def generate_poly(settings_path, input_path, order, output_path):
 
         atom_permutations = list(combine_permutations(fragments, fragment_permutations))
 
+        system.format_print("{} total atom permutations.".format(len(atom_permutations)), italics=True)
+
         # write permutation count to log file
         poly_log_file.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
         poly_log_file.write("\n")
@@ -101,6 +104,8 @@ def generate_poly(settings_path, input_path, order, output_path):
         for permutation in atom_permutations:
             poly_log_file.write(":".join(str(x) for x in permutation) + "\n")
         poly_log_file.write("\n")
+
+        system.format_print("{} total variables.".format(len(variables)), italics=True)
 
         # write variable count to log file
         poly_log_file.write("<> variables ({}) <>\n".format(len(variables))) 
@@ -127,12 +132,10 @@ def generate_poly(settings_path, input_path, order, output_path):
         # degree monomials, etc
         total_monomials = []
 
-        print("Finding permutations...")
-
         # loop thru every degree in this polynomial
         for degree in range(1, order + 1):
 
-            print("Generating degree {} terms...".format(degree))
+            system.format_print("Generating degree {} terms...".format(degree), italics=True)
 
             # header for this degree
             poly_log_file.write("<> {} degree <>\n".format(degree))
@@ -144,12 +147,14 @@ def generate_poly(settings_path, input_path, order, output_path):
             # log number of possible monomials
             poly_log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
 
-            print("Filtering degree {} terms...".format(degree))
+            system.format_print("{} possible degree {} terms. Now filtering them...".format(len(monomials), degree),
+                    italics=True)
 
             # filter out monomials from the list based on filters in the poly.in file
             accepted_monomials = list(filter_monomials(monomials, variables, monomial_filters))
 
-            print("Eliminating Redundant degree {} terms...".format(degree))
+            system.format_print("{} filtered degree {} terms. Now eliminating redundant terms...".format(len(accepted_monomials), degree),
+                    italics=True)
 
             # filter out redundant monomials (that are a permutation of eachother)
             accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
@@ -165,14 +170,15 @@ def generate_poly(settings_path, input_path, order, output_path):
             # add the monomials of the current degree to the list of all monomials
             total_monomials.append(accepted_monomials)
 
-            print("There were {} accepted degree {} terms.".format(len(accepted_monomials), degree))
+            system.format_print("There were {} accepted degree {} terms.".format(len(accepted_monomials), degree),
+                    italics=True)
 
-        print("There were {} accepted terms over all".format(total_terms))
+        system.format_print("There were {} accepted terms over all".format(total_terms), italics=True)
 
         # log the total number of terms
         poly_log_file.write(" Total number of terms: {}\n".format(total_terms))
 
-        print("Writing .h and .maple polynomial files...")
+        system.format_print("Writing .h and .maple polynomial files...", italics=True)
 
         # write the header file
         with open(output_path + "/poly-model.h", "w") as header_file:
@@ -203,7 +209,8 @@ def generate_poly(settings_path, input_path, order, output_path):
             write_grd_closing(grd_file, total_terms, len(variables))
             write_nogrd_closing(nogrd_file, total_terms, len(variables))
 
-    print("Successfully generated polynomial files!")
+    system.format_print("Successfully generated polynomial files! {} total terms.".format(total_terms),
+            bold=True, color=system.Color.GREEN)
 
 
 def parse_input(input_path):

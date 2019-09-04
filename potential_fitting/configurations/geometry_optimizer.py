@@ -1,7 +1,7 @@
 # absolute module imports
 from potential_fitting import calculator
 from potential_fitting.calculator import Model
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.molecule import xyz_to_molecules
 
 def optimize_geometry(settings_path, unopt_path, opt_path, method, basis):
@@ -16,6 +16,8 @@ def optimize_geometry(settings_path, unopt_path, opt_path, method, basis):
     Returns:
         None.
     """
+    system.format_print("Beginning geometry optimization of {}...".format(unopt_path),
+            bold=True, color=system.Color.YELLOW)
 
     settings = SettingsReader(settings_path)
 
@@ -35,3 +37,6 @@ def optimize_geometry(settings_path, unopt_path, opt_path, method, basis):
         opt_file.write("{}\n".format(opt_molecule.get_num_atoms()))
         opt_file.write("{}\n".format(energy))
         opt_file.write("{}\n".format(opt_molecule.to_xyz()))
+
+    system.format_print("Geometry optimization complete! Optimized geometry in {}.".format(opt_path),
+            bold=True, color=system.Color.GREEN)

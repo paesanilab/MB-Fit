@@ -1,7 +1,7 @@
 # absolute module imports
 from potential_fitting import calculator
 from potential_fitting.molecule import xyz_to_molecules
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.calculator import Model
 
 def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, basis):
@@ -16,6 +16,8 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, ba
     Returns:
         The null dimension of the input molecule.
     """
+    system.format_print("Beginning normal modes calculation of {}...".format(opt_path),
+            bold=True, color=system.Color.YELLOW)
     
     settings = SettingsReader(settings_path)
 
@@ -33,6 +35,9 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, ba
     
     # write the normal modes to the output file
     write_normal_modes(settings_path, normal_modes, frequencies, red_masses, normal_modes_path)
+
+    system.format_print("Normal modes calculation complete! Normal modes in {}.".format(normal_modes_path),
+            bold=True, color=system.Color.GREEN)
 
 def write_normal_modes(settings_path, normal_modes, frequencies, red_masses, normal_modes_path):
     """

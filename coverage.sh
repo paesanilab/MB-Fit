@@ -6,6 +6,13 @@ if [ $# -ne 3 ]; then
     exit 1
 fi
 
+which coverage > /dev/null
+if [ $? -ne 0 ]; then
+    echo "coverage is not installed."
+    echo "Install coverage for instance with 'conda install coverage'."
+    exit 1
+fi
+
 echo "Running python tests."
 
 coverage run --source potential_fitting run_tests.py > $2 2> $1

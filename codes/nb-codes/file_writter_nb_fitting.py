@@ -1196,7 +1196,7 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
                      pair = "".join(sorted([mon[i][0], mon[j][0]]))
                      vector_index = str(pairs.index(pair))
 
-                     a += "    nl_terms[" + vector_index + "] += x6(1.0, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{}));\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
+                     a += "    nl_terms[" + vector_index + "] += x6(1.0, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
 
     elif len(monomer_atom_types) == 2:
         mon1 = atom_types[0]

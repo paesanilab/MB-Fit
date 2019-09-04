@@ -1030,9 +1030,21 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
 
     os.chdir(workdir)
 
-    
+def update_config_with_ttm(settings_path, config_path):
+    config = SettingsReader(config_path) 
+    settings = SettingsReader(settings_path)
+    workdir = os.getcwd()
+    fit_folder_name = "ttm_nrg_fits"
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/best_fit/"
 
+    with open(fit_folder_prefix + "ttm-nrg_params.dat",'r') as ttm_file:
+        a_buck = ttm_file.readline().strip().split()
+        b_buck = ttm_file.readline().strip().split()
 
+    config.set("fitting","A",a_buck)    
+    config.set("fitting","d6",b_buck)   
+
+    config.write(config_path)
 
 
 

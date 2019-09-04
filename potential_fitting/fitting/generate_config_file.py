@@ -558,12 +558,12 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths, dist
     configwriter.set("fitting", "d_min", str(0.5))
     configwriter.set("fitting", "d_max", str(6.0))
 
-    configwriter.set("fitting", "C6", str(c6_list))
-    configwriter.set("fitting", "d6", str([[0.0 for x in c6] for c6 in c6_list]))
+    configwriter.set("fitting", "C6", str(c6_list[-1]))
+    configwriter.set("fitting", "d6", str([0.0 for x in c6_list[-1]]))
 
-    configwriter.set("fitting", "var_intra", "coul")
-    configwriter.set("fitting", "var_inter", "coul")
-    configwriter.set("fitting", "var_virtual_sites", "exp")
+    configwriter.set("fitting", "var_intra", "exp")
+    configwriter.set("fitting", "var_inter", "exp")
+    configwriter.set("fitting", "var_virtual_sites", "coul")
     configwriter.set("fitting", "energy_range", str(25.0))
     configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 

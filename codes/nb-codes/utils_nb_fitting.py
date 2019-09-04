@@ -1,25 +1,14 @@
+from potential_fitting.polynomials import FragmentParser
+
 def get_atom_types(fragment):
+    fragment_parser = FragmentParser(fragment, 'a')
+
     atom_list = []
-    was_digit = False
-    current_text = ""
-    for character in fragment:
-        if not character.isdigit():
-            if was_digit:
-                atom_list.append(int(current_text))
-                current_text = character
-                was_digit = False
-            else:
-                current_text += character
-        else:
-            if was_digit:
-                current_text += character
-            else:
-                atom_list.append(current_text)
-                was_digit = True
-                current_text = character
-            
-    # At this point, only the last number is missing
-    atom_list.append(int(current_text))
+
+    for atom_type in fragment_parser.get_atom_and_virtual_site_types():
+        atom_list.append(atom_type.get_type())
+        atom_list.append(atom_type.get_count())
+
     return atom_list
 
 def get_nonbonded_pairs(vsites, mon_types_a, mon_types_b = None):

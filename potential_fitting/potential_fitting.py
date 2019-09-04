@@ -887,11 +887,15 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
     create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
 
-def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10):
+def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10, ttm = False):
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+    if ttm:
+        fit_folder_name = "ttm_nrg_fits"
+    else:
+        fit_folder_name = "mb_nrg_fits"
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
     if not os.path.exists(fit_folder_prefix):
         os.mkdir(fit_folder_prefix)
     
@@ -922,11 +926,15 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
 
     os.chdir(workdir)
 
-def execute_fits(settings_path):
+def execute_fits(settings_path, ttm = False):
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+    if ttm:
+        fit_folder_name = "ttm_nrg_fits"
+    else:
+        fit_folder_name = "mb_nrg_fits"
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
 
     # A fit folder that does not have a fit.log file inside is considered not run
     # In that case, the run_fit.sh will be executed
@@ -944,11 +952,15 @@ def execute_fits(settings_path):
 
     os.chdir(workdir)
     
-def retrieve_best_fit(settings_path, fitted_nc_path):
+def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+    if ttm:
+        fit_folder_name = "ttm_nrg_fits"
+    else:
+        fit_folder_name = "mb_nrg_fits"
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
 
     # Loop over all the fits, check the output, and store the results.
     os.chdir(fit_folder_prefix)
@@ -957,14 +969,19 @@ def retrieve_best_fit(settings_path, fitted_nc_path):
     for fit in all_fits:
         os.chdir(fit)
 
-        with open("fit.log",'r') as logfile:
-            log_lines = logfile.readlines()
-            full_rmsd = float(log_lines[-7].split()[2])
-            wfull_rmsd = float(log_lines[-6].split()[2])
-            max_error = float(log_lines[-5].split()[2])
-            low_rmsd = float(log_lines[-4].split()[2])
-            low_max_error = float(log_lines[-3].split()[2])
-            results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error])
+        try:
+            with open("fit.log",'r') as logfile:
+                log_lines = logfile.readlines()
+                full_rmsd = float(log_lines[-7].split()[2])
+                wfull_rmsd = float(log_lines[-6].split()[2])
+                max_error = float(log_lines[-5].split()[2])
+                low_rmsd = float(log_lines[-4].split()[2])
+                low_max_error = float(log_lines[-3].split()[2])
+                results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error])
+        except:
+            print("Doesn't seem that the log file in " + fit + " is correct...")
+            print("Maybe you want to rerun " + fit + " again.")
+            results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf')])
 
         os.chdir("../")
 
@@ -1003,7 +1020,8 @@ def retrieve_best_fit(settings_path, fitted_nc_path):
 
     os.chdir("best_fit")
     nb = len(settings.get("molecule","names").split(","))
-    system.call("ncgen", "-o", fitted_nc_path, "fit-" + str(nb) + "b.cdl")
+    if os.path.exists("fit-" + str(nb) + "b.cdl"):
+        system.call("ncgen", "-o", fitted_nc_path, "fit-" + str(nb) + "b.cdl")
 
     # Report best RMSD
     print("Best fit found has a weighted RMSD of {} kcal/mol, a low energy RMSD of {} kcal/mol, and a maximum error in the low energy training set of {} kcal/mol".format(best_results[2], best_results[4], best_results[5]))

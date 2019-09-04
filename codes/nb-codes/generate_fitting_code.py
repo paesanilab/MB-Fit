@@ -226,6 +226,18 @@ file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, 
 file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name)
 
 ################################################################################
+## TTM-nrg fitting code ########################################################
+################################################################################
+if number_of_monomers == 2:
+    file_writter_nb_fitting.write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max)
+
+################################################################################
+## TTM-nrg evaluation code #####################################################
+################################################################################
+
+    file_writter_nb_fitting.write_eval_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
+
+################################################################################
 ## Makefile ####################################################################
 ################################################################################
 

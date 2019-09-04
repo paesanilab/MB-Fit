@@ -81,11 +81,13 @@ class TestJobReaderAndWriter(unittest.TestCase):
 
         database.generate_training_set(self.dim_settings_path, self.config_path, self.dim_train_path, "HF", "STO-3G", False, "database_test")
 
-        config_molecules = parse_training_set_file(self.dimer_configs_path, settings=SettingsReader(self.dim_settings_path))
-        train_molecules = parse_training_set_file(self.dim_train_path, settings=SettingsReader(self.dim_settings_path))
+        config_molecules = list(parse_training_set_file(self.dimer_configs_path, settings=SettingsReader(self.dim_settings_path)))
+        train_molecules = list(parse_training_set_file(self.dim_train_path, settings=SettingsReader(self.dim_settings_path)))
 
         for molecule in train_molecules:
             self.assertIn(molecule, config_molecules)
+        for molecule in config_molecules:
+            self.assertIn(molecule, train_molecules)
 
 
 

@@ -1,5 +1,4 @@
 #!/bin/bash
-echo "running!"
 for j in $1/*
 do
     if [[ -f $j ]]

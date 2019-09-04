@@ -66,7 +66,7 @@ polarizability_factors = config.getlist("fitting", "polarizability_factors", flo
 # __FOR__ETHAN__ 
 #c6_constants = config.getlist("fitting", "c6")
 #C6 = c6_constants[len(c6_constants) - 1]
-C6 = config.getlist("fitting", "c6")
+C6 = config.getlist("fitting", "c6", float)
 
 # last element of d6_constants is list of the inter_molecular d6 constants
 #d6_constants = config.getlist("fitting", "d6")

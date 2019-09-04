@@ -1,4 +1,5 @@
 from potential_fitting.polynomials import FragmentParser
+from potential_fitting.exceptions import InconsistentValueError
 
 def get_atom_types(fragment):
     fragment_parser = FragmentParser(fragment, 'a')
@@ -55,8 +56,9 @@ def read_poly_in(poly_in, vsites, var_intra, var_inter, var_virtual_sites):
                         if pair not in intra_poly_pairs:
                             intra_poly_pairs.append(pair)
                     else:
-                        raise ValueError # figure out what exception to raise
-                else:
+                        # variable is labeled as intra but the two fragment labels are different. UH OH!
+                        raise InconsistentValueError('fragment id of first atom', 'fragment id of second atom', args[1], args[3], 'x-intra variables must have the same fragment index; something is wrong in {}'.format(poly_in))
+
                     if has_vsites:
                         variables[-1].append(var_virtual_sites)
                     else:

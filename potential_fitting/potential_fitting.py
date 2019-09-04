@@ -1,5 +1,5 @@
 # external package imports
-import os, sys, contextlib
+import os, sys, contextlib, glob
 
 # local module imports
 from .utils import SettingsReader, files, system
@@ -886,3 +886,142 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
     perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
     create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
+
+def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10):
+    # Get information
+    settings = SettingsReader(settings_path)
+    workdir = os.getcwd()
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+    if not os.path.exists(fit_folder_prefix):
+        os.mkdir(fit_folder_prefix)
+    
+    # initialize indexes
+    fit_index = 1
+    count = 0
+    # Prepare fits
+    while count < num_fits:
+        os.chdir(fit_folder_prefix)
+        new_fit_folder = "fit" + str(fit_index)
+        if os.path.exists(new_fit_folder):
+            print("{} folder already exists. Trying next index.".format(new_fit_folder))
+            fit_index += 1
+        else:
+            os.mkdir(new_fit_folder)
+            os.chdir(new_fit_folder)
+            # Link the training set to the fit folder
+            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), ".")
+            # Create bash script that will run the fit
+            my_bash = open("run_fit.sh",'w')
+            my_bash.write("#!/bin/bash\n")
+            my_bash.write("\n{}/{} {} {} {} > fit.log 2> fit.err \n".format(workdir,fit_executable_path,training_set_path, DE, alpha))  
+            my_bash.close()
+            system.call("chmod", "744", "run_fit.sh")
+            fit_index += 1
+            count += 1 
+            print("Succesfully created fit folder {}.".format(new_fit_folder))
+
+    os.chdir(workdir)
+
+def execute_fits(settings_path):
+    # Get information
+    settings = SettingsReader(settings_path)
+    workdir = os.getcwd()
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+
+    # A fit folder that does not have a fit.log file inside is considered not run
+    # In that case, the run_fit.sh will be executed
+    os.chdir(fit_folder_prefix)
+    all_fits = glob.glob("fit*")
+    for fit in all_fits:
+        os.chdir(fit)
+        if not os.path.exists("fit.log"):
+            print("{} is running.".format(fit))
+            system.call("./run_fit.sh")
+            print("{} is completed.".format(fit))
+        else:
+            print("{} is already done. Continuing...".format(fit))
+        os.chdir("../")
+
+    os.chdir(workdir)
+    
+def retrieve_best_fit(settings_path, fitted_nc_path):
+    # Get information
+    settings = SettingsReader(settings_path)
+    workdir = os.getcwd()
+    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/"
+
+    # Loop over all the fits, check the output, and store the results.
+    os.chdir(fit_folder_prefix)
+    all_fits = glob.glob("fit*")
+    results = []
+    for fit in all_fits:
+        os.chdir(fit)
+
+        with open("fit.log",'r') as logfile:
+            log_lines = logfile.readlines()
+            full_rmsd = float(log_lines[-7].split()[2])
+            wfull_rmsd = float(log_lines[-6].split()[2])
+            max_error = float(log_lines[-5].split()[2])
+            low_rmsd = float(log_lines[-4].split()[2])
+            low_max_error = float(log_lines[-3].split()[2])
+            results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error])
+
+        os.chdir("../")
+
+    # Sort the results according to weighet RMSD of the full TS
+    sorted_results = sorted(results, key=lambda x: x[2])
+
+    # Get the best result
+    best_fit = sorted_results[0][0]
+    best_results = sorted_results[0]
+    
+    # Check if best fit folder exists.
+    # If it does exist, check the output in best folder to ensure that the new best
+    # fit is actually the best
+    # If not, just store the best fit in there
+    if not os.path.exists("best_fit"):
+        system.call("cp", "-r", best_fit, "best_fit")
+    else:
+        os.chdir("best_fit")
+        with open("fit.log",'r') as logfile:
+            log_lines = logfile.readlines()
+            full_rmsd = float(log_lines[-7].split()[2])
+            wfull_rmsd = float(log_lines[-6].split()[2])
+            max_error = float(log_lines[-5].split()[2])
+            low_rmsd = float(log_lines[-4].split()[2])
+            low_max_error = float(log_lines[-3].split()[2])
+            previous_best = [fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error]
+        os.chdir("../")
+
+        if previous_best[2] <= sorted_results[0][2]:
+            print("Previous fit is better than any fit tested")
+            best_results = previous_best
+        else:
+            print("Replacing best_fit by {}".format(sorted_results[0][0]))
+            system.call("rm", "-rf", "best_fit")
+            system.call("cp", "-r", sorted_results[0][0], "best_fit")
+
+    os.chdir("best_fit")
+    nb = len(settings.get("molecule","names").split(","))
+    system.call("ncgen", "-o", fitted_nc_path, "fit-" + str(nb) + "b.cdl")
+
+    # Report best RMSD
+    print("Best fit found has a weighted RMSD of {} kcal/mol, a low energy RMSD of {} kcal/mol, and a maximum error in the low energy training set of {} kcal/mol".format(best_results[2], best_results[4], best_results[5]))
+
+    os.chdir(workdir)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -630,10 +630,13 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
 """
         ff.write(a)
 
-    # Write Check for distances
-    condition = "true "
-    for d in all_distances:
-        condition += " && " + d[0] + "r > m_ro "
+    # Write Check for distances but skip if distances is empty
+    if len(all_distances) > 0:
+        condition = "true "
+        for d in all_distances:
+            condition += " && " + d[0] + "r > m_ro "
+    else:
+        condition = "false "
 
     a = """
     vars = std::vector<double>(""" + str(number_of_variables) + """,0.0);
@@ -1242,7 +1245,7 @@ int main(int argc, char** argv) {
               << alpha << std::endl;
 
     {
-        const char fn[] = "fit-2b-initial.cdl";
+        const char fn[] = "fit-""" + str(number_of_monomers) + """b-initial.cdl";
         std::ofstream ofs(fn);
         std::cout << "\\n>> dumping initial model as '" << fn << "' >>\\n\\n";
         model.as_cdl(ofs);
@@ -1254,7 +1257,7 @@ int main(int argc, char** argv) {
     try {
         size_t nsys = tset::load_nb_system(*argv, training_set);
         std::cout << "'" << *(argv++) << "' : "
-                      << nsys << " dimers" << std::endl;
+                      << nsys << " configurations" << std::endl;
         if (--argc > 0) E_range = atof(*(argv++));
 
         if (--argc > 0) alpha = atof(*(argv++));
@@ -1607,7 +1610,7 @@ int main(int argc, char** argv) {
 
         size_t nsys = tset::load_nb_system(*argv, training_set);
         std::cout << "'" << *(argv++) << "' : "
-                      << nsys << " dimers" << std::endl;
+                      << nsys << " configurations" << std::endl;
 
     } catch (const std::exception& e) {
         std::cerr << " ** Error ** : " << e.what() << std::endl;

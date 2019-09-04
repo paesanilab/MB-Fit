@@ -469,6 +469,30 @@ def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_pa
 
     os.chdir(original_dir)   
  
+def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
+    """
+    Generates the fit code based on the polynomials for a system
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_path         - Local path to the dimer config file.
+        poly_in_path        - Local path to the the A3B2.in type file to read polynomial input from.
+        poly_path           - Local path to directory where polynomial files are.
+        poly_order          - The order of the polynomial in poly_path.
+        fit_dir_path        - Local path to directory to generate fit code in.
+
+    Returns:
+        None.
+    """
+
+    files.init_directory(fit_dir_path)
+
+    if not os.path.isdir(fit_dir_path):
+        os.mkdir(fit_dir_path)
+
+    fitting.prepare_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path)
+
+
 def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
     """
     Generates the fit code based on the polynomials for a monomer

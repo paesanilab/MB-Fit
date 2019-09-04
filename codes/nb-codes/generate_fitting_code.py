@@ -64,19 +64,24 @@ polarizability_factors = config.getlist("fitting", "polarizability_factors")
 # By default, if not specified in the config.ini file, these lists
 # will be set to a list of the same length, but with all coefficients 0.0
 # __FOR__ETHAN__ 
-c6_constants = config.getlist("fitting", "c6")
-# last element of c6_constants is list of the inter_molecular c6 constants
-C6 = c6_constants[len(c6_constants) - 1]
+#c6_constants = config.getlist("fitting", "c6")
+#C6 = c6_constants[len(c6_constants) - 1]
+C6 = config.getlist("fitting", "c6")
 
 # last element of d6_constants is list of the inter_molecular d6 constants
-d6_constants = config.getlist("fitting", "d6")
-d6 = d6_constants[len(d6_constants) - 1]
+#d6_constants = config.getlist("fitting", "d6")
+#d6 = d6_constants[len(d6_constants) - 1]
 
 # last element of A_constants is list of the inter_molecular A constants
 # Initialize A and b to 0, for now
-
-A_buck = [0.0] * len(C6)
-b_buck = [0.0] * len(C6)
+try:
+    A_buck = config.getlist("fitting", "A")
+    b_buck = config.getlist("fitting", "d6")
+    d6 = b_buck
+except:
+    A_buck = [0.0] * len(C6)
+    b_buck = [0.0] * len(C6)
+    d6 = [0.0] * len(C6)
 #A_constants = config.getlist("fitting", "A")
 #Abuck = A_constants[len(A_constants) - 1]
 

@@ -50,7 +50,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
 
         # add filter based on the filtering setting in settings.ini
         polynomial_filtering = settings.get("poly_generation", "accepted_terms",
-                "all")
+                "all" if len(list(molecule_in_parser.get_fragments())) == 1 else "partly-inter")
 
         # make sure the user hasn't chosed intermolecular terms only with a monomer
         if len(list(molecule_in_parser.get_fragments())) == 1 and not polynomial_filtering == "all":

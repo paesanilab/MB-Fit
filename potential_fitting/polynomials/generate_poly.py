@@ -570,16 +570,14 @@ class PolynomialGenerator(object):
                             in other_terms)
 
                 for mon in mons:
-                    new = True
 
-                    for p in mon.permute(variable_permutations):
-                        if p in yielded_monomials:
-                            new = False
-                            break
+                    standard_mon = mon.get_standard_permutations(variable_permutations)
 
-                    if new:
-                        yielded_monomials.add(mon)
-                        yield mon
+                    if standard_mon in yielded_monomials:
+                        continue
+
+                    yielded_monomials.add(standard_mon)
+                    yield standard_mon
 
     def eliminate_redundant_monomials(self, monomials, variable_permutations):
         """
@@ -1033,6 +1031,9 @@ class Monomial(object):
 
             yield Monomial(monomial_permutation)
 
+    def get_standard_permutations(self, variable_permutations):
+        return sorted(self.permute(variable_permutations), key=lambda x: x.get_degrees())[-1]
+
     def get_total_degree(self):
         """
         Gets the total degree of this Monomial by summing the degree of each variable.
@@ -1044,6 +1045,9 @@ class Monomial(object):
             The total degree of this Monomial.
         """
         return sum(self.degrees)
+
+    def get_degrees(self):
+        return self.degrees
 
     def __eq__(self, other):
         return self.degrees == other.degrees

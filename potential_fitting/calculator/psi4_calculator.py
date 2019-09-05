@@ -41,7 +41,7 @@ class Psi4Calculator(Calculator):
             return False
 
     def is_valid_model(self, model):
-        return model.get_method() in psi4.procedures['energy'].keys()
+        return model.get_method().lower() in psi4.procedures['energy'].keys()
 
     def initialize_calculation(self, log_path):
         """

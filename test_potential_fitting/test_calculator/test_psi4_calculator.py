@@ -125,6 +125,13 @@ class TestPsi4Calculator(TestCalculator):
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
+    def test_is_valid_model(self):
+
+        self.assertTrue(self.calculator1.is_valid_model(Model("HF", "STO-3G", False)))
+        self.assertTrue(self.calculator2.is_valid_model(Model("wb97m-v", "STO-3G", True)))
+        self.assertFalse(self.calculator3.is_valid_model(Model("", "STO-3G", False)))
+        self.assertFalse(self.calculator4.is_valid_model(Model("badmethod", "STO-3G", True)))
+
     def test_find_frequencies(self):
 
         # compare freqs, normal modes, and reduced masses.

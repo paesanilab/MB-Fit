@@ -728,7 +728,6 @@ class Molecule(object):
                 raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure atoms_per_fragment, the atom count line in your xyz file, and the number of atom lines in your xyz file all agree.")
 
             string += line
-        
         return Molecule.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
     @staticmethod

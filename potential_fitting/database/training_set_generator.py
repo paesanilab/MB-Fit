@@ -143,7 +143,8 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
 
 
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf')):
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),
+        depricated_fitcode=False):
     """"
     Creates a training set file from the calculated energies in a database.
 
@@ -160,6 +161,8 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         e_bind_max          - Maximum binding energy allowed, exclusive.
         e_mon_max           - Minimum monomer deformation energy allowed, inclusive.
         e_mon_max           - Maximum monomer deformation energy allowed, exclusive.
+        depricated_fitcode  - Is this function being called to be used with the depricated fitcode?
+                The output of the 1b and 2b training sets will be different.
 
     Return:
         None.
@@ -201,13 +204,15 @@ def generate_training_set(settings_path, database_config_path, training_set_path
                 # write the number of atoms to the output file
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
-                output.write("{} {}".format(binding_energy, interaction_energy))
-#                if molecule.get_num_fragments() == 1:
-#                    output.write("{}".format(binding_energy))
-#                elif molecule.get_num_fragments() == 2:
-#                    output.write("{} {} {} {}".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
-#                else:
-#                    output.write("{} {}".format(binding_energy, interaction_energy))
+                if depricated_fitcode:
+                    if molecule.get_num_fragments() == 1:
+                        output.write("{}".format(binding_energy))
+                    elif molecule.get_num_fragments() == 2:
+                        output.write("{} {} {} {}".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
+                    else:
+                        output.write("{} {}".format(binding_energy, interaction_energy))
+                else:
+                    output.write("{} {}".format(binding_energy, interaction_energy))
 
                 output.write("\n")
 

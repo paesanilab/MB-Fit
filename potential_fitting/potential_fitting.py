@@ -215,7 +215,8 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
 
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf')):
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),
+        depricated_fitcode=False):
     """"
     Creates a training set file from the calculated energies in a database.
 
@@ -232,12 +233,15 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         e_bind_max          - Maximum binding energy allowed, exclusive.
         e_mon_max           - Minimum monomer deformation energy allowed, inclusive.
         e_mon_max           - Maximum monomer deformation energy allowed, exclusive.
+        depricated_fitcode  - Is this function being called to be used with the depricated fitcode?
+                The output of the 1b and 2b training sets will be different.
 
     Return:
         None.
     """
     database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max)
+            cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max,
+            depricated_fitcode=depricated_fitcode)
 
 def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """

@@ -130,9 +130,8 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "C1", "b", "x-inter-B+C"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "D1", "b", "x-inter-B+D"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}']\n".format("B2", "a", "D2", "b", "x-inter-B+D"), lines)
-        self.assertIn("add_filter['degree', 'x-intra-*+*', '1+', '*']", lines)
 
-        self.assertEqual(len(lines), 18)
+        self.assertEqual(len(lines), 17)
 
     def test_A1B2_C1D2_partly_inter(self):
         generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))

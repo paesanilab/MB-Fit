@@ -90,6 +90,20 @@ class TestCalculator(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.calculator4.find_frequencies(TestCalculator.CN, TestCalculator.model2)
 
+    def test_is_valid_model(self):
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator1.is_valid_model(Model("HF", "STO-3G", False))
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator2.is_valid_model(Model("wb97m-v", "STO-3G", True))
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator3.is_valid_model(Model("", "", False))
+
+        with self.assertRaises(NotImplementedError):
+            self.calculator4.is_valid_model(Model("abcd", "efgh", False))
+
     def test_check_neg_freqs(self):
         
         self.assertEquals(self.calculator1.check_neg_freqs([]), 0)

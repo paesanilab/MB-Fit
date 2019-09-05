@@ -418,7 +418,8 @@ class Database():
         next_start_symmetry = 'A'
 
         self.single_execute("SELECT * FROM get_empty_molecule(%s)", (mol_name,))
-        for frag_name, charge, spin, atomic_symbols, atomic_symmetries, atomic_counts, SMILE, frag_count in self.cursor.fetchall():
+        frag_info = sorted(self.cursor.fetchall(), key = lambda x: x[0])
+        for frag_name, charge, spin, atomic_symbols, atomic_symmetries, atomic_counts, SMILE, frag_count in frag_info:
 
             for i in range(frag_count):
 
@@ -451,6 +452,13 @@ class Database():
             atom.set_xyz(index, index, index)
 
         return molecule
+
+    def count_pending_calculations(self, *tags):
+        self.single_execute("SELECT * FROM count_pending_calculations(%s)", (self.create_postgres_array(*tags),))
+
+        count = self.cursor.fetchone()[0]
+
+        return count
 
     def get_all_calculations(self, client_name, *tags, calculations_to_do=sys.maxsize):
         """
@@ -626,6 +634,20 @@ class Database():
             if batch_offset > max_count:
                 return
 
+    def get_training_set_size(self, names, method, basis, cp, *tags):
+        model_name = "{}/{}/{}".format(method, basis, cp)
+
+        standard_names = sorted(names)
+
+        molecule_name = "-".join(standard_names)
+
+        self.single_execute("SELECT * FROM count_training_set_size(%s, %s, %s)",
+                            (molecule_name, model_name, self.create_postgres_array(*tags)))
+
+        count = self.cursor.fetchone()[0]
+
+        return count
+
     def get_training_set(self, names, SMILES, method, basis, cp, *tags):
 
         self.clear_notices()
@@ -639,9 +661,7 @@ class Database():
 
         molecule_name = "-".join(standard_names)
 
-        self.single_execute("SELECT * FROM count_training_set_size(%s, %s, %s)",
-                            (molecule_name, model_name, self.create_postgres_array(*tags)))
-        max_count = self.cursor.fetchone()[0]
+        max_count = self.get_training_set_size(names, method, basis, cp, *tags)
 
         empty_molecule = self.build_empty_molecule(molecule_name)
 

@@ -1,8 +1,9 @@
 # external package imports
 import os, sys
+from hashlib import sha1
 
 # absolute module imports
-from potential_fitting.utils import SettingsReader, files
+from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.exceptions import ConfigMissingSectionError, ConfigMissingPropertyError
 
 # local module imports
@@ -26,13 +27,26 @@ def make_all_jobs(settings_path, database_config_path, client_name, job_dir, *ta
         None.
     """
 
+
     if num_jobs is None:
         num_jobs = sys.maxsize
 
+    counter = 0
+
     # open the database
     with Database(database_config_path) as database:
+
+        total_pending = database.count_pending_calculations(*tags)
+        system.format_print("Making jobs from database into directory {}. {} total jobs with tags {} pending in database. Making jobs for {} of them.".format(job_dir, total_pending, tags, min(num_jobs, total_pending)), bold=True, color=system.Color.YELLOW)
+
         for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags, calculations_to_do=num_jobs):
+
             write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir)
+            counter += 1
+            if counter % 100 == 0:
+                system.format_print("Made {} jobs so far.".format(counter), italics=True)
+
+    system.format_print("Completed job generation. {} jobs generated. {} jobs with tags {} remaining to be created.".format(counter, total_pending - counter, tags), bold=True, color=system.Color.GREEN)
 
 
 def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, job_dir):
@@ -60,21 +74,7 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
     # parse settings file
     settings = SettingsReader(settings_path)
 
-    i = 1
-
-    file_path = job_dir + "/job_{}.py".format(i)
-
-    while os.path.exists(file_path):
-        i += 1
-
-        file_path = job_dir + "/job_{}.py".format(i)
-
-    files.init_file(file_path)
-
-    with open(file_path, "w") as job_file, open(os.path.dirname(os.path.abspath(__file__)) + "/job_template.py", "r") as job_template:
-        job_string = "".join(job_template.readlines())
-
-        job_file.write(job_string.format(**{
+    template_dictionary = {
             # TODO
             "whole_molecule": molecule.to_xyz().replace("\n", "\\n"),
             "charges": [frag.get_charge() for frag in molecule.get_fragments()],
@@ -84,7 +84,7 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
             "atom_counts": [frag.get_num_atoms() for frag in molecule.get_fragments()],
             "names": [frag.get_name() for frag in molecule.get_fragments()],
             "total_atoms": molecule.get_num_atoms(),
-            "molecule":     molecule.to_xyz(frag_indices, cp).replace("\n", "\\n"),
+            "molecule":     molecule.to_xyz(frag_indices, use_cp).replace("\n", "\\n"),
             "frag_indices": frag_indices,
             "method":       method,
             "basis":        basis,
@@ -93,6 +93,26 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
             "num_threads":  settings.get("psi4", "num_threads"),
             "memory":       settings.get("psi4", "memory"),
             "format":       "{}",
-            "total_charge": sum([frag.get_charge() for frag in molecule.get_fragments()]),
-            "total_spin": sum([frag.get_spin_multiplicity() for frag in molecule.get_fragments()])
-        }))
+            "total_charge": molecule.get_charge(frag_indices),
+            "total_spin": molecule.get_spin_multiplicity(frag_indices)
+        }
+
+    hash_string = "\n".join([str(v) for v in template_dictionary.values()])
+    job_hash = sha1(hash_string.encode()).hexdigest()
+
+    template_dictionary["job_hash"] = job_hash
+
+    i = 8
+    file_path = job_dir + "/job_{}.py".format(job_hash[:i])
+
+    while os.path.exists(file_path):
+        i += 1
+
+        file_path = job_dir + "/job_{}.py".format(job_hash[:i])
+
+    files.init_file(file_path)
+
+    with open(file_path, "w") as job_file, open(os.path.dirname(os.path.abspath(__file__)) + "/job_template.py", "r") as job_template:
+        job_string = "".join(job_template.readlines())
+
+        job_file.write(job_string.format(**template_dictionary))

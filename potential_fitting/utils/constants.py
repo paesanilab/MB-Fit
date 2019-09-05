@@ -11,6 +11,7 @@ cal_to_joule = 4.184
 bohr = 0.52917721067e-10 # meter, 2014 CODATA
 bohr_to_ang = bohr * 1.0e10 # 0.52 ang / 1 bohr
 ang_to_bohr = 1/bohr_to_ang # 1.82 bohr / 1 ang
+kelvin_to_au =  3.16683 * 1e-6 
 
 autocm = 2.194746313e5 # Hartree to wavenumbers (cm-1) - TODO: derive from fundamental constants
 cmtoau = 4.5563352527e-6 # wavenumbers (cm-1) to Hartree
@@ -129,7 +130,7 @@ def number_to_symbol(number):
 
     # if the number is 0 or less, it is an invalid atomic number
     if number < 1:
-        raise ValueError("{} is not a recognized atomic number".format(number))
+        raise InvalidValueError("atomic number", number, "greater than 0")
 
     try:
         # find this atomic number's symbol, by looking at the list of atomic symbols

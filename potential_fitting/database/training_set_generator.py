@@ -31,7 +31,7 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
         None.
     """
 
-    warnings.warn("generate_1b_training_set() has been depricated. Please use generate_training_set() instead.",
+    warnings.warn("generate_1b_training_set() has been deprecated. Please use generate_training_set() instead.",
             DeprecationWarning)
 
     settings = SettingsReader(settings_path)
@@ -144,7 +144,7 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
 
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
         cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),
-        depricated_fitcode=False):
+        deprecated_fitcode=False):
     """"
     Creates a training set file from the calculated energies in a database.
 
@@ -161,7 +161,7 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         e_bind_max          - Maximum binding energy allowed, exclusive.
         e_mon_max           - Minimum monomer deformation energy allowed, inclusive.
         e_mon_max           - Maximum monomer deformation energy allowed, exclusive.
-        depricated_fitcode  - Is this function being called to be used with the depricated fitcode?
+        deprecated_fitcode  - Is this function being called to be used with the deprecated fitcode?
                 The output of the 1b and 2b training sets will be different.
 
     Return:
@@ -204,7 +204,7 @@ def generate_training_set(settings_path, database_config_path, training_set_path
                 # write the number of atoms to the output file
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
-                if depricated_fitcode:
+                if deprecated_fitcode:
                     if molecule.get_num_fragments() == 1:
                         output.write("{}".format(binding_energy))
                     elif molecule.get_num_fragments() == 2:

@@ -652,7 +652,7 @@ class Molecule(object):
         try:
             atom_total = int(lines[0])
         except ValueError:
-            raise XYZFormatError("atom count line '{}' cannot be parsed into an integer".format(lines[0]), "line should contain a single integer")
+            raise XYZFormatError("{}".format(lines[0]), "line should contain a single integer")
 
         # make sure that the total number of atoms indicated by the xyz file matches the number of atoms indicated per fragment
         if atom_total != sum(atoms_per_fragment):
@@ -700,19 +700,34 @@ class Molecule(object):
         # build the xyz string
         string = ""
 
-        # read lines from the file equal to the number needed for one molecule
-        for line_count in range(2 + sum(atoms_per_fragment)):
+        # read blank lines until a non-blank line is found.
+
+        while(True):
+            line = file.readline()
+
+            # If line is EOF, then raise StopIteration to say that there are no more molecules in this file.
+            if line == "":
+                raise StopIteration
+
+            # If line is not a blank line, stop reading blank lines.
+            if line is not "\n":
+                break
+
+        # add the atom count line to the string.
+        string += line
+
+        # read the comment line.
+        string += file.readline()
+
+        for i in range(sum(atoms_per_fragment)):
 
             line = file.readline()
 
-            # if the line is an empty string, then we have reached end of file mid parse
+            # if the line is EOF, we have reached EOF mid-parse!
             if line == "":
-                if line_count == 0:
-                    raise StopIteration # if the first line is empty, raise StopIteration to indicate that this file is out of molecules to parse
-                raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure the last molecule in the file has a comment line and a number of atoms equal to the amount indicated in the atom count line.")
+                raise XYZFormatError("ran out of lines to read from xyz file {} in the middle of a molecule".format(file.name), "make sure atoms_per_fragment, the atom count line in your xyz file, and the number of atom lines in your xyz file all agree.")
 
             string += line
-        
         return Molecule.read_xyz(string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment)
 
     @staticmethod

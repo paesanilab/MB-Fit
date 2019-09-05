@@ -1,5 +1,5 @@
 # external package imports
-import itertools
+import itertools, hashlib
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system
@@ -9,52 +9,88 @@ from potential_fitting.exceptions import ParsingError, InvalidValueError, Incons
 from . import filters
 from .molecule_in_parser import MoleculeInParser
 
-def generate_poly(settings_path, input_path, order, output_path):
+
+class PolynomialGenerator(object):
     """
-    Generates the ".cpp", ".h", and ".maple" polynomial files for the polynomial described by the input file.
-
-    Args:
-        settings_path       - Local path to the ".ini" file with relevent settings.
-        input_path          - Local path to the ".in" polynomial file to read.
-        output_path         - Local path to the directory to write the output files in.
-
-    Returns:
-        None.
+    Class for generating of polynomial monomials and cpp and maple files.
     """
 
-    system.format_print("Generating polynomial files from input file {} into directory {}.".format(input_path, output_path),
-            bold=True, color=system.Color.YELLOW)
 
-    # make sure the output directory exists
-    files.init_directory(output_path)
+    def __init__(self, settings_path):
+        """
+        Constructs a new PolynomialGenerator.
 
-    # read the settings file
-    settings = SettingsReader(settings_path)
+        Args:
+            settings_path   - Local path to '.ini' settings file containing settings for this PolynomialGenerator.
 
-    # parse declaired fragments and variables from the input-file
-    fragments, variables, monomial_filters = parse_input(input_path)
 
-    molecule_in_parser = MoleculeInParser("_".join(fragments))
+        Returns:
+            A new PolynomialGenerator.
+        """
+        self.settings = SettingsReader(settings_path)
 
-    poly_log_path = "{}/poly.log".format(output_path)
+    def generate_polynomial(self, input_path, order, output_dir_path):
 
-    # open output file for polynomials, will automatically be closed by with open as syntax
-    with open(poly_log_path, "w") as poly_log_file:
+        """
+        Generates .h, .cpp, .maple, and .log polynomial files for a new polynomial based on the input file and order.
 
-        system.format_print("Parsing input file {}...".format(input_path), italics=True)
+        Args:
+            input_path      - Local path to '.in' polynomial input file.
+            order           - Order of the polynomial to generate.
+            output_dir_path - Local path to the directory in which to write all files.
 
-        # write number of fragments to log
-        poly_log_file.write("<> fragments({}) <>\n".format(len(fragments)))
-        poly_log_file.write("\n")
+        Returns:
+            None.
+        """
 
-        # write each fragment to log
-        for fragment in fragments:
-            poly_log_file.write(fragment + "\n")
-        poly_log_file.write("\n")
+        system.format_print("Generating polynomial files from input file {} into directory {}.".format(input_path, output_dir_path),
+                            bold=True, color=system.Color.YELLOW)
+
+        log_path = "{}/poly.log".format(output_dir_path)
+
+        monomials, variables, variable_permutations = self.get_monomials_and_variables(input_path, order, log_path)
+
+        self.write_cpp_files(monomials, variables, variable_permutations, output_dir_path)
+
+        system.format_print("Successfully generated polynomial files into directory {}.".format(output_dir_path),
+                            bold=True, color=system.Color.GREEN)
+
+    def get_monomials_and_variables(self, input_path, order, log_path):
+        """
+        Gets Monomials, variables, and variable permutations for a polynomial defined by the input file and given order.
+
+        Args:
+            input_path      - Local path to '.in' polynomial input file.
+            order           - Order of monomials to generate.
+            log_path        - Local path to '.log' file to write the log to.
+
+        Returns:
+            (monomials, variables, permutations)
+            monomials       - List of all Monomials in the polynomial.
+            variables       - List of all variables in the polynomial.
+            permutations    - List of all the permutations of the variables in this polynomial that can be used to
+                    permute the monomials to get the permutations of each Monomial.
+        """
+
+        system.format_print("Parsing polynomial input file {}...".format(input_path),
+                            italics=True)
+
+        # parse fragments, variables, and filters from the input file
+        fragments, variables, monomial_filters = self.read_input_file(input_path)
+
+        # create a molecule parser of all the fragments.
+        molecule_in_parser = MoleculeInParser("_".join(fragments))
 
         # Parse the fragment names to name the atoms in the system
+
+        # list of names of atoms in the molecule, each name consists of a type (ex: 'A', 'B', etc) concatenated to
+        # a letter that indicates the fragment (ex: 'a', 'b', etc).
         atom_names = []
+
+        # holds the index of the first atom in each fragment.
         index_each_fragment = []
+
+        # index of the next atom to parse.
         index = 0
 
         for fragment_parser in molecule_in_parser.get_fragments():
@@ -62,512 +98,580 @@ def generate_poly(settings_path, input_path, order, output_path):
             for atom_type_parser in fragment_parser.get_atom_and_virtual_site_types():
                 for atom in atom_type_parser.get_atoms():
                     atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
-                    index += 1;
+                    index += 1
 
-        # write number of atoms to log
-        poly_log_file.write("<> atoms ({}) <>\n".format(len(atom_names)))
-        poly_log_file.write("\n")
+        files.init_file(log_path)
 
-        # write each atom to log
-        poly_log_file.write(":".join(atom_names) + "\n")
-        poly_log_file.write("\n")
+        # open the log file
+        with open(log_path, "w") as log_file:
 
-        system.format_print("Finding atom permutations...", italics=True)
+            # write number of fragments to log
+            log_file.write("<> fragments({}) <>\n".format(len(fragments)))
+            log_file.write("\n")
 
-        # build the permutation group for each fragment
-        fragment_permutations = []
+            # write each fragment to log
+            for fragment in fragments:
+                log_file.write(fragment + "\n")
+            log_file.write("\n")
 
-        # loop thru each fragment
-        for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
+            # write number of atoms to log
+            log_file.write("<> atoms ({}) <>\n".format(len(atom_names)))
+            log_file.write("\n")
 
-            # generate all permutations for this fragment
-            permutations = list(make_permutations(fragment_parser.get_atom_and_virtual_site_types()))
-            
-            # add to each permutation the index of the first atom in this fragment in the molecule
-            for permutation in permutations:
-                for index in range(len(permutation)):
-                    permutation[index] += index_each_fragment[frag_index]
+            # write each atom to log
+            log_file.write(":".join(atom_names) + "\n")
+            log_file.write("\n")
 
-            fragment_permutations.append(permutations)
+            system.format_print("Finding permutations...",
+                                italics=True)
 
-        # construct total permutations from the fragments, including permutations of like fragments
+            # build the permutations for each fragment
+            fragment_permutations = []
 
-        atom_permutations = list(combine_permutations(fragments, fragment_permutations))
+            # loop thru each fragment
+            for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
 
-        system.format_print("{} total atom permutations.".format(len(atom_permutations)), italics=True)
+                # get all permutations for the atoms within this fragment
+                permutations = list(self.get_fragment_permutations(fragment_parser.get_atom_and_virtual_site_types()))
 
-        # write permutation count to log file
-        poly_log_file.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
-        poly_log_file.write("\n")
+                # add to each permutation the index of the first atom in this fragment in the molecule
+                for permutation in permutations:
+                    for index in range(len(permutation)):
+                        permutation[index] += index_each_fragment[frag_index]
 
-        # write each permutation to log file
-        for permutation in atom_permutations:
-            poly_log_file.write(":".join(str(x) for x in permutation) + "\n")
-        poly_log_file.write("\n")
+                fragment_permutations.append(permutations)
 
-        system.format_print("{} total variables.".format(len(variables)), italics=True)
+            # construct molecule permutations from the fragment permutations.
 
-        # write variable count to log file
-        poly_log_file.write("<> variables ({}) <>\n".format(len(variables))) 
-        poly_log_file.write("\n")
+            atom_permutations = list(self.get_molecule_permutations(fragments, fragment_permutations))
 
-        # generate the variable permutations
-        variable_permutations = list(make_variable_permutations(variables, atom_permutations, atom_names))
+            # write permutation count to log file
+            log_file.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
+            log_file.write("\n")
+
+            # write each permutation to log file
+            for permutation in atom_permutations:
+                log_file.write(":".join(str(x) for x in permutation) + "\n")
+            log_file.write("\n")
+
+            # write variable count to log file
+            log_file.write("<> variables ({}) <>\n".format(len(variables)))
+            log_file.write("\n")
+
+            # generate the variable permutations
+            variable_permutations = list(self.get_variable_permutations(variables, atom_permutations, atom_names))
+
+            # write each variable to log file
+            for index, variable in zip(range(len(variables)), variables):
+                log_file.write("{:>2} : {:>3}({:>1}) <===> {:>3}({:>1}) : {}\n".format(index, variable.atom1_name,
+                                                                                            variable.atom1_fragment,
+                                                                                            variable.atom2_name,
+                                                                                            variable.atom2_fragment,
+                                                                                            variable.category))
+            log_file.write("\n")
+
+            # generate the monomials
+
+            # this list will contain all accepted monomials for the polynomial.
+            total_monomials = []
+
+            # loop thru every degree in this polynomial
+            for degree in range(1, order + 1):
+
+                system.format_print("Generating degree {} terms...".format(degree),
+                                    italics=True)
+
+                # header for this degree
+                log_file.write("<> {} degree <>\n".format(degree))
+                log_file.write("\n")
+
+                # get all the monomials of the current degree
+                monomials = list(self.get_monomials(len(variables), degree))
+
+                # log number of possible monomials
+                log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
+
+                system.format_print("{} possible degree {} terms, now filtering them...".format(len(monomials), degree),
+                                    italics=True)
+
+                # filter out monomials from the list based on filters in the poly.in file
+                accepted_monomials = list(self.filter_monomials(monomials, variables, monomial_filters))
+
+                system.format_print("{} filtered {} degree monomials, now eliminating redundant terms...".format(len(accepted_monomials), degree),
+                                    italics=True)
+
+                # filter out redundant monomials (that are a permutation of eachother)
+                accepted_monomials = list(self.eliminate_redundant_monomials(accepted_monomials, variable_permutations))
+
+                # log number of accpeted terms
+                log_file.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
+
+                log_file.write("\n")
+
+                # add the monomials of the current degree to the list of all monomials
+                total_monomials.extend(accepted_monomials)
+
+                system.format_print("There were {} accepted degree {} terms.".format(len(accepted_monomials), degree),
+                                    italics=True)
+
+            system.format_print("There were {} accepted terms over all".format(len(total_monomials)),
+                                italics=True)
+
+            # log the total number of terms
+            log_file.write(" Total number of terms: {}\n".format(len(total_monomials)))
+
+            return total_monomials, variables, variable_permutations
+
+    def write_cpp_files(self, monomials, variables, variable_permutations, output_dir_path):
+        """
+        Write the .cpp, .h, and .maple files for a polynomial.
+
+        Args:
+            monomials       - List of all Monomials in the polynomial.
+            variables       - List of all the Variables in the polynomial.
+            variable_permutations - List of all permutations of the Variables in this polynomial that can be used to
+                    permute the monomials to get the permutations of each Monomial.
+            output_dir_path - Local path to directory in which to write output files.
+
+        Returns:
+            None.
+        """
+
+        system.format_print("Writing .h and .maple polynomial files in directory {}...".format(output_dir_path),
+                            italics=True)
+
+        files.init_directory(output_dir_path)
 
         # make the .cpp vars file
-        with open(output_path + "/vars.cpp", "w") as vars_file:
-            write_variable_file(vars_file, variables);
-
-        # write each variable to log file
-        for index, variable in zip(range(len(variables)), variables):
-            poly_log_file.write("{:>2} : {:>3}({:>1}) <===> {:>3}({:>1}) : {}\n".format(index, variable.atom1_name,
-                    variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment, variable.category))
-        poly_log_file.write("\n")
-
-        # generate the monomials
-
-        total_terms = 0
-
-        # this list will be filled so that the first item is all the 1st degree monomials, second item is all the 2nd
-        # degree monomials, etc
-        total_monomials = []
-
-        # loop thru every degree in this polynomial
-        for degree in range(1, order + 1):
-
-            system.format_print("Generating degree {} terms...".format(degree), italics=True)
-
-            # header for this degree
-            poly_log_file.write("<> {} degree <>\n".format(degree))
-            poly_log_file.write("\n")
-
-            # get all the monomials of the current degree
-            monomials = list(generate_monomials(len(variables), degree))
-
-            # log number of possible monomials
-            poly_log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
-
-            system.format_print("{} possible degree {} terms. Now filtering them...".format(len(monomials), degree),
-                    italics=True)
-
-            # filter out monomials from the list based on filters in the poly.in file
-            accepted_monomials = list(filter_monomials(monomials, variables, monomial_filters))
-
-            system.format_print("{} filtered degree {} terms. Now eliminating redundant terms...".format(len(accepted_monomials), degree),
-                    italics=True)
-
-            # filter out redundant monomials (that are a permutation of eachother)
-            accepted_monomials = list(eliminate_redundant_monomials(accepted_monomials, variable_permutations))
-
-            # log number of accpeted terms
-            poly_log_file.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
-
-            poly_log_file.write("\n")
-
-            # update the total number of terms
-            total_terms += len(accepted_monomials)
-
-            # add the monomials of the current degree to the list of all monomials
-            total_monomials.append(accepted_monomials)
-
-            system.format_print("There were {} accepted degree {} terms.".format(len(accepted_monomials), degree),
-                    italics=True)
-
-        system.format_print("There were {} accepted terms over all".format(total_terms), italics=True)
-
-        # log the total number of terms
-        poly_log_file.write(" Total number of terms: {}\n".format(total_terms))
-
-        system.format_print("Writing .h and .maple polynomial files...", italics=True)
+        with open(output_dir_path + "/vars.cpp", "w") as vars_file:
+            self.write_variable_file(vars_file, variables)
 
         # write the header file
-        with open(output_path + "/poly-model.h", "w") as header_file:
-            write_header_file(header_file, total_terms, len(variables))
+        with open(output_dir_path + "/poly-model.h", "w") as header_file:
+            self.write_header_file(header_file, len(monomials), len(variables))
 
         # open the three files we will now write to
-        with open(output_path + "/poly-direct.cpp", "w") as cpp_file, open(output_path + "/poly-grd.maple",
-                "w") as grd_file, open(output_path + "/poly-nogrd.maple", "w") as nogrd_file:
+        with open(output_dir_path + "/poly-direct.cpp", "w") as cpp_file, open(output_dir_path + "/poly-grd.maple",
+                                                                           "w") as grd_file, open(
+            output_dir_path + "/poly-nogrd.maple", "w") as nogrd_file:
 
             # write the opening for the cpp file
-            write_cpp_opening(cpp_file, total_terms, len(variables))
+            self.write_cpp_opening(cpp_file, len(monomials), len(variables))
 
             # keeps track of what index in a list of all monomials the current monomial would occupy
             monomial_index = 0
 
             # loop thru every degree in this polynomial
-            for degree in range(1, order + 1):
-                for monomial in total_monomials[degree - 1]:
-                    write_cpp_monomial(cpp_file, monomial_index, monomial, variable_permutations)
-                    write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
-                    write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
-                    monomial_index += 1
+            for monomial in monomials:
+                self.write_cpp_monomial(cpp_file, monomial_index, monomial, variable_permutations)
+                self.write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
+                self.write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
+                monomial_index += 1
 
-                cpp_file.write("\n")
-                grd_file.write("\n")
+            cpp_file.write("\n")
+            grd_file.write("\n")
+            nogrd_file.write("\n")
 
-            write_cpp_closing(cpp_file, total_terms)
-            write_grd_closing(grd_file, total_terms, len(variables))
-            write_nogrd_closing(nogrd_file, total_terms, len(variables))
+            self.write_cpp_closing(cpp_file, len(monomials))
+            self.write_grd_closing(grd_file, len(monomials), len(variables))
+            self.write_nogrd_closing(nogrd_file, len(monomials), len(variables))
 
-    system.format_print("Successfully generated polynomial files! {} total terms.".format(total_terms),
-            bold=True, color=system.Color.GREEN)
+        system.format_print("Successfully generated polynomial files!",
+                            italics=True)
 
-
-def parse_input(input_path):
-    """
-    Reads the polynomial input file and returns a list of fragments, variables, and filters.
-
-    Args:
-        input_path          - Local path to the ".in" polynomial input file.
-
-    Returns:
-        A 3-tuple (fragments, variables, filters) as read from the input file. fragments is a list of "A1B2" type
-        formats, variables is a list of Variable objects, filters is a list of Fitler objects.
-    """
-
-    fragments = []
-    variables = []
-    monomial_filters = []
-
-    with open(input_path, "r") as input_file:
-
-        # loop thru all lines in the input file
-        for line in input_file:
-
-            # check if this line is an add_molecule statement
-            if line.startswith("add_molecule"):
-
-                # parse line into a fragment
-                fragments.append(line[line.index("['") + 2:line.index("']")])
-
-            # check if this line is an add_variable statement
-            elif line.startswith("add_variable"):
-
-                # parse line into a variable
-                variables.append(Variable(line))
-
-            elif line.startswith("add_filter"):
-                # remove all the extra information before and after the brackets
-                line = line[line.index("[") + 1:line.index("]")]
-                monomial_filters.append(filters.parse_filter(*line.replace("'", "").replace(" ", "").split(",")))
-                
-            # if line is neither a add_molecule statement, add_variable statement, or a blank line, it is invalid
-            elif line != "\n":
-                raise ParsingError(input_path, "Unrecongnized line format: '{}'".format(line))
-
-    return fragments, variables, monomial_filters
-
-class Variable(object):
-    """
-    Holds all information relevent to a single variable.
-    """
-
-    def __init__(self, line):
+    def read_input_file(self, input_path):
         """
-        Creates a new Variable from a line from the polynomial input file.
+        Reads the polynomial input file and returns a list of fragments, Variables, and Filters.
 
         Args:
-            line            - The line from the poly.in to read into this variable.
+            input_path          - Local path to the ".in" polynomial input file.
 
         Returns:
-            A new Variable.
+            A 3-tuple (fragments, variables, filters) as read from the input file. fragments is a list of "A1B2" type
+            formats, variables is a list of Variable objects, filters is a list of Fitler objects.
         """
 
-        # remove all the extra information before and after the brackets
-        line = line[line.index("[") + 1:line.index("]")]
+        fragments = []
+        variables = []
+        monomial_filters = []
 
-        # parse the line into this Variable's fields
-        self.atom1_name, self.atom1_fragment, self.atom2_name, self.atom2_fragment, self.category = line.replace("'",
-                "").replace(" ", "").split(",")
+        with open(input_path, "r") as input_file:
 
-def make_permutations(atom_types):
-    """
-    Takes in a fragment and constructs all permutations of that fragment by swapping positions of equivelent atoms.
+            # loop thru all lines in the input file
+            for line in input_file:
 
-    Example Input and output:
-    A3 -> [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
-    A1B2 -> [[0, 1, 2], [0, 2, 1]
-    A1B1C1 -> [[0, 1, 2]]
-    A2B2 -> [[0, 1, 2, 3], [0, 1, 3, 2], [1, 0, 2, 3], [1, 0, 3, 2]]
-    A1B1A1 -> [[0, 1, 2],[2, 1, 0]]
+                # if line starts with a pound sign, it is a comment line, so ignore it.
+                if line.startswith("#"):
+                    continue
 
-    Args:
-        atom_types            - String in the form"A1B2", "A3", etc. indicating which atoms are equivelent.
+                # check if this line is an add_molecule statement
+                if line.startswith("add_molecule"):
 
-    Returns:
-        A list of lists of indices representing permutations of the fragment, created by forming all permutations of
-        equivelent atoms. If [0, 1] and [1, 0] are both included in the output, then atoms 0 and 1 are interchangable.
-    """
+                    # parse line into a fragment
+                    fragments.append(line[line.index("['") + 2:line.index("']")])
+                    continue
 
-    try:
-        atom_type_parser = next(atom_types)
-        # read the 2nd letter of the fragment, the atom count. (For instance 2 in A2B3)
-    except StopIteration:
-        # if the fragment string is empty, then this fragment has no permutations
-        yield []
-        return
+                # check if this line is an add_variable statement
+                if line.startswith("add_variable"):
 
-    count = atom_type_parser.get_count()
-    # get all possible permutations of the number of atoms indicated by count
-    permutations = itertools.permutations(range(count))
-    
-    # loop thru each of the permutations
-    for permutation in permutations:
-        
-        # yield from the generator created by concatinating the permutation of the first atom type in the fragment with
-        # the permutations created by a recursive call on the rest of the fragment
-        # increase each item in the lists given by the recursive call equal to the number of atoms of the first type in
-        # the fragment
-        atom_types, new_gen = itertools.tee(atom_types)
-        yield from (list(permutation) + [count + i for i in perm] for perm in make_permutations(new_gen))
+                    # remove all the extra information before and after the brackets
+                    line = line[line.index("[") + 1:line.index("]")]
 
+                    # remove all single quotes and spaces from  line
+                    line = line.replace("'", "").replace(" ", "")
 
+                    # split line into arguments and construct a new variable
+                    variables.append(Variable(*line.split(",")))
+                    continue
 
-def combine_permutations(fragments, fragment_permutations):
-    """
-    Takes a list of fragments ("A1B2", "A1B1C1", etc) and a list of the permutations of those fragments and yields
-    permutations of the molecule as a whole.
+                # check if this line is an add_filter statement
+                if line.startswith("add_filter"):
 
-    Works by generating one permutation for every possible choice of 1 permutation from each fragment, but if 2
-    fragments are the same, their permutations will also be swapped with eachother to create all permutations where
-    equivelent atoms are swapped in every possible order.
+                    # remove all the extra information before and after the brackets
+                    line = line[line.index("[") + 1:line.index("]")]
 
-    Args:
-        fragments           - List of strings of format "A1B2" representing the fragments.
-        fragment_permutations - List of permutations for each fragment as generated by make_permutations().
+                    # remove all single quotes and spaces from  line
+                    line = line.replace("'", "").replace(" ", "")
 
-    Returns:
-        A list of lists of indicies representing all permutations of the atoms in this molecule where equivelent atoms
-        are swapped in every possible order.
-    """
-    
-    # if there are no fragments, then there are no permutations for this molecule
-    if len(fragments) == 0:
-        yield []
-        return
+                    # split line into arguments and construct a new filter
+                    monomial_filters.append(filters.parse_filter(*line.split(",")))
+                    continue
 
-    # loop thru every permutation of the first fragment
-    for permutation in fragment_permutations[0]:
+                # unless this line is blank, it is an invalid format
+                if line != "\n":
+                    raise ParsingError(input_path, "Unrecongnized line format: '{}'".format(line))
 
-        # yield from the first fragment's permutation concatinated with the permutations of the rest of the molecule
-        yield from (permutation + perm for perm in combine_permutations(fragments[1:], fragment_permutations[1:]))
+        return fragments, variables, monomial_filters
 
-    # loop thru every other fragmanet in the molecule
-    for i in range(1, len(fragments)):
-        
-        # check if the current fragment (0) is the same as another one
-        if fragments[i] == fragments[0]:
+    def get_fragment_permutations(self, atom_type_generator):
+        """
+        Takes in a fragment and constructs all permutations of that fragment by swapping positions of equivalent atoms.
 
-            # loop thru every permutation of the fragment that is the same as the current one
-            for permutation in fragment_permutations[i]:
+        Example Input and output:
+        A3 -> [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+        A1B2 -> [[0, 1, 2], [0, 2, 1]
+        A1B1C1 -> [[0, 1, 2]]
+        A2B2 -> [[0, 1, 2, 3], [0, 1, 3, 2], [1, 0, 2, 3], [1, 0, 3, 2]]
+        A1B1A1 -> [[0, 1, 2],[2, 1, 0]]
 
-                # yield from that fragment's permutation concatinated with the permuations of the rest of the molecule
-                # with the current fragment (0) swapped into the position of the fragment it is the same as.
-                # the reason we swap the permutations is because identical fragments DO NOT have the same numbers in
-                # their permutations as the numbers are indices of atoms in the molecule, so the 2nd fragment will have
-                # greater indices than the first, even if the fragments are the same.
-                yield from (permutation + perm for perm in combine_permutations(fragments[1:i] + [fragments[0]] +
-                        fragments[i + 1:], fragment_permutations[1:i] + [fragment_permutations[0]]
-                        + fragment_permutations[i + 1:]))
+        Args:
+            atom_types            - Generator that generates one AtomParser for each atom type in the fragment.
+                    Like those created by FragmentParser.get_atom_and_virtual_site_types().
 
-def make_variable_permutations(variables, atom_permutations, atom_names):
-    """
-    Constructs the variable permutations from the atom permutations.
+        Generates:
+            Lists of indices representing permutations of the fragment, created by forming all permutations of
+            equivalent atoms. If [0, 1] and [1, 0] are both included in the output, then atoms 0 and 1 are interchangeable.
+        """
 
-    Args:
-        varibles            - A list of the variables in this polynomial.
-        atom_permutations   - A list of all the atom permutations as generated by combine_permutations().
-        atom_names          - A list of the names of each atom in this molecule, unique for each atom.
-
-    Returns:
-        List of lists of indicies representing the variable permutations in this fragment.
-    """
-
-    # there will be 1 variable permutation for every atom permutation
-    for atom_permutation in atom_permutations:
-
-        # initialize the new variable permutation
-        variable_permutation = []
-
-        # each variable permutation has length = len(variables) where each value is a value of a variable which should
-        # be switched with this index to create this permutation
-        for variable in variables:
-
-            # get the variable's atoms
-            atom1 = variable.atom1_name + variable.atom1_fragment
-            atom2 = variable.atom2_name + variable.atom2_fragment
-
-            # get the permutated variable's atoms
-
-            new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
-            new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
-
-            # find the index of this variable in the list of variables
-            new_index = -1
-            for new_variable_index, new_variable in enumerate(variables):
-                # if both new atoms match the atoms for a variable, then that is the permutated variable
-                if (new_atom1 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom2 ==
-                        new_variable.atom2_name + new_variable.atom2_fragment):
-                    new_index = new_variable_index
-                    break
-                if (new_atom2 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom1 ==
-                        new_variable.atom2_name + new_variable.atom2_fragment):
-                    new_index = new_variable_index
-                    break
-
-            # this catch is technically not needed, as this should *never* happen.
-            # a variable should always be found, if one is not found new_index being -1 signifies a problem
-            if new_index == -1:
-                print("Uh Oh, something went wrong. This should never print. :( Contant Ethan to help debug this very cryptic error message.")
-
-            # append the index of the permutated variable to variable permutation
-            variable_permutation.append(new_index)
-
-        yield variable_permutation
-
-            
-
-def generate_monomials(number_of_vars, degree):
-    """
-    Given a number of variables and a degree, generates all possible monomials of that degree.
-
-    Yeilds every possible list of length number_of_vars with entries adding to degree.
-
-    Args:
-        number_of_vars      - The number of variables to generate monomials for.
-        degree              - The degree of each monomial.
-
-    Returns:
-        A list of all possible lists of length number of vars with entries adding to degree where each entry is a
-        non-negative whole number.
-    """
-
-    # if number of vars is 1, then the only possible monomial is a monomial with 1 variable with the given degree
-    if number_of_vars == 1:
-        yield [degree]
-        return
-
-    # if degree is 0, then the only possible monomial is a monomial with all 0 degrees with the given number of
-    # variables
-    if degree == 0:
-        yield [0 for i in range(number_of_vars)]
-        return
-
-    # loop over all possible first non-zero terms
-    for v in range(number_of_vars):
-
-        # loop over all possible degree values of the first non-zero term
-        for d in range(1, degree + 1):
-
-            # yield from the list created by all zeros before the first non-zero term, then the first non-zero term,
-            # then each result of the recursive call on all terms after the first non-zero term with degree equal to
-            # degree minus the degree of the first non-zero term
-            yield from ([0 for i in range(v)] + [d] + monomial for monomial in
-                    generate_monomials(number_of_vars - v - 1, degree - d))
-
-def eliminate_redundant_monomials(monomials, variable_permutations):
-    """
-    Eliminates any monomial that is a permutation of another monomial.
-
-    Args:
-        monomials           - List of monomials as generated by generate_monomials().
-        variable_permutations - Variable permutations as generated by make_variable_permutations().
-
-    Returns:
-        List of monomials, with redundant monomials filtered out.
-    """
-
-    # copies the list of accepted monomials so we can filter it.
-    accepted_monomials = monomials[:]
-
-    index = 0
-
-    while(True):
         try:
-            monomial = accepted_monomials[index]
-        except IndexError:
-            break
-        permutated_monomials = set([tuple(permutation) for permutation in permute_monomial(monomial,
-                variable_permutations)])
-        for permutated_monomial in permutated_monomials:
+            # get the first atom type from the generator.
+            atom_type_parser = next(atom_type_generator)
+        except StopIteration:
+            # If the generator is exhausted, then there are no atoms in this fragment, so there are no permutations.
+            yield []
+            return
+
+        # how many atoms of the first type are in the fragment?
+        count = atom_type_parser.get_count()
+
+        # get all possible permutations of the atoms of the first atom type.
+        first_permutations = itertools.permutations(range(count))
+
+        # convert first_permutations to a list of lists
+        first_permutations = [list(first_permutation) for first_permutation in first_permutations]
+
+        # get all possible permutations of the atoms of all atom types except the first.
+        other_permutations = self.get_fragment_permutations(atom_type_generator)
+
+        # offset all other_permutations by the number of atoms of the first type, also convert other_permutations to list of lists.
+        other_permutations = [[count + i for i in perm] for perm in other_permutations]
+
+        # yield every combination of permutations of the atoms of the first type and permuations of the atoms of all other types.
+        yield from (first_permutation + other_permutation
+                    for first_permutation, other_permutation
+                    in itertools.product(first_permutations, other_permutations))
+
+    def get_molecule_permutations(self, fragments, fragment_permutations):
+        """
+        Takes a list of fragments ("A1B2", "A1B1C1", etc) and a list of the permutations of those fragments and yields
+        permutations of the molecule as a whole.
+
+        Works by generating one permutation for every possible choice of 1 permutation from each fragment, but if 2
+        fragments are the same, their permutations will also be swapped with each other to create all permutations where
+        equivalent atoms are swapped in every possible order.
+
+        Args:
+            fragments           - List of strings of format "A1B2" representing the fragments.
+            fragment_permutations - List of permutations for each fragment as generated by get_fragment_permutations().
+
+        Generates:
+            Lists of indices representing all permutations of the atoms in this molecule where equivalent atoms
+            are swapped in every possible order.
+        """
+
+        if len(fragments) != len(fragment_permutations):
+            raise InconsistentValueError("number of fragments", "number of fragment permutations",
+                                         len(fragments), len(fragment_permutations),
+                                         "these values must be equal")
+
+        # if there are no fragments, then there are no permutations for this molecule
+        if len(fragments) == 0:
+            yield []
+            return
+
+        # get list of permutations of the first fragment
+        first_permutations = fragment_permutations[0]
+
+        # get list of permutations of every other fragment in the molecule
+        other_permutations = self.get_molecule_permutations(fragments[1:], fragment_permutations[1:])
+
+        # yield every combination of permutations of the first fragment and permutations of the rest of the molecule.
+        yield from (first_permutation + other_permutation
+                    for first_permutation, other_permutation
+                    in itertools.product(first_permutations, other_permutations))
+
+        # loop thru every other fragment in the molecule
+        for i in range(1, len(fragments)):
+
+            # check if the first fragment is the same the other fragment
+            # if so, we must yield additional permutations where these fragments are switched.
+            if fragments[i] == fragments[0]:
+
+                # get the list of all permutations of the other fragment that is the same as the first one.
+                other_permutations = fragment_permutations[i]
+
+                # get list of permutations of every fragment except the other fragment that is the same as the first one
+                # after swapping the first fragment with the other one.
+                switched_permutations = self.get_molecule_permutations(fragments[1:i] + [fragments[0]] + fragments[i + 1:],
+                                                             fragment_permutations[1:i] + [fragment_permutations[0]] +
+                                                             fragment_permutations[i + 1:])
+
+                # yield every combination of permutations of the other fragment and the permutations produced by
+                # switching the first fragment with the other one.
+                yield from (other_permutation + switched_permutation
+                            for other_permutation, switched_permutation
+                            in itertools.product(other_permutations, switched_permutations))
+
+    def get_variable_permutations(self, variables, molecule_permutations, atom_names):
+        """
+        Constructs the variable permutations from the molecule permutations.
+
+        Args:
+            variables           - A list of the variables in this polynomial.
+            molecule_permutations   - A list of all the molecule permutations as generated by get_molecule_permutations().
+            atom_names          - A list of the names of each atom in this molecule, unique for each atom. Must match
+                    those in the variables.
+
+        Generates:
+            Lists of indices representing the variable permutations in this fragment. Where if permutation[0] = 1, then
+            in that permutation, variable at index 1 is moved to index 0.
+        """
+
+        # there will be 1 variable permutation for every molecule permutation
+        for atom_permutation in molecule_permutations:
+
+            # initialize the new variable permutation
+            variable_permutation = []
+
+            # each variable permutation has length == len(variables) where each value is a value of a variable which should
+            # be switched with this index to create this permutation
+            for variable in variables:
+
+                # get the variable's atoms
+                atom1 = variable.atom1_name + variable.atom1_fragment
+                atom2 = variable.atom2_name + variable.atom2_fragment
+
+                # get the permutated variable's atoms
+
+                new_atom1 = atom_names[atom_permutation[atom_names.index(atom1)]]
+                new_atom2 = atom_names[atom_permutation[atom_names.index(atom2)]]
+
+                # find the index of this variable in the list of variables
+                new_index = -1
+                for new_variable_index, new_variable in enumerate(variables):
+                    # if both new atoms match the atoms for a variable, then that is the permutated variable
+                    if (new_atom1 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom2 ==
+                            new_variable.atom2_name + new_variable.atom2_fragment):
+                        new_index = new_variable_index
+                        break
+                    if (new_atom2 == new_variable.atom1_name + new_variable.atom1_fragment and new_atom1 ==
+                            new_variable.atom2_name + new_variable.atom2_fragment):
+                        new_index = new_variable_index
+                        break
+
+                # this catch is technically not needed, as this should *never* happen.
+                # a variable should always be found, if one is not found new_index being -1 signifies a problem
+                if new_index == -1:
+                    print("Uh Oh, something went wrong. This should never print. :( Contant Ethan to help debug this very cryptic error message.")
+                    print("Its not a you problem, its a Ethan problem.")
+                    raise Exception
+
+                # append the index of the permutated variable to variable permutation
+                variable_permutation.append(new_index)
+
+            yield variable_permutation
+
+    def get_monomials(self, number_of_variables, degree):
+        """
+        Given a number of variables and a degree, generates all possible monomials of that degree.
+
+        Yields every possible list of length number_of_vars with entries adding to degree.
+        All entries are non-negative integers.
+
+        Args:
+            number_of_variables - The number of variables to generate monomials for.
+            degree              - The degree of each monomial.
+
+        Generates:
+            All possible lists of length number of vars with entries adding to degree where each entry is a
+            non-negative integer.
+        """
+
+        # if number of vars is 1, then the only possible monomial is a monomial with 1 variable with the given degree
+        if number_of_variables == 1:
+            yield Monomial([degree])
+            return
+
+        # if degree is 0, then the only possible monomial is a monomial with all 0 degrees with the given number of
+        # variables
+        if degree == 0:
+            yield Monomial([0 for i in range(number_of_variables)])
+            return
+
+        # loop over all possible first non-zero terms
+        for first_non_zero_term_index in range(number_of_variables):
+
+            # loop over all possible values of the first non-zero term's degree
+            for first_non_zero_degree in range(1, degree + 1):
+
+                # generate the list of degrees for all terms before the first non-zero term.
+                zero_terms = [0 for i in range(first_non_zero_term_index)]
+
+                # generate the list of degrees for the first non-zero term.
+                first_non_zero_term = [first_non_zero_degree]
+
+                # get all the possible lists of degrees for all terms after the first non-zero term.
+                other_terms = self.get_monomials(number_of_variables - first_non_zero_term_index - 1,
+                                                      degree - first_non_zero_degree)
+
+                # yield every monomial created by concatenating all the terms before the first non-zero term, the first
+                # non-zero term, and every possible list of terms after the first non-zero term.
+                yield from (Monomial(zero_terms + first_non_zero_term + other_term.degrees)
+                            for other_term
+                            in other_terms)
+
+    def eliminate_redundant_monomials(self, monomials, variable_permutations):
+        """
+        Eliminates any Monomial that is a permutation of another monomial.
+
+        Args:
+            monomials           - List of Monomials as generated by get_monomials().
+            variable_permutations - Variable permutations as generated by get_variable_permutations().
+
+        Generates:
+            All Monomials in the input, with redundant Monomials removed.
+        """
+
+        # copies the list of accepted monomials so we can filter it without modifying the input.
+        accepted_monomials = monomials[:]
+
+        index = 0
+
+        while(True):
+
+            # get the next monomial whose redundant permutations we will remove from accepted_monomials.
             try:
-                accepted_monomials.remove(list(permutated_monomial))
-            except ValueError:
-                pass
-
-        accepted_monomials.insert(0, monomial)
-        index += 1
-
-    yield from (x for x in accepted_monomials)
-    
-def permute_monomial(monomial, variable_permutations):
-    """
-    Takes in a monomial, and returns all permuttions of said monomial.
-
-    Args:
-        monomial           - The monomial to permute.
-        variable_permutations - Variable permutations as geneated by make_variable_permutations().
-
-    Returns:
-        List of all monomials created by permuting the input monomial by all the variable_permutations.
-    """
-
-    # there will be 1 permutation for each variable permutation.
-    for variable_permutation in variable_permutations:
-
-        # initialize the permutation to all zeros
-        monomial_permutation = [0 for i in monomial]
-
-        # loop over each variable index and degree
-        for index, degree in zip(range(len(monomial)), monomial):
-
-            # because we initialized the monomial_permutation to all 0s, if degree is 0, we don't have to do anything
-            if degree == 0:
-                continue
-
-            # if degree is not zero, then lookup the new index of this variable in the permutated monomial
-            new_index = variable_permutation.index(index)
-
-            # now set the value of this variable in the permuted monomial
-            monomial_permutation[new_index] = monomial[index]
-
-        yield monomial_permutation
-            
-def filter_monomials(monomials, variables, monomial_filters):
-    """
-    Filters a list of monomials with the given filters.
-
-    Args:
-        monomials           - List of monomials as generated by generate_monomials().
-        variables           - List of all variables in the monomials.
-        monomial_filters    - List of Filters to use to filter the monomials.
-
-    Returns:
-        List of monomials, without any monomial that fails at least 1 filter.
-    """
-    for monomial in monomials:
-        keep = True
-        for monomial_filter in monomial_filters:
-            if not monomial_filter.keep(monomial, variables):
-                keep = False
+                monomial = accepted_monomials[index]
+            except IndexError:
+                # if there are no more monomials, end the loop.
                 break
 
-        if keep:
-            yield monomial
+            # get a list of every permutation of the monomial
+            permutated_monomials = set(permutation
+                                        for permutation
+                                        in monomial.permute(variable_permutations))
 
-def write_variable_file(variable_file, variables):
-    # variable header comment
-    variable_file.write("\n// <-> variables <->\n\n")
-    
-    # loop thru each variable
-    for index, variable in enumerate(variables):
-        
-        # write the variable to vars.cpp
-        variable_file.write("    x[{}] = @VAR@-|{}|({}{}{}{};\n".format(index, variable.category, variable.atom1_name,
-                variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment))
+            # loop over every permutation of the monomial.
+            for permutated_monomial in permutated_monomials:
 
-def write_header_file(header_file, total_terms, number_of_variables):
-    header_file.write("""#ifndef POLY_MODEL_H
+                # if this permutation is in accepted_monomials, remove it.
+                try:
+                    accepted_monomials.remove(permutated_monomial)
+                except ValueError:
+                    pass
+
+            # after removing all permutations of monomial, we have to add the original monomial back, because
+            # it got removed too.
+            accepted_monomials.insert(0, monomial)
+
+            # increment index by one, so we look at the next monomial.
+            index += 1
+
+        # once all redundant monomials have been filtered out, yield them all.
+        yield from (x for x in accepted_monomials)
+
+    def filter_monomials(self, monomials, variables, filters):
+        """
+        Filters a list of monomials with the given filters.
+
+        Args:
+            monomials           - List of Monomials as generated by get_monomials().
+            variables           - List of all variables in the monomials.
+            monomial_filters    - List of Filters to use to filter the monomials.
+
+        Returns:
+            List of Monomials, without any Monomial that fails at least 1 filter.
+        """
+
+        # we must try each monomial
+        for monomial in monomials:
+
+            keep = True
+
+            # if the monomial fails 1 ore more filters, then we do not yield it.
+            for filter in filters:
+                if not filter.keep(monomial, variables):
+                    keep = False
+                    break
+
+            # if the monomial didn't fail any filters, yield it.
+            if keep:
+                yield monomial
+
+    def write_variable_file(self, variable_file, variables):
+        """
+        Writes the 'variable.cpp' file.
+
+        Args:
+            variable_file   - Local path to file to write in.
+            variables       - All variables to write in the file.
+
+        Returns:
+            None.
+        """
+        # variable header comment
+        variable_file.write("\n// <-> variables <->\n\n")
+
+        # loop thru each variable
+        for index, variable in enumerate(variables):
+
+            # write the variable to vars.cpp
+            variable_file.write("    x[{}] = @VAR@-|{}|({}{}{}{};\n".format(index, variable.category, variable.atom1_name,
+                    variable.atom1_fragment, variable.atom2_name, variable.atom2_fragment))
+
+    def write_header_file(self, header_file, total_terms, number_of_variables):
+        """
+        Writes the '.h' polynomial file.
+
+        Args:
+            header_file     - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
+        header_file.write("""#ifndef POLY_MODEL_H
 #define POLY_MODEL_H
 
 namespace mb_system {{
@@ -595,9 +699,20 @@ public:
 
 #endif // POLY_MODEL_H""".format(total_terms, number_of_variables))
 
-def write_cpp_opening(cpp_file, total_terms, number_of_variables):
-    cpp_file.write("""#include "poly-model.h"
+    def write_cpp_opening(self, cpp_file, total_terms, number_of_variables):
+        """
+        Writes the opening of the 'poly-direct.cpp' polynomial file.
 
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
+        cpp_file.write("""#include "poly-model.h"
+    
 namespace mb_system {{
 
 double poly_model::eval_direct(const double a[{0}], const double x[{1}])
@@ -605,117 +720,180 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
     double p[{0}];
 """.format(total_terms, number_of_variables))
 
-def write_cpp_monomial(cpp_file, index, monomial, variable_permutations):
-    cpp_file.write("    p[{}] = ".format(index))
+    def write_cpp_monomial(self, cpp_file, index, monomial, variable_permutations):
+        """
+        Writes a single monomial to the 'poly-direct.cpp' polynomial file.
 
-    first_term = True
-    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
+        Args:
+            cpp_file        - Local path to file to write in.
+            index           - The index of this monomial.
+            monomial        - The Monomial to write.
+            variable_permutations - All permutations of the variables in this polynomial that can be used to permute
+                    the Monomial.
 
-        if not first_term:
-            cpp_file.write(" + ")
+        Returns:
+            None.
+        """
+        cpp_file.write("    p[{}] = ".format(index))
 
-        first_term = False;
+        first_term = True
+        for permutation in set(
+                [permutation for permutation in monomial.permute(variable_permutations)]):
 
-        first_factor = True
-        
-        for variable_index, degree in enumerate(permutation):
+            if not first_term:
+                cpp_file.write(" + ")
 
-            if degree == 0:
-                continue
+            first_term = False;
 
-            for term in range(degree):
+            first_factor = True
 
-                if not first_factor:
-                    cpp_file.write("*")
+            for variable_index, degree in enumerate(permutation):
 
-                first_factor = False
+                if degree == 0:
+                    continue
 
-                cpp_file.write("x[{}]".format(variable_index))
+                for term in range(degree):
 
-    cpp_file.write(";\n")                
+                    if not first_factor:
+                        cpp_file.write("*")
 
-def write_grd_monomial(grd_file, index, monomial, variable_permutations):
-    grd_file.write("    p[{}] := ".format(index + 1))
+                    first_factor = False
 
-    first_term = True
-    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
+                    cpp_file.write("x[{}]".format(variable_index))
 
-        if not first_term:
-            grd_file.write("+")
+        cpp_file.write(";\n")
 
-        first_term = False;
+    def write_grd_monomial(self, grd_file, index, monomial, variable_permutations):
+        """
+        Writes a single monomial to the 'poly-grd.maple' polynomial file.
 
-        first_factor = True
-        
-        for variable_index, degree in enumerate(permutation):
+        Args:
+            cpp_file        - Local path to file to write in.
+            index           - The index of this monomial.
+            monomial        - The Monomial to write.
+            variable_permutations - All permutations of the variables in this polynomial that can be used to permute
+                    the Monomial.
 
-            if degree == 0:
-                continue
+        Returns:
+            None.
+        """
+        grd_file.write("    p[{}] := ".format(index + 1))
 
-            for term in range(degree):
+        first_term = True
+        for permutation in set(
+                [permutation for permutation in monomial.permute(variable_permutations)]):
 
-                if not first_factor:
-                    grd_file.write("*")
+            if not first_term:
+                grd_file.write("+")
 
-                first_factor = False
+            first_term = False;
 
-                grd_file.write("x{}".format(str(variable_index + 1).rjust(2, "0")))
+            first_factor = True
 
-    grd_file.write(":\n")                
+            for variable_index, degree in enumerate(permutation):
 
-def write_nogrd_monomial(nogrd_file, index, monomial, variable_permutations):
-    nogrd_file.write("    p[{}] := ".format(index + 1))
+                if degree == 0:
+                    continue
 
-    first_term = True
-    for permutation in set([tuple(permutation) for permutation in permute_monomial(monomial, variable_permutations)]):
+                for term in range(degree):
 
-        if not first_term:
-            nogrd_file.write("+")
+                    if not first_factor:
+                        grd_file.write("*")
 
-        first_term = False;
+                    first_factor = False
 
-        first_factor = True
-        
-        for variable_index, degree in enumerate(permutation):
+                    grd_file.write("x{}".format(str(variable_index + 1).rjust(2, "0")))
 
-            if degree == 0:
-                continue
+        grd_file.write(":\n")
 
-            for term in range(degree):
+    def write_nogrd_monomial(self, nogrd_file, index, monomial, variable_permutations):
+        """
+        Writes a single monomial to the 'poly-nogrd.maple' polynomial file.
 
-                if not first_factor:
-                    nogrd_file.write("*")
+        Args:
+            cpp_file        - Local path to file to write in.
+            index           - The index of this monomial.
+            monomial        - The Monomial to write.
+            variable_permutations - All permutations of the variables in this polynomial that can be used to permute
+                    the Monomial.
 
-                first_factor = False
+        Returns:
+            None.
+        """
+        nogrd_file.write("    p[{}] := ".format(index + 1))
 
-                nogrd_file.write("x{}".format(str(variable_index + 1).rjust(2, "0")))
+        first_term = True
+        for permutation in set(
+                [permutation for permutation in monomial.permute(variable_permutations)]):
 
-    nogrd_file.write(":\n")                
+            if not first_term:
+                nogrd_file.write("+")
 
-def write_cpp_closing(cpp_file, total_terms):
-    cpp_file.write("""    double energy(0);
-    for(int i = 0; i < {}; ++i)
-        energy += p[i]*a[i];
+            first_term = False;
 
-    return energy;
+            first_factor = True
 
-}}
-}} // namespace mb_system""".format(total_terms))
+            for variable_index, degree in enumerate(permutation):
 
-def write_grd_closing(grd_file, total_terms, number_of_variables):
-    arg_str = "["
+                if degree == 0:
+                    continue
 
-    for index in range(number_of_variables):
-        arg_str += "x" + str(index + 1).rjust(2, "0")
-        if index != number_of_variables - 1:
-            arg_str += ","
-            if (index + 1) % 10 == 0:
-                arg_str += "\n         "
-            else:
-                arg_str += " "
-    
-    arg_str += "]"
-    grd_file.write("""
+                for term in range(degree):
+
+                    if not first_factor:
+                        nogrd_file.write("*")
+
+                    first_factor = False
+
+                    nogrd_file.write("x{}".format(str(variable_index + 1).rjust(2, "0")))
+
+        nogrd_file.write(":\n")
+
+    def write_cpp_closing(self, cpp_file, total_terms):
+        """
+        Writes the closing of the 'poly-direct.cpp' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+
+        Returns:
+            None.
+        """
+        cpp_file.write("""    double energy(0);
+        for(int i = 0; i < {}; ++i)
+            energy += p[i]*a[i];
+
+        return energy;
+
+    }}
+    }} // namespace mb_system""".format(total_terms))
+
+    def write_grd_closing(self, grd_file, total_terms, number_of_variables):
+        """
+        Writes the closing of the 'poly-grd.maple' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
+        arg_str = "["
+
+        for index in range(number_of_variables):
+            arg_str += "x" + str(index + 1).rjust(2, "0")
+            if index != number_of_variables - 1:
+                arg_str += ","
+                if (index + 1) % 10 == 0:
+                    arg_str += "\n         "
+                else:
+                    arg_str += " "
+
+        arg_str += "]"
+        grd_file.write("""
 energy := 0;
 for k from 1 by 1 to {} do
     energy := energy + a[k]*p[k]:
@@ -738,20 +916,31 @@ xxx := codegen[optimize](xxx):
 
 codegen[C](xxx, optimized, filename="poly-grd.c"):""".format(total_terms, arg_str))
 
-def write_nogrd_closing(nogrd_file, total_terms, number_of_variables):
-    arg_str = "["
+    def write_nogrd_closing(self, nogrd_file, total_terms, number_of_variables):
+        """
+        Writes the closing of the 'poly-nogrd.maple' polynomial file.
 
-    for index in range(number_of_variables):
-        arg_str += "x" + str(index + 1).rjust(2, "0")
-        if index != number_of_variables - 1:
-            arg_str += ","
-            if (index + 1) % 10 == 0:
-                arg_str += "\n         "
-            else:
-                arg_str += " "
-    
-    arg_str += "]"
-    nogrd_file.write("""
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
+        arg_str = "["
+
+        for index in range(number_of_variables):
+            arg_str += "x" + str(index + 1).rjust(2, "0")
+            if index != number_of_variables - 1:
+                arg_str += ","
+                if (index + 1) % 10 == 0:
+                    arg_str += "\n         "
+                else:
+                    arg_str += " "
+
+        arg_str += "]"
+        nogrd_file.write("""
 energy := 0;
 for k from 1 by 1 to {} do
     energy := energy + a[k]*p[k]:
@@ -771,3 +960,108 @@ xxx := codegen[packargs](xxx, args, x):
 xxx := codegen[optimize](xxx):
 
 codegen[C](xxx, optimized, filename="poly-nogrd.c"):""".format(total_terms, arg_str))
+
+
+class Monomial(object):
+    """
+    Class that stores all the information associated with a single Monomial: one term of a polynomial.
+    """
+
+    def __init__(self, degrees):
+        """
+        Constructs a new Monomial.
+
+        Args:
+            degrees     - List of the degrees of each variable in this monomial.
+
+        Returns:
+            A new Monomial.
+        """
+
+        self.degrees = degrees
+
+    def permute(self, variable_permutations):
+        """
+        Gives all permutations of this Monomial.
+
+        Args:
+            variable_permutations - Variable permutations as generated by get_variable_permutations().
+
+        Generates:
+            List of all Monomials created by permuting the this Monomial by all the variable_permutations.
+        """
+
+        # there will be 1 permutation for each variable permutation.
+        for variable_permutation in variable_permutations:
+
+            # initialize the permutation to all zeros
+            monomial_permutation = [0 for i in self.degrees]
+
+            # loop over each variable index and degree
+            for index, degree in zip(range(len(self.degrees)), self.degrees):
+
+                # because we initialized the monomial_permutation to all 0s, if degree is 0, we don't have to do anything
+                if degree == 0:
+                    continue
+
+                # if degree is not zero, then lookup the new index of this variable in the permuted monomial
+                new_index = variable_permutation.index(index)
+
+                # now set the value of this variable in the permuted monomial
+                monomial_permutation[new_index] = self.degrees[index]
+
+            yield Monomial(monomial_permutation)
+
+    def get_total_degree(self):
+        """
+        Gets the total degree of this Monomial by summing the degree of each variable.
+
+        Args:
+            None.
+
+        Returns:
+            The total degree of this Monomial.
+        """
+        return sum(self.degrees)
+
+    def __eq__(self, other):
+        return self.degrees == other.degrees
+
+    def __hash__(self):
+        return int(hashlib.sha1(":".join([str(degree) for degree in self.degrees]).encode()).hexdigest(), 16)
+
+    def __getitem__(self, item):
+        return self.degrees[item]
+
+class Variable(object):
+    """
+    Holds all information relevant to a single variable.
+    """
+
+    def __init__(self, atom1_name, atom1_fragment, atom2_name, atom2_fragment, category):
+        """
+        Creates a new Variable from all required information.
+
+        Args:
+            atom1_name              - The type of the first atom in this variable.
+            atom1_fragment          - The fragment of the first atom in this variable.
+            atom2_name              - The type of the second atom in this variable.
+            atom2_fragment          - The fragment of the second atom in this variable.
+            category                - The category of this variable, either 'inter' or 'intra'.
+
+
+        Returns:
+            A new Variable.
+        """
+
+        self.atom1_name = atom1_name
+        self.atom1_fragment = atom1_fragment
+        self.atom2_name = atom2_name
+        self.atom2_fragment = atom2_fragment
+        self.category = category
+
+
+
+
+
+

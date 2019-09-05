@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from potential_fitting.polynomials import generate_poly
+from potential_fitting.polynomials import PolynomialGenerator
 
 class TestGeneratePoly(unittest.TestCase):
 
@@ -11,14 +11,15 @@ class TestGeneratePoly(unittest.TestCase):
         TestGeneratePoly.reference_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reference")
         TestGeneratePoly.settings_path = os.path.join(TestGeneratePoly.resources_dir, "none.ini")
 
+        TestGeneratePoly.poly_generator = PolynomialGenerator(TestGeneratePoly.settings_path)
+
     def test_A4B1_degree4_no_filter(self):
 
         input_path = os.path.join(TestGeneratePoly.resources_dir, "A4B1_no_filter.in")
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A4B1_no_filter_degree_4")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A4B1_no_filter_degree_4")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       4,
                       output_dir
                       )
@@ -35,8 +36,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B3_no_filter_degree_4")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B3_no_filter_degree_4")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       4,
                       output_dir
                       )
@@ -53,8 +53,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A2B1_A2B1_partly_inter_degree_2")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A2B1_A2B1_partly_inter_degree_2")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       2,
                       output_dir
                       )
@@ -71,8 +70,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A2B5_C1D2_partly_inter_degree_2")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A2B5_C1D2_partly_inter_degree_2")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       2,
                       output_dir
                       )
@@ -89,8 +87,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2X2_A1B2X2_no_filters_degree_4")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2X2_A1B2X2_no_filters_degree_4")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       4,
                       output_dir
                       )
@@ -107,8 +104,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1_B1C2_B1C2_partly_inter_degree_2")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1_B1C2_B1C2_partly_inter_degree_2")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       2,
                       output_dir
                       )
@@ -126,8 +122,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2X2_A1B2X2_A1B2X2_purely_inter_degree_2")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2X2_A1B2X2_A1B2X2_purely_inter_degree_2")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       2,
                       output_dir
                       )
@@ -144,8 +139,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2C2_custom_filters_degree_4")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2C2_custom_filters_degree_4")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       4,
                       output_dir
                       )
@@ -162,8 +156,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2X2_A1B2X2_mbpol_filters_degree_4")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2X2_A1B2X2_mbpol_filters_degree_4")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       4,
                       output_dir
                       )
@@ -180,8 +173,7 @@ class TestGeneratePoly(unittest.TestCase):
         output_dir = os.path.join(TestGeneratePoly.output_dir, "A1B2_A1B2_A1B2_mbpol_filters_degree_4")
         reference_dir = os.path.join(TestGeneratePoly.reference_dir, "A1B2_A1B2_A1B2_mbpol_filters_degree_4")
 
-        generate_poly(TestGeneratePoly.settings_path,
-                      input_path,
+        TestGeneratePoly.poly_generator.generate_polynomial(input_path,
                       4,
                       output_dir
                       )

@@ -338,7 +338,9 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
         None.
     """
 
-    polynomials.generate_poly(settings_path, poly_in_path, order, poly_dir_path)
+    poly_generator = polynomials.PolynomialGenerator(settings_path)
+
+    poly_generator.generate_polynomial(poly_in_path, order, poly_dir_path)
 
 def execute_maple(settings_path, poly_dir_path):
     """

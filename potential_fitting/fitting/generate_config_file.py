@@ -10,6 +10,7 @@ from potential_fitting.polynomials import MoleculeInParser
 qchem_template = "qchem_template"
 
 # TODO This function should be removed and use the fancier fucntion that Ethan has
+
 # to get the list of atoms 
 def get_atom_types(fragment):
     atom_list = []
@@ -35,14 +36,18 @@ def get_atom_types(fragment):
     atom_list.append(int(current_text))
     return atom_list
 
-def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_list, distance_between, use_published_polarizabilities):
+def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_list, distance_between, use_published_polarizabilities,
+                            method="wb97m-v",
+                            basis="aug-cc-pvtz"):
     # Define the names
     name1 = settings_list[0].get("molecule","names")
     name2 = settings_list[0].get("molecule","names")
 
-    print("Running C6 calculation for the dimer {}_{}".format(name1,name2))
+    print("Running C6 calculation for the dimer {}_{} with {}/{}.".format(name1, name2, method, basis))
 
-    qchem_id_name = "get_config_qchem" + name1 + "_" + name2
+
+    qchem_id_name = "get_config_qchem_{}_{}_{}_{}".format(name1, name2, method, basis)
+
     qchem_in_path = os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".in")
     qchem_out_path = os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".out")
     qchem_log_path = os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".log")
@@ -88,10 +93,8 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
             qchem_in.write("$end\n")
     
             qchem_in.write("$rem\n")
-            qchem_in.write("method " + dimer_settings.get("config", "method", "hf") + "\n")
-            #qchem_in.write("method " + settings.get("config", "method", "wb97m-v") + "\n")
-            #qchem_in.write("basis " + settings.get("config", "basis", "aug-cc-pvtz") + "\n")
-            qchem_in.write("basis " + dimer_settings.get("config", "basis", "sto-3g") + "\n")
+            qchem_in.write("method " + method + "\n")
+            qchem_in.write("basis " + basis + "\n")
     
             # read the qchem template and append it to the qchem in
             qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
@@ -104,7 +107,7 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
         with open(qchem_log_path, "w") as qchem_log:
             system.call("qchem", "-nt", str(num_threads), qchem_in_path, qchem_out_path, out_file=qchem_log)
 
-    print("Parsing qchem output {}".format(qchem_out_path))
+    print("Parsing qchem output {}.".format(qchem_out_path))
 
     c6 = get_c6_from_qchem_output(qchem_out_path, fragment_list, atomic_symbols, use_published_polarizabilities)
 
@@ -246,11 +249,13 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
 
     
 
-def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_published_polarizabilities):
+def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_published_polarizabilities,
+                                 method="wb97m-v",
+                                 basis="aug-cc-pvtz"):
     name = settings.get("molecule","names")
-    print("Running C6 calculation for the monomer {}".format(name))
+    print("Running C6 calculation for the monomer {} with {}/{}.".format(name, method, basis))
 
-    qchem_id_name = "get_config_qchem" + name
+    qchem_id_name = "get_config_qchem_{}_{}_{}".format(name, method, basis)
 
     qchem_in_path = os.path.join(settings.get("files", "log_path"), qchem_id_name + ".in")
     qchem_out_path = os.path.join(settings.get("files", "log_path"), qchem_id_name + ".out")
@@ -287,10 +292,8 @@ def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_
             qchem_in.write("$end\n")
 
             qchem_in.write("$rem\n")
-            qchem_in.write("method " + settings.get("config", "method", "hf") + "\n")
-            #qchem_in.write("method " + settings.get("config", "method", "wb97m-v") + "\n")
-            #qchem_in.write("basis " + settings.get("config", "basis", "aug-cc-pvtz") + "\n")
-            qchem_in.write("basis " + settings.get("config", "basis", "sto-3g") + "\n")
+            qchem_in.write("method " + method + "\n")
+            qchem_in.write("basis " + basis + "\n")
 
             # read the qchem template and append it to the qchem in
             qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
@@ -305,7 +308,7 @@ def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_
         with open(qchem_log_path, "w") as qchem_log:
             system.call("qchem", "-nt", str(num_threads), qchem_in_path, qchem_out_path, out_file=qchem_log)
     
-    print("Parsing qchem output {}".format(qchem_out_path))
+    print("Parsing qchem output {}.".format(qchem_out_path))
 
     charges, pols = get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_published_polarizabilities)
 
@@ -428,21 +431,31 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
 
     return charges, effective_polarizabilities
 
-def generate_fitting_config_file_new(settings_file, config_path, geo_paths, distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
+                                     distance_between=20,
+                                     use_published_polarizabilities=True,
+                                     method="wb97m-v",
+                                     basis="aug-cc-pvtz"):
     """
-        Generates the config file needed to perform a fit.
-        Args:
-            settings_path       - Local path to the file containing all relevent settings information.
-            config_path         - Local path to file to write the config file to.
-            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
-            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-                    does not converge, try different values of this.
-            use_published_polarizabilities - use published polarizabilites from
-                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+    Generates the config file needed to perform a fit.
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_path         - Local path to file to write the config file to.
+        geo_paths           - List of local paths to the optimized geometries to include in this fit config.
+        distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
+                does not converge, try different values of this.
+                Default: False.
+        use_published_polarizabilities - use published polarizabilites from
+                Default: True.
+                DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+        method              - Method to use for charges, polarizabilities, and c6 constants.
+                Default: wb97m-v.
+        basis               - Basis to use for charges, polarizabilites, and c6 constants.
+                Default: aug-cc-pvtz.
 
-        Returns:
-            None.
-        """
+    Returns:
+        None.
+    """
 
     # read Settings for the full system
     settings = SettingsReader(settings_file)
@@ -450,7 +463,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths, dist
     # Obtain the system fragment names
     names = settings.get("molecule", "names")
 
-    print("Generating fitting config file for molecule with fragments: {}".format(names))
+    print("Generating fitting config file for molecule with fragments: {}.".format(names))
 
     # Obtain the system properties
     monomer_settings = []
@@ -493,9 +506,9 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths, dist
     c6_list = []
 
     for i in range(len(symmetries)):
-        # TODO here is where the names are enforced
-        config_name = names[i] + "_config.ini"
-        charges, pols = calculate_chg_pol_for_config(monomer_settings[i],geo_paths[i], fragments[i], distance_between, use_published_polarizabilities)
+        charges, pols = calculate_chg_pol_for_config(monomer_settings[i],geo_paths[i], fragments[i], distance_between, use_published_polarizabilities,
+                                                     method=method,
+                                                     basis=basis)
 
         dimer_setting = SettingsReader(settings_file)
         dimer_setting.set("molecule", "names", name + "," + name)
@@ -505,7 +518,9 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths, dist
         dimer_setting.set("molecule", "symmetry", symmetry + "," + symmetry)
         dimer_setting.set("molecule", "SMILES", SMILE + "," + SMILE)
 
-        c6 = calculate_c6_for_config(dimer_setting, [monomer_settings[i], monomer_settings[i]], [geo_paths[i],geo_paths[i]],[fragments[i],fragments[i]], distance_between, use_published_polarizabilities)        
+        c6 = calculate_c6_for_config(dimer_setting, [monomer_settings[i], monomer_settings[i]], [geo_paths[i],geo_paths[i]],[fragments[i],fragments[i]], distance_between, use_published_polarizabilities,
+                                     method=method,
+                                     basis=basis)
 
         chg_list.append(charges[0])
         pol_list.append(pols[0])
@@ -514,7 +529,9 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths, dist
     # If we are doing a dimer, we need the intermolecular c6
     if len(symmetries) == 2:
         true_dimer_setting = SettingsReader(settings_file)
-        c6 = calculate_c6_for_config(true_dimer_setting, [monomer_settings[0], monomer_settings[1]], [geo_paths[0],geo_paths[1]],[fragments[0],fragments[1]], distance_between, use_published_polarizabilities)
+        c6 = calculate_c6_for_config(true_dimer_setting, [monomer_settings[0], monomer_settings[1]], [geo_paths[0],geo_paths[1]],[fragments[0],fragments[1]], distance_between, use_published_polarizabilities,
+                                     method=method,
+                                     basis=basis)
 
         c6_list.append(c6[-1])
 

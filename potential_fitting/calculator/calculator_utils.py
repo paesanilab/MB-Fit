@@ -5,6 +5,7 @@ from potential_fitting.utils import SettingsReader, files, constants
 from potential_fitting.exceptions import NoSuchLibraryError, LibraryCallError, PotentialFittingError
 from potential_fitting.molecule import parse_training_set_file
 from .model import Model
+
 def get_calculator(settings_path, logging = True):
     settings = SettingsReader(settings_path)
     if settings.get("energy_calculator", "code") == "psi4":

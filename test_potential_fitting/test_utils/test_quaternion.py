@@ -177,5 +177,4 @@ class TestQuaternion(unittest.TestCase):
         self.assertAlmostEqual(z2, 1)
 
 
-
 suite = unittest.TestLoader().loadTestsFromTestCase(TestQuaternion)

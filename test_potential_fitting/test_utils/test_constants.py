@@ -1,6 +1,7 @@
 import unittest
 
 from potential_fitting.utils import constants
+from potential_fitting.exceptions import InvalidValueError
 
 class TestConstants(unittest.TestCase):
 
@@ -12,6 +13,15 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(constants.symbol_to_number("H"), 1)
         self.assertEqual(constants.symbol_to_number("Ne"), 10)
 
+        self.assertEqual(constants.symbol_to_number("NE"), 10)
+        self.assertEqual(constants.symbol_to_number("ne"), 10)
+
+        with self.assertRaises(InvalidValueError):
+            constants.symbol_to_number("Yo")
+
+        with self.assertRaises(InvalidValueError):
+            constants.symbol_to_number("Xx")
+
 
     def test_number_to_symbol(self):
         self.assertEqual(constants.number_to_symbol(1), "H")
@@ -20,6 +30,12 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(constants.number_to_symbol(15), "P")
         self.assertEqual(constants.number_to_symbol(1), "H")
         self.assertEqual(constants.number_to_symbol(10), "Ne")
+
+        with self.assertRaises(InvalidValueError):
+            self.assertEqual(constants.number_to_symbol(0))
+
+        with self.assertRaises(InvalidValueError):
+            self.assertEqual(constants.number_to_symbol(1000))
 
     def test_symbol_to_mass(self):
         self.assertEqual(constants.symbol_to_mass("H"), 1.008)
@@ -53,6 +69,9 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(constants.symbol_to_vdw_radius("H"), 1.20)
         self.assertEqual(constants.symbol_to_vdw_radius("Ne"), 1.54)
 
+        with self.assertRaises(InvalidValueError):
+            constants.symbol_to_vdw_radius("Sc")
+
     def test_symbol_to_free_polarizability(self):
         self.assertEqual(constants.symbol_to_free_polarizability("H"), constants.bohr_to_ang**3 * 4.50711)
         self.assertEqual(constants.symbol_to_free_polarizability("He"), constants.bohr_to_ang**3 * 1.38375)
@@ -69,5 +88,11 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(constants.symbol_to_ccsdt_free_polarizability("O"), 0.86381)
         self.assertEqual(constants.symbol_to_ccsdt_free_polarizability("H"), 0.66582)
         self.assertEqual(constants.symbol_to_ccsdt_free_polarizability("P"), 3.72507)
+
+        with self.assertRaises(InvalidValueError):
+            constants.symbol_to_ccsdt_free_polarizability("D")
+
+        with self.assertRaises(InvalidValueError):
+            constants.symbol_to_ccsdt_free_polarizability("Br")
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestConstants)

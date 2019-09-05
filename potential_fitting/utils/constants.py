@@ -130,7 +130,7 @@ def number_to_symbol(number):
 
     # if the number is 0 or less, it is an invalid atomic number
     if number < 1:
-        raise ValueError("{} is not a recognized atomic number".format(number))
+        raise InvalidValueError("atomic number", number, "greater than 0")
 
     try:
         # find this atomic number's symbol, by looking at the list of atomic symbols

@@ -64,7 +64,7 @@ class Atom(object):
 
         self.symmetry_class = symmetry_class
 
-    def get_number(self):
+    def get_atomic_number(self):
         """
         Gets the atomic number of this atom
 

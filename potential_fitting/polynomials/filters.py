@@ -17,6 +17,9 @@ def parse_filter(*args):
 
     input_args = args
 
+    if len(args) == 0:
+        raise FilterBadSyntaxError(input_args, 0, "nothing", "a valid filter name: 'not', 'degree', 'ind-degree', 'sum-degree', or 'num-fragments'")
+
     # keywords are not, and, or, degree
     if args[0] is '(':
         num_parens = 0
@@ -44,8 +47,6 @@ def parse_filter(*args):
         if args[0] == "degree":
             try:
                 filter1 = DegreeFilter(*args[1:4])
-            except FilterBadSyntaxError as e:
-                raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
             except TypeError:
                 raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "three arguments for 'degree' filter") from None
             index = 3
@@ -53,8 +54,6 @@ def parse_filter(*args):
         elif args[0] == "ind-degree":
             try:
                 filter1 = IndividualDegreeFilter(*args[1:3])
-            except FilterBadSyntaxError as e:
-                raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
             except TypeError:
                 raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'ind-degree' filter") from None
             index = 2
@@ -62,8 +61,6 @@ def parse_filter(*args):
         elif args[0] == "sum-degree":
             try:
                 filter1 = SumDegreeFilter(*args[1:3])
-            except FilterBadSyntaxError as e:
-                raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
             except TypeError:
                 raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'sum-degree' filter") from None
             index = 2
@@ -71,8 +68,6 @@ def parse_filter(*args):
         elif args[0] == "num-fragments":
             try:
                 filter1 = NumFragmentsFilter(*args[1:3])
-            except FilterBadSyntaxError as e:
-                raise FilterBadSyntaxError(input_args, 1 + e.index, e.saw, e.expected) from None
             except TypeError:
                 raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'num-fragments' filter") from None
             index = 2

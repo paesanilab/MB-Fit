@@ -1,8 +1,7 @@
 import os
 
 def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
-    
-    # get just the "A3B2" part of "path/A3B2.in"
+
     molecule = ""
     with open(in_path) as in_poly:
         while(True):
@@ -106,9 +105,13 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     os.system("mv dispersion.* " + fit_path + "/")
     os.system("mv buckingham.* " + fit_path + "/")
     os.system("mv eval*b.cpp " + fit_path + "/")
-    os.system("mv eval*b-ttm.cpp " + fit_path + "/")
     os.system("mv fit*b.cpp " + fit_path + "/")
-    os.system("mv fit*b-ttm.cpp " + fit_path + "/")
+
+    # only move ttm files if they were generated (for 2+ b).
+    if len(molecule.split("_")) > 1:
+        os.system("mv eval*b-ttm.cpp " + fit_path + "/")
+        os.system("mv fit*b-ttm.cpp " + fit_path + "/")
+
     os.system("mv Makefile " + fit_path + "/")
     os.system("mv mbnrg_*_fit.* " + fit_path + "/")
     os.system("mv mon*.cpp mon*.h " + fit_path + "/")

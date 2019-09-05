@@ -680,7 +680,7 @@ def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
 
 def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
 
-    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.color.GREEN)
+    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.GREEN)
 
     settings = SettingsReader(settings_path)
 

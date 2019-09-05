@@ -186,7 +186,7 @@ class PolynomialGenerator(object):
                 log_file.write("\n")
 
                 # get all the monomials of the current degree
-                monomials = list(self.get_monomials(len(variables), degree))
+                monomials = list(self.get_monomials(len(variables), degree, variable_permutations))
 
                 # log number of possible monomials
                 log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
@@ -201,7 +201,7 @@ class PolynomialGenerator(object):
                                     italics=True)
 
                 # filter out redundant monomials (that are a permutation of eachother)
-                accepted_monomials = list(self.eliminate_redundant_monomials(accepted_monomials, variable_permutations))
+                #accepted_monomials = list(self.eliminate_redundant_monomials(accepted_monomials, variable_permutations))
 
                 # log number of accpeted terms
                 log_file.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
@@ -511,7 +511,7 @@ class PolynomialGenerator(object):
 
             yield variable_permutation
 
-    def get_monomials(self, number_of_variables, degree):
+    def get_monomials(self, number_of_variables, degree, variable_permutations):
         """
         Given a number of variables and a degree, generates all possible monomials of that degree.
 
@@ -538,8 +538,15 @@ class PolynomialGenerator(object):
             yield Monomial([0 for i in range(number_of_variables)])
             return
 
+        yielded_monomials = set()
+
         # loop over all possible first non-zero terms
         for first_non_zero_term_index in range(number_of_variables):
+
+            new_variable_permutations = [[i - first_non_zero_term_index - 1 for i in p[first_non_zero_term_index + 1:]]
+                                        for p
+                                        in variable_permutations
+                                        if all([i - first_non_zero_term_index - 1 >= 0 for i in p[first_non_zero_term_index + 1:]])]
 
             # loop over all possible values of the first non-zero term's degree
             for first_non_zero_degree in range(1, degree + 1):
@@ -552,13 +559,27 @@ class PolynomialGenerator(object):
 
                 # get all the possible lists of degrees for all terms after the first non-zero term.
                 other_terms = self.get_monomials(number_of_variables - first_non_zero_term_index - 1,
-                                                      degree - first_non_zero_degree)
+                                                 degree - first_non_zero_degree,
+                                                 new_variable_permutations)
 
                 # yield every monomial created by concatenating all the terms before the first non-zero term, the first
                 # non-zero term, and every possible list of terms after the first non-zero term.
-                yield from (Monomial(zero_terms + first_non_zero_term + other_term.degrees)
+
+                mons = (Monomial(zero_terms + first_non_zero_term + other_term.degrees)
                             for other_term
                             in other_terms)
+
+                for mon in mons:
+                    new = True
+
+                    for p in mon.permute(variable_permutations):
+                        if p in yielded_monomials:
+                            new = False
+                            break
+
+                    if new:
+                        yielded_monomials.add(mon)
+                        yield mon
 
     def eliminate_redundant_monomials(self, monomials, variable_permutations):
         """

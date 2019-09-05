@@ -1,9 +1,11 @@
+import warnings
 # absolute module imports
 from potential_fitting.utils import constants, SettingsReader, files
 from potential_fitting.exceptions import NoEnergiesError, NoOptimizedEnergyError, MultipleOptimizedEnergiesError, NoEnergyInRangeError
 
 # local module imports
 from .database import Database
+from potential_fitting.utils import system
 
 
 def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min=0, e_max=float('inf')):
@@ -28,6 +30,9 @@ def generate_1b_training_set(settings_path, database_config_path, training_set_p
     Return:
         None.
     """
+
+    warnings.warn("generate_1b_training_set() has been depricated. Please use generate_training_set() instead.",
+            DeprecationWarning)
 
     settings = SettingsReader(settings_path)
 
@@ -89,6 +94,9 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
         None.
     """
 
+    warnings.warn("generate_2b_training_set() has been depricated. Please use generate_training_set() instead.",
+            DeprecationWarning)
+
     settings = SettingsReader(settings_path)
 
     names = settings.get("molecule", "names").split(",")
@@ -133,6 +141,7 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
 
         print("Generated training set with " + str(count_configs) + " Configurations.")
 
+
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
         cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf')):
     """"
@@ -164,7 +173,9 @@ def generate_training_set(settings_path, database_config_path, training_set_path
     # open the database
     with Database(database_config_path) as database:
 
-        print("Creating a training set file from database into file {}.".format(training_set_path))
+        training_set_size = database.get_training_set_size(names, method, basis, cp, *tags)
+        system.format_print("Creating a fitting input file from database into file {} with up to {} geometries.".format(training_set_path, training_set_size),
+                bold=True, color=system.Color.YELLOW)
 
         # initializing a counter
         count_configs = 0
@@ -190,12 +201,13 @@ def generate_training_set(settings_path, database_config_path, training_set_path
                 # write the number of atoms to the output file
                 output.write(str(molecule.get_num_atoms()) + "\n")
 
-                if molecule.get_num_fragments() == 1:
-                    output.write("{}".format(binding_energy))
-                elif molecule.get_num_fragments() == 2:
-                    output.write("{} {} {} {}".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
-                else:
-                    output.write("{} {}".format(binding_energy, interaction_energy))
+                output.write("{} {}".format(binding_energy, interaction_energy))
+#                if molecule.get_num_fragments() == 1:
+#                    output.write("{}".format(binding_energy))
+#                elif molecule.get_num_fragments() == 2:
+#                    output.write("{} {} {} {}".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
+#                else:
+#                    output.write("{} {}".format(binding_energy, interaction_energy))
 
                 output.write("\n")
 
@@ -205,7 +217,12 @@ def generate_training_set(settings_path, database_config_path, training_set_path
                 # increment the counter
                 count_configs += 1
 
+                if count_configs + filtered_configs % 100 == 0:
+                    system.format_print("Considered {} geometries so far. Included {} and filtered {} out.".format(count_configs + filtered_configs, count_configs, filtered_configs),
+                            italics=True)
+
         if count_configs == 0:
             raise Exception
 
-        print("Generated training set with " + str(count_configs) + " configurations. " + str(filtered_configs) + " configurations filtered out due to binding or deformation energies outside of specified range.")
+        system.format_print("Generated training set with {} configurations. {} configurations filtered out due to binding or deformation energies outside of specified range.".format(count_configs, filtered_configs),
+                bold=True, color=system.Color.GREEN)

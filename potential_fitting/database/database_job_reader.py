@@ -4,7 +4,7 @@ from glob import glob
 
 # absolute module imports
 from potential_fitting.molecule import Molecule
-from potential_fitting.utils import SettingsReader
+from potential_fitting.utils import SettingsReader, system
 from potential_fitting.exceptions import ConfigMissingPropertyError
 
 # local module imports
@@ -28,6 +28,12 @@ def read_all_jobs(database_config_path, job_dir):
     Returns:
         None.
     """
+
+    system.format_print("Reading jobs from directory {} into database.".format(job_dir),
+        bold=True, color=system.Color.YELLOW)
+
+    counter = 0
+
     calculation_results = []
     for directory in glob(job_dir + "/job_*"):
         if directory.endswith("done"):
@@ -41,8 +47,16 @@ def read_all_jobs(database_config_path, job_dir):
                 db.set_properties(calculation_results)
             calculation_results = []
 
+        counter += 1
+
+        if counter % 100 == 0:
+            system.format_print("Read {} jobs so far.".format(counter), italics=True)
+
     with Database(database_config_path) as db:
         db.set_properties(calculation_results)
+
+    system.format_print("Completed reading jobs. Read {} in total".format(counter), bold=True, color=system.Color.GREEN)
+    system.format_print("Moving read job directories...", bold=True, color=system.Color.YELLOW)
 
     for directory in glob(job_dir + "/job_*"):
         if directory.endswith("done"):
@@ -60,6 +74,8 @@ def read_all_jobs(database_config_path, job_dir):
             job_dir = directory + "_{}_done".format(i)
 
         os.rename(directory, job_dir)
+
+    system.format_print("Moved completed job directories!", bold=True, color=system.Color.GREEN)
 
 
 def read_job(job_dat_path, job_log_path):

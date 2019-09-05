@@ -1,65 +1,39 @@
-TRAVIS_BUILD_DIR=$(pwd)
-num_passed=0
-num_failed=0
+#!/bin/bash
 
-check_exit_code () {
-    if [ $? -eq 0 ]
-    then
-        num_passed=$(($num_passed + 1))
-    else
-        num_failed=$(($num_failed + 1))
-    fi
-}
-
-echo "Running polynomial tests"
-cd $TRAVIS_BUILD_DIR/oldtests/polytests/1B; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/polytests/2B; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/polytests/3B; bash run_test.sh
-check_exit_code
-
-echo "Running polynomial input tests"
-cd $TRAVIS_BUILD_DIR/oldtests/polytests/input_generation; bash run_test.sh
-check_exit_code
-
-echo "Running calculator tests"
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomer; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/monomers; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimer; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/dimers; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimer; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/trimers; bash run_test.sh
-check_exit_code
-
-echo "running norm distribution tests"
-cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/src; make
-cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_so4.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_pf6.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_minimum.sh
-check_exit_code
-cd $TRAVIS_BUILD_DIR/configuration_generator/norm_distribution/scripts; bash run_test_trimer_saddle.sh
-check_exit_code
-
-echo "running psi4 tests"
-cd $TRAVIS_BUILD_DIR/oldtests/calctests/psi4; bash run_test.sh
-check_exit_code
-
-cd $TRAVIS_BUILD_DIR
-
-echo "Test running complete, $num_passed passed and $num_failed failed."
-if [ $num_failed -gt 0 ]
+if [ $# -eq 0 ]
 then
-    exit 1
+    time=$(date '+%Y-%m-%d-%H-%M-%S')
+    mkdir test_results -p
+    results="test_results/${time}_results.log"
+    log="test_results/${time}_test.log"
+    coverage="test_results/${time}_coverage.log"
+elif [ $# -eq 3 ]
+then
+    results=$1
+    log=$2
+    coverage=$3
 else
-    exit 0
+    echo "wrong number of arguments."
+    echo "Usage: ./coverage.sh <test_results> <test_log> <coverage_log>"
+    exit 1
 fi
+
+
+
+which coverage > /dev/null
+if [ $? -ne 0 ]; then
+    echo "coverage is not installed."
+    echo "Install coverage for instance with 'conda install coverage'."
+    exit 1
+fi
+
+echo "Running python tests."
+
+coverage run --source potential_fitting run_tests.py > $log 2> $results
+
+coverage report -m > $coverage
+
+echo "Done!" 
+echo "Test results in ${results}."
+echo "Test log in ${log}."
+echo "Test covarege report in ${coverage}."

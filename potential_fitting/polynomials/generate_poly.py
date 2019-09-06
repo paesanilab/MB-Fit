@@ -198,12 +198,6 @@ class PolynomialGenerator(object):
                 # filter out monomials from the list based on filters in the poly.in file
                 accepted_monomials = list(self.filter_monomials(monomials, variables, monomial_filters))
 
-                system.format_print("{} filtered {} degree monomials, now eliminating redundant terms...".format(len(accepted_monomials), degree),
-                                    italics=True)
-
-                # filter out redundant monomials (that are a permutation of eachother)
-                #accepted_monomials = list(self.eliminate_redundant_monomials(accepted_monomials, variable_permutations))
-
                 # log number of accpeted terms
                 log_file.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
 
@@ -579,7 +573,6 @@ class PolynomialGenerator(object):
         # return a list of length degree L, where each element L[d] is a list of all monomials using all variables
         # with total degree d + 1. List will be of length degree.
         return [monomial_grid[number_of_variables][d] for d in range(1, degree + 1)]
-
 
     def get_monomials(self, number_of_variables, degree, variable_permutations):
         """

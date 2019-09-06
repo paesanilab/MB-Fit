@@ -532,9 +532,15 @@ class PolynomialGenerator(object):
         # (Remember, the row n=0 was filled in as a base case.)
         for n in range(1, number_of_variables + 1):
 
+            system.format_print("Generating all monomials using only the first {} variables...".format(n),
+                                italics=True)
+
             # Fill in each row of monomial_grid starting from d = 1 and ending at d = degree.
             # (Remember, the row d=0 was filled in as a base case.)
             for d in range(1, degree + 1):
+
+                system.format_print("Generating degree {} monomials...".format(d),
+                                    italics=True)
 
                 # initialize list of candidate monomials using only the first n variables of degree d.
                 # this list will contain some monomials that are permutations of eachother.

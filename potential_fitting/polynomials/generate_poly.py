@@ -175,18 +175,19 @@ class PolynomialGenerator(object):
             # this list will contain all accepted monomials for the polynomial.
             total_monomials = []
 
+            system.format_print("Generating terms up to degree {}...".format(order),
+                                italics=True)
+            unfiltered_monomials = self.get_monomials_dynamic(len(variables), order, variable_permutations)
+
             # loop thru every degree in this polynomial
             for degree in range(1, order + 1):
-
-                system.format_print("Generating degree {} terms...".format(degree),
-                                    italics=True)
 
                 # header for this degree
                 log_file.write("<> {} degree <>\n".format(degree))
                 log_file.write("\n")
 
                 # get all the monomials of the current degree
-                monomials = list(self.get_monomials_dynamic(len(variables), degree, variable_permutations))
+                monomials = unfiltered_monomials[degree - 1]
 
                 # log number of possible monomials
                 log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
@@ -575,9 +576,9 @@ class PolynomialGenerator(object):
                 # degree d using just the first n variables.
                 monomial_grid[n][d] = final_monomials
 
-        # return the element of monomial_grid equal to all permutationally independent monomials of total degree
-        # maximum degree using all variables.
-        return monomial_grid[number_of_variables][degree]
+        # return a list of length degree L, where each element L[d] is a list of all monomials using all variables
+        # with total degree d + 1. List will be of length degree.
+        return [monomial_grid[number_of_variables][d] for d in range(1, degree + 1)]
 
 
     def get_monomials(self, number_of_variables, degree, variable_permutations):

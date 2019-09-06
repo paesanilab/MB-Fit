@@ -186,7 +186,7 @@ class PolynomialGenerator(object):
                 log_file.write("\n")
 
                 # get all the monomials of the current degree
-                monomials = list(self.get_monomials(len(variables), degree, variable_permutations))
+                monomials = list(self.get_monomials_dynamic(len(variables), degree, variable_permutations))
 
                 # log number of possible monomials
                 log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
@@ -511,6 +511,75 @@ class PolynomialGenerator(object):
 
             yield variable_permutation
 
+    def get_monomials_dynamic(self, number_of_variables, degree, variable_permutations):
+
+        # define monomial grid as 2d array. where x[n][d] means all monomials using only the first n
+        # variables of total degree d.
+        # each element x[n][d] will be a set of such monomials.
+        monomial_grid = [[None for i in range(0, degree + 1)] for i in range(0, number_of_variables + 1)]
+
+        # first we fill in our base cases
+
+        # any monomial with total degree d has every variable raised to the 0th power
+        d = 0
+        for n in range(0, number_of_variables + 1):
+            monomial_grid[n][d] = set([Monomial([0 for k in range(n)])])
+
+        # There are no monomials with no variables and positve total degree, so all sets where n = 0 are empty.
+        # (except the one where d = 0 as well, where we have one monomial with no variables)
+        n = 0
+        for d in range(1, degree + 1):
+            monomial_grid[n][d] = set([])
+
+        # Now, for our recursive case!
+
+        # Fill in monomial_grid starting from n = 0, and ending at n = number_of_variables.
+        # (Remember, the row n=0 was filled in as a base case.)
+        for n in range(1, number_of_variables + 1):
+
+            # Fill in each row of monomial_grid starting from d = 1 and ending at d = degree.
+            # (Remember, the row d=0 was filled in as a base case.)
+            for d in range(1, degree + 1):
+
+                # initialize list of candidate monomials using only the first n variables of degree d.
+                # this list will contain some monomials that are permutations of eachother.
+                monomials = []
+
+                # each candidate monomial could have degree [0, d] in the last variable of the first n.
+                # we loop over these degrees and for each case add monomials to the list of candidate monomials.
+                for i in range(0, d + 1):
+
+                    # add all candidate monomials with degree i in the last variable of the first n to the
+                    # list of candidate monomials.
+                    # this step is done by looking at all monomials with d-i total degree and one less variable and
+                    # appending an extra degree i to the end.
+                    monomials.extend(set([Monomial(monomial.get_degrees() + [i])
+                                          for monomial
+                                          in monomial_grid[n-1][d-i]]))
+
+                # initialize a set of permutationally independent monomials.
+                final_monomials = set()
+
+                # get a list of all variable permutations using only the first n variables.
+                new_var_permutations = [p[:n] for p in variable_permutations if all([i < n for i in p[:n]])]
+
+                # for each candidate monomial, we add its standard order permutation to the list of final monomials.
+                # because final monomials is a set, this eliminates permutationally redundant monomials.
+                for mon in monomials:
+
+                    standard_mon = mon.get_standard_permutations(new_var_permutations)
+
+                    final_monomials.add(standard_mon)
+
+                # update the element of monomial_grid to equal all permutationally independent monomials of total
+                # degree d using just the first n variables.
+                monomial_grid[n][d] = final_monomials
+
+        # return the element of monomial_grid equal to all permutationally independent monomials of total degree
+        # maximum degree using all variables.
+        return monomial_grid[number_of_variables][degree]
+
+
     def get_monomials(self, number_of_variables, degree, variable_permutations):
         """
         Given a number of variables and a degree, generates all possible monomials of that degree.
@@ -526,6 +595,8 @@ class PolynomialGenerator(object):
             All possible lists of length number of vars with entries adding to degree where each entry is a
             non-negative integer.
         """
+
+        print("THIS SHOULD NEVER RUN!")
 
         # if number of vars is 1, then the only possible monomial is a monomial with 1 variable with the given degree
         if number_of_variables == 1:

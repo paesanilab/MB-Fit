@@ -586,8 +586,6 @@ class PolynomialGenerator(object):
             non-negative integer.
         """
 
-        print("THIS SHOULD NEVER RUN!")
-
         # if number of vars is 1, then the only possible monomial is a monomial with 1 variable with the given degree
         if number_of_variables == 1:
             yield Monomial([degree])

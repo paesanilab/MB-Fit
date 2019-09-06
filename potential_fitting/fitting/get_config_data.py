@@ -9,7 +9,11 @@ from potential_fitting.polynomials import MoleculeInParser
 
 qchem_template = "qchem_template"
 
-def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [],
+                                 distance_between = 20,
+                                 use_published_polarizabilities = True,
+                                 method="wb97m-v",
+                                 basis="aug-cc-pvtz"):
     """
         Generates the config file needed to perform a fit.
 
@@ -104,7 +108,7 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
     if len(geo_paths) < 3:
         charges, effective_polarizabilities, c6_constants = execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, distance_between,
-                                  use_published_polarizabilities)
+                                  use_published_polarizabilities, method=method, basis=basis)
     else:
         charges = [[] for geo_path in geo_paths]
         effective_polarizabilities = [[] for geo_path in geo_paths]
@@ -194,7 +198,9 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
     print("Completed generating config file {}.".format(config_path))
 
-def execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, distance_between, use_published_polarizabilities):
+def execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, distance_between, use_published_polarizabilities,
+                              method="wb97m-v",
+                              basis="aug-cc-pvtz"):
 
     qchem_in_path = os.path.join(settings.get("files", "log_path"), "get_config_qchem.in")
     with open(qchem_in_path, "w") as qchem_in:
@@ -277,8 +283,8 @@ def execute_qchem_calculation(settings, geo_paths, monomer_settings, fragments, 
         qchem_in.write("$end\n")
 
         qchem_in.write("$rem\n")
-        qchem_in.write("method " + settings.get("config", "method", "wb97m-v") + "\n")
-        qchem_in.write("basis " + settings.get("config", "basis", "aug-cc-pvtz") + "\n")
+        qchem_in.write("method " + method + "\n")
+        qchem_in.write("basis " + basis + "\n")
 
         # read the qchem template and append it to the qchem in
         qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)

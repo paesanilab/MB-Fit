@@ -418,7 +418,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths, dist
     fitting.generate_fitting_config_file_new(settings_file, config_path, geo_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
 
 
-def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,
+                                 method=):
     """
         Generates the config file needed to perform a fit.
 

@@ -32,7 +32,7 @@ def call(command, *args, in_file = None, out_file = subprocess.PIPE):
     except FileNotFoundError:
         raise CommandNotFoundError(command) from None
 
-def format_print(string, bold = False, italics = False, color = None):
+def format_print(string, bold = False, italics = False, color = None, replace_with_next_line = False):
     if bold:
         string = '\33[1m' + string + '\33[0m'
     if italics:
@@ -40,7 +40,11 @@ def format_print(string, bold = False, italics = False, color = None):
     if color is not None:
         string = '\33[{}m'.format(color.value) + string + '\33[0m'
 
-    print(string)
+    if replace_with_next_line:
+        string = "\r" + string
+        print(string, end='')
+    else:
+        print(string)
 
 class Color(Enum):
     RED = 31

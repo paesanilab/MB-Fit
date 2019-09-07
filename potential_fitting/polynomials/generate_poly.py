@@ -2,7 +2,7 @@
 import itertools, hashlib
 
 # absolute module imports
-from potential_fitting.utils import SettingsReader, files, system
+from potential_fitting.utils import SettingsReader, files, system, ProgressBar
 from potential_fitting.exceptions import ParsingError, InvalidValueError, InconsistentValueError
 
 # relative module imports
@@ -175,18 +175,20 @@ class PolynomialGenerator(object):
             # this list will contain all accepted monomials for the polynomial.
             total_monomials = []
 
+            system.format_print("Generating terms up to degree {}...".format(order),
+                                italics=True)
+
+            unfiltered_monomials = self.get_monomials_dynamic(len(variables), order, variable_permutations)
+
             # loop thru every degree in this polynomial
             for degree in range(1, order + 1):
-
-                system.format_print("Generating degree {} terms...".format(degree),
-                                    italics=True)
 
                 # header for this degree
                 log_file.write("<> {} degree <>\n".format(degree))
                 log_file.write("\n")
 
                 # get all the monomials of the current degree
-                monomials = list(self.get_monomials(len(variables), degree))
+                monomials = unfiltered_monomials[degree - 1]
 
                 # log number of possible monomials
                 log_file.write("{} possible {} degree monomials\n".format(len(monomials), degree))
@@ -196,12 +198,6 @@ class PolynomialGenerator(object):
 
                 # filter out monomials from the list based on filters in the poly.in file
                 accepted_monomials = list(self.filter_monomials(monomials, variables, monomial_filters))
-
-                system.format_print("{} filtered {} degree monomials, now eliminating redundant terms...".format(len(accepted_monomials), degree),
-                                    italics=True)
-
-                # filter out redundant monomials (that are a permutation of eachother)
-                accepted_monomials = list(self.eliminate_redundant_monomials(accepted_monomials, variable_permutations))
 
                 # log number of accpeted terms
                 log_file.write("{} <<== accepted {} degree terms\n".format(len(accepted_monomials), degree))
@@ -511,7 +507,72 @@ class PolynomialGenerator(object):
 
             yield variable_permutation
 
-    def get_monomials(self, number_of_variables, degree):
+    def get_monomials_dynamic(self, number_of_variables, degree, variable_permutations):
+
+        # define monomial grid as 2d array. where x[n][d] means all monomials using only the first n
+        # variables of total degree d.
+        # each element x[n][d] will be a set of such monomials.
+        monomial_grid = [[None for i in range(0, degree + 1)] for i in range(0, number_of_variables + 1)]
+
+        # first we fill in our base cases
+
+        # any monomial with total degree 0 has every variable raised to the 0th power
+        d = 0
+        for n in range(0, number_of_variables + 1):
+            monomial_grid[n][d] = set([Monomial([0 for k in range(n)])])
+
+        # There are no monomials with no variables and positve total degree, so all sets where n = 0 are empty.
+        # (except the one where d = 0 as well, where we have one monomial with no variables)
+        n = 0
+        for d in range(1, degree + 1):
+            monomial_grid[n][d] = set([])
+
+        progress_bar = ProgressBar(start=0, end=(number_of_variables) * (degree))
+        progress_bar.update(0)
+
+        # Now, for our recursive case!
+
+        # Fill in monomial_grid starting from n = 0, and ending at n = number_of_variables.
+        # (Remember, the row n=0 was filled in as a base case.)
+        for n in range(1, number_of_variables + 1):
+
+            # get a list of all variable permutations using only the first n variables.
+            new_var_permutations = [p[:n] for p in variable_permutations if all([i < n for i in p[:n]])]
+
+            # Fill in each row of monomial_grid starting from d = 1 and ending at d = degree.
+            # (Remember, the row d=0 was filled in as a base case.)
+            for d in range(1, degree + 1):
+
+                # initialize a set of permutationally independent monomials.
+                monomials = set()
+
+                # each monomial could have degree [0, d] in the last variable of the first n.
+                # we loop over these degrees and for each case add monomials to the list of monomials.
+                for i in range(0, d + 1):
+
+                    # add all monomials with degree i in the last variable of the first n to the
+                    # list of monomials.
+                    # this step is done by looking at all monomials with d-i total degree and one less variable and
+                    # appending an extra term of degree i to the end.
+                    for monomial in set([Monomial(monomial.get_degrees() + [i])
+                                        for monomial
+                                        in monomial_grid[n-1][d-i]]):
+                        
+                        monomials.add(monomial.get_standard_permutations(new_var_permutations))
+
+                # update the element of monomial_grid to equal all permutationally independent monomials of total
+                # degree d using just the first n variables.
+                monomial_grid[n][d] = monomials
+
+                progress_bar.update((n-1)*degree + d)
+
+        progress_bar.finish()
+
+        # return a list of length degree L, where each element L[d] is a list of all monomials using all variables
+        # with total degree d + 1. List will be of length degree.
+        return [monomial_grid[number_of_variables][d] for d in range(1, degree + 1)]
+
+    def get_monomials(self, number_of_variables, degree, variable_permutations):
         """
         Given a number of variables and a degree, generates all possible monomials of that degree.
 
@@ -538,8 +599,15 @@ class PolynomialGenerator(object):
             yield Monomial([0 for i in range(number_of_variables)])
             return
 
+        yielded_monomials = set()
+
         # loop over all possible first non-zero terms
         for first_non_zero_term_index in range(number_of_variables):
+
+            new_variable_permutations = [[i - first_non_zero_term_index - 1 for i in p[first_non_zero_term_index + 1:]]
+                                        for p
+                                        in variable_permutations
+                                        if all([i - first_non_zero_term_index - 1 >= 0 for i in p[first_non_zero_term_index + 1:]])]
 
             # loop over all possible values of the first non-zero term's degree
             for first_non_zero_degree in range(1, degree + 1):
@@ -552,63 +620,25 @@ class PolynomialGenerator(object):
 
                 # get all the possible lists of degrees for all terms after the first non-zero term.
                 other_terms = self.get_monomials(number_of_variables - first_non_zero_term_index - 1,
-                                                      degree - first_non_zero_degree)
+                                                 degree - first_non_zero_degree,
+                                                 new_variable_permutations)
 
                 # yield every monomial created by concatenating all the terms before the first non-zero term, the first
                 # non-zero term, and every possible list of terms after the first non-zero term.
-                yield from (Monomial(zero_terms + first_non_zero_term + other_term.degrees)
+
+                mons = (Monomial(zero_terms + first_non_zero_term + other_term.degrees)
                             for other_term
                             in other_terms)
 
-    def eliminate_redundant_monomials(self, monomials, variable_permutations):
-        """
-        Eliminates any Monomial that is a permutation of another monomial.
+                for mon in mons:
 
-        Args:
-            monomials           - List of Monomials as generated by get_monomials().
-            variable_permutations - Variable permutations as generated by get_variable_permutations().
+                    standard_mon = mon.get_standard_permutations(variable_permutations)
 
-        Generates:
-            All Monomials in the input, with redundant Monomials removed.
-        """
+                    if standard_mon in yielded_monomials:
+                        continue
 
-        # copies the list of accepted monomials so we can filter it without modifying the input.
-        accepted_monomials = monomials[:]
-
-        index = 0
-
-        while(True):
-
-            # get the next monomial whose redundant permutations we will remove from accepted_monomials.
-            try:
-                monomial = accepted_monomials[index]
-            except IndexError:
-                # if there are no more monomials, end the loop.
-                break
-
-            # get a list of every permutation of the monomial
-            permutated_monomials = set(permutation
-                                        for permutation
-                                        in monomial.permute(variable_permutations))
-
-            # loop over every permutation of the monomial.
-            for permutated_monomial in permutated_monomials:
-
-                # if this permutation is in accepted_monomials, remove it.
-                try:
-                    accepted_monomials.remove(permutated_monomial)
-                except ValueError:
-                    pass
-
-            # after removing all permutations of monomial, we have to add the original monomial back, because
-            # it got removed too.
-            accepted_monomials.insert(0, monomial)
-
-            # increment index by one, so we look at the next monomial.
-            index += 1
-
-        # once all redundant monomials have been filtered out, yield them all.
-        yield from (x for x in accepted_monomials)
+                    yielded_monomials.add(standard_mon)
+                    yield standard_mon
 
     def filter_monomials(self, monomials, variables, filters):
         """
@@ -1012,6 +1042,9 @@ class Monomial(object):
 
             yield Monomial(monomial_permutation)
 
+    def get_standard_permutations(self, variable_permutations):
+        return sorted(self.permute(variable_permutations), key=lambda x: x.get_degrees())[-1]
+
     def get_total_degree(self):
         """
         Gets the total degree of this Monomial by summing the degree of each variable.
@@ -1024,6 +1057,9 @@ class Monomial(object):
         """
         return sum(self.degrees)
 
+    def get_degrees(self):
+        return self.degrees
+
     def __eq__(self, other):
         return self.degrees == other.degrees
 
@@ -1032,6 +1068,7 @@ class Monomial(object):
 
     def __getitem__(self, item):
         return self.degrees[item]
+
 
 class Variable(object):
     """

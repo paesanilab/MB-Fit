@@ -516,7 +516,7 @@ class PolynomialGenerator(object):
 
         # first we fill in our base cases
 
-        # any monomial with total degree d has every variable raised to the 0th power
+        # any monomial with total degree 0 has every variable raised to the 0th power
         d = 0
         for n in range(0, number_of_variables + 1):
             monomial_grid[n][d] = set([Monomial([0 for k in range(n)])])
@@ -550,13 +550,14 @@ class PolynomialGenerator(object):
                 # we loop over these degrees and for each case add monomials to the list of monomials.
                 for i in range(0, d + 1):
 
-                    # add all candidate monomials with degree i in the last variable of the first n to the
-                    # list of candidate monomials.
+                    # add all monomials with degree i in the last variable of the first n to the
+                    # list of monomials.
                     # this step is done by looking at all monomials with d-i total degree and one less variable and
                     # appending an extra term of degree i to the end.
                     for monomial in set([Monomial(monomial.get_degrees() + [i])
                                         for monomial
                                         in monomial_grid[n-1][d-i]]):
+                        
                         monomials.add(monomial.get_standard_permutations(new_var_permutations))
 
                 # update the element of monomial_grid to equal all permutationally independent monomials of total
@@ -586,8 +587,6 @@ class PolynomialGenerator(object):
             All possible lists of length number of vars with entries adding to degree where each entry is a
             non-negative integer.
         """
-
-        print("THIS SHOULD NEVER RUN!")
 
         # if number of vars is 1, then the only possible monomial is a monomial with 1 variable with the given degree
         if number_of_variables == 1:

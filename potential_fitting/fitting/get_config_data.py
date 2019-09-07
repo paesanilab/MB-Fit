@@ -39,6 +39,10 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
                     does not converge, try different values of this.
             use_published_polarizabilities - use published polarizabilites from
                     DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+            method              - Method to use to calculate charges, polarizabilites, and c6 constants.
+                    Default: wb97m-v
+            basis              - Basis to use to calculate charges, polarizabilites, and c6 constants.
+                    Default: aug-cc-pvtz
 
         Returns:
             None.

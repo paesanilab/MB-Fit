@@ -50,7 +50,7 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
 
     settings = SettingsReader(settings_file)
 
-    print("Generating fitting config file for molecule with fragments: {}".format(settings.get("molecule", "names")))
+    print("Generating fitting config file for molecule with fragments: {} using {}/{}.".format(settings.get("molecule", "names"), method, basis))
 
     print("Preparing qchem input...")
 

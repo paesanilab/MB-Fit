@@ -2,7 +2,7 @@
 import itertools, hashlib
 
 # absolute module imports
-from potential_fitting.utils import SettingsReader, files, system
+from potential_fitting.utils import SettingsReader, files, system, ProgressBar
 from potential_fitting.exceptions import ParsingError, InvalidValueError, InconsistentValueError
 
 # relative module imports
@@ -527,14 +527,14 @@ class PolynomialGenerator(object):
         for d in range(1, degree + 1):
             monomial_grid[n][d] = set([])
 
+        progress_bar = ProgressBar(start=0, end=(number_of_variables) * (degree))
+        progress_bar.update(0)
+
         # Now, for our recursive case!
 
         # Fill in monomial_grid starting from n = 0, and ending at n = number_of_variables.
         # (Remember, the row n=0 was filled in as a base case.)
         for n in range(1, number_of_variables + 1):
-
-            system.format_print("Generating all monomials using only the first {} variables...".format(n),
-                                italics=True)
 
             # get a list of all variable permutations using only the first n variables.
             new_var_permutations = [p[:n] for p in variable_permutations if all([i < n for i in p[:n]])]
@@ -542,9 +542,6 @@ class PolynomialGenerator(object):
             # Fill in each row of monomial_grid starting from d = 1 and ending at d = degree.
             # (Remember, the row d=0 was filled in as a base case.)
             for d in range(1, degree + 1):
-
-                system.format_print("Generating degree {} monomials...".format(d),
-                                    italics=True)
 
                 # initialize a set of permutationally independent monomials.
                 monomials = set()
@@ -565,6 +562,10 @@ class PolynomialGenerator(object):
                 # update the element of monomial_grid to equal all permutationally independent monomials of total
                 # degree d using just the first n variables.
                 monomial_grid[n][d] = monomials
+
+                progress_bar.update((n-1)*degree + d)
+
+        progress_bar.finish()
 
         # return a list of length degree L, where each element L[d] is a list of all monomials using all variables
         # with total degree d + 1. List will be of length degree.

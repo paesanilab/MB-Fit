@@ -2436,10 +2436,110 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
+def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
+    ff = open(fname,'w')
+    a = """
+#ifndef POLY_""" + str(number_of_monomers) + "B_" + namespace.upper() + """_H
+#define POLY_""" + str(number_of_monomers) + "B_" + namespace.upper() + """_H
 
+namespace """ + namespace + """ {
 
+struct """ + struct_name + """ {
+    static const unsigned degree = """ + str(degree) + """;
+    static const unsigned n_vars = """ + str(nvars) + """;
 
+    static const unsigned size = """ + str(npoly) + """;
 
+    double eval(const double x[""" + str(nvars) + """], 
+              const double a[""" + str(npoly) + """]);
+    double eval_direct(const double x[""" + str(nvars) + """], 
+                     const double a[""" + str(npoly) + """]);
+    double eval(const double x[""" + str(nvars) + """], 
+              const double a[""" + str(npoly) + """],
+                    double g[""" + str(nvars) + """]);
+    double eval_direct(const double x[""" + str(nvars) + """], 
+                     const double a[""" + str(npoly) + """],
+                           double g[""" + str(nvars) + """]);
+};
+
+} // namespace """ + namespace + """
+
+#endif // POLY_""" + str(number_of_monomers) + "B_" + namespace.upper() + """_H
+
+"""
+    ff.write(a)
+    ff.close()
+
+def retrieve_polynomial_lines(keyword_start, poly_file):
+    poly_lines = ""
+    with open(poly_file,'r') as poly:
+        line = poly.readline()
+        while line != "":
+            if any(line.startswith(key) for key in keyword_start):
+                poly_lines += line
+            line = poly.readline()
+
+    return poly_lines
+
+def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
+    ff = open(fname,'w')
+    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+namespace """ + namespace + """ {
+
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """], 
+            const double a[""" + str(npoly) + """],
+                  double g[""" + str(nvars) + """]) {
+"""
+
+    ff.write(a)
+
+    poly_lines = retrieve_polynomial_lines(["    const double t", "    g[", "    return "],poly_directory + "/poly-grd.cpp")
+
+    ff.write(poly_lines)
+
+    a = """}
+
+} // namespace """ + namespace + """
+
+"""
+
+    ff.write(a)
+    ff.close()
+
+def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
+    ff = open(fname,'w')
+    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+namespace """ + namespace + """ {
+
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """], 
+            const double a[""" + str(npoly) + """]) {
+"""
+
+    ff.write(a)
+
+    poly_lines = retrieve_polynomial_lines(["    const double t", "    g[", "    return "],poly_directory + "/poly-nogrd.cpp")
+
+    ff.write(poly_lines)
+
+    a = """}
+
+} // namespace """ + namespace + """
+
+"""
+
+    ff.write(a)
+    ff.close()
 
 
 

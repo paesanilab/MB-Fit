@@ -5,8 +5,8 @@ import utils_nb_fitting
 import file_writter_nb_fitting
 
 
-if len(sys.argv) != 6:
-    print("Usage: ./script <settings.ini> <config.ini> <poly-direct.cpp_with_path> <degree> <poly.in name>")
+if len(sys.argv) != 7:
+    print("Usage: ./script <settings.ini> <config.ini> <poly-direct.cpp_with_path> <degree> <poly.in name> <poly_directory>")
     sys.exit()
 else:
     settings_path = sys.argv[1]
@@ -14,6 +14,7 @@ else:
     directcpp = sys.argv[3]
     degree = int(sys.argv[4])
     name = sys.argv[5]
+    poly_directory = sys.argv[6]
 
 # In[ ]:
 
@@ -205,9 +206,6 @@ file_writter_nb_fitting.write_dispersion_cpp(monomer_atom_types, virtual_sites_p
 ################################################################################
 file_writter_nb_fitting.write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck)
 
-ff = open("buckingham.cpp",'w')
-ff.write("hello\n")
-ff.close()
 file_writter_nb_fitting.write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 ################################################################################
@@ -248,166 +246,13 @@ if number_of_monomers == 2:
 
 file_writter_nb_fitting.write_makefile(number_of_monomers, system_name)
 
+################################################################################
+## Write polynomial header and cpp for MBX #####################################
+################################################################################
 
-#
-#
-## ## Buckingham.cpp
-#
-## In[ ]:
-#
-#
-#cppname = "buckingham.cpp"
-#ff = open(cppname,'w')
-#a = """
-##include "buckingham.h"
-#
-#x2b_buck::x2b_buck() {
-#  xyz1 = new double[3];
-#  xyz2 = new double[3];
-#}
-#x2b_buck::~x2b_buck() {
-#  delete[] xyz1;
-#  delete[] xyz2;
-#}
-#
-#x2b_buck::x2b_buck(double * c1, double * c2, size_t n1, size_t n2) {
-#  xyz1 = new double[3*n1];
-#  xyz2 = new double[3*n2];
-#  std::copy(c1, c1 + 3*n1, xyz1);
-#  std::copy(c2, c2 + 3*n2, xyz2);
-#}
-#
-#double x2b_buck::get_buckingham() {
-#
-#  double ebuck = 0.0;
-#"""
-#ff.write(a)
-#
-#nc = 0
-## loops over each type of atom in the input
-#for i in range(0,len(types_a),2):
-#    n = 1
-#    # loops over each atom of that type
-#    for j in range(int(types_a[i+1])):
-#        if not types_a[i] in vsites:
-#            ff.write('    const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz1 + ' + str(3 * nc) + ';\n')
-#            n = n + 1
-#            nc = nc + 1
-#ff.write('\n')
-#
-#nc = 0
-## loops over each type of atom in the input
-#for i in range(0,len(types_b),2):
-#    n = 1
-#    # loops over each atom of that type
-#    for j in range(int(types_b[i+1])):
-#        if not types_b[i] in vsites:
-#            ff.write('    const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz2 + ' + str(3 * nc) + ';\n')
-#            n = n + 1
-#            nc = nc + 1
-#ff.write('\n')
-#
-#for i in range(0,len(types_a),2):
-#    na = 1
-#    for j in range(int(types_a[i+1])):
-#        for k in range(0,len(types_b),2):
-#            nb = 1
-#            for l in range(int(types_b[k+1])):
-#                
-#                if types_a[i] not in vsites and types_b[k] not in vsites:
-#                    t = "".join(sorted([types_a[i], types_b[k]]))
-#
-#                    ff.write('  ebuck += buck(m_A_' + t  + ', m_b_' + t + ', ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b" + ');\n')
-#
-#                nb += 1
-#        na += 1
-#
-#a = """
-#  return ebuck;
-#}
-#
-#double x2b_buck::get_buckingham(double * grd) {
-#
-#  double ebuck = 0.0;
-#"""
-#ff.write(a)
-#
-#nc = 0
-## loops over each type of atom in the input
-#for i in range(0,len(types_a),2):
-#    n = 1
-#    # loops over each atom of that type
-#    for j in range(int(types_a[i+1])):
-#        if not types_a[i] in vsites:
-#            ff.write('    const double* ' + types_a[i] + '_' + str(n) + '_a' + '= xyz1 + ' + str(3 * nc) + ';\n')
-#            n = n + 1
-#            nc = nc + 1
-#ff.write('\n')
-#
-#nc = 0
-## loops over each type of atom in the input
-#for i in range(0,len(types_b),2):
-#    n = 1
-#    # loops over each atom of that type
-#    for j in range(int(types_b[i+1])):
-#        if not types_b[i] in vsites:
-#            ff.write('    const double* ' + types_b[i] + '_' + str(n) + '_b' + '= xyz2 + ' + str(3 * nc) + ';\n')
-#            n = n + 1
-#            nc = nc + 1
-#ff.write('\n')
-#
-#nc = 0
-## loops over each type of atom in the input
-#for i in range(0,len(types_a),2):
-#    n = 1
-#    # loops over each atom of that type
-#    for j in range(int(types_a[i+1])):
-#        if not types_a[i] in vsites:
-#            ff.write('    double* ' + types_a[i] + '_' + str(n) + '_a_g' + '= grd + ' + str(3 * nc) + ';\n')
-#            n = n + 1
-#            nc = nc + 1
-#ff.write('\n')
-#
-## loops over each type of atom in the input
-#for i in range(0,len(types_b),2):
-#    n = 1
-#    # loops over each atom of that type
-#    for j in range(int(types_b[i+1])):
-#        if not types_b[i] in vsites:
-#            ff.write('    double* ' + types_b[i] + '_' + str(n) + '_b_g' + '= grd + ' + str(3 * nc) + ';\n')
-#            n = n + 1
-#            nc = nc + 1
-#ff.write('\n')
-#
-#for i in range(0,len(types_a),2):
-#    na = 1
-#    for j in range(int(types_a[i+1])):
-#        for k in range(0,len(types_b),2):
-#            nb = 1
-#            for l in range(int(types_b[k+1])):
-#                
-#                if types_a[i] not in vsites and types_b[k] not in vsites:
-#
-#                    t = "".join(sorted([types_a[i], types_b[k]]))
-#
-#                    ff.write('  ebuck += buck(m_A_' + t  + ', m_b_' + t + ', ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b," + types_a[i] + "_" + str(na) + "_a_g," + types_b[k] + "_" + str(nb) + "_b_g" + ');\n')
-#
-#                nb += 1
-#        na += 1
-#
-#a = """
-#  return ebuck;
-#}
-#"""
-#ff.write(a)
-#ff.close()
-#
-#
-#
-#
-## ## Fitting routine
-
-
+file_writter_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
+file_writter_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+file_writter_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
 
 
 ## ## Fitting with TTM as underlying

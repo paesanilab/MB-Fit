@@ -785,7 +785,7 @@ class DegreeFilter(Filter):
         """
 
         # calculate the total degree of this monomial
-        term = sum(monomial)
+        term = monomial.get_total_degree()
 
         # used to track whether this monomial's TOTAl degree matches one of this filter's applicable terms
         applicable_term = False

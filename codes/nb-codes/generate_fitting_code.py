@@ -48,14 +48,14 @@ for i in range(number_of_monomers):
         number_of_sites[i] += 1
     
 # Obtain the lists with the excluded pairs
-excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12")
-excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13")
-excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14")
+excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
+excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
+excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14", int)
 
 #Obtain charges (in the order of input), pols and polfacs
-charges = config.getlist("fitting", "charges")
-polarizabilities = config.getlist("fitting", "polarizabilities")
-polarizability_factors = config.getlist("fitting", "polarizability_factors")
+charges = config.getlist("fitting", "charges", float)
+polarizabilities = config.getlist("fitting", "polarizabilities", float)
+polarizability_factors = config.getlist("fitting", "polarizability_factors", float)
 
 ################################################################################
 ## DIMER   PROPERTIES ##########################################################
@@ -67,7 +67,7 @@ polarizability_factors = config.getlist("fitting", "polarizability_factors")
 # __FOR__ETHAN__ 
 #c6_constants = config.getlist("fitting", "c6")
 #C6 = c6_constants[len(c6_constants) - 1]
-C6 = config.getlist("fitting", "c6")
+C6 = config.getlist("fitting", "c6", float)
 
 # last element of d6_constants is list of the inter_molecular d6 constants
 #d6_constants = config.getlist("fitting", "d6")
@@ -76,8 +76,8 @@ C6 = config.getlist("fitting", "c6")
 # last element of A_constants is list of the inter_molecular A constants
 # Initialize A and b to 0, for now
 try:
-    A_buck = config.getlist("fitting", "A")
-    b_buck = config.getlist("fitting", "d6")
+    A_buck = config.getlist("fitting", "A", float)
+    b_buck = config.getlist("fitting", "d6", float)
     d6 = b_buck
 except:
     A_buck = [0.0] * len(C6)

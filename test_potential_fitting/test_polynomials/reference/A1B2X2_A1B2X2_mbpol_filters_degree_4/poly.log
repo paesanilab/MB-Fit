@@ -78,22 +78,22 @@ A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b
 
 <> 1 degree <>
 
-31 possible 1 degree monomials
+8 possible 1 degree monomials
 6 <<== accepted 1 degree terms
 
 <> 2 degree <>
 
-496 possible 2 degree monomials
+70 possible 2 degree monomials
 63 <<== accepted 2 degree terms
 
 <> 3 degree <>
 
-5456 possible 3 degree monomials
+505 possible 3 degree monomials
 491 <<== accepted 3 degree terms
 
 <> 4 degree <>
 
-46376 possible 4 degree monomials
+3260 possible 4 degree monomials
 593 <<== accepted 4 degree terms
 
  Total number of terms: 1153

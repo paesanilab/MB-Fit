@@ -215,7 +215,8 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
 
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf')):
+        cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),
+        deprecated_fitcode=False):
     """"
     Creates a training set file from the calculated energies in a database.
 
@@ -232,12 +233,15 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         e_bind_max          - Maximum binding energy allowed, exclusive.
         e_mon_max           - Minimum monomer deformation energy allowed, inclusive.
         e_mon_max           - Maximum monomer deformation energy allowed, exclusive.
+        deprecated_fitcode  - Is this function being called to be used with the deprecated fitcode?
+                The output of the 1b and 2b training sets will be different.
 
     Return:
         None.
     """
     database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max)
+            cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max,
+            deprecated_fitcode=deprecated_fitcode)
 
 def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
     """
@@ -334,7 +338,9 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path):
         None.
     """
 
-    polynomials.generate_poly(settings_path, poly_in_path, order, poly_dir_path)
+    poly_generator = polynomials.PolynomialGenerator(settings_path)
+
+    poly_generator.generate_polynomial(poly_in_path, order, poly_dir_path)
 
 def execute_maple(settings_path, poly_dir_path):
     """
@@ -379,40 +385,44 @@ def execute_maple(settings_path, poly_dir_path):
 
     os.chdir(original_dir)
 
-def generate_fitting_config_file_new(settings_file, config_path, geo_paths, distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
+                                     distance_between=20,
+                                     use_published_polarizabilities=True,
+                                     method="wb97m-v",
+                                     basis="aug-cc-pvtz"):
     """
         Generates the config file needed to perform a fit.
 
-        Qchem is required for this step to work for 1 and 2 b.
-
-        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
-
-        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
-        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
-
-        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
-        Intermolecular c6 constants are read from config_2b_paths.
+        Qchem is required for this step to work.
 
         Args:
             settings_path       - Local path to the file containing all relevent settings information.
             config_path         - Local path to file to write the config file to.
             geo_paths           - List of local paths to the optimized geometries to include in this fit config.
-            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
-                    config for each monomer.
-            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
-                    config for each combination of monomers.
             distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
                     does not converge, try different values of this.
             use_published_polarizabilities - use published polarizabilites from
                     DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+                    Default: True.
+            method              - Method to use for charges, polarizabilities, and c6 constants.
+                    Default: wb97m-v.
+            basis               - Basis to use for charges, polarizabilites, and c6 constants.
+                    Default: aug-cc-pvtz.
 
         Returns:
             None.
         """
-    fitting.generate_fitting_config_file_new(settings_file, config_path, geo_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
+
+    fitting.generate_fitting_config_file_new(settings_file, config_path, geo_paths,
+                                             distance_between=distance_between,
+                                             use_published_polarizabilities=use_published_polarizabilities,
+                                             method=method,
+                                             basis=basis)
 
 
-def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,
+                                 method="wb97m-v",
+                                 basis="aug-cc-pvtz"):
     """
         Generates the config file needed to perform a fit.
 
@@ -438,13 +448,18 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
                     does not converge, try different values of this.
             use_published_polarizabilities - use published polarizabilites from
                     DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+            method              - Method to use to calculate charges, polarizabilites, and c6 constants.
+                    Default: wb97m-v
+            basis              - Basis to use to calculate charges, polarizabilites, and c6 constants.
+                    Default: aug-cc-pvtz
 
         Returns:
             None.
         """
 
     fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
-            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
+            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities,
+            method=method, basis=basis)
     
 def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
     """

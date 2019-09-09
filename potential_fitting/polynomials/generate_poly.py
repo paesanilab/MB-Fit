@@ -953,11 +953,11 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
         Returns:
             None.
         """
-        cpp_file.write("""    double energy(0);
-        for(int i = 0; i < {}; ++i)
-            energy += p[i]*a[i];
+    	cpp_file.write("""    double energy(0);
+	for(int i = 0; i < {}; ++i)
+	    energy += p[i]*a[i];
 
-        return energy;
+	return energy;
 
 }}
 }} // namespace mb_system""".format(total_terms))
@@ -974,10 +974,10 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
             None.
         """
         cpp_file.write("""    double energy(0);
-        for(int i = 0; i < {}; ++i)
-            energy += p[i]*a[i];
+	for(int i = 0; i < {}; ++i)
+	    energy += p[i]*a[i];
 
-        return energy;
+	return energy;
 
 }}
 }} // namespace mb_system""".format(total_terms))

@@ -68,7 +68,6 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
 
     Returns:
         None.
-    
     """
 
     # parse settings file

@@ -1,8 +1,9 @@
 import sys, os
 from glob import glob
+from hashlib import sha1
 
 from potential_fitting.calculator import Model
-from potential_fitting.utils import SettingsReader, system
+from potential_fitting.utils import SettingsReader, system, files
 from potential_fitting.molecule import Molecule
 from potential_fitting.exceptions import ConfigMissingPropertyError
 from . import Database
@@ -150,7 +151,50 @@ class JobHander(object):
             None.
         """
 
-        raise NotImplementedError
+        # parse settings file
+
+        template_dictionary = {
+                # TODO
+                "whole_molecule": molecule.to_xyz().replace("\n", "\\n"),
+                "charges": [frag.get_charge() for frag in molecule.get_fragments()],
+                "spins": [frag.get_spin_multiplicity() for frag in molecule.get_fragments()],
+                "symmetries": [frag.get_symmetry() for frag in molecule.get_fragments()],
+                "SMILES": ",".join([frag.get_SMILE() for frag in molecule.get_fragments()]),
+                "atom_counts": [frag.get_num_atoms() for frag in molecule.get_fragments()],
+                "names": [frag.get_name() for frag in molecule.get_fragments()],
+                "total_atoms": molecule.get_num_atoms(),
+                "molecule":     molecule.to_xyz(frag_indices, use_cp).replace("\n", "\\n"),
+                "frag_indices": frag_indices,
+                "method":       model.get_method(),
+                "basis":        model.get_basis(),
+                "cp":           model.get_cp(),
+                "use_cp":       use_cp,
+                "num_threads":  self.settings.get("psi4", "num_threads"),
+                "memory":       self.settings.get("psi4", "memory"),
+                "total_charge": molecule.get_charge(frag_indices),
+                "total_spin": molecule.get_spin_multiplicity(frag_indices),
+                "format":       "{}"
+            }
+
+        hash_string = "\n".join([str(v) for v in template_dictionary.values()])
+        job_hash = sha1(hash_string.encode()).hexdigest()
+
+        template_dictionary["job_hash"] = job_hash
+
+        i = 8
+        file_path = job_dir + "/job_{}.py".format(job_hash[:i])
+
+        while os.path.exists(file_path):
+            i += 1
+
+            file_path = job_dir + "/job_{}.py".format(job_hash[:i])
+
+        files.init_file(file_path)
+
+        with open(file_path, "w") as job_file, open(self.get_job_template_path(), "r") as job_template:
+            job_string = "".join(job_template.readlines())
+
+            job_file.write(job_string.format(**template_dictionary))
 
     def read_job(self, job_dat_path, job_log_path):
         """
@@ -192,3 +236,6 @@ class JobHander(object):
             log_text = "\n".join(log_file.readlines())
 
         return molecule, method, basis, cp, use_cp, frag_indices, success, energy, log_text
+
+    def get_job_template_path(self):
+        raise NotImplementedError

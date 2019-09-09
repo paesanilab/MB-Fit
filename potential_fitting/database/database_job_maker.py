@@ -111,7 +111,7 @@ def write_job(settings_path, molecule, method, basis, cp, use_cp, frag_indices, 
 
     files.init_file(file_path)
 
-    with open(file_path, "w") as job_file, open(os.path.dirname(os.path.abspath(__file__)) + "/job_template.py", "r") as job_template:
+    with open(file_path, "w") as job_file, open(os.path.dirname(os.path.abspath(__file__)) + "/psi4_job_template.py", "r") as job_template:
         job_string = "".join(job_template.readlines())
 
         job_file.write(job_string.format(**template_dictionary))

@@ -11,3 +11,4 @@ from .training_set_generator import generate_1b_training_set, generate_2b_traini
 from .job_handler import JobHander
 from .psi4_job_handler import Psi4JobHander
 from .qchem_job_handler import QchemJobHandler
+from .job_handler_utils import get_job_handler

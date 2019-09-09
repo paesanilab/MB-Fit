@@ -214,6 +214,16 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
 
     database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
 
+def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+    job_handler = database.get_job_handler(settings_path)
+
+    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
+
+def read_jobs(settings_path, database_config_path, job_dir):
+    job_handler = database.get_job_handler(settings_path)
+
+    job_handler.make_all_jobs(database_config_path, job_dir)
+
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
         cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),
         deprecated_fitcode=False):

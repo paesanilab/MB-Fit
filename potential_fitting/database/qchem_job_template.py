@@ -1,5 +1,3 @@
-import psi4
-from psi4.driver.qcdb.exceptions import QcdbException
 import subprocess, os
 
 """
@@ -56,31 +54,40 @@ def execute_job():
         job_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "job_{format}".format(job_hash[:i]))
 
     os.mkdir(job_dir)
-    output_file = job_dir + "/output.ini"
-    log_file = job_dir + "/output.log"
+    input_path = job_dir + "/qchem_input.log"
+    qchem_stdout_std_err_log_path = job_dir + "/qchem_log.log"
+    output_path = job_dir + "/output.ini"
+    log_path = job_dir + "/output.log"
 
-    psi4.core.set_output_file(log_file, False)
-    psi4.set_memory(memory)
-    psi4_input_geo = "\n" + str(total_charge) + " " + str(total_spin) + "\n" + molecule
-    psi4.geometry(psi4_input_geo)
-    psi4.set_num_threads(number_of_threads)
+    # qchem specific stuff
 
-    try:
-        energy = psi4.energy("{format}/{format}".format(method, basis))
-        print("Energy: {format}".format(energy))
-        success = True
-    except (ValueError, SystemError):
-        success = False
-        print("Something went wrong...")
-    except QcdbException:
-        success = False
-        print("The calculation failed.")
-    except RuntimeError:
-        success = False
-        print("The calculation failed. Iterations *probably* did not converge.")
+    with open(input_path, "w") as input_file:
+        input_file.write("$molecule\n")
+        input_file.write("{} {}\n".format(total_charge, total_spin))
+        input_file.write("{}\n".format(molecule))
+        input_file.write("$end\n")
 
+        input_file.write("$rem\n")
+        input_file.write("jobtype sp\n")
+        input_file.write("method {}\n".format(method))
+        input_file.write("basis {}\n".format(basis))
+        input_file.write("$end\n")
 
-    with open(output_file, "w") as out_file:
+    subprocess.run(["qchem", "-nt", str(number_of_threads), input_path, log_path], stdout=qchem_stdout_std_err_log_path, stderr=qchem_stdout_std_err_log_path)
+
+    energy = None
+    success = False
+    with open(output_path) as out_file:
+        for line in out_file:
+            if line.find("Total energy in the final basis set = ") != -1:
+                energy = float(line[line.find("Total energy in the final basis set = ") + 39:])
+                success = True
+                print("Energy: {format}".format(energy))
+                break
+
+    # end qchem specific stuff
+
+    with open(output_path, "w") as out_file:
         out_file.write("[molecule]\n")
         out_file.write("xyz = {format}\n\n{format}".format(total_atoms, whole_molecule).replace("\n", "\n ") + "\n")
         out_file.write("atom_counts = {format}\n".format(atom_counts))

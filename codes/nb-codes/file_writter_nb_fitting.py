@@ -2500,7 +2500,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
     ff.write(a)
 
-    poly_lines = retrieve_polynomial_lines(["    const double t", "    g[", "    return "],poly_directory + "/poly-grd.cpp")
+    poly_lines = retrieve_polynomial_lines(["    const double t", "    g[", "    return"],poly_directory + "/poly-grd.cpp")
 
     ff.write(poly_lines)
 
@@ -2528,7 +2528,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
     ff.write(a)
 
-    poly_lines = retrieve_polynomial_lines(["    const double t", "    g[", "    return "],poly_directory + "/poly-nogrd.cpp")
+    poly_lines = retrieve_polynomial_lines(["    const double t", "    g[", "    return"],poly_directory + "/poly-nogrd.cpp")
 
     ff.write(poly_lines)
 

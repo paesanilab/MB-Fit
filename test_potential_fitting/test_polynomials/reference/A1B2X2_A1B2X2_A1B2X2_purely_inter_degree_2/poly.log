@@ -484,12 +484,12 @@ A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b:A1c:B1c:B2c:X1c:X2c
 
 <> 1 degree <>
 
-84 possible 1 degree monomials
+8 possible 1 degree monomials
 6 <<== accepted 1 degree terms
 
 <> 2 degree <>
 
-3570 possible 2 degree monomials
+139 possible 2 degree monomials
 99 <<== accepted 2 degree terms
 
  Total number of terms: 105

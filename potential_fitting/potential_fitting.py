@@ -420,7 +420,9 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                              basis=basis)
 
 
-def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True):
+def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,
+                                 method="wb97m-v",
+                                 basis="aug-cc-pvtz"):
     """
         Generates the config file needed to perform a fit.
 
@@ -446,13 +448,18 @@ def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1
                     does not converge, try different values of this.
             use_published_polarizabilities - use published polarizabilites from
                     DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
+            method              - Method to use to calculate charges, polarizabilites, and c6 constants.
+                    Default: wb97m-v
+            basis              - Basis to use to calculate charges, polarizabilites, and c6 constants.
+                    Default: aug-cc-pvtz
 
         Returns:
             None.
         """
 
     fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
-            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities)
+            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities,
+            method=method, basis=basis)
     
 def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
     """

@@ -63,21 +63,24 @@ def execute_job():
 
     with open(input_path, "w") as input_file:
         input_file.write("$molecule\n")
-        input_file.write("{} {}\n".format(total_charge, total_spin))
-        input_file.write("{}\n".format(molecule))
+        input_file.write("{{}} {{}}\n".format(total_charge, total_spin))
+        input_file.write("{{}}\n".format(molecule))
         input_file.write("$end\n")
 
         input_file.write("$rem\n")
         input_file.write("jobtype sp\n")
-        input_file.write("method {}\n".format(method))
-        input_file.write("basis {}\n".format(basis))
+        input_file.write("method {{}}\n".format(method))
+        input_file.write("basis {{}}\n".format(basis))
         input_file.write("$end\n")
 
-    subprocess.run(["qchem", "-nt", str(number_of_threads), input_path, log_path], stdout=qchem_stdout_std_err_log_path, stderr=qchem_stdout_std_err_log_path)
+
+    subprocess.run(["touch", qchem_stdout_std_err_log_path])
+    with open(qchem_stdout_std_err_log_path, "r") as qchem_stdout_std_err_log_file:
+        subprocess.run(["qchem", "-nt", str(number_of_threads), input_path, log_path], stdout=qchem_stdout_std_err_log_file, stderr=qchem_stdout_std_err_log_file)
 
     energy = None
     success = False
-    with open(output_path) as out_file:
+    with open(log_path) as out_file:
         for line in out_file:
             if line.find("Total energy in the final basis set = ") != -1:
                 energy = float(line[line.find("Total energy in the final basis set = ") + 39:])

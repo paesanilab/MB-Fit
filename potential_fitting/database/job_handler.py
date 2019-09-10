@@ -238,4 +238,14 @@ class JobHander(object):
         return molecule, method, basis, cp, use_cp, frag_indices, success, energy, log_text
 
     def get_job_template_path(self):
+        """
+        Gets the path to the template job file for this JobHandler.
+
+        Args:
+            None.
+
+        Returns:
+            Absolute path to job template file.
+        """
+
         raise NotImplementedError

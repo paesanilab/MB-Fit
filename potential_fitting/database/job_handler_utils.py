@@ -4,7 +4,17 @@ from .psi4_job_handler import Psi4JobHander
 from .qchem_job_handler import QchemJobHandler
 
 
-def get_job_handler(settings_path, logging = True):
+def get_job_handler(settings_path):
+    """
+    Gets a JobHandler that will make jobs for the code given in the settings file.
+
+    Args:
+        settings_path       - Local path to settings file.
+
+    Returns:
+        A new JobHandler object.
+    """
+
     settings = SettingsReader(settings_path)
     if settings.get("energy_calculator", "code") == "psi4":
         return Psi4JobHander(settings_path)

@@ -198,7 +198,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     and restarted.
     
     Args:
-        settings_path       - Local path to the file containing all relevent settings information.
+        settings_path       - Local path to the file containing all relevant settings information.
         database_config_path - .ini file containing host, port, database, username, and password.
                     Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
@@ -215,11 +215,45 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
 
 def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+    """
+    Makes a Job file for each energy that still needs to be calculated in this Database.
+
+    Args:
+        settings_path       - Local path to the file containing all relevant settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        client_name         - Name of the client that will perform these jobs
+        job_dir             - Local path to the directory to place the job files in.
+        tags                - Onlt  make jobs for calculations marked with at least one of these tags.
+        num_jobs            - The number of jobs to generate. Unlimted if None.
+
+    Returns:
+        None.
+    """
+
     job_handler = database.get_job_handler(settings_path)
 
     job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
 
 def read_jobs(settings_path, database_config_path, job_dir):
+    """
+    Searches the given directory for completed job directories and enters
+    the results into the database.
+
+    Any directory that starts with job_ will be considered a completed job directory.
+    After data is entered into the database, these directories will be renamed from
+    job_* to job_*_done.
+
+    Args:
+        settings_path       - Local path to the file containing all relevant settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        job_dir             - Local path the the directory to search.
+
+    Returns:
+        None.
+    """
+
     job_handler = database.get_job_handler(settings_path)
 
     job_handler.make_all_jobs(database_config_path, job_dir)

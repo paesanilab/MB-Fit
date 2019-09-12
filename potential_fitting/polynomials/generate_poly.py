@@ -1,5 +1,5 @@
 # external package imports
-import itertools, hashlib
+import itertools, hashlib, math
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system, ProgressBar
@@ -15,19 +15,21 @@ class PolynomialGenerator(object):
     Class for generating of polynomial monomials and cpp and maple files.
     """
 
-
-    def __init__(self, settings_path):
+    def __init__(self, settings_path, num_gradient_terms_per_line=1):
         """
         Constructs a new PolynomialGenerator.
 
         Args:
             settings_path   - Local path to '.ini' settings file containing settings for this PolynomialGenerator.
-
+            num_gradient_terms_per_line - The number of terms to put in each line in the cpp file
+                    for computing the gradients. Larger numbers may result in slower compilation times.
 
         Returns:
             A new PolynomialGenerator.
         """
+
         self.settings = SettingsReader(settings_path)
+        self.num_gradient_terms_per_line = num_gradient_terms_per_line
 
     def generate_polynomial(self, input_path, order, output_dir_path):
 
@@ -826,7 +828,12 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
 
     def write_cpp_gradient(self, cpp_file, index, monomials, variable_permutations):
 
+        num_monomials = len(monomials)
+        num_variables = len(monomials[0].degrees)
+
         monomial_strings = []
+
+        num_gradient_terms_on_line = 0
 
         for monomial_index, monomial in enumerate(monomials):
 
@@ -847,15 +854,36 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
 
                 permutation_strings.append("*".join(variable_strings))
 
-            if len(permutation_strings) == 0:
-                continue
+            if len(permutation_strings) != 0:
+                monomial_strings.append("a[{}]*({})".format(monomial_index, " + ".join(permutation_strings)))
 
-            monomial_strings.append("a[{}]*({})".format(monomial_index, " + ".join(permutation_strings)))
+            num_gradient_terms_on_line += 1
 
-        if len(monomial_strings) == 0:
-            gradient_string = "    g[{}] = 0;\n".format(index)
-        else:
-            gradient_string = "    g[{}] = {};\n".format(index, " + ".join(monomial_strings))
+            if num_gradient_terms_on_line == self.num_gradient_terms_per_line:
+
+                t_index = (math.ceil(num_monomials / self.num_gradient_terms_per_line) * index
+                           + math.ceil((monomial_index // self.num_gradient_terms_per_line * self.num_gradient_terms_per_line) / self.num_gradient_terms_per_line))
+
+                if len(monomial_strings) == 0:
+                    cpp_file.write("    int t{} = 0;\n".format(t_index))
+                else:
+                    cpp_file.write("    int t{} = {};\n".format(t_index, " + ".join(monomial_strings)))
+                monomial_strings = []
+                num_gradient_terms_on_line = 0
+
+        if num_gradient_terms_on_line > 0:
+            t_index = (math.ceil(num_monomials / self.num_gradient_terms_per_line) * index
+                       + math.ceil((monomial_index // self.num_gradient_terms_per_line * self.num_gradient_terms_per_line) / self.num_gradient_terms_per_line))
+
+            if len(monomial_strings) == 0:
+                cpp_file.write("    int t{} = 0;\n".format(t_index))
+            else:
+                cpp_file.write("    int t{} = {};\n".format(t_index, " + ".join(monomial_strings)))
+
+        start_t_index = (math.ceil(num_monomials / self.num_gradient_terms_per_line) * index)
+        end_t_index = (math.ceil(num_monomials / self.num_gradient_terms_per_line) * (index + 1))
+
+        gradient_string = "    g[{}] = {};\n".format(index, " + ".join(["t{}".format(t_index) for t_index in range(start_t_index, end_t_index)]))
 
         cpp_file.write(gradient_string)
 
@@ -956,7 +984,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
         Returns:
             None.
         """
-    	cpp_file.write("""    double energy(0);
+        cpp_file.write("""    double energy(0);
 	for(int i = 0; i < {}; ++i)
 	    energy += p[i]*a[i];
 

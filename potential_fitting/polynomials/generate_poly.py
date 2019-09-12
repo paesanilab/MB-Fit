@@ -726,6 +726,9 @@ struct poly_model {{
 
     static double eval_direct(const double a[{0}],
                               const double x[{1}]);
+    static double eval_direct(const double a[{0}],
+                              const double x[{1}], 
+                              double g[{1}]);
 
 public:
     unsigned report_nvars(){{ return n_vars; }};

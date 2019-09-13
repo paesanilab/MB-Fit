@@ -892,7 +892,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
         end_t_index = t_index
 
         if end_t_index == 0:
-            gradient_string = "    g[{}] = 0;".format(index)
+            gradient_string = "    g[{}] = 0;\n".format(index)
         else:
             gradient_string = "    g[{}] = {};\n".format(index, " + ".join(["t{}_{}".format(index, t_index) for t_index in range(0, end_t_index)]))
 

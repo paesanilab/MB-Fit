@@ -258,11 +258,23 @@ class PolynomialGenerator(object):
             self.write_cpp_opening(cpp_file, len(monomials), len(variables))
             self.write_cpp_grd_opening(cpp_grd_file, len(monomials), len(variables))
 
+            system.format_print('Writing gradients...',
+                                italics=True)
+            progress_bar = ProgressBar(start=0, end=len(variables) - 1)
+            progress_bar.update(0)
+
             for index in range(len(variables)):
                 self.write_cpp_gradient(cpp_grd_file, index, monomials, variable_permutations)
+                progress_bar.update(index)
+            progress_bar.finish()
 
             # keeps track of what index in a list of all monomials the current monomial would occupy
             monomial_index = 0
+
+            system.format_print('Writing terms...',
+                                italics=True)
+            progress_bar = ProgressBar(start=0, end=len(monomials))
+            progress_bar.update(0)
 
             # loop thru every degree in this polynomial
             for monomial in monomials:
@@ -271,6 +283,9 @@ class PolynomialGenerator(object):
                 self.write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
                 self.write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
                 monomial_index += 1
+                progress_bar.progress(1)
+
+            progress_bar.finish()
 
             cpp_file.write("\n")
             grd_file.write("\n")

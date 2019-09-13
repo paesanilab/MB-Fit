@@ -872,33 +872,29 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
             if len(permutation_strings) != 0:
                 monomial_strings.append("a[{}]*({})".format(monomial_index, " + ".join(permutation_strings)))
 
-            num_gradient_terms_on_line += 1
+                num_gradient_terms_on_line += 1
 
-            if num_gradient_terms_on_line == self.num_gradient_terms_per_line:
+                if num_gradient_terms_on_line == self.num_gradient_terms_per_line:
 
-
-                if len(monomial_strings) == 0:
-                    cpp_file.write("    double t{}_{} = 0;\n".format(index, t_index))
-                else:
                     cpp_file.write("    double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
 
-                monomial_strings = []
-                num_gradient_terms_on_line = 0
+                    monomial_strings = []
+                    num_gradient_terms_on_line = 0
 
-                t_index += 1
+                    t_index += 1
 
         if num_gradient_terms_on_line > 0:
 
-            if len(monomial_strings) == 0:
-                cpp_file.write("    double t{}_{} = 0;\n".format(index, t_index))
-            else:
-                cpp_file.write("    double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
+            cpp_file.write("    double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
 
             t_index += 1
 
         end_t_index = t_index
 
-        gradient_string = "    g[{}] = {};\n".format(index, " + ".join(["t{}_{}".format(index, t_index) for t_index in range(0, end_t_index)]))
+        if end_t_index == 0:
+            gradient_string = "    g[{}] = 0;".format(index)
+        else:
+            gradient_string = "    g[{}] = {};\n".format(index, " + ".join(["t{}_{}".format(index, t_index) for t_index in range(0, end_t_index)]))
 
         cpp_file.write(gradient_string)
 

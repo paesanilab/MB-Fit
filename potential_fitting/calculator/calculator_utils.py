@@ -7,6 +7,16 @@ from potential_fitting.molecule import parse_training_set_file
 from .model import Model
 
 def get_calculator(settings_path, logging = True):
+    """
+    Gets a new Calculator object that can be used to perform QM calculations.
+
+    Args:
+        settings_path       - Local path to '.ini' settings file with all relevant settings.
+        logging             - Not used at this time.
+
+    Returns:
+        A new Calculator object.
+    """
     settings = SettingsReader(settings_path)
     if settings.get("energy_calculator", "code") == "psi4":
         return Psi4Calculator(settings_path, logging)

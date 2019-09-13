@@ -47,7 +47,6 @@ class TestCalculatorUtils(unittest.TestCase):
                       "STO-3G",
                       False)
 
-
         out_mols = parse_training_set_file(TestCalculatorUtils.training_set_output)
         ref_mols = parse_training_set_file(TestCalculatorUtils.training_set_reference)
 

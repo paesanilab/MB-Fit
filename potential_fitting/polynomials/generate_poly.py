@@ -876,7 +876,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
 
                 if num_gradient_terms_on_line == self.num_gradient_terms_per_line:
 
-                    cpp_file.write("    double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
+                    cpp_file.write("    const double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
 
                     monomial_strings = []
                     num_gradient_terms_on_line = 0
@@ -885,7 +885,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
 
         if num_gradient_terms_on_line > 0:
 
-            cpp_file.write("    double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
+            cpp_file.write("    const double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
 
             t_index += 1
 

@@ -99,12 +99,7 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
 
         with open(output_configs_path, "a") as output_configs_file:
             output_configs_file.write("{}\n".format(molecule.get_num_atoms()))
-            if molecule.get_num_fragments() == 1:
-                output_configs_file.write("{}\n".format(binding_energy))
-            elif molecule.get_num_fragments() == 2:
-                output_configs_file.write("{} {} {} {}\n".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
-            else:
-                output_configs_file.write("{} {}\n".format(binding_energy, interaction_energy))
+            output_configs_file.write("{} {}\n".format(binding_energy, interaction_energy))
             output_configs_file.write(molecule.to_xyz())
             output_configs_file.write("\n")
 
@@ -123,6 +118,3 @@ def get_energies_to_calculate(num_bodies, cp):
             if cp and i < num_bodies:
                 yield p, True
             yield p, False
-
-
-

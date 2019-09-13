@@ -60,8 +60,13 @@ class TestCalculatorUtils(unittest.TestCase):
             ref_lines = reference_file.readlines()
 
             for i in range(3):
-                output.append((round(float(out_lines[i * 5 + 1]), 5), out_mols.__next__()))
-                reference.append((round(float(ref_lines[i * 5 + 1]), 5), ref_mols.__next__()))
+                output.append((round(float(out_lines[i * 5 + 1].split()[0]), 5),
+                               round(float(out_lines[i * 5 + 1].split()[1]), 5),
+                               out_mols.__next__()))
+
+                reference.append((round(float(ref_lines[i * 5 + 1].split()[0]), 5),
+                                  round(float(ref_lines[i * 5 + 1].split()[1]), 5),
+                                  ref_mols.__next__()))
 
         for molecule in output:
             self.assertIn(molecule, reference)

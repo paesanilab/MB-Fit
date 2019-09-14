@@ -55,7 +55,7 @@ def execute_job():
 
     os.mkdir(job_dir)
     input_path = job_dir + "/qchem_input.log"
-    qchem_stdout_std_err_log_path = job_dir + "/qchem_log.log"
+    qchem_stdout_stderr_log_path = job_dir + "/qchem_log.log"
     output_path = job_dir + "/output.ini"
     log_path = job_dir + "/output.log"
 
@@ -74,9 +74,9 @@ def execute_job():
         input_file.write("$end\n")
 
 
-    subprocess.run(["touch", qchem_stdout_std_err_log_path])
-    with open(qchem_stdout_std_err_log_path, "r") as qchem_stdout_std_err_log_file:
-        subprocess.run(["qchem", "-nt", str(number_of_threads), input_path, log_path], stdout=qchem_stdout_std_err_log_file, stderr=qchem_stdout_std_err_log_file)
+    subprocess.run(["touch", qchem_stdout_stderr_log_path])
+    with open(qchem_stdout_stderr_log_path, "r") as qchem_stdout_stderr_log_file:
+        subprocess.run(["qchem", "-nt", str(number_of_threads), input_path, log_path], stdout=qchem_stdout_stderr_log_file, stderr=qchem_stdout_stderr_log_file)
 
     energy = None
     success = False

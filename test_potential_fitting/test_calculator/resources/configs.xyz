@@ -1,0 +1,17 @@
+3
+CO2 geometry
+C       0.1       0       0
+O       1       0       0
+O       -1      0       0
+
+3
+CO2 geometry
+C       0       0.1       0
+O       1       0       0
+O       -1      0       0
+
+3
+CO2 geometry
+C       0.2       0.2       0
+O       1       0       0
+O       -1      0       0

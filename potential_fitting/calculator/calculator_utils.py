@@ -7,6 +7,16 @@ from potential_fitting.molecule import parse_training_set_file
 from .model import Model
 
 def get_calculator(settings_path, logging = True):
+    """
+    Gets a new Calculator object that can be used to perform QM calculations.
+
+    Args:
+        settings_path       - Local path to '.ini' settings file with all relevant settings.
+        logging             - Not used at this time.
+
+    Returns:
+        A new Calculator object.
+    """
     settings = SettingsReader(settings_path)
     if settings.get("energy_calculator", "code") == "psi4":
         return Psi4Calculator(settings_path, logging)
@@ -89,12 +99,7 @@ def fill_energies(settings_path, input_configs_path, monomer_settings_paths, opt
 
         with open(output_configs_path, "a") as output_configs_file:
             output_configs_file.write("{}\n".format(molecule.get_num_atoms()))
-            if molecule.get_num_fragments() == 1:
-                output_configs_file.write("{}\n".format(binding_energy))
-            elif molecule.get_num_fragments() == 2:
-                output_configs_file.write("{} {} {} {}\n".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
-            else:
-                output_configs_file.write("{} {}\n".format(binding_energy, interaction_energy))
+            output_configs_file.write("{} {}\n".format(binding_energy, interaction_energy))
             output_configs_file.write(molecule.to_xyz())
             output_configs_file.write("\n")
 
@@ -113,6 +118,3 @@ def get_energies_to_calculate(num_bodies, cp):
             if cp and i < num_bodies:
                 yield p, True
             yield p, False
-
-
-

@@ -340,13 +340,13 @@ class Molecule(object):
             fifthmoment += (numpy.matrix([atom.get_x(), atom.get_y(), atom.get_z()]) * principal_axes).getA1() ** 5 * atom.get_mass()
 
         if fifthmoment[0] < 1e-6:
-        	principal_axes[:, 0] *= -1
+            principal_axes[:, 0] *= -1
 
-       	if fifthmoment[1] < 1e-6:
-       		principal_axes[:, 1] *= -1
+        if fifthmoment[1] < 1e-6:
+            principal_axes[:, 1] *= -1
 
-       	if numpy.linalg.det(principal_axes) < 0:
-       		principal_axes[:, 2] *= -1
+        if numpy.linalg.det(principal_axes) < 0:
+            principal_axes[:, 2] *= -1
 
         # update the position of each atom
         for atom in self.get_atoms():

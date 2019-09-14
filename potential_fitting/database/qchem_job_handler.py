@@ -1,8 +1,8 @@
 import os
 
-from .job_handler import JobHander
+from .job_handler import JobHandler
 
-class QchemJobHandler(JobHander):
+class QchemJobHandler(JobHandler):
 
     def get_job_template_path(self):
         """

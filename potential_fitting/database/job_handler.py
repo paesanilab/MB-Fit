@@ -9,11 +9,11 @@ from potential_fitting.exceptions import ConfigMissingPropertyError
 from . import Database
 
 
-class JobHander(object):
+class JobHandler(object):
 
     def __init__(self, settings_path):
         """
-        Constructs a new JobHander.
+        Constructs a new JobHandler.
 
         Args:
             settings_path   - Local path to '.ini' settings file with all settings.

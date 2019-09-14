@@ -1,8 +1,8 @@
 import os
 
-from .job_handler import JobHander
+from .job_handler import JobHandler
 
-class Psi4JobHander(JobHander):
+class Psi4JobHandler(JobHandler):
 
     def get_job_template_path(self):
         """

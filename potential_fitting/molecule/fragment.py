@@ -810,7 +810,7 @@ class Fragment(object):
 
                 if atom.get_symmetry_class() in used_symmetries.keys():
                     if used_symmetries[atom.get_symmetry_class()] != atom.get_name():
-                        return False, standard_symmetry, "User symmetry had non-identical atoms in the same symmetry class."
+                        return False, standard_symmetry, "User symmetry had atoms in the same symmetry class with different names."
                     user_symmetry += atom.get_symmetry_class()
                 else:
                     user_symmetry += next_letter

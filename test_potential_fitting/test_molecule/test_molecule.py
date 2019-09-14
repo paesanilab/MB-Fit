@@ -334,9 +334,40 @@ class TestMolecule(unittest.TestCase):
 
         self.assertIn(mol, ref_mols)
 
-    """
-    Tests the to_xyz() function of the Molecule class
-    """
+    def test_get_excluded_pairs(self):
+        mol = Molecule([Fragment([Atom("O", "A", 1.41421356238, 1.41421356238, 0),
+                                  Atom("O", "A", -1.41421356238, -1.41421356238, 0)], "OO", 0, 1, "OO")])
+
+        self.assertEqual(mol.get_excluded_pairs(), [[[[0, 1]]], [[]], [[]]])
+
+        mol = Molecule([Fragment([Atom("O", "A", -1.5, 1.5, 0),
+                                  Atom("H", "B", -0.5, 0.5, 0)], "OH-", -1, 1, "OH"),
+                        Fragment([Atom("O", "A", 1.5, -1.5, 0),
+                                  Atom("H", "B", 0.5, -0.5, 0)], "OH-", -1, 1, "OH")
+                        ])
+
+        self.assertEqual(mol.get_excluded_pairs(), [[[[0, 1]], [[0, 1]]], [[], []], [[], []]])
+
+        mol = Molecule([Fragment([Atom("O", "A", -1.5, 1.5, 0),
+                                  Atom("H", "B", -0.5, 0.5, 0),
+                                  Atom("H", "B", -0.5, -0.5, 0)], "OH2", 0, 1, "O(H)H"),
+                        Fragment([Atom("O", "A", 1.5, -1.5, 0),
+                                  Atom("H", "B", 0.5, -0.5, 0),
+                                  Atom("H", "B", 0.5, 0.5, 0)], "OH2", 0, 1, "O(H)H")
+                        ])
+
+        self.assertEqual(mol.get_excluded_pairs(), [[[[0, 1], [0, 2]], [[0, 1], [0, 2]]], [[[1, 2]], [[1, 2]]], [[], []]])
+
+        mol = Molecule([Fragment([Atom("O", "A", -1.5, 1.5, 0),
+                                  Atom("H", "B", -0.5, 0.5, 0),
+                                  Atom("H", "B", -0.5, -0.5, 0)], "OH2", 0, 1, "O(H)H"),
+                        Fragment([Atom("O", "A", 1.5, -1.5, 0),
+                                  Atom("H", "B", 0.5, -0.5, 0),
+                                  Atom("H", "B", 0.5, 0.5, 0)], "OH2", 0, 1, "O(H)H")
+                        ])
+
+        self.assertEqual(mol.get_excluded_pairs(max_exclusion=2), [[[[0, 1], [0, 2]], [[0, 1], [0, 2]]], [[[1, 2]], [[1, 2]]]])
+
     def test_to_xyz(self):
 
         fragment0 = Fragment([Atom("H", "A", 5, 3, 0.00343), Atom("Cl", "B", 2, 0, -13), Atom("He", "C", 6, 2, 0.343)], "HClHe", -1, 1, "H[Cl][He]")

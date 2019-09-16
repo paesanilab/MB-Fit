@@ -964,7 +964,7 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
     fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
     if not os.path.exists(fit_folder_prefix):
         os.mkdir(fit_folder_prefix)
-    
+
     # initialize indexes
     fit_index = 1
     count = 0
@@ -983,7 +983,8 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
             # Create bash script that will run the fit
             my_bash = open("run_fit.sh",'w')
             my_bash.write("#!/bin/bash\n")
-            my_bash.write("\n{}/{} {} {} {} > fit.log 2> fit.err \n".format(workdir,fit_executable_path,training_set_path, DE, alpha))  
+            my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(os.path.join(workdir, fit_executable_path),
+                                                                         training_set_path, DE, alpha))
             my_bash.close()
             system.call("chmod", "744", "run_fit.sh")
             fit_index += 1
@@ -1038,51 +1039,77 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
         try:
             with open("fit.log",'r') as logfile:
                 log_lines = logfile.readlines()
+                converged = (log_lines[-10].split()[1] == "converged")
                 full_rmsd = float(log_lines[-7].split()[2])
                 wfull_rmsd = float(log_lines[-6].split()[2])
                 max_error = float(log_lines[-5].split()[2])
                 low_rmsd = float(log_lines[-4].split()[2])
                 low_max_error = float(log_lines[-3].split()[2])
-                results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error])
+
+                if not converged:
+                    print("Looks like the fit in " + fit + " didn't converge...")
+                    print("Maybe you want to rerun " + fit + " again.")
+                    results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, False])
+                else:
+                    results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, True])
         except:
             print("Doesn't seem that the log file in " + fit + " is correct...")
             print("Maybe you want to rerun " + fit + " again.")
-            results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf')])
+            results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), False])
 
         os.chdir("../")
 
     # Sort the results according to weighet RMSD of the full TS
-    sorted_results = sorted(results, key=lambda x: x[2])
+    sorted_results = sorted(results, key=lambda x: (not x[6], x[2]))
 
     # Get the best result
     best_fit = sorted_results[0][0]
     best_results = sorted_results[0]
+
+    if not best_results[6]:
+        print("No fit converged... :(. Still trying to update best fit...")
     
     # Check if best fit folder exists.
     # If it does exist, check the output in best folder to ensure that the new best
     # fit is actually the best
     # If not, just store the best fit in there
     if not os.path.exists("best_fit"):
+        print("No previous best fit, so just storing the current best fit.")
         system.call("cp", "-r", best_fit, "best_fit")
     else:
         os.chdir("best_fit")
         with open("fit.log",'r') as logfile:
             log_lines = logfile.readlines()
+            converged = (log_lines[-10].split()[1] == "converged")
             full_rmsd = float(log_lines[-7].split()[2])
             wfull_rmsd = float(log_lines[-6].split()[2])
             max_error = float(log_lines[-5].split()[2])
             low_rmsd = float(log_lines[-4].split()[2])
             low_max_error = float(log_lines[-3].split()[2])
-            previous_best = [fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error]
+            previous_best = [fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, converged]
         os.chdir("../")
 
-        if previous_best[2] <= sorted_results[0][2]:
-            print("Previous fit is better than any fit tested")
-            best_results = previous_best
+        replace = False
+
+        if not previous_best[6] and best_results[6]:
+            print("Previous best fit did not converge, but new best fit did, so replacing previous best fit.")
+            replace = True
+        elif previous_best[6] and not best_results[6]:
+            print("Previous best fit did converge, but new best fit did not, so not replacing previous best fit.")
+        elif previous_best[6]:
+            print("Both previous best fit and new best fit converged, so checking which is better...")
+            replace = previous_best[2] > sorted_results[0][2]
         else:
+            print("Neither previous best fit or new best fit converged, so checking which is better...")
+            replace = previous_best[2] > sorted_results[0][2]
+
+        if replace:
             print("Replacing best_fit by {}".format(sorted_results[0][0]))
             system.call("rm", "-rf", "best_fit")
             system.call("cp", "-r", sorted_results[0][0], "best_fit")
+        else:
+            best_results = previous_best
+
 
     os.chdir("best_fit")
     nb = len(settings.get("molecule","names").split(","))

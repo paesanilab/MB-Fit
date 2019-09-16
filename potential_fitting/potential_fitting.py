@@ -1105,7 +1105,7 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
                     results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, False])
                 else:
                     results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, True])
-        except:
+        except (FileNotFoundError, IndexError):
             print("Doesn't seem that the log file in " + fit + " is correct...")
             print("Maybe you want to rerun " + fit + " again.")
             results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), False])

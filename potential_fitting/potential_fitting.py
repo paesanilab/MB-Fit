@@ -954,6 +954,25 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
 
 def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10, ttm = False):
+    """
+    Prepares fits to be run by creating directories with executable scripts in them.
+
+    Each directory will contain a run_fit.sh script, which when ran will run one fit.
+
+    The directories will appear in the directory with your other log files.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        fit_executable_path - Local path to the compiled fit executable.
+        training_set_path   - Local path to training set to use for all the fits.
+        DE                  - ????
+        alpha               - ????
+        num_fits            - How many new directories with executables to make. Existing ones will not be changed.
+        ttm                 - True if these are ttm fits. False otherwise.
+
+    Returns:
+        None.
+    """
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
@@ -981,11 +1000,11 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
             # Link the training set to the fit folder
             system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), ".")
             # Create bash script that will run the fit
-            my_bash = open("run_fit.sh",'w')
-            my_bash.write("#!/bin/bash\n")
-            my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(os.path.join(workdir, fit_executable_path),
+            with open("run_fit.sh",'w') as my_bash
+                my_bash.write("#!/bin/bash\n")
+                my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(os.path.join(workdir, fit_executable_path),
                                                                          training_set_path, DE, alpha))
-            my_bash.close()
+
             system.call("chmod", "744", "run_fit.sh")
             fit_index += 1
             count += 1 
@@ -994,6 +1013,19 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
     os.chdir(workdir)
 
 def execute_fits(settings_path, ttm = False):
+    """
+    Looks for fit executables in fit directories in the logs directory and runs the fits.
+
+    Will ignore any fits that already have a log file - suggesting they have already been run.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        ttm                 - True if you want to run ttm fits, False otherwise.
+
+    Returns:
+        None.
+    """
+
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
@@ -1020,6 +1052,24 @@ def execute_fits(settings_path, ttm = False):
     os.chdir(workdir)
     
 def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
+    """
+    Looks through all log files in all fit directories in the log path and finds the best fit.
+
+    Will consider any converged fit to be better than any unconverged fit, regardless of RMSDs.
+
+    The best_fit will end up inside a directory in the logs directory called "best_fit".
+
+    If any new fit is better than the current best fit, it will replace best_fit with the new
+    best one.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        ttm                 - True to look at ttm fits. False otherwise.
+        fitted_nc_path      - Generate a .nc file with the parameters for the best fit at this location.
+
+    Returns:
+        None.
+    """
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
@@ -1128,6 +1178,18 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     os.chdir(workdir)
 
 def update_config_with_ttm(settings_path, config_path):
+    """
+    Updates a fit config.ini file with the A and d constants from the best ttm fit.
+
+    The best ttm fit values will be taken from the best_fit directory inside the logs directory.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_path         - Local path to the config file to update.
+
+    Returns:
+        None.
+    """
     config = SettingsReader(config_path) 
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()

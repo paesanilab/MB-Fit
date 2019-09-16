@@ -1039,7 +1039,10 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
         try:
             with open("fit.log",'r') as logfile:
                 log_lines = logfile.readlines()
-                converged = (log_lines[-10].split()[1] == "converged") or (log_lines[-15].split()[1] == "converged")
+                try:
+                    converged = (log_lines[-10].split()[1] == "converged") or (log_lines[-15].split()[1] == "converged")
+                except IndexError:
+                    converged = False
                 full_rmsd = float(log_lines[-7].split()[2])
                 wfull_rmsd = float(log_lines[-6].split()[2])
                 max_error = float(log_lines[-5].split()[2])
@@ -1080,7 +1083,10 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
         os.chdir("best_fit")
         with open("fit.log",'r') as logfile:
             log_lines = logfile.readlines()
-            converged = (log_lines[-10].split()[1] == "converged") or (log_lines[-15].split()[1] == "converged")
+            try:
+                converged = (log_lines[-10].split()[1] == "converged") or (log_lines[-15].split()[1] == "converged")
+            except IndexError:
+                converged = False
             full_rmsd = float(log_lines[-7].split()[2])
             wfull_rmsd = float(log_lines[-6].split()[2])
             max_error = float(log_lines[-5].split()[2])

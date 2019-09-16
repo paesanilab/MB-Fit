@@ -1000,7 +1000,7 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
             # Link the training set to the fit folder
             system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), ".")
             # Create bash script that will run the fit
-            with open("run_fit.sh",'w') as my_bash
+            with open("run_fit.sh",'w') as my_bash:
                 my_bash.write("#!/bin/bash\n")
                 my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(os.path.join(workdir, fit_executable_path),
                                                                          training_set_path, DE, alpha))

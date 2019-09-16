@@ -292,17 +292,21 @@ class Atom(object):
         # compute distance in 3d coordinate plane
         return math.sqrt((self.get_x() - atom.get_x()) ** 2 + (self.get_y() - atom.get_y()) ** 2 + (self.get_z() - atom.get_z()) ** 2)
 
-    def to_xyz(self):
+    def to_xyz(self, num_digits=14):
         """
         Gets the string representation of this atom in the xyz file format
 
         Args:
-            None
+            num_digits - The number of digits to include when writing this atom's coordinates.
+                    Default: 14
 
         Returns:
             String containing this atom's atomic symbol and coordinates in the xyz format
         """
-        return "{:2} {:22.14e} {:22.14e} {:22.14e}".format(self.name, self.x, self.y, self.z)
+
+        num_chars = num_digits + 8
+
+        return "{0:2} {1:{4}.{5}e} {2:{4}.{5}e} {3:{4}.{5}e}".format(self.name, self.x, self.y, self.z, num_chars, num_digits)
 
     def is_bonded(self, atom, bond_sensitivity = 1.15):
         """
@@ -319,17 +323,19 @@ class Atom(object):
         return self.distance(atom) < bond_sensitivity * (self.get_covalent_radius() + atom.get_covalent_radius())
 
     # NOTE: using @ prefix is not universal, setup some way to change ghost representation depending on platform.
-    def to_ghost_xyz(self):
+    def to_ghost_xyz(self, num_digits=14):
         """
         Gets the string representation of this atom in the xyz file format as a ghost atom
 
         Args:
-            None
+            num_digits - The number of digits to include when writing this atom's coordinates.
+                    Default: 14
 
         Returns:
             String containing this atom's atomic symbol and coordinates in the xyz ghost atom format
         """
-        return "@{}".format(self.to_xyz())
+
+        return "@{}".format(self.to_xyz(num_digits=num_digits))
 
     def __eq__(self, other):
         return (self.get_name() == other.get_name() and self.get_symmetry_class() == other.get_symmetry_class()

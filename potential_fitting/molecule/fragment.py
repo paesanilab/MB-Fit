@@ -536,12 +536,13 @@ class Fragment(object):
         return [[list(pair) for pair in excluded_pairs_1x] for excluded_pairs_1x in excluded_pairs]
 
 
-    def to_xyz(self):
+    def to_xyz(self, num_digits=14):
         """ 
         Gets the string representation of this fragment in the xyz file format.
 
         Args:
-            None
+            num_digits - The number of digits to include when writing atom coordinates.
+                    Default: 14
 
         Returns:
             String containing the atomic symbols and coordinates of each atom in this fragment.
@@ -551,17 +552,18 @@ class Fragment(object):
 
         # add each atom to the string
         for atom in self.get_atoms():
-            string += atom.to_xyz() + "\n"
+            string += atom.to_xyz(num_digits=num_digits) + "\n"
 
         return string
 
-    def to_standard_xyz(self):
+    def to_standard_xyz(self, num_digits=14):
         """ 
         Gets the string representation of this fragment in the xyz file format.
         Atoms are in standard order.
 
         Args:
-            None
+            num_digits - The number of digits to include when writing atom coordinates.
+                    Default: 14
 
         Returns:
             String containing the atomic symbols and coordinates of each atom in this fragment in standard order.
@@ -571,16 +573,17 @@ class Fragment(object):
 
         # add each atom to the string
         for atom in self.get_standard_order():
-            string += atom.to_xyz() + "\n"
+            string += atom.to_xyz(num_digits=num_digits) + "\n"
 
         return string
 
-    def to_ghost_xyz(self):
+    def to_ghost_xyz(self, num_digits=14):
         """ 
         Gets the string representation of this fragment in the xyz file format as a ghost fragment.
 
         Args:
-            None
+            num_digits - The number of digits to include when writing atom coordinates.
+                    Default: 14
 
         Returns:
             string containing the atomic symbols and coordinates of each atom in this fragment as ghost atoms.
@@ -590,17 +593,18 @@ class Fragment(object):
 
         # add each atom to the string
         for atom in self.get_atoms():
-            string += atom.to_ghost_xyz() + "\n"
+            string += atom.to_ghost_xyz(num_digits=num_digits) + "\n"
 
         return string
 
-    def to_standard_ghost_xyz(self):
+    def to_standard_ghost_xyz(self, num_digits=14):
         """ 
         Gets the string representation of this fragment in the xyz file format as a ghost fragment.
         Atoms are in standard order.
 
         Args:
-            None
+            num_digits - The number of digits to include when writing atom coordinates.
+                    Default: 14
 
         Returns:
             string containing the atomic symbols and coordinates of each atom in this fragment in standard order as ghost atoms
@@ -610,7 +614,7 @@ class Fragment(object):
 
         # add each atom to the string
         for atom in self.get_standard_order():
-            string += atom.to_ghost_xyz() + "\n"
+            string += atom.to_ghost_xyz(num_digits=num_digits) + "\n"
 
         return string
 

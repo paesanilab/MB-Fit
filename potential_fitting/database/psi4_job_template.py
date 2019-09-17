@@ -56,10 +56,13 @@ def execute_job():
         job_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "job_{format}".format(job_hash[:i]))
 
     os.mkdir(job_dir)
-    output_file = job_dir + "/output.ini"
-    log_file = job_dir + "/output.log"
+    output_path = job_dir + "/output.ini"
+    log_path = job_dir + "/output.log"
 
-    psi4.core.set_output_file(log_file, False)
+
+    # psi4 specific stuff!
+
+    psi4.core.set_output_file(log_path, False)
     psi4.set_memory(memory)
     psi4_input_geo = "\n" + str(total_charge) + " " + str(total_spin) + "\n" + molecule
     psi4.geometry(psi4_input_geo)
@@ -79,8 +82,9 @@ def execute_job():
         success = False
         print("The calculation failed. Iterations *probably* did not converge.")
 
+    # end psi4 specific stuff
 
-    with open(output_file, "w") as out_file:
+    with open(output_path, "w") as out_file:
         out_file.write("[molecule]\n")
         out_file.write("xyz = {format}\n\n{format}".format(total_atoms, whole_molecule).replace("\n", "\n ") + "\n")
         out_file.write("atom_counts = {format}\n".format(atom_counts))

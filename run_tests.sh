@@ -3,7 +3,7 @@
 if [ $# -eq 0 ]
 then
     time=$(date '+%Y-%m-%d-%H-%M-%S')
-    mkdir test_results -p
+    mkdir -p test_results
     results="test_results/${time}_results.log"
     log="test_results/${time}_test.log"
     coverage="test_results/${time}_coverage.log"

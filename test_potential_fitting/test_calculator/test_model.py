@@ -4,14 +4,6 @@ from potential_fitting.calculator import Model
 
 class TestModel(unittest.TestCase):
 
-    # set up before the first test case
-    def setUpClass():
-        pass
-
-    # clean up after the last test case
-    def tearDownClass():
-        pass
-
     # set up before each test case
     def setUp(self):
 

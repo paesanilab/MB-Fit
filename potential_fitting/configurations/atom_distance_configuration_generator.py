@@ -20,10 +20,10 @@ class AtomDistanceConfigurationGenerator(ConfigurationGenerator):
             mol1_atom_index     - The index of the atom in the first monomer to rotate around.
             mol2_atom_index     - The index of the atom in the second monomer to rotate around.
             distance            - The distance between the two atoms.
-            num_attempts        - The number of attempts to generate a configuration at any given distance before giving
-                    up and moving to the next distance.
             min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                     atoms.
+            num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                    up and moving to the next distance.
 
         Returns:
             A new AtomDistanceConfigurationGenerator.
@@ -150,9 +150,11 @@ class AtomDistanceConfigurationGenerator(ConfigurationGenerator):
                 system.format_print("{} configs done...".format(total_configs),
                                     italics=True)
 
-        # if we have hit our target number of configs, return
-        if total_configs == num_configs:
-            system.format_print("Done! Generated {} configurations".format(num_configs), bold=True,
+        system.format_print("Done! Generated {} configurations.".format(total_configs), bold=True,
+                                color=system.Color.GREEN)
+
+        if total_configs < num_configs:
+            system.format_print("Generated fewer than {} configs because it was too hard to generate configurations at the given distance without placing atoms too close together.".format(num_configs), bold=True,
                                 color=system.Color.GREEN)
 
 class RanOutOfAttemptsException(Exception):

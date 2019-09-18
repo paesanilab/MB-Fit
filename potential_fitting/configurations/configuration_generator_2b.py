@@ -215,7 +215,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
 
                 # if we have hit our target number of configs, return
                 if total_configs == num_configs:
-                    system.format_print("Done! Generated {} configurations".format(num_configs), bold=True,
+                    system.format_print("Done! Generated {} configurations.".format(num_configs), bold=True,
                                         color=system.Color.GREEN)
                     return
 
@@ -281,7 +281,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                 system.format_print("{} configs done...".format(num_configs - total_configs), italics=True)
 
         # if we have hit our target number of configs, return
-        system.format_print("Done! Generated {} configurations".format(num_configs), bold=True,
+        system.format_print("Done! Generated {} configurations.".format(num_configs), bold=True,
                             color=system.Color.GREEN)
         return
 

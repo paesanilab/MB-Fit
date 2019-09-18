@@ -156,6 +156,42 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                                                                              config_generator,
                                                                              number_of_configs,
                                                                              seed=seed)
+def generate_atom_distance_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
+        mol1_atom_index, mol2_atom_index, distance=2, min_inter_distance=0.8, num_attempts = 100, seed=None):
+    """
+    Generates 2b configurations for a given dimer by placing two atoms a certain distance apart and applying
+    random rotations.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        geo1_path           - Local path to read the first optimized geometry from.
+        geo2_path           - Local path to read the second optimized geometry from.
+        number_of_configs   - The target number of configurations to generate. If max_distance is set too low or
+                min_inter_distance is set too high, then less configurations may be generated.
+        configurations_path - Local path to the file in to write the configurations to.
+        mol1_atom_index     - The index of the atom in the first monomer to rotate around.
+        mol2_atom_index     - The index of the atom in the second monomer to rotate around.
+        distance            - The distance between the two atoms.
+        min_inter_distance  - Minimum intermolecular distance in any config is the sum of two atoms vdw radii * this
+                value.
+        num_attempts        - The number of tries to generate a config at any given distance before giving up and
+                moving to the next one.
+        seed                - The same seed will generate the same configurations.
+
+    Returns:
+        None.
+    """
+
+    config_generator = configurations.AtomDistanceConfigurationGenerator(settings_path, mol1_atom_index, mol2_atom_index,
+                                                                         distance=distance,
+                                                                         min_inter_distance=min_inter_distance,
+                                                                         num_attempts=num_attempts)
+
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
 
 def generate_configurations(settings_path, number_of_configs, configurations_path, *geo_paths, radius=10,
                             min_inter_distance=0.8, num_attempts=100, seed=None, logarithmic=False):

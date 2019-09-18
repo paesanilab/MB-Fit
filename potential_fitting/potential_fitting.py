@@ -77,7 +77,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs = 100, seed = None, temperature = None):
+        number_of_configs=100, seed=None, temperature=None):
     """
     Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
 
@@ -98,14 +98,17 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         None.
     """
 
-    if temperature is not None:
-        temperature *= constants.kelvin_to_au
-    configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-            number_of_configs, seed = seed, temperature=temperature)
+    config_generator = configurations.NormalModesConfigurationGenerator(settings_path, normal_modes_path, temperature=temperature)
+
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file([opt_geo_path],
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
-        min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, num_attempts = 100, logarithmic = False, seed = None):
+        min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False, use_grid=False,
+        step_size=0.5, num_attempts=100, logarithmic=False, seed=None):
     """
     Generates 2b configurations for a given dimer.
 
@@ -138,18 +141,31 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
         None.
     """
 
-    configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
-            min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
+    config_generator = configurations.DistanceSamplingConfigurationGenerator(settings_path,
+                                                                             min_distance=min_distance,
+                                                                             max_distance=max_distance,
+                                                                             min_inter_distance=min_inter_distance,
+                                                                             progression=progression,
+                                                                             use_grid=use_grid,
+                                                                             step_size=step_size,
+                                                                             num_attempts=num_attempts,
+                                                                             logarithmic=logarithmic)
 
-def generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius = 10, min_inter_distance=0.8, num_attempts=100,
-                                      seed=None, logarithmic = False):
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
+
+def generate_configurations(settings_path, number_of_configs, configurations_path, *geo_paths, radius=10,
+                            min_inter_distance=0.8, num_attempts=100, seed=None, logarithmic=False):
     """
     Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         number_of_configs   - Number of configurations to generate.
-        config_path         - Local path to the file to write the configurations.
+        configurations_path         - Local path to the file to write the configurations.
         geo_paths           - Paths of all the geometries to make the nb configurations from. Can be single optimized
                 geometry or a set of distorted geometries. Will take random configs from these files to make the
                 nb configs.
@@ -166,8 +182,17 @@ def generate_configurations(settings_path, number_of_configs, config_path, *geo_
         None
     """
 
-    configurations.generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius=radius, min_inter_distance=min_inter_distance, num_attempts=num_attempts,
-                                      seed=seed, logarithmic=logarithmic)
+    config_generator = configurations.RandomSamplingConfigurationGenerator(settings_path,
+                                                                             radius=radius,
+                                                                             min_inter_distance=min_inter_distance,
+                                                                             num_attempts=num_attempts,
+                                                                             logarithmic=logarithmic)
+
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file(geo_paths,
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
 
 def init_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """

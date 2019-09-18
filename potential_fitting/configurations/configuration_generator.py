@@ -2,7 +2,8 @@
 from random import randint
 
 # absolute module imports
-from potential_fitting.utils import SettingsReader, system
+from potential_fitting.utils import SettingsReader, system, files
+from potential_fitting.molecule import xyz_to_molecules
 
 class ConfigurationGenerator(object):
     """
@@ -55,3 +56,28 @@ class ConfigurationGenerator(object):
         system.format_print("No seed given, randomly using seed {}.".format(seed),
                             italics=True)
         return seed
+
+    @staticmethod
+    def generate_configs_from_file_to_file(geo_paths, out_path, config_generator, num_configs, seed=None):
+        """
+        This function reads geometries from filepaths, feeds them into a config_generator, and then writes
+        the output to another file.
+
+        Args:
+            geo_paths       - List of local paths to '.xyz' files containing geometries to generate configurations with.
+            out_path        - Local path to '.xyz' file to write configurations to.
+            config_generator - Implementation of ConfigurationGenerator to use to generate the configurations.
+            num_configs     - The number of configurations to generate.
+            seed            - Seed given to config_generator. The same seed will produce the same configurations when
+                    all else is held equal.
+        """
+
+        molecule_lists = [xyz_to_molecules(path) for path in geo_paths]
+
+        molecules = config_generator.generate_configurations(molecule_lists, num_configs, seed=seed)
+
+        out_path = files.init_file(out_path)
+
+        with open(out_path) as out_file:
+            for molecule_index, molecule in enumerate(molecules):
+                out_file.write("{}\n{}\n{}\n".format(molecule.get_num_atoms(), molecule_index, molecule.to_xyz()))

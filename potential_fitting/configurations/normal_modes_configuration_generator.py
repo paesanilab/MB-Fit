@@ -26,10 +26,13 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         Returns:
             A new NormalModesConfigurationGenerator.
         """
+
         super(ConfigurationGenerator, self).__init__(settings_path)
 
         self.frequencies, self.reduced_masses, self.normal_modes = self.parse_normal_modes_file(normal_modes_path)
 
+        if temperature is not None:
+            temperature *= constants.kelvin_to_au
         self.temperature = temperature
 
     def parse_normal_modes_file(self, normal_modes_path):

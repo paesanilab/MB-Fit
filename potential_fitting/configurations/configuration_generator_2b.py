@@ -4,7 +4,7 @@ from random import Random
 
 # Absolute module impots
 from potential_fitting.utils import Quaternion
-from potential_fitting.molecule import xyz_to_molecules
+from potential_fitting.molecule import Molecule
 from potential_fitting.utils import files, system
 from .configuration_generator import ConfigurationGenerator
 
@@ -38,6 +38,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         Returns:
             A new DistanceSamplingConfigurationGenerator.
         """
+
         super(ConfigurationGenerator, self).__init__(settings_path)
 
         self.min_distance = min_distance
@@ -114,7 +115,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         # if we run out of attempts without generating a valid configuration, raise an exception
         raise RanOutOfAttemptsException
 
-    def generate_configurations(self, geo_paths, output_path, num_configs, seed=None):
+    def generate_configurations(self, molecule_lists, num_configs, seed=None):
         """
         Generates configurations of the given molecule.
 
@@ -133,40 +134,30 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         if seed is None:
             seed = self.get_rand_seed()
 
-        geo1_path = geo_paths[0]
-        geo2_path = geo_paths[1]
+        molecules1 = molecule_lists[0]
+        molecules2 = molecule_lists[1]
 
         if self.progression:
-            self.generate_configurations_smooth(geo1_path, geo2_path, output_path, num_configs, seed)
+            yield from self.generate_configurations_smooth(molecules1, molecules2, num_configs, seed)
         else:
-            self.generate_configurations_random(geo1_path, geo2_path, output_path, num_configs, seed)
+            yield from self.generate_configurations_random(molecules1, molecules2, num_configs, seed)
 
-    def generate_configurations_smooth(self, geo1_path, geo2_path, output_path, num_configs, seed):
+    def generate_configurations_smooth(self, molecules1, molecules2, num_configs, seed):
         """
-        Helper Function to Generate a set of 2 body configurations of the two optimized geometries based on a smooth
-        progression and outputs them to an xyz file.
+        Generate a set of 2 body configurations of the two geometries based on a smooth
+        progression.
 
         Args:
-            settings_path       - Local path to the file containing all relevent settings information.
-            geo1_path           - Local path to the first optimized (or series of unoptimized) geometry.
-            geo2_path           - Local path to the second optimized (or series of unoptimized) geometry.
-            number_of_configs   - Number of configurations to generate.
-            config_path         - Local path to the file to write the configurations.
-            min_distance        - The minimum distance between the centers of mass of the two monomers.
-            max_distance        - The maximum distance between the centers of mass of the two monomers.
-            min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
-                    atoms.
-            use_grid            - If True, then distance between the center of mass of the monomers will be on a grid.
-                    Otherwise, it will be smooth.
-            step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
-            num_attempts        - The number of attempts to generate a configuration at any given distance before giving
-                    up and moving to the next distance.
-            logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
-                    This means more configs are generated at lower distances.
-            seed                - Seed to use, the same seed will give the same configurations.
+            molecules1      - List of Molecule object configurations for the first molecule that will be sampled
+                    from to generate configurations.
+            molecules2      - List of Molecule object configurations for the second molecule that will be sampled
+                    from to generate configurations.
+            num_configs     - The number of configurations to generate.
+            seed            - Seed for the random number generator. The same seed will yield the same configurations
+                    when all else is held equal.
 
-        Returns:
-            None.
+        Yields:
+            Molecule objects containing the new configurations.
         """
 
         # if use_grid is false, set the step size to even space the configurations
@@ -175,13 +166,6 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
 
         # how many steps the grid will have
         num_steps = math.floor((self.max_distance - self.min_distance) / step_size)
-
-        # how many configurations to generate per step in the grid (will be 1 if use_grid is False)
-        configs_per_distance = math.ceil(num_configs / num_steps)
-
-        # parse the molecules from the input xyz files
-        molecules1 = xyz_to_molecules(geo1_path)
-        molecules2 = xyz_to_molecules(geo2_path)
 
         # keeps track of how many total configurations have been generated
         total_configs = 0
@@ -194,82 +178,64 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                 num_configs),
             bold=True, color=system.Color.YELLOW)
 
-        # open the config file to write to
-        with open(files.init_file(output_path, files.OverwriteMethod.get_from_settings(self.settings)), "w") as config_file:
+        # loop over each step on our grid
+        for step in range(num_steps):
+            # loop over how many configs we want to generate at this step in the grid, which is equal
+            #   to the number of configs remaining to be generated divided by the number of steps left.
+            #   this ensures that unless a config at the last step is impossible, we will always have
+            #   exactly num_configs configs.
+            for config in range(math.ceil((num_configs - total_configs) / (num_steps - step))):
 
-            # loop over each step on our grid
-            for step in range(num_steps):
-                # loop over how many configs we want to generate at this step in the grid, which is equal
-                #   to the number of configs remaining to be generated divided by the number of steps left.
-                #   this ensures that unless a config at the last step is impossible, we will always have
-                #   exactly num_configs configs.
-                for config in range(math.ceil((num_configs - total_configs) / (num_steps - step))):
+                # first select a random geometry for each monomer
+                molecule1 = random.choice(molecules1)
+                molecule2 = random.choice(molecules2)
 
-                    # first select a random geometry for each monomer
-                    molecule1 = random.choice(molecules1)
-                    molecule2 = random.choice(molecules2)
+                try:
+                    # move the molecules to a valid configuration, making 5 attempts
+                    if self.logarithmic:
+                        self.move_to_config(random, molecule1, molecule2,
+                                            self.logarithmic_progression(self.min_distance, self.max_distance, num_configs,
+                                                               num_configs * step / (num_steps)))
+                    else:
+                        self.move_to_config(random, molecule1, molecule2, self.min_distance + step * step_size)
 
-                    try:
-                        # move the molecules to a valid configuration, making 5 attempts
-                        if self.logarithmic:
-                            self.move_to_config(random, molecule1, molecule2,
-                                                self.logarithmic_progression(self.min_distance, self.max_distance, num_configs,
-                                                                   num_configs * step / (num_steps)))
-                        else:
-                            self.move_to_config(random, molecule1, molecule2, self.min_distance + step * step_size)
+                except RanOutOfAttemptsException:
+                    # if we didn't find a valid configuration, skip this config
+                    continue
 
-                    except RanOutOfAttemptsException:
-                        # if we didn't find a valid configuration, skip this config
-                        continue
+                mol = Molecule([molecule1.get_fragments()[0], molecule2.get_fragments()[1]])
 
-                    # write total number of atoms to config file
-                    config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
+                yield mol
 
-                    # in the comment line, write how many configs have been generated before this one
-                    config_file.write("{}\n".format(total_configs))
+                total_configs += 1
 
-                    # write the xyz of each monomer to the config file
-                    config_file.write("{}\n{}\n".format(molecule1.to_xyz(), molecule2.to_xyz()))
+                if total_configs % 100 == 0:
+                    system.format_print("{} configs done...".format(num_configs - total_configs),
+                                        italics=True)
 
-                    total_configs += 1
+                # if we have hit our target number of configs, return
+                if total_configs == num_configs:
+                    system.format_print("Done! Generated {} configurations".format(num_configs), bold=True,
+                                        color=system.Color.GREEN)
+                    return
 
-                    if total_configs % 100 == 0:
-                        system.format_print("{} configs done...".format(num_configs - total_configs),
-                                            italics=True)
-
-                    # if we have hit our target number of configs, return
-                    if total_configs == num_configs:
-                        system.format_print("Done! Generated {} configurations".format(num_configs), bold=True,
-                                            color=system.Color.GREEN)
-                        return
-
-    def generate_configurations_random(self, geo1_path, geo2_path, output_path, num_configs, seed):
+    def generate_configurations_random(self, molecules1, molecules2, num_configs, seed):
         """
-        Helper Function to Generate a set of 2 body configurations of the two optimized geometries at random lengths and
-        outputs them to an xyz file.
+        Generate a set of 2 body configurations of the two geometries based on a random
+        progression.
 
         Args:
-            settings_path       - Local path to the file containing all relevent settings information.
-            geo1_path           - Local path to the first optimized (or series of unoptimized) geometry.
-            geo2_path           - Local path to the second optimized (or series of unoptimized) geometry.
-            number_of_configs   - Number of configurations to generate.
-            config_path         - Local path to the file to write the configurations.
-            min_distance        - The minimum distance between the centers of mass of the two monomers.
-            max_distance        - The maximum distance between the centers of mass of the two monomers.
-            min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
-                    atoms.
-            num_attempts        - The number of attempts to generate a configuration at any given distance before giving
-                    up and moving to the next distance.
-            logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
-                    This means more configs are generated at lower distances.
-            seed                - Seed to use, the same seed will give the same configurations.
+            molecules1      - List of Molecule object configurations for the first molecule that will be sampled
+                    from to generate configurations.
+            molecules2      - List of Molecule object configurations for the second molecule that will be sampled
+                    from to generate configurations.
+            num_configs     - The number of configurations to generate.
+            seed            - Seed for the random number generator. The same seed will yield the same configurations
+                    when all else is held equal.
 
-        Returns:
-            None
+        Yields:
+            Molecule objects containing the new configurations.
         """
-        # parse the molecules from the input xyz files
-        molecules1 = xyz_to_molecules(geo1_path)
-        molecules2 = xyz_to_molecules(geo2_path)
 
         # construct a psuedo-random number generator
         random = Random(seed)
@@ -282,49 +248,42 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                 num_configs),
             bold=True, color=system.Color.YELLOW)
 
-        # open the config file to write to
-        with open(files.init_file(output_path, files.OverwriteMethod.get_from_settings(self.settings)), "w") as config_file:
+        while total_configs > 0:
 
-            while total_configs > 0:
+            # random distance between min_distance and max_distance
 
-                # random distance between min_distance and max_distance
+            if self.logarithmic:
+                random_distance = self.logarithmic_progression(self.min_distance, self.max_distance, num_configs,
+                                                          random.uniform(0, num_configs - 1))
+            else:
+                random_distance = random.uniform(self.min_distance, self.max_distance)
 
-                if self.logarithmic:
-                    random_distance = self.logarithmic_progression(self.min_distance, self.max_distance, num_configs,
-                                                              random.uniform(0, num_configs - 1))
-                else:
-                    random_distance = random.uniform(self.min_distance, self.max_distance)
+            # getting the molecules
+            molecule1 = random.choice(molecules1)
+            molecule2 = random.choice(molecules2)
 
-                # getting the molecules
-                molecule1 = random.choice(molecules1)
-                molecule2 = random.choice(molecules2)
+            # generating one confiugration at that random distance
 
-                # generating one confiugration at that random distance
+            try:
+                self.move_to_config(random, molecule1, molecule2, random_distance, self.min_inter_distance, self.num_attempts)
+            except RanOutOfAttemptsException:
+                # if we didn't find a valid configuration, skip this config
+                continue
 
-                try:
-                    self.move_to_config(random, molecule1, molecule2, random_distance, self.min_inter_distance, self.num_attempts)
-                except RanOutOfAttemptsException:
-                    # if we didn't find a valid configuration, skip this config
-                    continue
-                # write total number of atoms to config file
-                config_file.write("{}\n".format(molecule1.get_num_atoms() + molecule2.get_num_atoms()))
+            mol = Molecule([molecule1.get_fragments()[0], molecule2.get_fragments()[1]])
+            yield mol
 
-                # in the comment line, write how many configs have been generated before this one
-                config_file.write("{}\n".format(num_configs - total_configs))
+            # decrementing required number of configs
+            total_configs -= 1
 
-                # write the xyz of each monomer to the config file
-                config_file.write("{}\n{}\n".format(molecule1.to_xyz(), molecule2.to_xyz()))
-
-                # decrementing required number of configs
-                total_configs -= 1
-
-                if (num_configs - total_configs) % 100 == 0:
-                    system.format_print("{} configs done...".format(num_configs - total_configs), italics=True)
+            if (num_configs - total_configs) % 100 == 0:
+                system.format_print("{} configs done...".format(num_configs - total_configs), italics=True)
 
         # if we have hit our target number of configs, return
         system.format_print("Done! Generated {} configurations".format(num_configs), bold=True,
                             color=system.Color.GREEN)
         return
+
 
 class RanOutOfAttemptsException(Exception):
     """

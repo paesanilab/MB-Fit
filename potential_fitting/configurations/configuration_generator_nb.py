@@ -10,8 +10,29 @@ from potential_fitting.utils import files, SettingsReader, system
 from .configuration_generator import ConfigurationGenerator
 
 class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
+    """
+    Implementation of ConfigurationGenerator that generates configurations by randomly placing molecules
+    within a sphere of a given radius.
+    """
 
     def __init__(self, settings_path, radius=10, min_inter_distance=0.8, num_attempts=100, logarithmic=False):
+        """
+        Constructs a new RandomSamplingConfigurationGenerator.
+
+        Args:
+            settings_path       - Local path to '.ini' settings file with all relevant settings.
+            radius              - Radius of the sphere to place molecules in.
+            min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+                    atoms.
+            num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                    up and moving to the next distance.
+            logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                    This means more configs are generated closer to the center of the sphere.
+
+        Returns:
+            A new RandomSamplingConfigurationGenerator.
+        """
+
         super(ConfigurationGenerator, self).__init__(settings_path)
 
         self.radius = radius
@@ -34,7 +55,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
         dx = (math.log(max) - math.log(min)) / (num_configs - 1)
         return math.e ** (math.log(min) + config_num * dx)
 
-    def move_to_config(self, random, molecules, distances, min_inter_distance, attempts):
+    def move_to_config(self, random, molecules, distances):
         """
         Moves the molecules to a configuration with the given distance between their centers of
         mass and the point 0,0,0. Raises RanOutOfAttemptsException if a configuration is failed to be found after a certain number of attempts.
@@ -43,14 +64,12 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
             random              - The Random object used to generate the configuration.
             molecules           - The molecules to place in the configuration.
             distances           - Distance of each monomer from 0,0,0.
-            min_inter_distance  - Minimum intermolecular distance is this times the sum of the atoms van der walls radii.
-            attempts            - The number of configurations to try before giving up and raising the Exception.
 
         Returns:
             None.
         """
 
-        for attempt in range(attempts):
+        for attempt in range(self.attempts):
 
             for molecule, distance in zip(molecules, distances):
                 molecule.move_to_center_of_mass()
@@ -71,7 +90,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
                             # get the sum of the venderwall radii of the pair
                             sum_vdw_distance = atom1.get_vdw_radius() + atom2.get_vdw_radius()
                             # comparing with our factor (default = 0.8)
-                            if atom1.distance(atom2) < min_inter_distance * sum_vdw_distance:
+                            if atom1.distance(atom2) < self.min_inter_distance * sum_vdw_distance:
                                 flag = False
 
             # Returning only valid configurations.
@@ -81,35 +100,24 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
         # if we run out of attempts without generating a valid configuration, raise an exception
         raise RanOutOfAttemptsException
 
-    def generate_configurations(self, geo_paths, output_path, num_configs, seed=None):
+    def generate_configurations(self, molecule_lists, num_configs, seed=None):
         """
-        Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
+        Generates configurations of the given molecule.
 
         Args:
-            settings_path       - Local path to the file containing all relevent settings information.
-            number_of_configs   - Number of configurations to generate.
-            config_path         - Local path to the file to write the configurations.
-            geo_paths           - Paths of all the geometries to make the nb configurations from. Can be single optimized
-                    geometry or a set of distorted geometries. Will take random configs from these files to make the
-                    nb configs.
-            radius              - Radius of the sphere monomers are placed within.
-            min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
-                    atoms.
-            num_attempts        - The number of attempts to generate a configuration at any given distance before giving
-                    up and moving to the next distance.
-            seed                - Seed to use, the same seed will give the same configurations.
-            logarithmic         - If True, will use logarithmic progression to chose distances from center of sphere
-                    for monomers.
+            molecule_lists  - List of lists of molecules to generate configurations from such that molecule_lists[0]
+                    is a list of all configurations to use in the generation of configurations for the first molecule
+                    and so on.
+            num_configs     - The number of configurations to generate.
+            seed            - Seed for the random number generator. The same seed will yield the same configurations
+                    when all else is held equal.
 
-        Returns:
-            None
+        Yields:
+            Molecule objects containing the new configurations.
         """
 
         if seed is None:
             seed = self.get_rand_seed()
-
-        # parse the molecules from the input xyz files
-        molecules_lists = [xyz_to_molecules(geo_path) for geo_path in geo_paths]
 
         # construct a psuedo-random number generator
         random = Random(seed)
@@ -121,49 +129,41 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
             "Beginning nB configurations generation. Will generate {} configs.".format(num_configs), bold=True,
             color=system.Color.GREEN)
 
-        # open the config file to write to
-        with open(files.init_file(output_path, files.OverwriteMethod.get_from_settings(self.settings)), "w") as config_file:
+        while total_configs > 0:
 
-            while total_configs > 0:
+            # random distance between min_distance and max_distance
 
-                # random distance between min_distance and max_distance
+            if self.logarithmic:
+                distances = [self.logarithmic_progression(0, self.radius, num_configs,
+                                                     random.uniform(0, num_configs - 1)) for molecules in
+                             molecule_lists]
+            else:
+                distances = [random.uniform(0, self.radius) for molecules in molecule_lists]
 
-                if self.logarithmic:
-                    distances = [self.logarithmic_progression(0, self.radius, num_configs,
-                                                         random.uniform(0, num_configs - 1)) for molecules in
-                                 molecules_lists]
-                else:
-                    distances = [random.uniform(0, self.radius) for molecules in molecules_lists]
+            molecules = [random.choice(molecules_list) for molecules_list in molecule_lists]
 
-                molecules = [random.choice(molecules_list) for molecules_list in molecules_lists]
+            # generating one confiugration at that random distance
 
-                # generating one confiugration at that random distance
+            try:
+                self.move_to_config(random, molecules, distances, self.min_inter_distance, self.num_attempts)
+            except RanOutOfAttemptsException:
+                # if we didn't find a valid configuration, skip this config
+                continue
 
-                try:
-                    self.move_to_config(random, molecules, distances, self.min_inter_distance, self.num_attempts)
-                except RanOutOfAttemptsException:
-                    # if we didn't find a valid configuration, skip this config
-                    continue
-                # write total number of atoms to config file
-                config_file.write("{}\n".format(sum([molecule.get_num_atoms() for molecule in molecules])))
+            mol = Molecule([molecule.get_fragments()[0] for molecule in molecules])
+            yield mol
 
-                # in the comment line, write how many configs have been generated before this one
-                config_file.write("{}\n".format(num_configs - total_configs))
+            # decrementing required number of configs
+            total_configs -= 1
 
-                # write the xyz of each monomer to the config file
-                for molecule in molecules:
-                    config_file.write("{}\n".format(molecule.to_xyz()))
-
-                # decrementing required number of configs
-                total_configs -= 1
-
-                if (num_configs - total_configs) % 100 == 0:
-                    system.format_print("{} configs done...".format(num_configs - total_configs), italics=True)
+            if (num_configs - total_configs) % 100 == 0:
+                system.format_print("{} configs done...".format(num_configs - total_configs), italics=True)
 
         # if we have hit our target number of configs, return
         system.format_print("Done! Generated {} configurations.".format(num_configs), bold=True,
                             color=system.Color.GREEN)
         return
+
 
 class RanOutOfAttemptsException(Exception):
     """

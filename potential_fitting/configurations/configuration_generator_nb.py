@@ -33,7 +33,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
             A new RandomSamplingConfigurationGenerator.
         """
 
-        super(ConfigurationGenerator, self).__init__(settings_path)
+        super(RandomSamplingConfigurationGenerator, self).__init__(settings_path)
 
         self.radius = radius
         self.min_inter_distance = min_inter_distance

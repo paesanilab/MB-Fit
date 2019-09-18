@@ -78,6 +78,6 @@ class ConfigurationGenerator(object):
 
         out_path = files.init_file(out_path)
 
-        with open(out_path) as out_file:
+        with open(out_path, "w") as out_file:
             for molecule_index, molecule in enumerate(molecules):
                 out_file.write("{}\n{}\n{}\n".format(molecule.get_num_atoms(), molecule_index, molecule.to_xyz()))

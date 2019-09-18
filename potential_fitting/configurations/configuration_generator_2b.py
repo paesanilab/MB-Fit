@@ -39,7 +39,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
             A new DistanceSamplingConfigurationGenerator.
         """
 
-        super(ConfigurationGenerator, self).__init__(settings_path)
+        super(DistanceSamplingConfigurationGenerator, self).__init__(settings_path)
 
         self.min_distance = min_distance
         self.max_distance = max_distance

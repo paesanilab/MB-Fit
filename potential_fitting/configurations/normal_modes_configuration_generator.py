@@ -27,7 +27,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             A new NormalModesConfigurationGenerator.
         """
 
-        super(ConfigurationGenerator, self).__init__(settings_path)
+        super(NormalModesConfigurationGenerator, self).__init__(settings_path)
 
         self.frequencies, self.reduced_masses, self.normal_modes = self.parse_normal_modes_file(normal_modes_path)
 
@@ -242,7 +242,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             Molecule objects containing the new configurations.
         """
 
-        system.format_print("Beginning normal modes configuration generation of {}.".format(geo_path),
+        system.format_print("Beginning normal modes configuration generation.",
                             bold=True, color=system.Color.YELLOW)
 
         if seed is None:
@@ -285,6 +285,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             system.format_print(
                 "Will use a {} distribution to generate the configs.".format("geometric" if geometric else "linear"),
                 italics=True)
+
 
         # calculate the dimension of this molecule
         dim = 3 * molecule.get_num_atoms()

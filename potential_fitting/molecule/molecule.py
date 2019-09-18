@@ -1009,6 +1009,20 @@ class Molecule(object):
         order, frag_orders = self.get_reorder_order(names, SMILES)
         return self.get_reordered_copy(order, frag_orders, SMILES)
 
+    def get_copy(self):
+        """
+        Gets a copy of this molecule.
+
+        Args:
+            None.
+
+        Returns:
+            An exact copy of this molecule.
+        """
+
+        return self.get_reorder_copy([fragment.get_name() for fragment in self.get_fragments()],
+                                     [fragment.get_SMILE() for fragment in self.get_fragments()])
+
     def get_standard_order_order(self):
         """
         Gets the order the fragments and atoms in this molecule must be in to be in standard order.

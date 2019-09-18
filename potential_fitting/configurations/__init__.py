@@ -1,6 +1,7 @@
-from .configuration_generator_2b import generate_2b_configurations
-from .configuration_generator_nb import generate_configurations
+from .configuration_generator import ConfigurationGenerator
+from .normal_modes_configuration_generator import NormalModesConfigurationGenerator
+from .configuration_generator_2b import DistanceSamplingConfigurationGenerator
+from .configuration_generator_nb import RandomSamplingConfigurationGenerator
 from .configurations_splitter import split_configurations, MolecularDescriptor, RMSDDescriptor, RMSDDistanceDescriptor, RandomDescriptor
-from .configuration_generator import generate_normal_mode_configurations
 from .geometry_optimizer import optimize_geometry
 from .normal_modes_generator import generate_normal_modes

@@ -965,8 +965,10 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
         settings_path       - Local path to the file containing all relevent settings information.
         fit_executable_path - Local path to the compiled fit executable.
         training_set_path   - Local path to training set to use for all the fits.
-        DE                  - ????
-        alpha               - ????
+        DE                  - Low DE places more weight on low energy training set items. Large DE places even weight on
+                all training set items.
+        alpha               - Weight for the regularization parameter in the fits. Large alpha means coefficients will
+                be smaller. (Less likely for one or more coefficients to blow up.)
         num_fits            - How many new directories with executables to make. Existing ones will not be changed.
         ttm                 - True if these are ttm fits. False otherwise.
 

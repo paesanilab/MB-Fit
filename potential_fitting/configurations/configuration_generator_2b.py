@@ -203,7 +203,8 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                     # if we didn't find a valid configuration, skip this config
                     continue
 
-                mol = Molecule([molecule1.get_fragments()[0], molecule2.get_fragments()[1]])
+                mol = Molecule.read_xyz_direct(str(
+                    molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
 
                 yield mol
 
@@ -265,12 +266,13 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
             # generating one confiugration at that random distance
 
             try:
-                self.move_to_config(random, molecule1, molecule2, random_distance, self.min_inter_distance, self.num_attempts)
+                self.move_to_config(random, molecule1, molecule2, random_distance)
             except RanOutOfAttemptsException:
                 # if we didn't find a valid configuration, skip this config
                 continue
 
-            mol = Molecule([molecule1.get_fragments()[0], molecule2.get_fragments()[1]])
+            mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
+
             yield mol
 
             # decrementing required number of configs

@@ -30,6 +30,11 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         super(NormalModesConfigurationGenerator, self).__init__(settings_path)
 
         self.frequencies, self.reduced_masses, self.normal_modes = self.parse_normal_modes_file(normal_modes_path)
+        self.frequencies, self.reduced_masses, self.normal_modes = self.sort_by_frequency(self.frequencies, self.reduced_masses, self.normal_modes)
+
+        # convert the frequencies to atomic units from cm-1
+        # absolute value allows supporting of imaginary frequencies (i think)
+        self.frequencies = [abs(frequency) / constants.autocm for frequency in self.frequencies]
 
         if temperature is not None:
             temperature *= constants.kelvin_to_au
@@ -301,12 +306,8 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         # number of configs using a distribution over temp
         num_temp_configs = num_configs - num_A_configs
 
-        # deep copy the frequencies, reduced masses, and normal modes input array before we change it, and sort them so
-        # that they are all sorted from lowest frequency to highest.
-        frequencies, reduced_masses, normal_modes = self.sort_by_frequency(self.frequencies, self.reduced_masses, self.normal_modes)
-
         # mass-scale and normalize the normal modes
-        for normal_mode in normal_modes:
+        for normal_mode in self.normal_modes:
 
             # normalization scale is used to keep track of the length of the normal mode vector to normalize it.
             normalization_scale = 0
@@ -331,17 +332,13 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 for i in range(3):
                     coordinates[i] = coordinates[i] / normalization_scale
 
-        # convert the frequencies to atomic units from cm-1
-        # absolute value allows supporting of imaginary frequencies (i think)
-        frequencies = [abs(frequency) / constants.autocm for frequency in frequencies]
-
         # first we will generate the temp distribution configs
 
         # if a geometric progression was requested, set min, max, factor, and addend of temp to correspond
         if geometric:
 
-            temp_min = frequencies[0]  # au
-            temp_max = 2 * frequencies[-1]  # au
+            temp_min = self.frequencies[0]  # au
+            temp_max = 2 * self.frequencies[-1]  # au
             temp_factor = (temp_min / temp_max) ** (-1 / (num_temp_configs - 1))
             temp_addend = 0
 
@@ -349,11 +346,11 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         elif linear:
 
             temp_min = 0  # au
-            temp_max = frequencies[-1]  # au
+            temp_max = self.frequencies[-1]  # au
             temp_factor = 1
             temp_addend = (temp_max - temp_min) / (num_temp_configs - 1)
         else:
-            temp_min = frequencies[-1] / 100
+            temp_min = self.frequencies[-1] / 100
             num_temp_configs = num_configs
             num_A_configs = 0
             if self.temperature is not None:
@@ -380,8 +377,8 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             G = [[0 for i in range(dim)] for k in range(dim)]  # sqrt of the mass-scaled covariance matrix
 
             # for each normal mode, frequency pair, update d and G.
-            for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)), frequencies,
-                                                                               reduced_masses, normal_modes):
+            for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(self.frequencies)), self.frequencies,
+                                                                               self.reduced_masses, self.normal_modes):
 
                 # check if frequency is high enough to have an effect
                 if frequency >= freq_cutoff:
@@ -409,15 +406,15 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 if self.temperature is None:
                     config_percent = (config_index + 1) / num_temp_configs
                     if config_percent < 0.05:
-                        temp = frequencies[-1] / 100
+                        temp = self.frequencies[-1] / 100
                     elif config_percent < 0.45:
-                        temp = frequencies[-1] / 20
+                        temp = self.frequencies[-1] / 20
                     elif config_percent < 0.75:
-                        temp = frequencies[-1] / 10
+                        temp = self.frequencies[-1] / 10
                     elif config_percent < 0.95:
-                        temp = frequencies[-1] / 5
+                        temp = self.frequencies[-1] / 5
                     else:
-                        temp = frequencies[-1] / 2
+                        temp = self.frequencies[-1] / 2
 
             else:
                 # increase temp
@@ -456,10 +453,10 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 G = [[0 for i in range(dim)] for k in range(dim)]  # sqrt of the mass scaled covariance matrix
 
                 # for each normal mode, frequency pair, update d and G.
-                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(frequencies)),
-                                                                                   frequencies,
-                                                                                   reduced_masses,
-                                                                                   normal_modes):
+                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(self.frequencies)),
+                                                                                   self.frequencies,
+                                                                                   self.reduced_masses,
+                                                                                   self.normal_modes):
 
                     # check if frequency is high enough to have an effect
                     if frequency >= freq_cutoff:

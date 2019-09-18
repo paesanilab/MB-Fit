@@ -787,11 +787,8 @@ class Molecule(object):
 
             symmetry = ""
 
-            try:
-                symmetry_class = ord(max(self.get_symmetry().strip("_"))) + 1
-                print("SYM START:", symmetry) 
-            except ValueError:
-                symmetry_class = 65
+            
+            symmetry_class = 65
 
             # loop over each atom assigning it a unique symmetry class
             for atom_index in range(total_atoms):

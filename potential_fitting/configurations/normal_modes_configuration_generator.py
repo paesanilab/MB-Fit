@@ -236,9 +236,8 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         Generates Normal modes configurations of the given molecule.
 
         Args:
-            molecule_lists  - List of lists of molecules to generate configurations from such that molecule_lists[0]
-                    is a list of all configurations to use in the generation of configurations for the first molecule
-                    and so on.
+            molecule_lists  - A List of lists containing only a single element such that molecule_lists[0][0] is the
+                    optimized geoemtry for the configuration generation.
             num_configs     - The number of configurations to generate.
             seed            - Seed for the random number generator. The same seed will yield the same configurations
                     when all else is held equal.

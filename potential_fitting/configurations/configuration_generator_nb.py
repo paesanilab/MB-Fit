@@ -69,7 +69,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
             None.
         """
 
-        for attempt in range(self.attempts):
+        for attempt in range(self.num_attempts):
 
             for molecule, distance in zip(molecules, distances):
                 molecule.move_to_center_of_mass()
@@ -145,12 +145,12 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
             # generating one confiugration at that random distance
 
             try:
-                self.move_to_config(random, molecules, distances, self.min_inter_distance, self.num_attempts)
+                self.move_to_config(random, molecules, distances)
             except RanOutOfAttemptsException:
                 # if we didn't find a valid configuration, skip this config
                 continue
 
-            mol = Molecule([molecule.get_fragments()[0] for molecule in molecules])
+            mol = Molecule.read_xyz_direct(str(sum([molecule.get_num_atoms() for molecule in molecules])) + "\n\n" + "\n".join([molecule.to_xyz() for molecule in molecules]))
             yield mol
 
             # decrementing required number of configs

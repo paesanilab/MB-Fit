@@ -77,7 +77,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs=100, seed=None, temperature=None, classical=True):
+        number_of_configs=100, seed=None, linear=True, geometric=False, temperature=None, classical=True):
     """
     Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
 
@@ -90,6 +90,8 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         number_of_configs   - Number of configurations to generate
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
+        linear              - If True, then use a linear distribution over temp and A.
+        geometric           - If True, then use a geometric distribution over temp and A.
         temperature         - Temperature at which normal mode sampling is done. If specified, configurations
                 will use clasical normal mode distribution at the specified temperature instead of either geometric
                 or linear progression.
@@ -102,6 +104,8 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
     """
 
     config_generator = configurations.NormalModesConfigurationGenerator(settings_path, normal_modes_path,
+                                                                        linear=linear,
+                                                                        geometric=geometric,
                                                                         temperature=temperature,
                                                                         classical=classical)
 

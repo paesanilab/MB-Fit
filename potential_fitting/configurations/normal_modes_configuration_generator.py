@@ -16,7 +16,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
     mode data.
     """
 
-    def __init__(self, settings_path, normal_modes_path, temperature=None, classical=True):
+    def __init__(self, settings_path, normal_modes_path, linear=True, geometric=False, temperature=None, classical=True):
         """
         Constructs a new NormalModesConfigurationGenerator.
 
@@ -27,6 +27,8 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
                     distribution. QM distributions generate a wider distribution over energy.
                     Default: True
+            linear              - If True, then use a linear distribution over temp and A.
+            geometric           - If True, then use a geometric distribution over temp and A.
 
         Returns:
             A new NormalModesConfigurationGenerator.
@@ -61,9 +63,6 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         if temperature is not None:
             temperature *= constants.kelvin_to_au
         self.temperature = temperature
-
-        geometric = self.settings.getboolean("config_generator", "geometric", False)
-        linear = self.settings.getboolean("config_generator", "linear", False)
 
         if temperature is not None:
             system.format_print("Specific temperature {} K given. Will generate configurations at only that temperature.".format(temperature),

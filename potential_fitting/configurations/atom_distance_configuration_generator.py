@@ -28,13 +28,14 @@ class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator)
             A new AtomDistanceConfigurationGenerator.
         """
 
-        super(AtomDistanceConfigurationGenerator, self).__init__(settings_path, distribution=ConstantDistributionFunction(distance))
+        super(AtomDistanceConfigurationGenerator, self).__init__(settings_path,
+                                                                 min_inter_distance=min_inter_distance,
+                                                                 num_attempts=num_attempts,
+                                                                 distribution=ConstantDistributionFunction(distance))
 
         self.mol1_atom_index = mol1_atom_index
         self.mol2_atom_index = mol2_atom_index
         self.distance = distance
-        self.min_inter_distance = min_inter_distance
-        self.num_attempts = num_attempts
 
     def move_to_config(self, random, molecule1, molecule2, distance):
         """

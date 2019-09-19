@@ -51,11 +51,13 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
 
         super(NormalModesConfigurationGenerator, self).__init__(settings_path)
 
+        # parse frequencies, reduced masses, and normal modes from the input file.
         self.frequencies, self.reduced_masses, self.normal_modes = self.parse_normal_modes_file(normal_modes_path)
+
+        # sort frequencies, reduced masses, and normal modes from smallest frequency to largest.
         self.frequencies, self.reduced_masses, self.normal_modes = self.sort_by_frequency(self.frequencies, self.reduced_masses, self.normal_modes)
 
         # Check for negative frequencies and print warnings.
-
         num_neg_freqs = 0
         for frequency in self.frequencies:
             if frequency < 0:
@@ -75,6 +77,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         # absolute value allows supporting of imaginary frequencies (i think)
         self.frequencies = [abs(frequency) / constants.autocm for frequency in self.frequencies]
 
+        # If the user specified a specific temperature, then only generate configs at that temperature.
         if temperature is not None:
             system.format_print("Specific temperature {} K given. Will generate configurations at only that temperature.".format(temperature),
                                 italics=True)
@@ -82,6 +85,9 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             temperature *= constants.kelvin_to_au
             self.temp_distribution = ConstantDistributionFunction(temperature)
             self.A_distribution = None
+
+        # If the user did not specify a specific temperature, linear, or geometric, generate configs over a
+        # piecewise temperature distribution.
         elif not linear and not geometric:
             system.format_print("Neither linear nor geometric specified, Will generate configurations over a piecewise temperature distribution.",
                                 italics=True)
@@ -98,22 +104,37 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 ]
             )
             self.A_distribution = None
-        elif linear:
+
+        # If linear is specifed (but not geometric), generate configs over a linear distribution over temp and A.
+        elif linear and not geometric:
             system.format_print("Linear specified. Will generate configurations over a linear temp and A distribution.",
                                 italics=True)
             self.temp_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, self.frequencies[-1])
             self.A_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, 2)
+
+        # If geometric is specifed (but not linear), generate configs over a geometric distribution over temp and A.
         elif geometric:
             system.format_print("Geometric specified. Will generate configurations over a geometric temp and A distribution.",
                                 italics=True)
             self.temp_distribution = GeometricDistributionFunction(self.frequencies[0], (self.frequencies[0] / (2 * self.frequencies[-1])) ** -1)
             self.A_distribution = GeometricDistributionFunction(1, (1 / 2) ** -1)
+
+        # If both geometric and linear are specified, Error!
         else:
             raise InconsistentValueError("linear", "geometric", linear, geometric, "both linear and geometric cannot be True")
 
+        # If the user has provided a specific temp distribution, overwrite any other temperature distribution with that one.
         if temp_distribution is not None:
+            system.format_print("User has provided a temperature distribution. Using that one instead of any default.",
+                                italics=True)
+
             self.temp_distribution = temp_distribution
+
+        # If the user has provided a specific A distribution, overwrite any other A distribution with that one.
         if A_distribution is not None:
+            system.format_print("User has provided a A distribution. Using that one instead of any default.",
+                                italics=True)
+
             self.A_distribution = A_distribution
 
         self.classical = classical
@@ -341,6 +362,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         # calculate the dimension of the null space of this molecule
         dim_null = dim - len(self.normal_modes)
 
+        # check to make sure the number of normal modes is right.
         if dim_null < 5:
             raise InvalidValueError("number of normal modes", dim - dim_null,
                                     "larger than 3 * (number of atoms in the molecule) - 5 ({})".format(dim))
@@ -349,16 +371,20 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         if self.A_distribution is None:
             num_temp_configs = num_configs
             num_A_configs = 0
+
         # If there is no temp distribution, then generate no configs over temp
         elif self.temp_distribution is None:
             num_temp_configs = 0
             num_A_configs = num_configs
-        # If both distributions are specified, generate configs over both
+
+        # If both distributions are specified, generate half of the configs over each
         elif self.temp_distribution is not None and self.A_distribution is not None:
             num_A_configs = num_configs // 2
             num_temp_configs = num_configs - num_A_configs
+
         # if neither distribution exists, error!
         else:
+            # should only happen if the user specifies both as None in the constructor
             raise InconsistentValueError("temp_distribution, A_distribution", self.temp_distribution, self.A_distribution,
                                          "both distributions cannot be None")
 
@@ -395,6 +421,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
 
         freq_cutoff = 10 * constants.cmtoau
 
+        # Generate the temp configs.
         if num_temp_configs > 0:
             system.format_print("Generating Temperature Distribution Configs...", italics=True)
 
@@ -407,8 +434,10 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 G = [[0 for i in range(dim)] for k in range(dim)]  # sqrt of the mass-scaled covariance matrix
 
                 # for each normal mode, frequency pair, update d and G.
-                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(self.frequencies)), self.frequencies,
-                                                                                   self.reduced_masses, self.normal_modes):
+                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(self.frequencies)),
+                                                                                   self.frequencies,
+                                                                                   self.reduced_masses,
+                                                                                   self.normal_modes):
 
                     # check if frequency is high enough to have an effect
                     if frequency >= freq_cutoff:
@@ -434,6 +463,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
 
             system.format_print("... Successfully generated temperature distribution configs!", italics=True)
 
+        # Generate the A configs.
         if num_A_configs > 0:
 
             system.format_print("Generating A Distribution Configs...", italics=True)

@@ -16,7 +16,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
     """
 
     def __init__(self, settings_path, min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False,
-                 use_grid=False, step_size=0.5, num_attempts=100, logarithmic=False):
+                 use_grid=False, step_size=0.5, num_attempts=100, logarithmic=False, distribution=None):
         """
         Constructs a new DistanceSamplingConfigurationGenerator.
 
@@ -26,8 +26,8 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
             max_distance        - The maximum distance between the centers of mass of the two monomers.
             min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                     atoms.
-            progression         - If True, a smooth progression will be used from min_distance to max_distance.
-                    Otherwise, a random progression will be used.
+            progression         - If True, a smooth progression will be used over the chosen distribution. Otherwise,
+                    random points on the distribution will be sampled.
             use_grid            - If True, then distance between the center of mass of the monomers will be on a grid.
                     Otherwise, it will be smooth.
             step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
@@ -35,6 +35,10 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                     up and moving to the next distance.
             logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
                     This means more configs are generated at lower distances.
+            distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                    is ignored and this distribution is used to choose the distances between configurations. Should
+                    be implemented over the domain [0,1]. So the first config will have distance
+                    distribution.get_value(0) and the last config will have distance distribution.get_value(1).
 
         Returns:
             A new DistanceSamplingConfigurationGenerator.
@@ -50,7 +54,9 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         self.num_attempts = num_attempts
         self.random = Random()
 
-        if logarithmic:
+        if distribution is not None:
+            self.distance_distribution=distribution
+        elif logarithmic:
             self.distance_distribution = LogarithmicDistributionFunction(self.min_distance, self.max_distance, 0, 1)
         else:
             self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, self.min_distance, 1, self.max_distance)

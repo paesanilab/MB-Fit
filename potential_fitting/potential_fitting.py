@@ -108,7 +108,7 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False, use_grid=False,
-        step_size=0.5, num_attempts=100, logarithmic=False, seed=None):
+        step_size=0.5, num_attempts=100, logarithmic=False, distribution=None, seed=None):
     """
     Generates 2b configurations for a given dimer.
 
@@ -135,6 +135,10 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                 moving to the next one.
         logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
                 This means more configs are generated at lower distances.
+        distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                is ignored and this distribution is used to choose the distances between configurations. Should
+                be implemented over the domain [0,1]. So the first config will have distance
+                distribution.get_value(0) and the last config will have distance distribution.get_value(1).
         seed                - The same seed will generate the same configurations.
 
     Returns:
@@ -149,7 +153,8 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                                                                              use_grid=use_grid,
                                                                              step_size=step_size,
                                                                              num_attempts=num_attempts,
-                                                                             logarithmic=logarithmic)
+                                                                             logarithmic=logarithmic,
+                                                                             distribution=distribution)
 
     configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
                                                                              configurations_path,

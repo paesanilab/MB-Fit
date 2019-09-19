@@ -76,10 +76,6 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         self.frequencies = [abs(frequency) / constants.autocm for frequency in self.frequencies]
 
         if temperature is not None:
-            temperature *= constants.kelvin_to_au
-        self.temperature = temperature
-
-        if temperature is not None:
             system.format_print("Specific temperature {} K given. Will generate configurations at only that temperature.".format(temperature),
                                 italics=True)
 

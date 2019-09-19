@@ -1,11 +1,10 @@
 from random import Random
 
 from potential_fitting.utils import Quaternion, system
-from potential_fitting.molecule import Molecule
+from potential_fitting.utils.distribution_function import ConstantDistributionFunction
+from .configuration_generator_2b import DistanceSamplingConfigurationGenerator
 
-from .configuration_generator import ConfigurationGenerator
-
-class AtomDistanceConfigurationGenerator(ConfigurationGenerator):
+class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator):
     """
     Implementation of ConfigurationGenerator that generates configurations using
     a random sampling of rotations while holding two atoms at a certain distance.
@@ -29,7 +28,7 @@ class AtomDistanceConfigurationGenerator(ConfigurationGenerator):
             A new AtomDistanceConfigurationGenerator.
         """
 
-        super(AtomDistanceConfigurationGenerator, self).__init__(settings_path)
+        super(AtomDistanceConfigurationGenerator, self).__init__(settings_path, distribution=ConstantDistributionFunction(distance))
 
         self.mol1_atom_index = mol1_atom_index
         self.mol2_atom_index = mol2_atom_index
@@ -93,69 +92,6 @@ class AtomDistanceConfigurationGenerator(ConfigurationGenerator):
 
         # if we run out of attempts without generating a valid configuration, raise an exception
         raise RanOutOfAttemptsException
-
-    def generate_configurations(self, molecule_lists, num_configs, seed=None):
-        """
-        Generates Configurations by rotating each molecule around the atom specified in the constructor
-        while holding those atoms at a specific distance.
-
-        Might generate less than num_configs configs if min_inter_distance is set to large.
-
-        Args:
-            molecule_lists  - List of lists of molecules to generate configurations from such that molecule_lists[0]
-                    is a list of all configurations to use in the generation of configurations for the first molecule
-                    and so on.
-            num_configs     - The number of configurations to generate.
-            seed            - Seed for the random number generator. The same seed will yield the same configurations
-                    when all else is held equal.
-
-        Yields:
-            Molecule objects containing the new configurations.
-        """
-
-
-        if seed is None:
-            seed = self.get_rand_seed()
-
-        # construct a psuedo-random number generator
-        random = Random(seed)
-
-        molecules1 = molecule_lists[0]
-        molecules2 = molecule_lists[1]
-
-        system.format_print(
-            "Beginning 2B configurations generation with constant distance between atoms at indices {} and {}.".format(
-                self.mol1_atom_index, self.mol2_atom_index),
-            bold=True, color=system.Color.YELLOW)
-
-        total_configs = 0
-
-        for i in range(num_configs):
-
-            molecule1 = random.choice(molecules1)
-            molecule2 = random.choice(molecules2)
-
-            try:
-                self.move_to_config(random, molecule1, molecule2, self.distance)
-            except RanOutOfAttemptsException:
-                continue
-
-            mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
-
-            yield mol
-
-            total_configs += 1
-
-            if total_configs % 100 == 0:
-                system.format_print("{} configs done...".format(total_configs),
-                                    italics=True)
-
-        system.format_print("Done! Generated {} configurations.".format(total_configs), bold=True,
-                                color=system.Color.GREEN)
-
-        if total_configs < num_configs:
-            system.format_print("Generated fewer than {} configs because it was too hard to generate configurations at the given distance without placing atoms too close together.".format(num_configs), bold=True,
-                                color=system.Color.GREEN)
 
 class RanOutOfAttemptsException(Exception):
     """

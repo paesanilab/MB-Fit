@@ -61,3 +61,14 @@ class PiecewiseDistributionFunction(DistributionFunction):
                 return function.get_value(x)
 
         return self.functions[-1].get_value(x)
+
+class RandomDistributionFunction(DistributionFunction):
+
+    def __init__(self, function, random, min, max):
+        self.function = function
+        self.random = random
+        self.min = min
+        self.max = max
+
+    def get_value(self, x):
+        return self.function.get_value(self.random.uniform(self.min, self.max))

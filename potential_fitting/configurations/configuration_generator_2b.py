@@ -7,7 +7,7 @@ from potential_fitting.utils import Quaternion
 from potential_fitting.molecule import Molecule
 from potential_fitting.utils import files, system
 from .configuration_generator import ConfigurationGenerator
-from potential_fitting.utils.distribution_function import LinearDistributionFunction, LogarithmicDistributionFunction
+from potential_fitting.utils.distribution_function import LinearDistributionFunction, LogarithmicDistributionFunction, RandomDistributionFunction
 
 class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
     """
@@ -45,15 +45,18 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         self.min_distance = min_distance
         self.max_distance = max_distance
         self.min_inter_distance = min_inter_distance
-        self.progression = progression
         self.use_grid = use_grid
         self.step_size = step_size
         self.num_attempts = num_attempts
+        self.random = Random()
 
         if logarithmic:
             self.distance_distribution = LogarithmicDistributionFunction(self.min_distance, self.max_distance, 0, 1)
         else:
             self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, self.min_distance, 1, self.max_distance)
+
+        if not progression:
+            self.distance_distribution = RandomDistributionFunction(self.distance_distribution, self.random, 0, 1)
 
     def move_to_config(self, random, molecule1, molecule2, distance):
         """
@@ -127,10 +130,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         molecules1 = molecule_lists[0]
         molecules2 = molecule_lists[1]
 
-        if self.progression:
-            yield from self.generate_configurations_smooth(molecules1, molecules2, num_configs, seed)
-        else:
-            yield from self.generate_configurations_random(molecules1, molecules2, num_configs, seed)
+        yield from self.generate_configurations_smooth(molecules1, molecules2, num_configs, seed)
 
     def generate_configurations_smooth(self, molecules1, molecules2, num_configs, seed):
         """
@@ -161,7 +161,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         total_configs = 0
 
         # construct a psuedo-random number generator
-        random = Random(seed)
+        self.random.seed(seed)
 
         system.format_print(
             "Beginning 2B configurations generation with smooth distribution. Will generate {} configs.".format(
@@ -176,13 +176,14 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
             #   exactly num_configs configs.
             for config in range(math.ceil((num_configs - total_configs) / (num_steps - step))):
 
+                distance = self.distance_distribution.get_value((step * step_size) / (self.max_distance - self.min_distance))
+
                 # first select a random geometry for each monomer
-                molecule1 = random.choice(molecules1)
-                molecule2 = random.choice(molecules2)
+                molecule1 = self.random.choice(molecules1)
+                molecule2 = self.random.choice(molecules2)
 
                 try:
-                    self.move_to_config(random, molecule1, molecule2,
-                                        self.distance_distribution.get_value((step * step_size) / (self.max_distance - self.min_distance)))
+                    self.move_to_config(self.random, molecule1, molecule2, distance)
 
                 except RanOutOfAttemptsException:
                     # if we didn't find a valid configuration, skip this config
@@ -204,68 +205,9 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                                         color=system.Color.GREEN)
                     return
 
-    def generate_configurations_random(self, molecules1, molecules2, num_configs, seed):
-        """
-        Generate a set of 2 body configurations of the two geometries based on a random
-        progression.
-
-        Args:
-            molecules1      - List of Molecule object configurations for the first molecule that will be sampled
-                    from to generate configurations.
-            molecules2      - List of Molecule object configurations for the second molecule that will be sampled
-                    from to generate configurations.
-            num_configs     - The number of configurations to generate.
-            seed            - Seed for the random number generator. The same seed will yield the same configurations
-                    when all else is held equal.
-
-        Yields:
-            Molecule objects containing the new configurations.
-        """
-
-        # construct a psuedo-random number generator
-        random = Random(seed)
-
-        # setting the total number of configs
-        total_configs = num_configs
-
-        system.format_print(
-            "Beginning 2B configurations generation with random distribution. Will generate {} configs.".format(
-                num_configs),
-            bold=True, color=system.Color.YELLOW)
-
-        while total_configs > 0:
-
-            # random distance between min_distance and max_distance
-
-            random_distance = self.distance_distribution.get_value((random.uniform(self.min_distance, self.max_distance) - self.min_distance) / (self.max_distance - self.min_distance))
-
-            # getting the molecules
-            molecule1 = random.choice(molecules1)
-            molecule2 = random.choice(molecules2)
-
-            # generating one confiugration at that random distance
-
-            try:
-                self.move_to_config(random, molecule1, molecule2, random_distance)
-            except RanOutOfAttemptsException:
-                # if we didn't find a valid configuration, skip this config
-                continue
-
-            mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
-
-            yield mol
-
-            # decrementing required number of configs
-            total_configs -= 1
-
-            if (num_configs - total_configs) % 100 == 0:
-                system.format_print("{} configs done...".format(num_configs - total_configs), italics=True)
-
-        # if we have hit our target number of configs, return
-        system.format_print("Done! Generated {} configurations.".format(num_configs), bold=True,
+        # TODO: add catch for when random distribution does not generate enough configurations.
+        system.format_print("Done! Generated {} configurations.".format(total_configs), bold=True,
                             color=system.Color.GREEN)
-        return
-
 
 class RanOutOfAttemptsException(Exception):
     """

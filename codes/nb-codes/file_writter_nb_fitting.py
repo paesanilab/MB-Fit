@@ -420,8 +420,9 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
         mon_id = chr(ord(mon_id)+1)
     return atoms
 
-def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name):
+def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name, extension = "", nspaces = 4):
     crd_shift = 0
+    spaces = " "*nspaces
     mon_id = 'a'
     string_pointers = ""
     string_pointers_vs = ""
@@ -431,20 +432,20 @@ def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name):
             atom = monomer[2*i]
             if not atom in vsites:
                 for j in range(monomer[2*i + 1]):
-                    string_pointers += "    const double* " + atom + "_" + str(j+1) + "_" + mon_id + " = " + xyz_var_name + " + " + str(crd_shift) + ";\n"
+                    string_pointers += spaces + "const double* " + atom + "_" + str(j+1) + "_" + mon_id + extension + " = " + xyz_var_name + " + " + str(crd_shift) + ";\n"
                     crd_shift += 3
             else:
                 for j in range(monomer[2*i + 1]):
-                    string_pointers_vs += "    double " + atom + "_" + str(j+1) + "_" + mon_id + "[3];\n"
+                    string_pointers_vs += spaces + "double " + atom + "_" + str(j+1) + "_" + mon_id + extension + "[3];\n"
         string_pointers += "\n"
         string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)    
     return string_pointers, string_pointers_vs
             
 
-def get_variables_string(variables, name_vout, name_vstruct):
+def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
     variables_string = ""
-
+    spaces = " "*nspaces
     for i in range(len(variables)):
         var = variables[i]
         types_1 = utils_nb_fitting.get_atom_types(var[0])
@@ -464,9 +465,23 @@ def get_variables_string(variables, name_vout, name_vstruct):
         if "0" in var[-1]:
             argument_constants = dconst + sorted_atoms + ', ' + kconst
 
-        variables_string += "    {}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout,i,name_vstruct,i,var[-1],argument_constants,atom1_name,atom2_name)
+        variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout,i,name_vstruct,i,var[-1],argument_constants,atom1_name,atom2_name)
 
     return variables_string     
+
+def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
+    variables_string = ""
+    spaces = " "*nspaces
+    for i in range(len(variables)):
+        var = variables[i]
+        types_1 = utils_nb_fitting.get_atom_types(var[0])
+        types_2 = utils_nb_fitting.get_atom_types(var[2])
+        atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[1])
+        atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[3])
+
+        variables_string += spaces + "{0}[{1}].grads({2}[{1}], {3}_g, {4}_g, {3}, {4});\n".format(name_vin,i,name_g,atom1_name,atom2_name)
+
+    return variables_string
 
 
 def write_fit_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max):
@@ -1025,8 +1040,10 @@ struct mbnrg_disp {
     # Need to select if we have 1b or 2b
     if len(monomer_atom_types) == 1:
         pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
-    else:
+    elif len(monomer_atom_types) == 2:
         pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+    else:
+        pairs = []
 
     # Write C6 declaration
     a = ""
@@ -1160,8 +1177,10 @@ def write_dispersion_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, 
     # Need to select if we have 1b or 2b
     if len(monomer_atom_types) == 1:
         pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
-    else:
+    elif len(monomer_atom_types) == 2:
         pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+    else:
+        pairs = []
 
     cppname = "dispersion.cpp"
     ff = open(cppname,'w')
@@ -2540,6 +2559,478 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
     ff.write(a)
     ff.close()
+
+def get_arguments_for_functions(arg_string, number_of_monomers):
+    arg_text = ""
+    for i in range(number_of_monomers):
+        arg_text += arg_string + str(i+1) 
+        if i+1 != number_of_monomers:
+            arg_text += ", "
+    return arg_text
+
+def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
+    defname = fname.replace(".h","_H").upper()
+    poly_header = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
+    poly_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    ff = open(fname,'w')
+
+    a = """#ifndef {0}
+#define {0} 
+
+#include \"{1}\" \n""".format(defname,poly_header)
+
+    ff.write(a)
+
+    # Get the monomer arguments for the constructor
+    arg_constr = get_arguments_for_functions("const std::string mon",number_of_monomers)
+
+    # Get the monomer arguments for the evals (xyz and grad)
+    arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
+    arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
+
+    a = """
+#include <cmath>
+#include <string>
+#include <vector>
+
+#include "constants.h"
+#include "variable.h"
+#include "water_monomer_lp.h"
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace """ + namespace + """ {
+
+//----------------------------------------------------------------------------//
+
+struct """ + struct_name + """ {
+    """ + struct_name + """() {};
+    """ + struct_name + "(" +  arg_constr + """);
+
+    ~""" + struct_name + """() {};
+
+    typedef """ + poly_name + """ polynomial;
+
+    double eval(""" + arg_xyz + """, const size_t n);
+    double eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n);
+
+  private:
+"""
+    ff.write(a)
+
+    for nl in non_linear_parameters:
+        ff.write("    double m_" + nl + ";\n")
+
+    a = """
+    double m_ri = """ + str(ri) + """;
+    double m_rf = """ + str(ro) + """;
+
+    double f_switch(const double&, double&);
+
+    std::vector<double> coefficients;
+};
+
+//----------------------------------------------------------------------------//
+
+} // namespace """ + namespace + """
+
+////////////////////////////////////////////////////////////////////////////////
+
+#endif 
+"""
+    ff.write(a)
+    ff.close()
+    
+def write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".cpp"
+    hname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
+
+    ff = open(fname,'w')
+
+    # Get the monomer arguments for the constructor
+    arg_constr = get_arguments_for_functions("const std::string mon",number_of_monomers)
+
+    # Get the monomer arguments for the evals (xyz and grad)
+    arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
+    arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
+
+    a = '''#include "''' + hname + '''"
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace ''' + namespace + """ {
+
+""" + struct_name + "::" + struct_name + "(" + arg_constr + """) {
+
+    // =====>> SECTION CONSTRUCTOR <<=====
+    // =>> PASTE RIGHT BELOW THIS LINE <==
+
+
+}
+
+//----------------------------------------------------------------------------//
+
+double """ + struct_name + """::f_switch(const double r, double& g)
+{
+    if (r > m_ro) {
+        g = 0.0;
+        return 0.0;
+    } else if (r > m_ri) {
+        const double t1 = M_PI/(m_ro - m_ri);
+        const double x = (r - m_ri)*t1;
+        g = - std::sin(x)*t1/2.0;
+        return (1.0 + std::cos(x))/2.0;
+    } else {
+        g = 0.0;
+        return 1.0;
+    }
+}
+
+//----------------------------------------------------------------------------//
+
+double """ + struct_name + """::eval(""" + arg_xyz + """, const size_t n) {
+    std::vector<double> energies(n,0.0);
+    std::vector<double> energies_sw(n,0.0);
+
+    std::vector<double> xyz(""" + str(sum(number_of_atoms)*3) + """); 
+
+    for (size_t j = 0; j < n; j++) {
+"""
+    ff.write(a)
+
+    for i in range(len(number_of_atoms)):
+        ff.write("        const double *mon" + str(i+1) + " = xyz" + str(i+1) + " + " + str(number_of_atoms[i]) + ";\n")
+
+    all_distances = utils_nb_fitting.get_list_of_numeric_pairs("d",number_of_monomers)
+    all_switches = utils_nb_fitting.get_list_of_numeric_pairs("sw",number_of_monomers)
+
+    ff.write("\n")
+
+    # Write the distances
+    for d in all_distances:
+        a = """
+        const double """ + d[0] + """[3] = 
+                         {mon""" + str(d[1]) + """[0] - mon""" + str(d[2]) + """[0],
+                          mon""" + str(d[1]) + """[1] - mon""" + str(d[2]) + """[1],
+                          mon""" + str(d[1]) + """[2] - mon""" + str(d[2]) + """[2]};
+
+        const double """ + d[0] + """rsq = """ + d[0] + """[0]*""" + d[0] + """[0] + """ + d[0] + """[1]*""" + d[0] + """[1] + """ + d[0] + """[2]*""" + d[0] + """[2];
+        const double """ + d[0] + """r = std::sqrt(""" + d[0] + """rsq);
+"""
+        ff.write(a)
+
+    # Write Check for distances but skip if distances is empty
+    if len(all_distances) > 0:
+        condition = "true "
+        for d in all_distances:
+            condition += " && " + d[0] + "r > m_ro "
+    else:
+        condition = "false "
+
+    a = """
+        if (""" + condition + """) {
+             continue;
+        }
+"""
+    ff.write(a)
+
+    counter = 0
+    for i in range(len(number_of_atoms)):
+        ff.write("\n        std::copy(mon" + str(i+1) + ", mon" + str(i+1) + " + " + str(number_of_atoms[i]*3) + ", xyz.begin() + " + str(counter) + ");\n")
+        counter += number_of_atoms[i]*3
+
+    # Get the pointers to the atoms
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()", nspaces = 8)
+
+    ff.write("\n\n" + pointer_to_coordinates)
+    ff.write(pointer_to_vsites)
+
+    a = """
+        double w12 =     -9.721486914088159e-02;  //from MBpol
+        double w13 =     -9.721486914088159e-02;
+        double wcross =   9.859272078406150e-02;
+
+    """
+    ff.write(a)
+
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+    char_code = 'a'
+    for i in range(len(use_lonepairs)):
+        if use_lonepairs[i] != 0:
+            a = """
+        monomer m""" + str(i+1) + """;
+        m""" + str(i+1) + """.setup(""" + monomer_atom_types[i][0] + "_1_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """);
+"""
+            ff.write(a)
+        char_code = chr(ord(char_code)+1)
+
+    ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
+    ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
+    string_vars = get_variables_string(variables, "xs", "vs", nspaces = 8)
+    ff.write(string_vars)
+
+    # write the switches
+    # for now, will be set as the sum of the products of each n-1 combination
+    # for a 3b, it will be the sum of the product of each pair
+    sw_string = "\n"
+    for sw, d in zip(all_switches, all_distances):
+        sw_string += "        double g{} = 0.0;\n".format(sw[0])
+        sw_string += "        double {} = f_switch({}, g{});\n".format(sw[0],d[0] + "r" ,sw[0])
+
+    ff.write(sw_string)
+
+    all_switches_only = []
+    for sw in all_switches:
+        all_switches_only.append(sw[0])
+    sw_comb = list(it.combinations(all_switches_only,number_of_monomers - 1))
+    sw_string = " + "
+    terms = []
+    if len(sw_comb[0]) == 0:
+        sw_string = "1.0"
+    else:
+        for swc in sw_comb:
+            term = "*"
+            term = term.join(swc)
+            terms.append(term)
+
+        sw_string = sw_string.join(terms)
+
+    a = """
+        sw = """ + sw_string + """;
+
+        energies[j] = polynomial::eval(coefficients.data(),xs);
+        energies_sw[j] = energies[j]*sw;
+
+    }
+    
+    double energy = 0.0;
+    for (size_t i = 0; i < n; i++)
+        energy += energies_sw[i];
+    
+    return energy;
+}
+
+//----------------------------------------------------------------------------//
+
+double """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n) {
+    std::vector<double> energies(n,0.0);
+    std::vector<double> energies_sw(n,0.0);
+
+    std::vector<double> xyz(""" + str(sum(number_of_atoms)*3) + """); 
+
+    for (size_t j = 0; j < n; j++) {
+"""
+    ff.write(a)
+
+    for i in range(len(number_of_atoms)):
+        ff.write("        const double *mon" + str(i+1) + " = xyz" + str(i+1) + " + " + str(number_of_atoms[i]) + ";\n")
+
+    all_distances = utils_nb_fitting.get_list_of_numeric_pairs("d",number_of_monomers)
+    all_switches = utils_nb_fitting.get_list_of_numeric_pairs("sw",number_of_monomers)
+
+    ff.write("\n")
+
+    # Write the distances
+    for d in all_distances:
+        a = """
+        const double """ + d[0] + """[3] = 
+                         {mon""" + str(d[1]) + """[0] - mon""" + str(d[2]) + """[0],
+                          mon""" + str(d[1]) + """[1] - mon""" + str(d[2]) + """[1],
+                          mon""" + str(d[1]) + """[2] - mon""" + str(d[2]) + """[2]};
+
+        const double """ + d[0] + """rsq = """ + d[0] + """[0]*""" + d[0] + """[0] + """ + d[0] + """[1]*""" + d[0] + """[1] + """ + d[0] + """[2]*""" + d[0] + """[2];
+        const double """ + d[0] + """r = std::sqrt(""" + d[0] + """rsq);
+"""
+        ff.write(a)
+
+    # Write Check for distances but skip if distances is empty
+    if len(all_distances) > 0:
+        condition = "true "
+        for d in all_distances:
+            condition += " && " + d[0] + "r > m_ro "
+    else:
+        condition = "false "
+
+    a = """
+        if (""" + condition + """) {
+             continue;
+        }
+
+        std::vector<double> gradients(""" + str(sum(number_of_atoms)*3) + """,0.0);
+"""
+    ff.write(a)
+
+    counter = 0
+    for i in range(len(number_of_atoms)):
+        ff.write("\n        std::copy(mon" + str(i+1) + ", mon" + str(i+1) + " + " + str(number_of_atoms[i]*3) + ", xyz.begin() + " + str(counter) + ");\n")
+        counter += number_of_atoms[i]*3
+
+    # Get the pointers to the atoms
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()", nspaces = 8)
+
+    ff.write(pointer_to_coordinates)
+    ff.write(pointer_to_vsites)
+    ff.write("\n")
+
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "gradients.data()", "_g", nspaces = 8)
+
+    ff.write(pointer_to_coordinates)
+    ff.write(pointer_to_vsites)
+    ff.write("\n")
+    
+
+    a = """
+        double w12 =     -9.721486914088159e-02;  //from MBpol
+        double w13 =     -9.721486914088159e-02;
+        double wcross =   9.859272078406150e-02;
+
+    """
+    ff.write(a)
+
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+    char_code = 'a'
+    for i in range(len(use_lonepairs)):
+        if use_lonepairs[i] != 0:
+            a = """
+        monomer m""" + str(i+1) + """;
+        m""" + str(i+1) + """.setup(""" + monomer_atom_types[i][0] + "_1_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """);
+"""
+            ff.write(a)
+        char_code = chr(ord(char_code)+1)
+
+    ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
+    ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
+    ff.write("\n        double gxs[" + str(number_of_variables) + "];\n\n")
+    string_vars = get_variables_string(variables, "xs", "vs",nspaces = 8)
+    ff.write(string_vars)
+
+    # write the switches
+    # for now, will be set as the sum of the products of each n-1 combination
+    # for a 3b, it will be the sum of the product of each pair
+    sw_string = "\n"
+    for sw, d in zip(all_switches, all_distances):
+        sw_string += "        double g{} = 0.0;\n".format(sw[0])
+        sw_string += "        double {} = f_switch({}, g{});\n".format(sw[0],d[0] + "r" ,sw[0])
+
+    ff.write(sw_string)
+
+    all_switches_only = []
+    for sw in all_switches:
+        all_switches_only.append(sw[0])
+    sw_comb = list(it.combinations(all_switches_only,number_of_monomers - 1))
+    sw_string = " + "
+    terms = []
+    if len(sw_comb[0]) == 0:
+        sw_string = "1.0"
+    else:
+        for swc in sw_comb:
+            term = "*"
+            term = term.join(swc)
+            terms.append(term)
+
+        sw_string = sw_string.join(terms)
+
+    a = """
+        sw = """ + sw_string + """;
+
+        energies[j] = polynomial::eval(coefficients.data(),xs,gxs);
+        energies_sw[j] = energies[j]*sw;
+
+        for (size_t i = 0; i < gxs.size(); i++) {
+            gxs[i] *= sw;
+        }
+
+"""
+    ff.write(a)
+
+    string_vars = get_grad_var_string(variables, "vs", "gxs", nspaces = 8)
+    ff.write(string_vars)
+
+    # Redistribution of gradients
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+    char_code = 'a'
+    for i in range(len(use_lonepairs)):
+        if use_lonepairs[i] != 0:
+            a = """
+        m""" + str(i+1) + """.grads(""" + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][0] + "_1_" + char_code + """);
+"""
+
+            ff.write(a)
+        char_code = chr(ord(char_code)+1)
+
+    # Now finalize switch gradients
+    all_switch_summands = sw_string.split(" + ")
+    for sw, d in zip(all_switches, all_distances):
+        switch_grad = []
+        for summand in all_switch_summands:
+            if sw[0] in summand:
+                switch_grad.append(summand.replace(sw[0],"1.0"))
+
+        switch_text = " + ".join(switch_grad)
+        ff.write("        g" + sw[0] + " *= (" + switch_text + ")*energies[j]/" + d[0] + "r;\n")
+
+
+    a = """
+        for (size_t i = 0; i < 3; i++) {
+"""
+
+    ff.write(a)
+
+    # And put the switch grads into the atoms
+    counter = 0
+    for i in range(len(number_of_atoms)):
+        string_to_add = "            gradients[" + str(counter) + " + i] += 0.0 " 
+        current_mon = i + 1
+        for sw, d in zip(all_switches, all_distances):
+            if current_mon == sw[1]:
+                string_to_add += "+ (g" + sw[0] + "*" + d[0] + "[i])"
+            elif current_mon == sw[2]:
+                string_to_add += "- (g" + sw[0] + "*" + d[0] + "[i])"
+
+        string_to_add += ";\n"
+        ff.write(string_to_add)
+                
+        counter += number_of_atoms[i]*3
+
+
+    a = """        }
+
+    }
+    
+    double energy = 0.0;
+    for (size_t i = 0; i < n; i++)
+        energy += energies_sw[i];
+    
+    return energy;
+}
+
+//----------------------------------------------------------------------------//
+
+"""
+
+    ff.write(a)
+    ff.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

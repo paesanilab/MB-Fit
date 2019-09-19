@@ -58,6 +58,7 @@ def read_poly_in(poly_in, vsites, var_intra, var_inter, var_virtual_sites):
                     else:
                         # variable is labeled as intra but the two fragment labels are different. UH OH!
                         raise InconsistentValueError('fragment id of first atom', 'fragment id of second atom', args[1], args[3], 'x-intra variables must have the same fragment index; something is wrong in {}'.format(poly_in))
+                else:
 
                     if has_vsites:
                         variables[-1].append(var_virtual_sites)

@@ -46,20 +46,21 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
 
         super(DistanceSamplingConfigurationGenerator, self).__init__(settings_path)
 
-        self.min_distance = min_distance
-        self.max_distance = max_distance
         self.min_inter_distance = min_inter_distance
         self.use_grid = use_grid
-        self.step_size = step_size
+        if max_distance == min_distance:
+            self.step_size = max_distance
+        else:
+            self.step_size = step_size / (max_distance - min_distance)
         self.num_attempts = num_attempts
         self.random = Random()
 
         if distribution is not None:
             self.distance_distribution=distribution
         elif logarithmic:
-            self.distance_distribution = LogarithmicDistributionFunction(self.min_distance, self.max_distance, 0, 1)
+            self.distance_distribution = LogarithmicDistributionFunction(min_distance, max_distance, 0, 1)
         else:
-            self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, self.min_distance, 1, self.max_distance)
+            self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, min_distance, 1, max_distance)
 
         if not progression:
             self.distance_distribution = RandomDistributionFunction(self.distance_distribution, self.random, 0, 1)
@@ -138,10 +139,12 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
 
         # if use_grid is false, set the step size to even space the configurations
         if not self.use_grid:
-            step_size = (self.max_distance - self.min_distance) / num_configs
+            step_size = 1 / num_configs
+        else:
+            step_size = self.step_size
 
         # how many steps the grid will have
-        num_steps = math.floor((self.max_distance - self.min_distance) / step_size)
+        num_steps = math.floor(1 / step_size)
 
         # keeps track of how many total configurations have been generated
         total_configs = 0
@@ -168,7 +171,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
 
                 for config in range(math.ceil((num_configs - total_configs) / (num_steps - step))):
 
-                    distance = self.distance_distribution.get_value((step * step_size) / (self.max_distance - self.min_distance))
+                    distance = self.distance_distribution.get_value(step * step_size)
 
                     # first select a random geometry for each monomer
                     molecule1 = self.random.choice(molecules1)

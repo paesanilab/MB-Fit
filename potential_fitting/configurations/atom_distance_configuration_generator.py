@@ -10,32 +10,46 @@ class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator)
     a random sampling of rotations while holding two atoms at a certain distance.
     """
 
-    def __init__(self, settings_path, mol1_atom_index, mol2_atom_index, distance=2, min_inter_distance=0.8, num_attempts=100):
+    def __init__(self, settings_path, mol1_atom_index, mol2_atom_index, min_distance=1, max_distance=5,
+                 min_inter_distance=0.8, progression=False, use_grid=False, step_size=0.5, num_attempts=100,
+                 logarithmic=False, distribution=None):
         """
         Constructs a new AtomDistanceConfigurationGenerator.
+
+        Centers the geometries around the atoms at the given indices instead of the centers of mass.
 
         Args:
             settings_path       - Local path to '.ini' settings file with all relevant settings.
             mol1_atom_index     - The index of the atom in the first monomer to rotate around.
             mol2_atom_index     - The index of the atom in the second monomer to rotate around.
-            distance            - The distance between the two atoms.
+            min_distance        - The minimum distance between the centers of mass of the two monomers.
+            max_distance        - The maximum distance between the centers of mass of the two monomers.
             min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                     atoms.
+            progression         - If True, a smooth progression will be used over the chosen distribution. Otherwise,
+                    random points on the distribution will be sampled.
+            use_grid            - If True, then distance between the center of mass of the monomers will be on a grid.
+                    Otherwise, it will be smooth.
+            step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
             num_attempts        - The number of attempts to generate a configuration at any given distance before giving
                     up and moving to the next distance.
+            logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                    This means more configs are generated at lower distances.
+            distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                    is ignored and this distribution is used to choose the distances between configurations. Should
+                    be implemented over the domain [0,1]. So the first config will have distance =
+                    distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
 
         Returns:
             A new AtomDistanceConfigurationGenerator.
         """
 
-        super(AtomDistanceConfigurationGenerator, self).__init__(settings_path,
-                                                                 min_inter_distance=min_inter_distance,
-                                                                 num_attempts=num_attempts,
-                                                                 distribution=ConstantDistributionFunction(distance))
+        super(AtomDistanceConfigurationGenerator, self).__init__(settings_path, min_distance, max_distance,
+                                                                 min_inter_distance, progression, use_grid, step_size,
+                                                                 num_attempts, logarithmic, distribution)
 
         self.mol1_atom_index = mol1_atom_index
         self.mol2_atom_index = mol2_atom_index
-        self.distance = distance
 
     def move_to_config(self, random, molecule1, molecule2, distance):
         """

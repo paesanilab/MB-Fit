@@ -188,25 +188,33 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                                                                              number_of_configs,
                                                                              seed=seed)
 def generate_atom_distance_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
-        mol1_atom_index, mol2_atom_index, distance=2, min_inter_distance=0.8, num_attempts = 100, seed=None):
+        mol1_atom_index, mol2_atom_index, min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False,
+        use_grid=False, step_size=0.5, num_attempts=100, logarithmic=False, distribution=None, seed=None):
     """
     Generates 2b configurations for a given dimer by placing two atoms a certain distance apart and applying
     random rotations.
 
     Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        geo1_path           - Local path to read the first optimized geometry from.
-        geo2_path           - Local path to read the second optimized geometry from.
-        number_of_configs   - The target number of configurations to generate. If max_distance is set too low or
-                min_inter_distance is set too high, then less configurations may be generated.
-        configurations_path - Local path to the file in to write the configurations to.
+        settings_path       - Local path to '.ini' settings file with all relevant settings.
         mol1_atom_index     - The index of the atom in the first monomer to rotate around.
         mol2_atom_index     - The index of the atom in the second monomer to rotate around.
-        distance            - The distance between the two atoms.
-        min_inter_distance  - Minimum intermolecular distance in any config is the sum of two atoms vdw radii * this
-                value.
-        num_attempts        - The number of tries to generate a config at any given distance before giving up and
-                moving to the next one.
+        min_distance        - The minimum distance between the centers of mass of the two monomers.
+        max_distance        - The maximum distance between the centers of mass of the two monomers.
+        min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+                atoms.
+        progression         - If True, a smooth progression will be used over the chosen distribution. Otherwise,
+                random points on the distribution will be sampled.
+        use_grid            - If True, then distance between the center of mass of the monomers will be on a grid.
+                Otherwise, it will be smooth.
+        step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
+        distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                is ignored and this distribution is used to choose the distances between configurations. Should
+                be implemented over the domain [0,1]. So the first config will have distance =
+                distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
         seed                - The same seed will generate the same configurations.
 
     Returns:
@@ -214,9 +222,14 @@ def generate_atom_distance_configurations(settings_path, geo1_path, geo2_path, n
     """
 
     config_generator = configurations.AtomDistanceConfigurationGenerator(settings_path, mol1_atom_index, mol2_atom_index,
-                                                                         distance=distance,
+                                                                         min_distance=min_distance,
+                                                                         max_distance=max_distance,
                                                                          min_inter_distance=min_inter_distance,
-                                                                         num_attempts=num_attempts)
+                                                                         progression=progression,
+                                                                         use_grid=use_grid, step_size=step_size,
+                                                                         num_attempts=num_attempts,
+                                                                         logarithmic=logarithmic,
+                                                                         distribution=distribution)
 
     configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
                                                                              configurations_path,

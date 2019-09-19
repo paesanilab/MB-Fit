@@ -130,26 +130,6 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         molecules1 = molecule_lists[0]
         molecules2 = molecule_lists[1]
 
-        yield from self.generate_configurations_smooth(molecules1, molecules2, num_configs, seed)
-
-    def generate_configurations_smooth(self, molecules1, molecules2, num_configs, seed):
-        """
-        Generate a set of 2 body configurations of the two geometries based on a smooth
-        progression.
-
-        Args:
-            molecules1      - List of Molecule object configurations for the first molecule that will be sampled
-                    from to generate configurations.
-            molecules2      - List of Molecule object configurations for the second molecule that will be sampled
-                    from to generate configurations.
-            num_configs     - The number of configurations to generate.
-            seed            - Seed for the random number generator. The same seed will yield the same configurations
-                    when all else is held equal.
-
-        Yields:
-            Molecule objects containing the new configurations.
-        """
-
         # if use_grid is false, set the step size to even space the configurations
         if not self.use_grid:
             step_size = (self.max_distance - self.min_distance) / num_configs
@@ -168,46 +148,56 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                 num_configs),
             bold=True, color=system.Color.YELLOW)
 
-        # loop over each step on our grid
-        for step in range(num_steps):
-            # loop over how many configs we want to generate at this step in the grid, which is equal
-            #   to the number of configs remaining to be generated divided by the number of steps left.
-            #   this ensures that unless a config at the last step is impossible, we will always have
-            #   exactly num_configs configs.
-            for config in range(math.ceil((num_configs - total_configs) / (num_steps - step))):
 
-                distance = self.distance_distribution.get_value((step * step_size) / (self.max_distance - self.min_distance))
+        # try up to 3 times to generate configs over the distribution.
+        for cycle_index in range(0, 3):
 
-                # first select a random geometry for each monomer
-                molecule1 = self.random.choice(molecules1)
-                molecule2 = self.random.choice(molecules2)
+            # loop over each step on our grid
+            for step in range(num_steps):
 
-                try:
-                    self.move_to_config(self.random, molecule1, molecule2, distance)
+                # loop over how many configs we want to generate at this step in the grid, which is equal
+                #   to the number of configs remaining to be generated divided by the number of steps left.
+                #   this ensures that unless a config at the last step is impossible, we will always have
+                #   exactly num_configs configs.
 
-                except RanOutOfAttemptsException:
-                    # if we didn't find a valid configuration, skip this config
-                    continue
+                for config in range(math.ceil((num_configs - total_configs) / (num_steps - step))):
 
-                mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
+                    distance = self.distance_distribution.get_value((step * step_size) / (self.max_distance - self.min_distance))
 
-                yield mol
+                    # first select a random geometry for each monomer
+                    molecule1 = self.random.choice(molecules1)
+                    molecule2 = self.random.choice(molecules2)
 
-                total_configs += 1
+                    try:
+                        self.move_to_config(self.random, molecule1, molecule2, distance)
 
-                if total_configs % 100 == 0:
-                    system.format_print("{} configs done...".format(num_configs - total_configs),
-                                        italics=True)
+                    except RanOutOfAttemptsException:
+                        # if we didn't find a valid configuration, skip this config
+                        continue
 
-                # if we have hit our target number of configs, return
-                if total_configs == num_configs:
-                    system.format_print("Done! Generated {} configurations.".format(num_configs), bold=True,
-                                        color=system.Color.GREEN)
-                    return
+                    mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
 
-        # TODO: add catch for when random distribution does not generate enough configurations.
+                    yield mol
+
+                    total_configs += 1
+
+                    if total_configs % 100 == 0:
+                        system.format_print("{} configs done...".format(total_configs),
+                                            italics=True)
+
+                    # if we have hit our target number of configs, return
+                    if total_configs == num_configs:
+                        system.format_print("Done! Generated {} configurations.".format(num_configs), bold=True,
+                                            color=system.Color.GREEN)
+                        return
+
         system.format_print("Done! Generated {} configurations.".format(total_configs), bold=True,
                             color=system.Color.GREEN)
+
+        if total_configs < num_configs:
+            system.format_print("Generated fewer than {} configs because it was too hard to generate configs over the given distribution.".format(num_configs), bold=True,
+                                color=system.Color.GREEN)
+
 
 class RanOutOfAttemptsException(Exception):
     """

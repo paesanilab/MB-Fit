@@ -7,6 +7,7 @@ from potential_fitting.utils import Quaternion
 from potential_fitting.molecule import Molecule
 from potential_fitting.utils import files, system
 from .configuration_generator import ConfigurationGenerator
+from potential_fitting.utils.distribution_function import LinearDistributionFunction, LogarithmicDistributionFunction
 
 class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
     """
@@ -48,22 +49,11 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         self.use_grid = use_grid
         self.step_size = step_size
         self.num_attempts = num_attempts
-        self.logarithmic = logarithmic
 
-    def logarithmic_progression(self, min, max, num_configs, config_num):
-        """
-        Gives a distance of a point on a logarithmic distribution.
-
-        Args:
-            min                 - The minimun distance.
-            max                 - The maximum distance.
-            num_configs         - The total number of configs in this progression.
-            config_num          - The number of the current config, in range [0, num_configs - 1]
-                    Config 0 will be at min distance while config num_configs - 1 will be at max distance.
-        """
-
-        dx = (math.log(max) - math.log(min)) / (num_configs - 1)
-        return math.e ** (math.log(min) + config_num * dx)
+        if logarithmic:
+            self.distance_distribution = LogarithmicDistributionFunction(self.min_distance, self.max_distance, 0, 1)
+        else:
+            self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, self.min_distance, 1, self.max_distance)
 
     def move_to_config(self, random, molecule1, molecule2, distance):
         """
@@ -191,13 +181,8 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                 molecule2 = random.choice(molecules2)
 
                 try:
-                    # move the molecules to a valid configuration, making 5 attempts
-                    if self.logarithmic:
-                        self.move_to_config(random, molecule1, molecule2,
-                                            self.logarithmic_progression(self.min_distance, self.max_distance, num_configs,
-                                                               num_configs * step / (num_steps)))
-                    else:
-                        self.move_to_config(random, molecule1, molecule2, self.min_distance + step * step_size)
+                    self.move_to_config(random, molecule1, molecule2,
+                                        self.distance_distribution.get_value((step * step_size) / (self.max_distance - self.min_distance)))
 
                 except RanOutOfAttemptsException:
                     # if we didn't find a valid configuration, skip this config
@@ -252,11 +237,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
 
             # random distance between min_distance and max_distance
 
-            if self.logarithmic:
-                random_distance = self.logarithmic_progression(self.min_distance, self.max_distance, num_configs,
-                                                          random.uniform(0, num_configs - 1))
-            else:
-                random_distance = random.uniform(self.min_distance, self.max_distance)
+            random_distance = self.distance_distribution.get_value((random.uniform(self.min_distance, self.max_distance) - self.min_distance) / (self.max_distance - self.min_distance))
 
             # getting the molecules
             molecule1 = random.choice(molecules1)

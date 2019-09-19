@@ -33,7 +33,7 @@ class LogarithmicDistributionFunction(DistributionFunction):
         self.min_x = min_x
         self.max_x = max_x
 
-        self.dx = (math.log(max_val) - math.log(min_val)) / (max_x - min_x - 1)
+        self.dx = (math.log(max_val) - math.log(min_val)) / (max_x - min_x)
 
     def get_value(self, x):
         return math.e ** (math.log(self.min_val) + (x - self.min_x) * self.dx)

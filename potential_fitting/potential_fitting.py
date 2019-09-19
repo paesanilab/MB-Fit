@@ -77,9 +77,12 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs=100, seed=None, linear=True, geometric=False, temperature=None, classical=True):
+        number_of_configs=100, seed=None, linear=False, geometric=False, temperature=None, classical=True,
+        temp_distribution=None, A_distribution=None):
     """
     Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
+
+    If both linear and geometric are False, will use a piecewise distribution over temperature.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
@@ -91,13 +94,25 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
         linear              - If True, then use a linear distribution over temp and A.
+                    Default: False
         geometric           - If True, then use a geometric distribution over temp and A.
+                    Default: False
         temperature         - Temperature at which normal mode sampling is done. If specified, configurations
                 will use clasical normal mode distribution at the specified temperature instead of either geometric
                 or linear progression.
         classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
                 distribution. QM distributions generate a wider distribution over energy.
                 Default: True
+        temp_distribution   - Implementation of DistributionFunction. If specified, then the temperature
+                distribution specified by the linear, geometric, or temperature arguments will be ignored and this
+                distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
+                will have temperature = temp_distribution.get_value(0) and the last config will have temperature =
+                temp_distribution.get_value(1).
+        A_distribution      - Implementation of DistributionFunction. If specified, then the A
+                distribution specified by the linear, geometric, or temperature arguments will be ignored and this
+                distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
+                will have A = A_distribution.get_value(0) and the last config will have A =
+                A_distribution.get_value(1).
 
     Returns:
         None.
@@ -107,7 +122,9 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
                                                                         linear=linear,
                                                                         geometric=geometric,
                                                                         temperature=temperature,
-                                                                        classical=classical)
+                                                                        classical=classical,
+                                                                        temp_distribution=temp_distribution,
+                                                                        A_distribution=A_distribution)
 
     configurations.ConfigurationGenerator.generate_configs_from_file_to_file([opt_geo_path],
                                                                              configurations_path,

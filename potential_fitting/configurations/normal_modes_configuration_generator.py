@@ -16,19 +16,34 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
     mode data.
     """
 
-    def __init__(self, settings_path, normal_modes_path, linear=True, geometric=False, temperature=None, classical=True):
+    def __init__(self, settings_path, normal_modes_path, linear=False, geometric=False, temperature=None,
+                 classical=True, temp_distribution=None, A_distribution=None):
         """
         Constructs a new NormalModesConfigurationGenerator.
+
+        If both linear and geometric are False, will use a piecewise distribution over temperature.
 
         Args:
             settings_path       - Local path to '.ini' settings file with all relevant settings.
             normal_modes_path   - Local path to the '.dat' file containing normal modes information.
+            linear              - If True, then use a linear distribution over temp and A.
+                    Default: False
+            geometric           - If True, then use a geometric distribution over temp and A.
+                    Default: False
             temperature         - If specified, use a special temperature progression to generate configurations.
             classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
                     distribution. QM distributions generate a wider distribution over energy.
                     Default: True
-            linear              - If True, then use a linear distribution over temp and A.
-            geometric           - If True, then use a geometric distribution over temp and A.
+            temp_distribution   - Implementation of DistributionFunction. If specified, then the temperature
+                    distribution specified by the linear, geometric, or temperature arguments will be ignored and this
+                    distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
+                    will have temperature = temp_distribution.get_value(0) and the last config will have temperature =
+                    temp_distribution.get_value(1).
+            A_distribution      - Implementation of DistributionFunction. If specified, then the A
+                    distribution specified by the linear, geometric, or temperature arguments will be ignored and this
+                    distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
+                    will have A = A_distribution.get_value(0) and the last config will have A =
+                    A_distribution.get_value(1).
 
         Returns:
             A new NormalModesConfigurationGenerator.
@@ -99,6 +114,11 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             self.A_distribution = GeometricDistributionFunction(1, (1 / 2) ** -1)
         else:
             raise InconsistentValueError("linear", "geometric", linear, geometric, "both linear and geometric cannot be True")
+
+        if temp_distribution is not None:
+            self.temp_distribution = temp_distribution
+        if A_distribution is not None:
+            self.A_distribution = A_distribution
 
         self.classical = classical
 

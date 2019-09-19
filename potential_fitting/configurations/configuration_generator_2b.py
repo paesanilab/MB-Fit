@@ -37,8 +37,8 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                     This means more configs are generated at lower distances.
             distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
                     is ignored and this distribution is used to choose the distances between configurations. Should
-                    be implemented over the domain [0,1]. So the first config will have distance
-                    distribution.get_value(0) and the last config will have distance distribution.get_value(1).
+                    be implemented over the domain [0,1]. So the first config will have distance =
+                    distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
 
         Returns:
             A new DistanceSamplingConfigurationGenerator.

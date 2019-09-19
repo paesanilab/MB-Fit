@@ -185,10 +185,10 @@ def generate_training_set(settings_path, database_config_path, training_set_path
         filtered_configs = 0
 
         with open(files.init_file(training_set_path, files.OverwriteMethod.get_from_settings(settings)), "w") as output:
-            for molecule, binding_energy, interaction_energy, deformation_energies in database.get_training_set(names, SMILES, method, basis, cp, *tags):
+            for molecule, binding_energy, nb_energy, deformation_energies in database.get_training_set(names, SMILES, method, basis, cp, *tags):
 
                 binding_energy *= constants.au_to_kcal
-                interaction_energy *= constants.au_to_kcal
+                nb_energy *= constants.au_to_kcal
                 deformation_energies = [d * constants.au_to_kcal for d in deformation_energies]
 
                 # skip this config if the binding energy is >= the maximum.
@@ -208,11 +208,11 @@ def generate_training_set(settings_path, database_config_path, training_set_path
                     if molecule.get_num_fragments() == 1:
                         output.write("{}".format(binding_energy))
                     elif molecule.get_num_fragments() == 2:
-                        output.write("{} {} {} {}".format(binding_energy, interaction_energy, deformation_energies[0], deformation_energies[1]))
+                        output.write("{} {} {} {}".format(binding_energy, nb_energy, deformation_energies[0], deformation_energies[1]))
                     else:
-                        output.write("{} {}".format(binding_energy, interaction_energy))
+                        output.write("{} {}".format(binding_energy, nb_energy))
                 else:
-                    output.write("{} {}".format(binding_energy, interaction_energy))
+                    output.write("{} {}".format(binding_energy, nb_energy))
 
                 output.write("\n")
 

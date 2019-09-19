@@ -25,6 +25,16 @@ class LinearDistributionFunction(DistributionFunction):
         return LinearDistributionFunction(intercept, slope)
 
 
+class GeometricDistributionFunction(DistributionFunction):
+
+    def __init__(self, coefficient, base):
+        self.coefficient = coefficient
+        self.base = base
+
+    def get_value(self, x):
+        return self.coefficient * self.base ** x
+
+
 class LogarithmicDistributionFunction(DistributionFunction):
 
     def __init__(self, min_val, max_val, min_x, max_x):
@@ -38,6 +48,7 @@ class LogarithmicDistributionFunction(DistributionFunction):
     def get_value(self, x):
         return math.e ** (math.log(self.min_val) + (x - self.min_x) * self.dx)
 
+
 class ConstantDistributionFunction(DistributionFunction):
 
     def __init__(self, val):
@@ -45,6 +56,7 @@ class ConstantDistributionFunction(DistributionFunction):
 
     def get_value(self, x):
         return self.val
+
 
 class PiecewiseDistributionFunction(DistributionFunction):
 
@@ -61,6 +73,7 @@ class PiecewiseDistributionFunction(DistributionFunction):
                 return function.get_value(x)
 
         return self.functions[-1].get_value(x)
+
 
 class RandomDistributionFunction(DistributionFunction):
 

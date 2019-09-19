@@ -1,11 +1,13 @@
 import math, numpy
 from random import Random
 
-from potential_fitting.utils import system, constants, files
-from potential_fitting.exceptions import LineFormatError, ParsingError, InvalidValueError
-from potential_fitting.molecule import xyz_to_molecules
+from potential_fitting.utils import system, constants
+from potential_fitting.exceptions import LineFormatError, ParsingError, InvalidValueError, InconsistentValueError
+from potential_fitting.utils.distribution_function import ConstantDistributionFunction, PiecewiseDistributionFunction,\
+                                                           LinearDistributionFunction, GeometricDistributionFunction
 
 from .configuration_generator import ConfigurationGenerator
+
 
 
 class NormalModesConfigurationGenerator(ConfigurationGenerator):
@@ -14,7 +16,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
     mode data.
     """
 
-    def __init__(self, settings_path, normal_modes_path, temperature=None):
+    def __init__(self, settings_path, normal_modes_path, temperature=None, classical=True):
         """
         Constructs a new NormalModesConfigurationGenerator.
 
@@ -22,6 +24,9 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             settings_path       - Local path to '.ini' settings file with all relevant settings.
             normal_modes_path   - Local path to the '.dat' file containing normal modes information.
             temperature         - If specified, use a special temperature progression to generate configurations.
+            classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
+                    distribution. QM distributions generate a wider distribution over energy.
+                    Default: True
 
         Returns:
             A new NormalModesConfigurationGenerator.
@@ -32,6 +37,23 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         self.frequencies, self.reduced_masses, self.normal_modes = self.parse_normal_modes_file(normal_modes_path)
         self.frequencies, self.reduced_masses, self.normal_modes = self.sort_by_frequency(self.frequencies, self.reduced_masses, self.normal_modes)
 
+        # Check for negative frequencies and print warnings.
+
+        num_neg_freqs = 0
+        for frequency in self.frequencies:
+            if frequency < 0:
+                num_neg_freqs += 1
+
+        if num_neg_freqs == 1:
+            system.format_print(
+                "Single negative frequency detected in input. This most likely means the given geometry is a transition state.",
+                italics=True)
+
+        elif num_neg_freqs > 1:
+            system.format_print(
+                "Multiple ({}) negative frequencies detected in input. Proceed with caution.".format(num_neg_freqs),
+                italics=True)
+
         # convert the frequencies to atomic units from cm-1
         # absolute value allows supporting of imaginary frequencies (i think)
         self.frequencies = [abs(frequency) / constants.autocm for frequency in self.frequencies]
@@ -39,6 +61,47 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         if temperature is not None:
             temperature *= constants.kelvin_to_au
         self.temperature = temperature
+
+        geometric = self.settings.getboolean("config_generator", "geometric", False)
+        linear = self.settings.getboolean("config_generator", "linear", False)
+
+        if temperature is not None:
+            system.format_print("Specific temperature {} K given. Will generate configurations at only that temperature.".format(temperature),
+                                italics=True)
+
+            temperature *= constants.kelvin_to_au
+            self.temp_distribution = ConstantDistributionFunction(temperature)
+            self.A_distribution = None
+        elif not linear and not geometric:
+            system.format_print("Neither linear nor geometric specified, Will generate configurations over a piecewise temperature distribution.",
+                                italics=True)
+            self.temp_distribution = PiecewiseDistributionFunction(
+                [
+                ConstantDistributionFunction(self.frequencies[-1] / 100),
+                ConstantDistributionFunction(self.frequencies[-1] / 20),
+                ConstantDistributionFunction(self.frequencies[-1] / 10),
+                ConstantDistributionFunction(self.frequencies[-1] / 5),
+                ConstantDistributionFunction(self.frequencies[-1] / 2),
+                ],
+                [
+                0.05, 0.45, 0.75, 0.95
+                ]
+            )
+            self.A_distribution = None
+        elif linear:
+            system.format_print("Linear specified. Will generate configurations over a linear temp and A distribution.",
+                                italics=True)
+            self.temp_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, self.frequencies[-1])
+            self.A_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, 2)
+        elif geometric:
+            system.format_print("Geometric specified. Will generate configurations over a geometric temp and A distribution.",
+                                italics=True)
+            self.temp_distribution = GeometricDistributionFunction(self.frequencies[0], (self.frequencies[0] / (2 * self.frequencies[-1])) ** -1)
+            self.A_distribution = GeometricDistributionFunction(1, (1 / 2) ** -1)
+        else:
+            raise InconsistentValueError("linear", "geometric", linear, geometric, "both linear and geometric cannot be True")
+
+        self.classical = classical
 
     def parse_normal_modes_file(self, normal_modes_path):
         """
@@ -252,44 +315,11 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         if seed is None:
             seed = self.get_rand_seed()
 
-        system.format_print("Running normal distribution configuration generator...", italics=True)
-
-        num_neg_freqs = 0
-        for frequency in self.frequencies:
-            if frequency < 0:
-                num_neg_freqs += 1
-
-        if num_neg_freqs == 1:
-            system.format_print(
-                "Single negative frequency detected in input. This most likely means the given geometry is a transition state.",
-                italics=True)
-
-        elif num_neg_freqs > 1:
-            system.format_print(
-                "Multiple ({}) negative frequencies detected in input. Proceed with caution.".format(num_neg_freqs),
-                italics=True)
-
         # parse the molecule from the input ".xyz" into a Molecule object
         molecule = molecule_lists[0][0]
 
-        # generate a new random seed
+        # create a new random object from the seed.
         random = Random(seed)
-
-        # get the number of configurations to generate from settings
-        # MRR - this should be argument -- num_configs = settings.getint("config_generator", "num_configs")
-
-        geometric = self.settings.getboolean("config_generator", "geometric", False)
-        linear = self.settings.getboolean("config_generator", "linear", False)
-
-        if self.temperature is not None:
-            linear = False
-            geometric = False
-
-        if linear or geometric:
-            system.format_print(
-                "Will use a {} distribution to generate the configs.".format("geometric" if geometric else "linear"),
-                italics=True)
-
 
         # calculate the dimension of this molecule
         dim = 3 * molecule.get_num_atoms()
@@ -300,10 +330,27 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             raise InvalidValueError("number of normal modes", dim - dim_null,
                                     "larger than 3 * (number of atoms in the molecule) - 5 ({})".format(dim))
 
-        # number of configs using a distribution over A
-        num_A_configs = num_configs // 2
-        # number of configs using a distribution over temp
-        num_temp_configs = num_configs - num_A_configs
+        # If there is no A distribution, then generate no configs over A
+        if self.A_distribution is None:
+            num_temp_configs = num_configs
+            num_A_configs = 0
+        # If there is no temp distribution, then generate no configs over temp
+        elif self.temp_distribution is None:
+            num_temp_configs = 0
+            num_A_configs = num_configs
+        # If both distributions are specified, generate configs over both
+        elif self.temp_distribution is not None and self.A_distribution is not None:
+            num_A_configs = num_configs // 2
+            num_temp_configs = num_configs - num_A_configs
+        # if neither distribution exists, error!
+        else:
+            raise InconsistentValueError("temp_distribution, A_distribution", self.temp_distribution, self.A_distribution,
+                                         "both distributions cannot be None")
+
+        system.format_print("Will generate {} configs over the A distribution.".format(num_A_configs),
+                            italics=True)
+        system.format_print("Will generate {} configs over the temperature distribution.".format(num_temp_configs),
+                            italics=True)
 
         # mass-scale and normalize the normal modes
         for normal_mode in self.normal_modes:
@@ -331,122 +378,55 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 for i in range(3):
                     coordinates[i] = coordinates[i] / normalization_scale
 
-        # first we will generate the temp distribution configs
-
-        # if a geometric progression was requested, set min, max, factor, and addend of temp to correspond
-        if geometric:
-
-            temp_min = self.frequencies[0]  # au
-            temp_max = 2 * self.frequencies[-1]  # au
-            temp_factor = (temp_min / temp_max) ** (-1 / (num_temp_configs - 1))
-            temp_addend = 0
-
-        # if a linear progression was requested, set min, max, factor, and addend of temp to correspond
-        elif linear:
-
-            temp_min = 0  # au
-            temp_max = self.frequencies[-1]  # au
-            temp_factor = 1
-            temp_addend = (temp_max - temp_min) / (num_temp_configs - 1)
-        else:
-            temp_min = self.frequencies[-1] / 100
-            num_temp_configs = num_configs
-            num_A_configs = 0
-            if self.temperature is not None:
-                temp_min = self.temperature
-            system.format_print(
-                "Will use a distribution over temperature to generate the configs using temperature {} au.".format(
-                    temp_min), italics=True)
-
-        system.format_print("Will generate {} configs over the A distribution.".format(num_A_configs), italics=True)
-        system.format_print("Will generate {} configs over the temperature distribution.".format(num_temp_configs),
-                            italics=True)
-        # initialize temp to the temp minimum, it will be increased each iteration of the loop
-        temp = temp_min
-
         freq_cutoff = 10 * constants.cmtoau
 
-        system.format_print("Generating Temperature Distribution Configs...", italics=True)
+        if num_temp_configs > 0:
+            system.format_print("Generating Temperature Distribution Configs...", italics=True)
 
+            # loop over each temp distribution config to generate
+            for config_index in range(num_temp_configs):
 
-        # loop over each temp distribution config to generate
-        for config_index in range(num_temp_configs):
+                temp = self.temp_distribution.get_value(config_index / (num_temp_configs - 1))
 
-            # fill G with all 0s
-            G = [[0 for i in range(dim)] for k in range(dim)]  # sqrt of the mass-scaled covariance matrix
+                # fill G with all 0s
+                G = [[0 for i in range(dim)] for k in range(dim)]  # sqrt of the mass-scaled covariance matrix
 
-            # for each normal mode, frequency pair, update d and G.
-            for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(self.frequencies)), self.frequencies,
-                                                                               self.reduced_masses, self.normal_modes):
+                # for each normal mode, frequency pair, update d and G.
+                for normal_mode_index, frequency, reduced_mass, normal_mode in zip(range(len(self.frequencies)), self.frequencies,
+                                                                                   self.reduced_masses, self.normal_modes):
 
-                # check if frequency is high enough to have an effect
-                if frequency >= freq_cutoff:
+                    # check if frequency is high enough to have an effect
+                    if frequency >= freq_cutoff:
 
-                    if not geometric and not linear:
-                        d = temp / (frequency ** 2)
+                        if self.classical:
+                            d = temp / (frequency ** 2)
 
-                    elif temp > 1.0e-8:
-                        # if temp is significantly larger than 0, then set this normal mode's d by the formula
-                        d = 0.5 / (numpy.tanh(frequency / (2 * temp)) * frequency)
+                        elif temp > 1.0e-8:
+                            # if temp is significantly larger than 0, then set this normal mode's d by the formula
+                            d = 0.5 / (numpy.tanh(frequency / (2 * temp)) * frequency)
 
-                    # if temp is not significantly larger than 0 (so it is close to 0), then we must use a different
-                    # formula to avoid divide-by-zero error.
-                    else:
-                        d = 0.5 / frequency
+                        # if temp is not significantly larger than 0 (so it is close to 0), then we must use a different
+                        # formula to avoid divide-by-zero error.
+                        else:
+                            d = 0.5 / frequency
 
-                    # G = ( d * U * U^T )^(1/2), where U are normal modes
-                    for i in range(dim):
-                        for j in range(dim):
-                            G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
+                        # G = ( d * U * U^T )^(1/2), where U are normal modes
+                        for i in range(dim):
+                            for j in range(dim):
+                                G[i][j] += math.sqrt(d) * normal_mode[i // 3][i % 3] * normal_mode[j // 3][j % 3]
 
-            yield self.make_config(molecule, G, random)
+                yield self.make_config(molecule, G, random)
 
-            if not geometric and not linear:
-                if self.temperature is None:
-                    config_percent = (config_index + 1) / num_temp_configs
-                    if config_percent < 0.05:
-                        temp = self.frequencies[-1] / 100
-                    elif config_percent < 0.45:
-                        temp = self.frequencies[-1] / 20
-                    elif config_percent < 0.75:
-                        temp = self.frequencies[-1] / 10
-                    elif config_percent < 0.95:
-                        temp = self.frequencies[-1] / 5
-                    else:
-                        temp = self.frequencies[-1] / 2
+            system.format_print("... Successfully generated temperature distribution configs!", italics=True)
 
-            else:
-                # increase temp
-                temp = temp * temp_factor + temp_addend
-
-        system.format_print("... Successfully generated temperature distribution configs!", italics=True)
-
-        if geometric or linear:
-
-            # now we will generate the A distribution configs
-
-            # if a geometric progression was requested, set min, max, factor, and addend of A to correspond
-            if geometric:
-                A_min = 1
-                A_max = 2
-                A_factor = (A_min / A_max) ** (-1 / (num_A_configs - 1))
-                A_addend = 0
-
-            # if a linear progression was requested, set min, max, factor, and addend of A to correspond
-            else:
-                A_min = 0
-                A_max = 2
-                A_factor = 1
-                A_addend = (A_max - A_min) / (num_A_configs - 1)
+        if num_A_configs > 0:
 
             system.format_print("Generating A Distribution Configs...", italics=True)
 
-
-            # initialize A to the A minimum, it will be increased each iteration of the loop
-            A = A_min
-
             # loop over each A distribution config to generate
             for config_index in range(num_A_configs):
+
+                A = self.A_distribution.get_value(config_index / (num_temp_configs - 1))
 
                 # fill G with all 0s
                 G = [[0 for i in range(dim)] for k in range(dim)]  # sqrt of the mass scaled covariance matrix
@@ -459,6 +439,9 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
 
                     # check if frequency is high enough to have an effect
                     if frequency >= freq_cutoff:
+
+                        if self.classical:
+                            d = temp / (frequency ** 2)
 
                         # if A is significantly larger than 0, then set this normal mode's d by the formula
                         if A > 1.0e-8:
@@ -476,9 +459,6 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                                     j % 3]
 
                 yield self.make_config(molecule, G, random)
-
-                # increase A
-                A = A * A_factor + A_addend
 
             system.format_print("... Successfully generated A distribution configs!", italics=True)
 

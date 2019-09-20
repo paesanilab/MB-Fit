@@ -365,6 +365,47 @@ class PolynomialGenerator(object):
 
         return fragments, variables, monomial_filters
 
+    def get_permutations(self, molecule_in):
+
+        if "_" in molecule_in
+            fragments = self.split_molecule_in(molecule_in)
+        else:
+            return self.get_fragment_permutations()
+        # TODO FINISH THIS
+
+
+
+    def split_molecule_in(self, molecule_in):
+        fragments = []
+        cur_fragment = ""
+
+        num_open_parens = 0
+
+        for char in molecule_in:
+
+            if char is '(':
+                if num_open_parens > 0:
+                    cur_fragment += char
+                num_open_parens += 1
+
+            elif char is ')':
+                num_open_parens -= 1
+                if num_open_parens > 0:
+                    cur_fragment += char
+
+            elif char is '_' and num_open_parens == 0:
+                fragments.append(cur_fragment[:])
+                cur_fragment = ""
+
+            else:
+                cur_fragment += char
+
+        if num_open_parens != 0:
+            raise Error # bad molecule_in, didn't close parenthesis
+
+        fragments.append(cur_fragment)
+        return fragments
+
     def get_fragment_permutations(self, atom_type_generator):
         """
         Takes in a fragment and constructs all permutations of that fragment by swapping positions of equivalent atoms.
@@ -998,10 +1039,10 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
             None.
         """
         cpp_file.write("""    double energy(0);
-	for(int i = 0; i < {}; ++i)
-	    energy += p[i]*a[i];
+    for(int i = 0; i < {}; ++i)
+        energy += p[i]*a[i];
 
-	return energy;
+    return energy;
 
 }}
 }} // namespace mb_system""".format(total_terms))
@@ -1018,10 +1059,10 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
             None.
         """
         cpp_file.write("""    double energy(0);
-	for(int i = 0; i < {}; ++i)
-	    energy += p[i]*a[i];
+    for(int i = 0; i < {}; ++i)
+        energy += p[i]*a[i];
 
-	return energy;
+    return energy;
 
 }}
 }} // namespace mb_system""".format(total_terms))

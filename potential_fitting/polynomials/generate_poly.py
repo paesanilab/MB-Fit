@@ -1,5 +1,5 @@
 # external package imports
-import itertools, hashlib
+import itertools
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system, ProgressBar
@@ -8,6 +8,8 @@ from potential_fitting.exceptions import ParsingError, InvalidValueError, Incons
 # relative module imports
 from . import filters
 from .molecule_in_parser import MoleculeInParser
+from .monomial import Monomial
+from .variable import Variable
 
 
 class PolynomialGenerator(object):
@@ -15,19 +17,21 @@ class PolynomialGenerator(object):
     Class for generating of polynomial monomials and cpp and maple files.
     """
 
-
-    def __init__(self, settings_path):
+    def __init__(self, settings_path, num_gradient_terms_per_line=1):
         """
         Constructs a new PolynomialGenerator.
 
         Args:
             settings_path   - Local path to '.ini' settings file containing settings for this PolynomialGenerator.
-
+            num_gradient_terms_per_line - The number of terms to put in each line in the cpp file
+                    for computing the gradients. Larger numbers may result in slower compilation times.
 
         Returns:
             A new PolynomialGenerator.
         """
+
         self.settings = SettingsReader(settings_path)
+        self.num_gradient_terms_per_line = num_gradient_terms_per_line
 
     def generate_polynomial(self, input_path, order, output_dir_path):
 
@@ -247,28 +251,50 @@ class PolynomialGenerator(object):
             self.write_header_file(header_file, len(monomials), len(variables))
 
         # open the three files we will now write to
-        with open(output_dir_path + "/poly-direct.cpp", "w") as cpp_file, open(output_dir_path + "/poly-grd.maple",
-                                                                           "w") as grd_file, open(
-            output_dir_path + "/poly-nogrd.maple", "w") as nogrd_file:
+        with open(output_dir_path + "/poly-direct.cpp", "w") as cpp_file, \
+             open(output_dir_path + "/poly-grd-direct.cpp", "w") as cpp_grd_file, \
+             open(output_dir_path + "/poly-grd.maple", "w") as grd_file, \
+             open(output_dir_path + "/poly-nogrd.maple", "w") as nogrd_file:
 
             # write the opening for the cpp file
             self.write_cpp_opening(cpp_file, len(monomials), len(variables))
+            self.write_cpp_grd_opening(cpp_grd_file, len(monomials), len(variables))
+
+            system.format_print('Writing gradients...',
+                                italics=True)
+            progress_bar = ProgressBar(start=0, end=len(variables) - 1)
+            progress_bar.update(0)
+
+            for index in range(len(variables)):
+                self.write_cpp_gradient(cpp_grd_file, index, monomials, variable_permutations)
+                progress_bar.update(index)
+            progress_bar.finish()
 
             # keeps track of what index in a list of all monomials the current monomial would occupy
             monomial_index = 0
 
+            system.format_print('Writing terms...',
+                                italics=True)
+            progress_bar = ProgressBar(start=0, end=len(monomials))
+            progress_bar.update(0)
+
             # loop thru every degree in this polynomial
             for monomial in monomials:
                 self.write_cpp_monomial(cpp_file, monomial_index, monomial, variable_permutations)
+                self.write_cpp_monomial(cpp_grd_file, monomial_index, monomial, variable_permutations)
                 self.write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
                 self.write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
                 monomial_index += 1
+                progress_bar.progress(1)
+
+            progress_bar.finish()
 
             cpp_file.write("\n")
             grd_file.write("\n")
             nogrd_file.write("\n")
 
             self.write_cpp_closing(cpp_file, len(monomials))
+            self.write_cpp_grd_closing(cpp_grd_file, len(monomials))
             self.write_grd_closing(grd_file, len(monomials), len(variables))
             self.write_nogrd_closing(nogrd_file, len(monomials), len(variables))
 
@@ -719,6 +745,9 @@ struct poly_model {{
 
     static double eval_direct(const double a[{0}],
                               const double x[{1}]);
+    static double eval_direct(const double a[{0}],
+                              const double x[{1}], 
+                              double g[{1}]);
 
 public:
     unsigned report_nvars(){{ return n_vars; }};
@@ -750,6 +779,27 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
     double p[{0}];
 """.format(total_terms, number_of_variables))
 
+    def write_cpp_grd_opening(self, cpp_file, total_terms, number_of_variables):
+        """
+        Writes the opening of the 'poly-grd-direct.cpp' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+            number_of_variables - Number of variables in the polynomial.
+
+        Returns:
+            None.
+        """
+        cpp_file.write("""#include "poly-model.h"
+    
+namespace mb_system {{
+
+double poly_model::eval_direct(const double a[{0}], const double x[{1}], double g[{1}])
+{{
+    double p[{0}];
+""".format(total_terms, number_of_variables))
+
     def write_cpp_monomial(self, cpp_file, index, monomial, variable_permutations):
         """
         Writes a single monomial to the 'poly-direct.cpp' polynomial file.
@@ -773,7 +823,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
             if not first_term:
                 cpp_file.write(" + ")
 
-            first_term = False;
+            first_term = False
 
             first_factor = True
 
@@ -792,6 +842,63 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
                     cpp_file.write("x[{}]".format(variable_index))
 
         cpp_file.write(";\n")
+
+    def write_cpp_gradient(self, cpp_file, index, monomials, variable_permutations):
+
+        num_monomials = len(monomials)
+
+        monomial_strings = []
+
+        num_gradient_terms_on_line = 0
+        t_index = 0
+
+        for monomial_index, monomial in enumerate(monomials):
+
+            permutation_strings = []
+
+            for permutation in set(
+                    [permutation for permutation in monomial.permute(variable_permutations)]):
+
+                const, derivative = permutation.get_derivative(index)
+                if const == 0:
+                    continue
+
+                variable_strings = [str(const)]
+
+                for variable_index, degree in enumerate(derivative.degrees):
+                    for i in range(degree):
+                        variable_strings.append("x[{}]".format(variable_index))
+
+                permutation_strings.append("*".join(variable_strings))
+
+            if len(permutation_strings) != 0:
+                monomial_strings.append("a[{}]*({})".format(monomial_index, " + ".join(permutation_strings)))
+
+                num_gradient_terms_on_line += 1
+
+                if num_gradient_terms_on_line == self.num_gradient_terms_per_line:
+
+                    cpp_file.write("    const double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
+
+                    monomial_strings = []
+                    num_gradient_terms_on_line = 0
+
+                    t_index += 1
+
+        if num_gradient_terms_on_line > 0:
+
+            cpp_file.write("    const double t{}_{} = {};\n".format(index, t_index, " + ".join(monomial_strings)))
+
+            t_index += 1
+
+        end_t_index = t_index
+
+        if end_t_index == 0:
+            gradient_string = "    g[{}] = 0;\n".format(index)
+        else:
+            gradient_string = "    g[{}] = {};\n".format(index, " + ".join(["t{}_{}".format(index, t_index) for t_index in range(0, end_t_index)]))
+
+        cpp_file.write(gradient_string)
 
     def write_grd_monomial(self, grd_file, index, monomial, variable_permutations):
         """
@@ -816,7 +923,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
             if not first_term:
                 grd_file.write("+")
 
-            first_term = False;
+            first_term = False
 
             first_factor = True
 
@@ -859,7 +966,7 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
             if not first_term:
                 nogrd_file.write("+")
 
-            first_term = False;
+            first_term = False
 
             first_factor = True
 
@@ -891,13 +998,33 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}])
             None.
         """
         cpp_file.write("""    double energy(0);
-        for(int i = 0; i < {}; ++i)
-            energy += p[i]*a[i];
+	for(int i = 0; i < {}; ++i)
+	    energy += p[i]*a[i];
 
-        return energy;
+	return energy;
 
-    }}
-    }} // namespace mb_system""".format(total_terms))
+}}
+}} // namespace mb_system""".format(total_terms))
+
+    def write_cpp_grd_closing(self, cpp_file, total_terms):
+        """
+        Writes the closing of the 'poly-grd-direct.cpp' polynomial file.
+
+        Args:
+            cpp_file        - Local path to file to write in.
+            total_terms     - Number of terms in the polynomial.
+
+        Returns:
+            None.
+        """
+        cpp_file.write("""    double energy(0);
+	for(int i = 0; i < {}; ++i)
+	    energy += p[i]*a[i];
+
+	return energy;
+
+}}
+}} // namespace mb_system""".format(total_terms))
 
     def write_grd_closing(self, grd_file, total_terms, number_of_variables):
         """
@@ -990,112 +1117,6 @@ xxx := codegen[packargs](xxx, args, x):
 xxx := codegen[optimize](xxx):
 
 codegen[C](xxx, optimized, filename="poly-nogrd.c"):""".format(total_terms, arg_str))
-
-
-class Monomial(object):
-    """
-    Class that stores all the information associated with a single Monomial: one term of a polynomial.
-    """
-
-    def __init__(self, degrees):
-        """
-        Constructs a new Monomial.
-
-        Args:
-            degrees     - List of the degrees of each variable in this monomial.
-
-        Returns:
-            A new Monomial.
-        """
-
-        self.degrees = degrees
-
-    def permute(self, variable_permutations):
-        """
-        Gives all permutations of this Monomial.
-
-        Args:
-            variable_permutations - Variable permutations as generated by get_variable_permutations().
-
-        Generates:
-            List of all Monomials created by permuting the this Monomial by all the variable_permutations.
-        """
-
-        # there will be 1 permutation for each variable permutation.
-        for variable_permutation in variable_permutations:
-
-            # initialize the permutation to all zeros
-            monomial_permutation = [0 for i in self.degrees]
-
-            # loop over each variable index and degree
-            for index, degree in zip(range(len(self.degrees)), self.degrees):
-
-                # because we initialized the monomial_permutation to all 0s, if degree is 0, we don't have to do anything
-                if degree == 0:
-                    continue
-
-                # if degree is not zero, then lookup the new index of this variable in the permuted monomial
-                new_index = variable_permutation.index(index)
-
-                # now set the value of this variable in the permuted monomial
-                monomial_permutation[new_index] = self.degrees[index]
-
-            yield Monomial(monomial_permutation)
-
-    def get_standard_permutations(self, variable_permutations):
-        return sorted(self.permute(variable_permutations), key=lambda x: x.get_degrees())[-1]
-
-    def get_total_degree(self):
-        """
-        Gets the total degree of this Monomial by summing the degree of each variable.
-
-        Args:
-            None.
-
-        Returns:
-            The total degree of this Monomial.
-        """
-        return sum(self.degrees)
-
-    def get_degrees(self):
-        return self.degrees
-
-    def __eq__(self, other):
-        return self.degrees == other.degrees
-
-    def __hash__(self):
-        return int(hashlib.sha1(":".join([str(degree) for degree in self.degrees]).encode()).hexdigest(), 16)
-
-    def __getitem__(self, item):
-        return self.degrees[item]
-
-
-class Variable(object):
-    """
-    Holds all information relevant to a single variable.
-    """
-
-    def __init__(self, atom1_name, atom1_fragment, atom2_name, atom2_fragment, category):
-        """
-        Creates a new Variable from all required information.
-
-        Args:
-            atom1_name              - The type of the first atom in this variable.
-            atom1_fragment          - The fragment of the first atom in this variable.
-            atom2_name              - The type of the second atom in this variable.
-            atom2_fragment          - The fragment of the second atom in this variable.
-            category                - The category of this variable, either 'inter' or 'intra'.
-
-
-        Returns:
-            A new Variable.
-        """
-
-        self.atom1_name = atom1_name
-        self.atom1_fragment = atom1_fragment
-        self.atom2_name = atom2_name
-        self.atom2_fragment = atom2_fragment
-        self.category = category
 
 
 

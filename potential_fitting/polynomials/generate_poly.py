@@ -3,11 +3,11 @@ import itertools
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system, ProgressBar
-from potential_fitting.exceptions import ParsingError, InvalidValueError, InconsistentValueError
+from potential_fitting.exceptions import ParsingError, InvalidInputError, InconsistentValueError
 
 # relative module imports
 from . import filters
-from .molecule_in_parser import MoleculeInParser
+from .molecule_in_parser import MoleculeInParser, FragmentParser
 from .monomial import Monomial
 from .variable import Variable
 
@@ -129,25 +129,7 @@ class PolynomialGenerator(object):
             system.format_print("Finding permutations...",
                                 italics=True)
 
-            # build the permutations for each fragment
-            fragment_permutations = []
-
-            # loop thru each fragment
-            for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
-
-                # get all permutations for the atoms within this fragment
-                permutations = list(self.get_fragment_permutations(fragment_parser.get_atom_and_virtual_site_types()))
-
-                # add to each permutation the index of the first atom in this fragment in the molecule
-                for permutation in permutations:
-                    for index in range(len(permutation)):
-                        permutation[index] += index_each_fragment[frag_index]
-
-                fragment_permutations.append(permutations)
-
-            # construct molecule permutations from the fragment permutations.
-
-            atom_permutations = list(self.get_molecule_permutations(fragments, fragment_permutations))
+            atom_permutations = list(self.get_permutations("_".join(fragments)))
 
             # write permutation count to log file
             log_file.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
@@ -367,13 +349,21 @@ class PolynomialGenerator(object):
 
     def get_permutations(self, molecule_in):
 
-        if "_" in molecule_in
-            fragments = self.split_molecule_in(molecule_in)
+        if "_" in molecule_in:
+            fragment_ins = self.split_molecule_in(molecule_in)
+            fragment_permutations_list = [list(self.get_permutations(fragment_in)) for fragment_in in fragment_ins]
+            fragment_atom_index = 0
+            for fragment_permutations in fragment_permutations_list:
+                for permutation in fragment_permutations:
+                    for i in range(len(permutation)):
+                        permutation[i] += fragment_atom_index
+                fragment_atom_index += len(fragment_permutations[0])
+
+            return self.get_molecule_permutations(fragment_ins, fragment_permutations_list)
         else:
-            return self.get_fragment_permutations()
+            parser = FragmentParser(molecule_in, 'a')
+            return self.get_fragment_permutations(parser.get_atom_and_virtual_site_types())
         # TODO FINISH THIS
-
-
 
     def split_molecule_in(self, molecule_in):
         fragments = []
@@ -401,7 +391,7 @@ class PolynomialGenerator(object):
                 cur_fragment += char
 
         if num_open_parens != 0:
-            raise Error # bad molecule_in, didn't close parenthesis
+            raise InvalidInputError("{} is not a valid symmetry input. Make sure all parenthesis are closed!".format(molecule_in))
 
         fragments.append(cur_fragment)
         return fragments

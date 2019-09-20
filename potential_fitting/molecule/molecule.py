@@ -486,13 +486,15 @@ class Molecule(object):
 
         return excluded_pairs
 
-    def to_xyz(self, fragments = None, cp = False):
+    def to_xyz(self, fragments=None, cp=False, num_digits=14):
         """
         Gets a string representation of the fragments in this molecule in the xyz file format
 
         Args:
-            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments
-            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments
+            fragments   - list of fragment indicies to include in the string; optional, default is to include all fragments.
+            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments.
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String representation of the fragments in this molecule in the xyz format
@@ -506,20 +508,22 @@ class Molecule(object):
 
         for index in range(len(self.get_fragments())):
             if index in fragments:
-                string += self.get_fragments()[index].to_xyz()
+                string += self.get_fragments()[index].to_xyz(num_digits=num_digits)
             elif cp:
-                string += self.get_fragments()[index].to_ghost_xyz() 
+                string += self.get_fragments()[index].to_ghost_xyz(num_digits=num_digits)
 
         return string[:-1] # removes last character of string (extra newline)
 
-    def to_standard_xyz(self, fragments = None, cp = False):
+    def to_standard_xyz(self, fragments=None, cp=False, num_digits=14):
         """
         Gets a string representation of the fragments in this molecule in the xyz file format.
         The order of the fragments and atoms is in standard order.
 
         Args:
-            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments
-            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments
+            fragments   - list of fragment indicies to include in the string; optional, default is to include all fragments.
+            cp          - if True then fragments not specified in the fragments list will be included as ghost fragments.
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String representation of the fragments in this molecule in the xyz format in standard order.
@@ -533,9 +537,9 @@ class Molecule(object):
 
         for index in range(len(self.get_standard_order())):
             if index in fragments:
-                string += self.get_standard_order()[index].to_standard_xyz()
+                string += self.get_standard_order()[index].to_standard_xyz(num_digits=num_digits)
             elif cp:
-                string += self.get_standard_order()[index].to_standard_ghost_xyz() 
+                string += self.get_standard_order()[index].to_standard_ghost_xyz(num_digits=num_digits)
 
         return string[:-1] # removes last character of string (extra newline)
 
@@ -586,7 +590,7 @@ class Molecule(object):
             SHA1 hash of this molecule
         """
 
-        hash_string = self.get_name() + "\n" + self.to_xyz() + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
+        hash_string = self.get_name() + "\n" + self.to_xyz(num_digits=5) + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
     def get_symbols(self):

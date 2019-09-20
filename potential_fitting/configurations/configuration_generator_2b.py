@@ -49,7 +49,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         self.min_inter_distance = min_inter_distance
         self.use_grid = use_grid
         if max_distance == min_distance:
-            self.step_size = max_distance
+            self.step_size = 1
         else:
             self.step_size = step_size / (max_distance - min_distance)
         self.num_attempts = num_attempts

@@ -728,41 +728,85 @@ class TestFragment(unittest.TestCase):
         self.assertEqual(fragment.confirm_symmetry_class()[1], "A1B2")
         self.assertEqual(fragment.confirm_symmetry_class()[2], "A1B1C1")
 
-    """
     def test_get_standard_copy(self):
-        fragment = Fragment([], "fragment", -2, 2, "")
-        fragment_standard = Fragment([], "fragment", -2, 2, "")
-        self.assertEqual(fragment.get_st)
+
+        atom_std1 = Atom("O", "A", 1, 1, 1)
+        atom_std2 = Atom("C", "B", 2, 2, 2)
+        atom_std3 = Atom("H", "C", 0, 0, 0)
+
+        standard_frag = Fragment([atom_std1, atom_std2, atom_std3], "fragment", 0, 1, "O(C)H")
+
+        self.assertEqual(standard_frag.get_standard_copy(), standard_frag)
 
         atom0 = Atom("H", "A", 0, 0, 0)
+        atom1 = Atom("C", "B", 2, 2, 2)
+        atom2 = Atom("O", "C", 1, 1, 1)
 
-        fragment = Fragment([atom0], "fragment", -2, 2, "H")
-        self.assertTrue(fragment.confirm_standard_order())
+        frag = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "H1.CO1")
 
-        atom1 = Atom("Cl", "B", 5, 7, -3)
+        self.assertEqual(frag.get_standard_copy(), standard_frag)
 
-        fragment = Fragment([atom0, atom1], "fragment", -2, 2, "H[Cl]")
-        self.assertFalse(fragment.confirm_standard_order())
+        atom0 = Atom("C", "A", 2, 2, 2)
+        atom1 = Atom("H", "B", 0, 0, 0)
+        atom2 = Atom("O", "C", 1, 1, 1)
 
-        fragment = Fragment([atom1, atom0], "fragment", -2, 2, "[Cl]H")
-        self.assertTrue(fragment.confirm_standard_order())
+        frag = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "C1.HO1")
 
-        atom2 = Atom("Xe", "C", 10.234235, -0.00000234, 2.353523)
+        self.assertEqual(frag.get_standard_copy(), standard_frag)
 
-        fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
-        self.assertFalse(fragment.confirm_standard_order())
-        fragment = Fragment([atom0, atom2, atom1], "fragment", -2, 2, "H[Xe][Cl]")
-        self.assertFalse(fragment.confirm_standard_order())
-        fragment = Fragment([atom1, atom0, atom2], "fragment", -2, 2, "[Cl]H[Xe]")
-        self.assertFalse(fragment.confirm_standard_order())
-        fragment = Fragment([atom1, atom2, atom0], "fragment", -2, 2, "[Cl][Xe]H")
-        self.assertFalse(fragment.confirm_standard_order())
-        fragment = Fragment([atom2, atom0, atom1], "fragment", -2, 2, "[Xe]H[Cl]")
-        self.assertFalse(fragment.confirm_standard_order())
+    def test_get_reorder_copy(self):
 
-        fragment = Fragment([atom2, atom1, atom0], "fragment", -2, 2, "[Xe][Cl]H")
-        self.assertTrue(fragment.confirm_standard_order())
-    """
+        atom_std1 = Atom("O", "A", 1, 1, 1)
+        atom_std2 = Atom("C", "B", 2, 2, 2)
+        atom_std3 = Atom("H", "C", 0, 0, 0)
+
+        standard_frag = Fragment([atom_std1, atom_std2, atom_std3], "fragment", 0, 1, "O(C)H")
+
+        self.assertEqual(standard_frag.get_reorder_copy("O(C)H"), standard_frag)
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+        atom1 = Atom("C", "B", 2, 2, 2)
+        atom2 = Atom("O", "C", 1, 1, 1)
+
+        frag = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "H1.CO1")
+
+        self.assertEqual(standard_frag.get_reorder_copy("H1.CO1"), frag)
+
+        atom0 = Atom("H", "A", 0, 0, 0)
+        atom1 = Atom("O", "B", 1, 1, 1)
+        atom2 = Atom("C", "C", 2, 2, 2)
+
+        frag = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "HOC")
+
+        self.assertEqual(standard_frag.get_reorder_copy("HOC"), frag)
+
+    def test_eq_and_ne(self):
+
+        atom0 = Atom("O", "A", 1, 1, 1)
+
+        atom1 = Atom("H", "B", 0, 0, 0)
+
+        atom2 = Atom("H", "B", 2, 2, 2)
+
+        frag0 = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "O(H)H")
+        frag1 = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "O(H)H")
+
+        self.assertEqual(frag0, frag1)
+
+        frag2 = Fragment([atom0, atom1, atom2], "fragment", 0, 2, "O(H)H")
+
+        self.assertNotEqual(frag0, frag2)
+
+        frag3 = Fragment([atom0, atom1, atom2], "fragment", 1, 1, "O(H)H")
+
+        self.assertNotEqual(frag0, frag3)
+
+        atom3 = Atom("H", "C", 2, 2, 2)
+
+        frag4 = Fragment([atom0, atom1, atom3], "fragment", 0, 1, "O(H)H")
+
+        self.assertNotEqual(frag0, frag4)
+
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFragment)

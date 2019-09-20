@@ -1120,6 +1120,8 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     best_fit = sorted_results[0][0]
     best_results = sorted_results[0]
 
+    print("Best fit is fit {}.".format(best_fit[0]))
+
     if not best_results[6]:
         print("Fit with lowest RMSD did not converge, maybe run it again with more iterations?")
         print("Still using that fit as the best one.")

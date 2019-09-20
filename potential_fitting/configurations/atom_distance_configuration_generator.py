@@ -20,15 +20,15 @@ class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator)
 
         Args:
             settings_path       - Local path to '.ini' settings file with all relevant settings.
-            mol1_atom_index     - The index of the atom in the first monomer to rotate around.
-            mol2_atom_index     - The index of the atom in the second monomer to rotate around.
-            min_distance        - The minimum distance between the centers of mass of the two monomers.
-            max_distance        - The maximum distance between the centers of mass of the two monomers.
+            mol1_atom_index     - The index of the centering atom in the first monomer to rotate around.
+            mol2_atom_index     - The index of the centering atom in the second monomer to rotate around.
+            min_distance        - The minimum distance between the centering atoms of the two monomers.
+            max_distance        - The maximum distance between the centering atoms of the two monomers.
             min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
                     atoms.
             progression         - If True, a smooth progression will be used over the chosen distribution. Otherwise,
                     random points on the distribution will be sampled.
-            use_grid            - If True, then distance between the center of mass of the monomers will be on a grid.
+            use_grid            - If True, then distance between the centering atoms of the monomers will be on a grid.
                     Otherwise, it will be smooth.
             step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
             num_attempts        - The number of attempts to generate a configuration at any given distance before giving
@@ -61,7 +61,7 @@ class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator)
             random              - The Random object used to generate the configuration.
             molecule1           - Molecule object of the 1st monomer.
             molecule2           - Molecule object of the 2nd monomer.
-            distance            - Distance between the centers of mass of the two molecules.
+            distance            - Distance between the centering atoms of the two molecules.
 
         Returns:
             None.

@@ -1058,8 +1058,6 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     """
     Looks through all log files in all fit directories in the log path and finds the best fit.
 
-    Will consider any converged fit to be better than any unconverged fit, regardless of RMSDs.
-
     The best_fit will end up inside a directory in the logs directory called "best_fit".
 
     If any new fit is better than the current best fit, it will replace best_fit with the new
@@ -1116,14 +1114,15 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
         os.chdir("../")
 
     # Sort the results according to weighet RMSD of the full TS
-    sorted_results = sorted(results, key=lambda x: (not x[6], x[2]))
+    sorted_results = sorted(results, key=lambda x: x[2])
 
     # Get the best result
     best_fit = sorted_results[0][0]
     best_results = sorted_results[0]
 
     if not best_results[6]:
-        print("No fit converged... :(. Still trying to update best fit...")
+        print("Fit with lowest RMSD did not converge, maybe run it again with more iterations?")
+        print("Still using that fit as the best one.")
     
     # Check if best fit folder exists.
     # If it does exist, check the output in best folder to ensure that the new best
@@ -1148,25 +1147,16 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
             previous_best = [fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, converged]
         os.chdir("../")
 
-        replace = False
-
-        if not previous_best[6] and best_results[6]:
-            print("Previous best fit did not converge, but new best fit did, so replacing previous best fit.")
-            replace = True
-        elif previous_best[6] and not best_results[6]:
-            print("Previous best fit did converge, but new best fit did not, so not replacing previous best fit.")
-        elif previous_best[6]:
-            print("Both previous best fit and new best fit converged, so checking which is better...")
-            replace = previous_best[2] > sorted_results[0][2]
-        else:
-            print("Neither previous best fit or new best fit converged, so checking which is better...")
-            replace = previous_best[2] > sorted_results[0][2]
+        replace = previous_best[2] > best_results[2]
 
         if replace:
-            print("Replacing best_fit by {}".format(sorted_results[0][0]))
+            print("New best fit is better than the old one.")
+            print("Replacing best_fit by {}.".format(sorted_results[0][0]))
             system.call("rm", "-rf", "best_fit")
             system.call("cp", "-r", sorted_results[0][0], "best_fit")
         else:
+            print("New best fit is not better than the old one.")
+            print("Keeping the old best fit.".format(sorted_results[0][0]))
             best_results = previous_best
 
 

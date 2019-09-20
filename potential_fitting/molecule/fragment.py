@@ -541,8 +541,8 @@ class Fragment(object):
         Gets the string representation of this fragment in the xyz file format.
 
         Args:
-            num_digits - The number of digits to include when writing atom coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String containing the atomic symbols and coordinates of each atom in this fragment.
@@ -562,8 +562,8 @@ class Fragment(object):
         Atoms are in standard order.
 
         Args:
-            num_digits - The number of digits to include when writing atom coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String containing the atomic symbols and coordinates of each atom in this fragment in standard order.
@@ -582,8 +582,8 @@ class Fragment(object):
         Gets the string representation of this fragment in the xyz file format as a ghost fragment.
 
         Args:
-            num_digits - The number of digits to include when writing atom coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             string containing the atomic symbols and coordinates of each atom in this fragment as ghost atoms.
@@ -603,8 +603,8 @@ class Fragment(object):
         Atoms are in standard order.
 
         Args:
-            num_digits - The number of digits to include when writing atom coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             string containing the atomic symbols and coordinates of each atom in this fragment in standard order as ghost atoms

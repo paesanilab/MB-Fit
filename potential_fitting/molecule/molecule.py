@@ -493,8 +493,8 @@ class Molecule(object):
         Args:
             fragments   - list of fragment indicies to include in the string; optional, default is to include all fragments.
             cp          - if True then fragments not specified in the fragments list will be included as ghost fragments.
-            num_digits - The number of digits to include when writing atom coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String representation of the fragments in this molecule in the xyz format
@@ -522,8 +522,8 @@ class Molecule(object):
         Args:
             fragments   - list of fragment indicies to include in the string; optional, default is to include all fragments.
             cp          - if True then fragments not specified in the fragments list will be included as ghost fragments.
-            num_digits - The number of digits to include when writing atom coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing atom coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String representation of the fragments in this molecule in the xyz format in standard order.
@@ -590,7 +590,7 @@ class Molecule(object):
             SHA1 hash of this molecule
         """
 
-        hash_string = self.get_name() + "\n" + self.to_xyz(num_digits=6) + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
+        hash_string = self.get_name() + "\n" + self.to_xyz(num_digits=5) + "\n" + str(self.get_charge()) + "\n" + str(self.get_spin_multiplicity())
         return sha1(hash_string.encode()).hexdigest()
 
     def get_symbols(self):

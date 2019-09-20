@@ -297,16 +297,25 @@ class Atom(object):
         Gets the string representation of this atom in the xyz file format
 
         Args:
-            num_digits - The number of digits to include when writing this atom's coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing this atom's coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String containing this atom's atomic symbol and coordinates in the xyz format
         """
 
-        num_chars = num_digits + 8
+        x = round(self.get_x(), num_digits)
+        y = round(self.get_y(), num_digits)
+        z = round(self.get_z(), num_digits)
 
-        return "{0:2} {1:{4}.{5}e} {2:{4}.{5}e} {3:{4}.{5}e}".format(self.name, self.x, self.y, self.z, num_chars, num_digits)
+        if x == -0.0:
+            x = 0.0
+        if y == -0.0:
+            y = 0.0
+        if z == -0.0:
+            z = 0.0
+
+        return "{0:2} {1:22.14e} {2:22.14e} {3:22.14e}".format(self.name, x, y, z)
 
     def is_bonded(self, atom, bond_sensitivity = 1.15):
         """
@@ -328,8 +337,8 @@ class Atom(object):
         Gets the string representation of this atom in the xyz file format as a ghost atom
 
         Args:
-            num_digits - The number of digits to include when writing this atom's coordinates.
-                    Default: 14
+            num_digits - The number of digits after the decimal point to include when writing this atom's coordinates.
+                    Default: 14 Maximum: 14
 
         Returns:
             String containing this atom's atomic symbol and coordinates in the xyz ghost atom format

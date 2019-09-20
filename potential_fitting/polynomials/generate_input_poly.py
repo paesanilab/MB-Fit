@@ -30,7 +30,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
 
         # loop thru each fragment and add an add_molecule line at top of file
         for fragment_parser in molecule_in_parser.get_fragments():
-            poly_in_file.write("add_molecule['{}']\n".format(fragment_parser.get_fragment_in()))
+            poly_in_file.write("add_molecule['{}']\n".format(fragment_parser.get_original_fragment_in()))
 
         # newline between fragments and variables
         poly_in_file.write("\n")

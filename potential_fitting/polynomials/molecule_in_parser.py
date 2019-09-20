@@ -3,6 +3,7 @@ import itertools
 
 # absolute module imports
 from potential_fitting.utils import constants
+from potential_fitting.exceptions import InvalidInputError
 
 class MoleculeInParser(object):
 
@@ -10,7 +11,7 @@ class MoleculeInParser(object):
         self.fragment_parsers = []
         frag_id = 'a'
 
-        for fragment_in in molecule_in.split("_"):
+        for fragment_in in self.split_molecule_in(molecule_in):
             self.fragment_parsers.append(FragmentParser(fragment_in, frag_id))
 
             frag_id = chr(ord(frag_id) + 1)
@@ -46,6 +47,37 @@ class MoleculeInParser(object):
 
             yield fragment_parser
 
+    def split_molecule_in(self, molecule_in):
+        fragments = []
+        cur_fragment = ""
+
+        num_open_parens = 0
+
+        for char in molecule_in:
+
+            if char is '(':
+                if num_open_parens > 0:
+                    cur_fragment += char
+                num_open_parens += 1
+
+            elif char is ')':
+                num_open_parens -= 1
+                if num_open_parens > 0:
+                    cur_fragment += char
+
+            elif char is '_' and num_open_parens == 0:
+                fragments.append(cur_fragment[:])
+                cur_fragment = ""
+
+            else:
+                cur_fragment += char
+
+        if num_open_parens != 0:
+            raise InvalidInputError("{} is not a valid symmetry input. Make sure all parenthesis are closed!".format(molecule_in))
+
+        fragments.append(cur_fragment)
+        return fragments
+
 class FragmentParser(object):
 
     def __init__(self, fragment_in, frag_id):
@@ -68,6 +100,8 @@ class FragmentParser(object):
             self.atom_parsers.append(AtomTypeParser(start_index, atom_in))
 
         self.frag_id = frag_id
+
+        self.fragment_in = fragment_in
 
     def get_num_atoms(self):
         return sum(atom_type.get_count() for atom_type in self.get_atom_types())
@@ -132,6 +166,8 @@ class FragmentParser(object):
         # number of atoms of a type
         reading_atom_type = True
 
+        fragment_in = fragment_in.replace("_", "").replace("(", "").replace(")", "")
+
         while(True):
 
             try:
@@ -190,6 +226,9 @@ class FragmentParser(object):
                 print("error", fragment_in)
                 # raise exception, because fragment_in must be all numbers and capital letters.
                 raise Exception
+
+    def get_original_fragment_in(self):
+        return self.fragment_in
 
 class AtomTypeParser(object):
 

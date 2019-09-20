@@ -491,7 +491,7 @@ class Molecule(object):
         Gets a string representation of the fragments in this molecule in the xyz file format
 
         Args:
-            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments.
+            fragments   - list of fragment indicies to include in the string; optional, default is to include all fragments.
             cp          - if True then fragments not specified in the fragments list will be included as ghost fragments.
             num_digits - The number of digits to include when writing atom coordinates.
                     Default: 14
@@ -520,7 +520,7 @@ class Molecule(object):
         The order of the fragments and atoms is in standard order.
 
         Args:
-            fragments   - list of fragment indicies to include in the string; optional, defualt is to include all fragments.
+            fragments   - list of fragment indicies to include in the string; optional, default is to include all fragments.
             cp          - if True then fragments not specified in the fragments list will be included as ghost fragments.
             num_digits - The number of digits to include when writing atom coordinates.
                     Default: 14

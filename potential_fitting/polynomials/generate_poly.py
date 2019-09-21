@@ -104,6 +104,8 @@ class PolynomialGenerator(object):
                     atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
                     index += 1
 
+        print("Atom names", atom_names)
+
         files.init_file(log_path)
 
         # open the log file
@@ -349,7 +351,7 @@ class PolynomialGenerator(object):
 
     def get_permutations(self, molecule_in):
 
-        if "_" in molecule_in:
+        if "_" in molecule_in or "(" in molecule_in or ")" in molecule_in:
             fragment_ins = self.split_molecule_in(molecule_in)
             fragment_permutations_list = [list(self.get_permutations(fragment_in)) for fragment_in in fragment_ins]
             fragment_atom_index = 0

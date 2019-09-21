@@ -497,7 +497,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     fcpp.write("src/bblock/sys_tools.h\n")
     fcpp.write(my_dispersion_text)
 
-    fcpp.write("\n\n\n SECTION SITES\n")
+    fcpp.write("\n\n\n SECTION BUCKINGHAM\n")
     fcpp.write("src/bblock/sys_tools.h\n")
     fcpp.write(my_buckingham_text)
 

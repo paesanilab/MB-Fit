@@ -343,7 +343,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             count += 1
      
     if number_of_monomers == 1:
-        print(mon_id_sorted)
         my_mon = [list(mon_id_sorted[0]), list(mon_id_sorted[0])]
         my_letter_types = [atom_types_letter[0],atom_types_letter[0]]
         my_number_types = [atom_types_number[0],atom_types_number[0]]
@@ -456,51 +455,51 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     # Print constructor information
     fcpp.write("// SECTION CONSTRUCTOR\n")
     fcpp.write("// " + holdercpp + "\n")
-    print(my_constructor_text)
+    fcpp.write(my_constructor_text)
 
     fcpp.write("\n\n\n// SECTION SITES\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_monomer_sites_text)
+    fcpp.write(my_monomer_sites_text)
 
     fcpp.write("\n\n\n// SECTION CHARGES\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_monomer_charges_text)
+    fcpp.write(my_monomer_charges_text)
 
     fcpp.write("\n\n\n// SECTION POLFACS\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_monomer_polfacs_text)
+    fcpp.write(my_monomer_polfacs_text)
 
     fcpp.write("\n\n\n// SECTION POLS\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_monomer_pols_text)
+    fcpp.write(my_monomer_pols_text)
 
     fcpp.write("\n\n\n// SECTION EXCLUDED\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_monomer_excluded_text)
+    fcpp.write(my_monomer_excluded_text)
 
     fcpp.write("\n\n\n SECTION INCLUDE{}B\n".format(number_of_monomers))
     fcpp.write("src/potential/{0}b/energy{0}b.h\n".format(number_of_monomers))
-    print(my_potential_include)
+    fcpp.write(my_potential_include)
 
     fcpp.write("\n\n\n SECTION {}B_NO_GRADIENT\n".format(number_of_monomers))
     fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
-    print(my_nb_conditional_nograd)
+    fcpp.write(my_nb_conditional_nograd)
 
     fcpp.write("\n\n\n SECTION {}B_GRADIENT\n".format(number_of_monomers))
     fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
-    print(my_nb_conditional_grad)
+    fcpp.write(my_nb_conditional_grad)
 
     fcpp.write("\n\n\n SECTION C6_LONG_RANGE\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_c6_lr_text)
+    fcpp.write(my_c6_lr_text)
 
     fcpp.write("\n\n\n SECTION DISPERSION\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_dispersion_text)
+    fcpp.write(my_dispersion_text)
 
     fcpp.write("\n\n\n SECTION SITES\n")
     fcpp.write("src/bblock/sys_tools.h\n")
-    print(my_buckingham_text)
+    fcpp.write(my_buckingham_text)
 
     fcpp.close()
 

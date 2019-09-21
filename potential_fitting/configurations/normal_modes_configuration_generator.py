@@ -368,12 +368,12 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                                     "larger than 3 * (number of atoms in the molecule) - 5 ({})".format(dim))
 
         # If there is no A distribution, then generate no configs over A
-        if self.A_distribution is None:
+        if self.A_distribution is None and self.temp_distribution is not None:
             num_temp_configs = num_configs
             num_A_configs = 0
 
         # If there is no temp distribution, then generate no configs over temp
-        elif self.temp_distribution is None:
+        elif self.temp_distribution is None and self.A_distribution is not None:
             num_temp_configs = 0
             num_A_configs = num_configs
 

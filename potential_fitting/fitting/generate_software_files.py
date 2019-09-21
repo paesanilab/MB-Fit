@@ -18,7 +18,7 @@ def get_atom_types(fragment):
 
     return atom_list
 
-def generate_software_files(settings, config_file, mon_ids, poly_order, molecule_in, ttm_only = False, MBX_HOME = None, version = "v1"):
+def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_only = False, MBX_HOME = None, version = "v1"):
     # NOTE mon_ids is a list with actual monomer names (h2o, ch4, c2h6...)
     # Read Settings
     settings = SettingsReader(settings_path)
@@ -87,10 +87,11 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     ## Polynomial ##############################################################
     ############################################################################
     
+    print("Getting polynomial fitted parameters...")
     # Define a couple things
     workdir = os.getcwd()
     mbnrg_best_fit = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/best_fit"
-    cdl_file = "fit-" + str(number_of_monomers) + ".cdl"
+    cdl_file = "fit-" + str(number_of_monomers) + "b.cdl"
 
     # Obtain polynomial coefficients and non_linear parameters
     constants = []
@@ -111,7 +112,7 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
         if line.startswith("poly"):
             for i in range(npoly):
                 polycoef.append("            " + cdl.readline().replace(";","};"))
-        line = fit.readline()
+        line = cdl.readline()
         if line == "":
             break
 
@@ -125,7 +126,7 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     for i in range(len(mon_id_sorted)):
         ids.append("mon" + str(i+1) + " == \"" + mon_ids[i] + "\"")
 
-    my_constructor_text += ids.join(" and ") + ") {\n"
+    my_constructor_text += " and ".join(ids) + ") {\n"
 
     ## Open file that contains the code to add
     #cppout = open("software_code.txt",'w')
@@ -142,40 +143,38 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     for p in constants:
         my_constructor_text += p
 
-    my_constructor_text += "\n    } // end if " + ids.join(" and ") + "\n" 
+    my_constructor_text += "\n    } // end if " + " and ".join(ids) + "\n" 
 
     ############################################################################
     ## Monomer Properties ##### Only if one-body ###############################
     ############################################################################
-    
+    i = 100
+    if number_of_monomers == 1:
+        print("Getting monomer properties...")
     # Write code that needs to be added in the SITES section of the code
     #cppout.write("=====>> SECTION SITES <<=====\n")
     #cppout.write("File: src/bblock/sys_tools.cpp\n")
 
-    my_monomer_sites_text = []
-    for i in range(number_of_monomers):
-        my_monomer_sites_text.append("")
-        my_monomer_sites_text[-1] += """
-        } else if (mon[i] == "{}") {
+        my_monomer_sites_text = ""
+        my_monomer_sites_text += """
+        }} else if (mon[i] == "{}") {{
             sites.push_back({});
             nat.push_back({});
-""".format(mon_ids[i],number_of_sites[i],number_of_atoms[i])
+""".format(mon_ids[0],number_of_sites[0],number_of_atoms[0])
 
     
     # Write code that needs to be added in the CHARGES section of the code
     #cppout.write("=====>> SECTION CHARGES <<=====\n")
     #cppout.write("File: src/bblock/sys_tools.cpp\n")
 
-    my_monomer_charges_text = []
-    for i in range(number_of_monomers):
-        my_monomer_charges_text.append("")
-        my_monomer_charges_text[-1] += """
-        } else if (mon_id == "{}") {
-            for (size_t nv = 0; nv < n_mon; nv++) {
-""".format(mon_ids[i])
+        my_monomer_charges_text = ""
+        my_monomer_charges_text += """
+        }} else if (mon_id == "{}") {{
+            for (size_t nv = 0; nv < n_mon; nv++) {{
+""".format(mon_ids[0])
 
-        for j in range(len(charges[i])):
-            my_monomer_charges_text += "                charges[fst_ind + nv*nsites + {}] = {} * CHARGECON;\n".format(j,charges[i][j])
+        for j in range(len(charges[0])):
+            my_monomer_charges_text += "                charges[fst_ind + nv*nsites + {}] = {} * CHARGECON;\n".format(j,charges[0][j])
         my_monomer_charges_text += "            }\n"
 
 
@@ -183,16 +182,14 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     #cppout.write("=====>> SECTION POLFACS <<=====\n")
     #cppout.write("File: src/bblock/sys_tools.cpp\n")
 
-    my_monomer_polfacs_text = []
-    for i in range(number_of_monomers):
-        my_monomer_polfacs_text.append("")
-        my_monomer_polfacs_text[-1] += """
-        } else if (mon_id == "{}") {
-            for (size_t nv = 0; nv < n_mon; nv++) {
-""".format(mon_ids[i])
+        my_monomer_polfacs_text = ""
+        my_monomer_polfacs_text += """
+        }} else if (mon_id == "{}") {{
+            for (size_t nv = 0; nv < n_mon; nv++) {{
+""".format(mon_ids[0])
 
-        for j in range(len(polarizability_factors[i])):
-            my_monomer_polfacs_text += "                polfac[fst_ind + nv*nsites + {}] = {};\n".format(j,polarizability_factors[i][j])
+        for j in range(len(polarizability_factors[0])):
+            my_monomer_polfacs_text += "                polfac[fst_ind + nv*nsites + {}] = {};\n".format(j,polarizability_factors[0][j])
         my_monomer_polfacs_text += "            }\n"
 
 
@@ -200,16 +197,14 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     #cppout.write("=====>> SECTION POLS <<=====\n")
     #cppout.write("File: src/bblock/sys_tools.cpp\n")
 
-    my_monomer_pols_text = []
-    for i in range(number_of_monomers):
-        my_monomer_pols_text.append("")
-        my_monomer_pols_text[-1] += """
-        } else if (mon_id == "{}") {
-            for (size_t nv = 0; nv < n_mon; nv++) {
-""".format(mon_ids[i])
+        my_monomer_pols_text = ""
+        my_monomer_pols_text += """
+        }} else if (mon_id == "{}") {{
+            for (size_t nv = 0; nv < n_mon; nv++) {{
+""".format(mon_ids[0])
 
-        for j in range(len(polarizabilities[i])):
-            my_monomer_pols_text += "                pol[fst_ind + nv*nsites + {}] = {};\n".format(j,polarizabilities[i][j])
+        for j in range(len(polarizabilities[0])):
+            my_monomer_pols_text += "                pol[fst_ind + nv*nsites + {}] = {};\n".format(j,polarizabilities[0][j])
         my_monomer_pols_text += "            }\n"
 
 
@@ -217,25 +212,23 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     #cppout.write("=====>> SECTION EXCLUDED <<=====\n")
     #cppout.write("File: src/bblock/sys_tools.cpp\n")
 
-    my_monomer_excluded_text = []
-    for i in range(number_of_monomers):
-        my_monomer_excluded_text.append("")
-        my_monomer_excluded_text[-1] += """
-        if (mon == "{}") {
+        my_monomer_excluded_text = ""
+        my_monomer_excluded_text += """
+        if (mon == "{}") {{
             // 12 distances
-""".format(mon_ids[i])
+""".format(mon_ids[0])
 
-        for excl in excluded_pairs_12[i]:
+        for excl in excluded_pairs_12[0]:
             my_monomer_excluded_text += "            exc12.insert(std::make_pair({}, {}));\n".format(excl[0],excl[1])
 
         my_monomer_excluded_text += "            // 13 distances\n"
 
-        for excl in excluded_pairs_13[i]:
+        for excl in excluded_pairs_13[0]:
             my_monomer_excluded_text += "            exc13.insert(std::make_pair({}, {}));\n".format(excl[0],excl[1])
 
         my_monomer_excluded_text += "            // 14 distances\n"
 
-        for excl in excluded_pairs_14[i]:
+        for excl in excluded_pairs_14[0]:
             my_monomer_excluded_text += "            exc14.insert(std::make_pair({}, {}));\n".format(excl[0],excl[1])
 
         my_monomer_excluded_text += "        }\n"
@@ -244,6 +237,7 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     #cppout.write("=====>> SECTION ONEBODY_NOGRD <<=====\n")
     #cppout.write("File: src/potential/1b/energy1b.cpp\n")
 
+    print("Getting energy calls...")
     system_name = monomers[0]
     for i in range(1,number_of_monomers):
         system_name += "_" + monomers[i]
@@ -252,7 +246,7 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     for i in range(len(mon_id_sorted)):
         ids.append("mon" + str(i+1) + " == \"" + mon_id_sorted[i][1] + "\"")
 
-    my_nb_conditional_nograd = "    } else if (" + ids.join(" and ") + ") {\n"
+    my_nb_conditional_nograd = "    } else if (" + " and ".join(ids) + ") {\n"
 
     my_nb_conditional_nograd += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
 
@@ -260,12 +254,12 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     for i in range(len(mon_id_sorted)):
         ids.append("mon" + str(mon_id_sorted[i][0] + 1))
 
-    my_nb_conditional_nograd += ids.join(", ") + ");\n"
+    my_nb_conditional_nograd += ", ".join(ids) + ");\n"
     
     ids = []
     for i in range(len(mon_id_sorted)):
         ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
-    my_nb_conditional_nograd += "        energies = pot.eval(" + ids.join(", ") + ", nm);\n"
+    my_nb_conditional_nograd += "        energies = pot.eval(" + ", ".join(ids) + ", nm);\n"
 
     # Write code that needs to be added in the ONEBODY_GRD section of the code
     #cppout.write("=====>> SECTION ONEBODY_GRD <<=====\n")
@@ -275,23 +269,22 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
     for i in range(len(mon_id_sorted)):
         ids.append("mon" + str(i+1) + " == \"" + mon_id_sorted[i][1] + "\"")
 
-    my_nb_conditional_grad = "    } else if (" + ids.join(" and ") + ") {\n"
+    my_nb_conditional_grad = "    } else if (" + " and ".join(ids) + ") {\n"
 
-    my_nb_conditional_grad += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format
-(system_name,degree,version)
+    my_nb_conditional_grad += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
 
     ids = []
     for i in range(len(mon_id_sorted)):
         ids.append("mon" + str(mon_id_sorted[i][0] + 1))
 
-    my_nb_conditional_grad += ids.join(", ") + ");\n"
+    my_nb_conditional_grad += ", ".join(ids) + ");\n"
     
     ids = []
     idgs = []
     for i in range(len(mon_id_sorted)):
         ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
         idgs.append("grad" + str(mon_id_sorted[i][0] + 1) + ".data()")
-    my_nb_conditional_grad += "        energies = pot.eval(" + ids.join(", ") + ", " + idgs.join(", ") + " nm);\n"
+    my_nb_conditional_grad += "        energies = pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + " nm);\n"
 
     # Write code that needs to be added in the INCLUDE1B section of the code
     #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
@@ -302,7 +295,7 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
 
 
 
-
+    print("Copying files to MBX_files folder...")
 
     # Folder where everything related to MBX is gonna go
     sofdir = workdir + "/MBX_files"
@@ -312,13 +305,13 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
 
     # define names for files
     headerf = "poly_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
-    cppgrad = "poly_{}b_{}_deg{}_grad_{}.h".format(number_of_monomers,system_name,degree,version)
-    cppnograd = "poly_{}b_{}_deg{}_nograd_{}.h".format(number_of_monomers,system_name,degree,version)
-    holderh = "mbnrg_{}b_{}_deg{}_grad_{}.h".format(number_of_monomers,system_name,degree,version)
-    holdercpp = "mbnrg_{}b_{}_deg{}_grad_{}.cpp".format(number_of_monomers,system_name,degree,version)
+    cppgrad = "poly_{}b_{}_deg{}_grad_{}.cpp".format(number_of_monomers,system_name,degree,version)
+    cppnograd = "poly_{}b_{}_deg{}_nograd_{}.cpp".format(number_of_monomers,system_name,degree,version)
+    holderh = "mbnrg_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
+    holdercpp = "mbnrg_{}b_{}_deg{}_{}.cpp".format(number_of_monomers,system_name,degree,version)
 
     # Move them
-    os.system("mv " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + holdercpp + " " + sofdir)
+    os.system("cp " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + holdercpp + " " + sofdir)
 
 
 
@@ -333,7 +326,7 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
 
     # Get the atomlist
     atom_types = []
-    for fragment in symmetry.split("_"):
+    for fragment in monomers:
         atom_types.append(get_atom_types(fragment))
 
     # Get the list with actual types
@@ -343,41 +336,55 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
         atom_types_number.append([])
         atom_types_letter.append([])
         count = 0
-        for i in range(1,2,len(fragment)):
+        for i in range(1,len(fragment),2):
             for j in range(fragment[i]):
-                atom_types_number.append(count)
-                atom_types_number.append(fragment[i-1])
+                atom_types_number[-1].append(count)
+                atom_types_letter[-1].append(fragment[i-1])
             count += 1
      
     if number_of_monomers == 1:
-        my_mon = [mon_id_sorted[0], mon_id_sorted[0]]
+        print(mon_id_sorted)
+        my_mon = [list(mon_id_sorted[0]), list(mon_id_sorted[0])]
+        my_letter_types = [atom_types_letter[0],atom_types_letter[0]]
+        my_number_types = [atom_types_number[0],atom_types_number[0]]
     elif number_of_monomers == 2:
         my_mon = [mon_id_sorted[0], mon_id_sorted[1]]
+        my_letter_types = [atom_types_letter[0],atom_types_letter[1]]
+        my_number_types = [atom_types_number[0],atom_types_number[1]]
     
     # First long range dispersion
-    my_c6_lr_text = []
-    for i in range(number_of_monomers):
-        my_c6_lr_text.append("    } else if (mon_id == \"{}\") {\n".format(mon_ids[0]))
-        my_c6_lr_text[-1] += "        for (size_t nv = 0; nv < n_mon; nv++) { \n"
-        for j in range(len(atom_types_letter[i])):
-            c6index = len(atom_types_number[i])*atom_types_number[i][j] + atom_types_number[i][j]
+    if number_of_monomers == 1:
+        my_c6_lr_text = "    }} else if (mon_id == \"{}\") {{\n".format(mon_ids[0])
+        my_c6_lr_text += "        for (size_t nv = 0; nv < n_mon; nv++) {{ \n"
+        for j in range(len(atom_types_letter[0])):
+            c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j] 
             my_c6_long_range = C6[c6index]
-            my_c6_lr_text[-1] += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[i][j])
+            my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
 
 
     if number_of_monomers < 3:
+        if my_mon[0][0] == my_mon[1][0]:
+            my_mon[1][0] += 1
         # Dispersion
         ids = []
         for i in range(len(my_mon)):
             ids.append("m" + str(i+1) + " == \"" + my_mon[i][1] + "\"")
-        my_dispersion_text = "    } else if (" + ids.join(" and ") + ") {\n"
+        my_dispersion_text = "    } else if (" + " and ".join(ids) + ") {\n"
     
-        my_dispersion_text += "        // Define number of atoms in each mon"
-        my_dispersion_text += "        nat1 = {}".format(number_of_atoms[my_mon[0][0]])
-        my_dispersion_text += "        nat2 = {}".format(number_of_atoms[my_mon[1][0]])
+        for i in range(len(my_number_types)):
+            for j in range(len(my_number_types[my_mon[i][0]])):
+                my_dispersion_text += "        types{}.push_back({});\n".format(my_mon[i][0] + 1, my_number_types[my_mon[i][0]][j])
+            my_dispersion_text += "\n"
 
+        number_of_types_2 = 0
+        if my_mon[0][0] > my_mon[1][0]:
+            number_of_types_2 = max(my_number_types[my_mon[0][0]])
+        else:
+            number_of_types_2 = max(my_number_types[my_mon[1][0]])
 
-        my_dispersion_text += "        // Fill in (in order) the C6 and d6 coefficients"
+        my_dispersion_text += "        nt2 = {};\n\n".format(number_of_types_2 + 1)
+
+        my_dispersion_text += "        // Fill in (in order) the C6 and d6 coefficients\n"
     
         c6_units = "// kcal/mol * A^(-6) "
         d6_units = "// A^(-1)"
@@ -385,12 +392,13 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
         c6_text = []
         d6_text = []
     
-        for i in range(len(atom_types_letter[my_mon[0][0]])):
-            for j in range(len(atom_types_letter[my_mon[1][0]])):
-                c6index = len(atom_types_number[my_mon[1][0]])*atom_types_number[my_mon[0][0]] + atom_types_number[my_mon[1][0]]
-                
-                c6_text.append("        C6.push_back(" + C6[c6index] + ");  " + c6_units + " " + atom_types_letter[i] + "--" + atom_types_letter[j] + "\n")
-                d6_text.append("        d6.push_back(" + d6[c6index] + ");  " + d6_units + " " + atom_types_letter[my_mon[0][0]][i] + "--" + atom_types_letter[my_mon[0][0]][j] + "\n")
+        for i in range(max(my_number_types[my_mon[0][0]]) + 1):
+            for j in range(max(my_number_types[my_mon[1][0]]) + 1):
+                c6index = max(my_number_types[my_mon[1][0]])*i + j
+                let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
+                let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
+                c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")
+                d6_text.append("        d6.push_back(" + str(d6[c6index]) + ");  " + d6_units + " " + let1 + "--" + let2 + "\n")
 
         for i in range(len(c6_text)):
             my_dispersion_text += c6_text[i]
@@ -402,14 +410,23 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
         ids = []
         for i in range(len(my_mon)):
             ids.append("m" + str(i+1) + " == \"" + my_mon[i][1] + "\"")
-        my_buckingham_text = "    } else if (" + ids.join(" and ") + ") {\n"
+        my_buckingham_text = "    } else if (" + " and ".join(ids) + ") {\n"
 
-        my_buckingham_text += "        // Define number of atoms in each mon"
-        my_buckingham_text += "        nat1 = {}".format(number_of_atoms[my_mon[0][0]])
-        my_buckingham_text += "        nat2 = {}".format(number_of_atoms[my_mon[1][0]])
+        for i in range(len(my_number_types)):
+            for j in range(len(my_number_types[my_mon[i][0]])):
+                my_buckingham_text += "        types{}.push_back({});\n".format(my_mon[i][0] + 1, my_number_types[my_mon[i][0]][j])
+            my_buckingham_text += "\n"
+
+        number_of_types_2 = 0
+        if my_mon[0][0] > my_mon[1][0]:
+            number_of_types_2 = max(my_number_types[my_mon[0][0]])
+        else:
+            number_of_types_2 = max(my_number_types[my_mon[1][0]])
+
+        my_buckingham_text += "        nt2 = {};\n\n".format(number_of_types_2 + 1)
 
 
-        my_buckingham_text += "        // Fill in (in order) the C6 and d6 coefficients"
+        my_buckingham_text += "        // Fill in (in order) the C6 and d6 coefficients\n"
 
         A_units = "// kcal/mol"
         b_units = "// A^(-1)"
@@ -418,12 +435,13 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
         b_text = []
 
         shift = 0;
-        for i in range(len(atom_types_letter[my_mon[0][0]])):
-            for j in range(len(atom_types_letter[my_mon[1][0]])):
-                c6index = len(atom_types_number[my_mon[1][0]])*atom_types_number[my_mon[0][0]] + atom_types_number[my_mon[1][0]]
-
-                A_text.append("        a.push_back(" + A_buck[c6index] + ");  " + A_units + " " + atom_types_letter[i] + "--" + atom_types_letter[j] + "\n")
-                b_text.append("        b.push_back(" + b_buck[c6index] + ");  " + b_units + " " + atom_types_letter[my_mon[0][0]][i] + "--" + atom_types_letter[my_mon[0][0]][j] + "\n")
+        for i in range(max(my_number_types[my_mon[0][0]]) + 1):
+            for j in range(max(my_number_types[my_mon[1][0]]) + 1):
+                c6index = max(my_number_types[my_mon[1][0]])*my_number_types[my_mon[0][0]][i] + my_number_types[my_mon[1][0]][j]
+                let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
+                let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
+                A_text.append("        a.push_back(" + str(A_buck[c6index]) + ");  " + A_units + " " + let1 + "--" + let2 + "\n")
+                b_text.append("        b.push_back(" + str(b_buck[c6index]) + ");  " + b_units + " " + let1 + "--" + let2 + "\n")
 
         for i in range(len(A_text)):
             my_buckingham_text += A_text[i]
@@ -432,10 +450,59 @@ def generate_software_files(settings, config_file, mon_ids, poly_order, molecule
             my_buckingham_text += b_text[i]
 
 
-    # Section LONG_RANGE_C6
-    
+    # Write the C++ code in a file
+    fcpp = open(sofdir + "/MBX_cpp_code.txt", 'w')
 
+    # Print constructor information
+    fcpp.write("// SECTION CONSTRUCTOR\n")
+    fcpp.write("// " + holdercpp + "\n")
+    print(my_constructor_text)
 
+    fcpp.write("\n\n\n// SECTION SITES\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_monomer_sites_text)
+
+    fcpp.write("\n\n\n// SECTION CHARGES\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_monomer_charges_text)
+
+    fcpp.write("\n\n\n// SECTION POLFACS\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_monomer_polfacs_text)
+
+    fcpp.write("\n\n\n// SECTION POLS\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_monomer_pols_text)
+
+    fcpp.write("\n\n\n// SECTION EXCLUDED\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_monomer_excluded_text)
+
+    fcpp.write("\n\n\n SECTION INCLUDE{}B\n".format(number_of_monomers))
+    fcpp.write("src/potential/{0}b/energy{0}b.h\n".format(number_of_monomers))
+    print(my_potential_include)
+
+    fcpp.write("\n\n\n SECTION {}B_NO_GRADIENT\n".format(number_of_monomers))
+    fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
+    print(my_nb_conditional_nograd)
+
+    fcpp.write("\n\n\n SECTION {}B_GRADIENT\n".format(number_of_monomers))
+    fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
+    print(my_nb_conditional_grad)
+
+    fcpp.write("\n\n\n SECTION C6_LONG_RANGE\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_c6_lr_text)
+
+    fcpp.write("\n\n\n SECTION DISPERSION\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_dispersion_text)
+
+    fcpp.write("\n\n\n SECTION SITES\n")
+    fcpp.write("src/bblock/sys_tools.h\n")
+    print(my_buckingham_text)
+
+    fcpp.close()
 
 
 

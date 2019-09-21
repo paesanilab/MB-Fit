@@ -30,7 +30,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                     Default: False
             geometric           - If True, then use a geometric distribution over temp and A.
                     Default: False
-            temperature         - If specified, use a special temperature progression to generate configurations.
+            temperature         - If specified, generate configurations at this constant temperature.
             classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
                     distribution. QM distributions generate a wider distribution over energy.
                     Default: True

@@ -128,6 +128,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
     my_constructor_text += " and ".join(ids) + ") {\n"
 
+    my_constructor_text += "        coefficients = std::vector<double> {\n"
+
     ## Open file that contains the code to add
     #cppout = open("software_code.txt",'w')
 
@@ -138,7 +140,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     for c in polycoef:
         my_constructor_text += c
 
-    c += "\n"
+    c += "\n\n"
     
     for p in constants:
         my_constructor_text += p
@@ -152,9 +154,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     if number_of_monomers == 1:
         print("Getting monomer properties...")
     # Write code that needs to be added in the SITES section of the code
-    #cppout.write("=====>> SECTION SITES <<=====\n")
-    #cppout.write("File: src/bblock/sys_tools.cpp\n")
-
         my_monomer_sites_text = ""
         my_monomer_sites_text += """
         }} else if (mon[i] == "{}") {{
@@ -164,9 +163,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
     
     # Write code that needs to be added in the CHARGES section of the code
-    #cppout.write("=====>> SECTION CHARGES <<=====\n")
-    #cppout.write("File: src/bblock/sys_tools.cpp\n")
-
         my_monomer_charges_text = ""
         my_monomer_charges_text += """
         }} else if (mon_id == "{}") {{
@@ -179,9 +175,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
 
     # Write code that needs to be added in the POLFACS section of the code
-    #cppout.write("=====>> SECTION POLFACS <<=====\n")
-    #cppout.write("File: src/bblock/sys_tools.cpp\n")
-
         my_monomer_polfacs_text = ""
         my_monomer_polfacs_text += """
         }} else if (mon_id == "{}") {{
@@ -194,9 +187,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
 
     # Write code that needs to be added in the POLS section of the code
-    #cppout.write("=====>> SECTION POLS <<=====\n")
-    #cppout.write("File: src/bblock/sys_tools.cpp\n")
-
         my_monomer_pols_text = ""
         my_monomer_pols_text += """
         }} else if (mon_id == "{}") {{
@@ -209,9 +199,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
 
     # Write code that needs to be added in excluded pair section
-    #cppout.write("=====>> SECTION EXCLUDED <<=====\n")
-    #cppout.write("File: src/bblock/sys_tools.cpp\n")
-
         my_monomer_excluded_text = ""
         my_monomer_excluded_text += """
         if (mon == "{}") {{
@@ -233,141 +220,130 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
         my_monomer_excluded_text += "        }\n"
 
-    # Write code that needs to be added in the ONEBODY_NOGRD section of the code
-    #cppout.write("=====>> SECTION ONEBODY_NOGRD <<=====\n")
-    #cppout.write("File: src/potential/1b/energy1b.cpp\n")
+    if not ttm_only:
+        # Write code that needs to be added in the ONEBODY_NOGRD section of the code
+        print("Getting energy calls...")
+        system_name = monomers[0]
+        for i in range(1,number_of_monomers):
+            system_name += "_" + monomers[i]
 
-    print("Getting energy calls...")
-    system_name = monomers[0]
-    for i in range(1,number_of_monomers):
-        system_name += "_" + monomers[i]
+        ids = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("mon" + str(i+1) + " == \"" + mon_id_sorted[i][1] + "\"")
 
-    ids = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("mon" + str(i+1) + " == \"" + mon_id_sorted[i][1] + "\"")
+        my_nb_conditional_nograd = "    } else if (" + " and ".join(ids) + ") {\n"
 
-    my_nb_conditional_nograd = "    } else if (" + " and ".join(ids) + ") {\n"
+        my_nb_conditional_nograd += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
 
-    my_nb_conditional_nograd += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
+        ids = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("mon" + str(mon_id_sorted[i][0] + 1))
 
-    ids = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("mon" + str(mon_id_sorted[i][0] + 1))
+        my_nb_conditional_nograd += ", ".join(ids) + ");\n"
+        
+        ids = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
+        my_nb_conditional_nograd += "        energies = pot.eval(" + ", ".join(ids) + ", nm);\n"
 
-    my_nb_conditional_nograd += ", ".join(ids) + ");\n"
-    
-    ids = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
-    my_nb_conditional_nograd += "        energies = pot.eval(" + ", ".join(ids) + ", nm);\n"
+        # Write code that needs to be added in the ONEBODY_GRD section of the code
+        #cppout.write("=====>> SECTION ONEBODY_GRD <<=====\n")
+        #cppout.write("File: src/potential/1b/energy1b.cpp\n")
 
-    # Write code that needs to be added in the ONEBODY_GRD section of the code
-    #cppout.write("=====>> SECTION ONEBODY_GRD <<=====\n")
-    #cppout.write("File: src/potential/1b/energy1b.cpp\n")
+        ids = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("mon" + str(i+1) + " == \"" + mon_id_sorted[i][1] + "\"")
 
-    ids = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("mon" + str(i+1) + " == \"" + mon_id_sorted[i][1] + "\"")
+        my_nb_conditional_grad = "    } else if (" + " and ".join(ids) + ") {\n"
 
-    my_nb_conditional_grad = "    } else if (" + " and ".join(ids) + ") {\n"
+        my_nb_conditional_grad += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
 
-    my_nb_conditional_grad += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
+        ids = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("mon" + str(mon_id_sorted[i][0] + 1))
 
-    ids = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("mon" + str(mon_id_sorted[i][0] + 1))
+        my_nb_conditional_grad += ", ".join(ids) + ");\n"
+        
+        ids = []
+        idgs = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
+            idgs.append("grad" + str(mon_id_sorted[i][0] + 1) + ".data()")
+        my_nb_conditional_grad += "        energies = pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
 
-    my_nb_conditional_grad += ", ".join(ids) + ");\n"
-    
-    ids = []
-    idgs = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
-        idgs.append("grad" + str(mon_id_sorted[i][0] + 1) + ".data()")
-    my_nb_conditional_grad += "        energies = pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + " nm);\n"
+        # Write code that needs to be added in the INCLUDE1B section of the code
+        #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
+        #cppout.write("File: src/potential/1b/energy1b.h\n")
 
-    # Write code that needs to be added in the INCLUDE1B section of the code
-    #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
-    #cppout.write("File: src/potential/1b/energy1b.h\n")
+        my_potential_include = "#include \"potential/" + str(number_of_monomers) + "b/mbnrg_{}b_{}_deg{}_{}.h\"\n".format(number_of_monomers,system_name,degree,version)
 
-    my_potential_include = "#include \"potential/" + str(number_of_monomers) + "b/mbnrg_{0}_deg{1}_{2}.h\"\n"
+        # Folder where everything related to MBX is gonna go
+        sofdir = workdir + "/MBX_files"
 
+        # create folder with the files for the software
+        os.system("mkdir -p " + sofdir)
 
+        # define names for files
+        headerf = "poly_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
+        cppgrad = "poly_{}b_{}_deg{}_grad_{}.cpp".format(number_of_monomers,system_name,degree,version)
+        cppnograd = "poly_{}b_{}_deg{}_nograd_{}.cpp".format(number_of_monomers,system_name,degree,version)
+        holderh = "mbnrg_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
+        holdercpp = "mbnrg_{}b_{}_deg{}_{}.cpp".format(number_of_monomers,system_name,degree,version)
 
-
-    print("Copying files to MBX_files folder...")
-
-    # Folder where everything related to MBX is gonna go
-    sofdir = workdir + "/MBX_files"
-
-    # create folder with the files for the software
-    os.system("mkdir -p " + sofdir)
-
-    # define names for files
-    headerf = "poly_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
-    cppgrad = "poly_{}b_{}_deg{}_grad_{}.cpp".format(number_of_monomers,system_name,degree,version)
-    cppnograd = "poly_{}b_{}_deg{}_nograd_{}.cpp".format(number_of_monomers,system_name,degree,version)
-    holderh = "mbnrg_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
-    holdercpp = "mbnrg_{}b_{}_deg{}_{}.cpp".format(number_of_monomers,system_name,degree,version)
-
-    # Move them
-    os.system("cp " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + holdercpp + " " + sofdir)
+        # Move them
+        os.system("mv " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + holdercpp + " " + sofdir)
 
 
 
 
 
     # Write the part of the code that needs to be put in dispersion
-    #cppout.write("=====>> SECTION DISPERSION <<=====\n")
-    #cppout.write("File: src/potential/dispersion2b.cpp\n")
-
-    # atom_type_X will be like [0,0,0,1,1] for A3B2
-    # atom_lable_X will be ['A','B'] for A3B2
-
-    # Get the atomlist
-    atom_types = []
-    for fragment in monomers:
-        atom_types.append(get_atom_types(fragment))
-
-    # Get the list with actual types
-    atom_types_number = []
-    atom_types_letter = []
-    for fragment in atom_types:
-        atom_types_number.append([])
-        atom_types_letter.append([])
-        count = 0
-        for i in range(1,len(fragment),2):
-            for j in range(fragment[i]):
-                atom_types_number[-1].append(count)
-                atom_types_letter[-1].append(fragment[i-1])
-            count += 1
-     
-    if number_of_monomers == 1:
-        my_mon = [list(mon_id_sorted[0]), list(mon_id_sorted[0])]
-        my_letter_types = [atom_types_letter[0],atom_types_letter[0]]
-        my_number_types = [atom_types_number[0],atom_types_number[0]]
-    elif number_of_monomers == 2:
-        my_mon = [mon_id_sorted[0], mon_id_sorted[1]]
-        my_letter_types = [atom_types_letter[0],atom_types_letter[1]]
-        my_number_types = [atom_types_number[0],atom_types_number[1]]
-    
-    # First long range dispersion
-    if number_of_monomers == 1:
-        my_c6_lr_text = "    }} else if (mon_id == \"{}\") {{\n".format(mon_ids[0])
-        my_c6_lr_text += "        for (size_t nv = 0; nv < n_mon; nv++) {{ \n"
-        for j in range(len(atom_types_letter[0])):
-            c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j] 
-            my_c6_long_range = C6[c6index]
-            my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
-
 
     if number_of_monomers < 3:
+    # Get the atomlist
+        atom_types = []
+        for fragment in monomers:
+            atom_types.append(get_atom_types(fragment))
+
+        # Get the list with actual types
+        atom_types_number = []
+        atom_types_letter = []
+        for fragment in atom_types:
+            atom_types_number.append([])
+            atom_types_letter.append([])
+            count = 0
+            for i in range(1,len(fragment),2):
+                for j in range(fragment[i]):
+                    atom_types_number[-1].append(count)
+                    atom_types_letter[-1].append(fragment[i-1])
+                count += 1
+         
+        if number_of_monomers == 1:
+            my_mon = [list(mon_id_sorted[0]), list(mon_id_sorted[0])]
+            my_letter_types = [atom_types_letter[0],atom_types_letter[0]]
+            my_number_types = [atom_types_number[0],atom_types_number[0]]
+        elif number_of_monomers == 2:
+            my_mon = [mon_id_sorted[0], mon_id_sorted[1]]
+            my_letter_types = [atom_types_letter[0],atom_types_letter[1]]
+            my_number_types = [atom_types_number[0],atom_types_number[1]]
+        
+        # First long range dispersion
+        if number_of_monomers == 1:
+            my_c6_lr_text = "    }} else if (mon_id == \"{}\") {{\n".format(mon_ids[0])
+            my_c6_lr_text += "        for (size_t nv = 0; nv < n_mon; nv++) { \n"
+            for j in range(len(atom_types_letter[0])):
+                c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j] 
+                my_c6_long_range = C6[c6index]
+                my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
+            my_c6_lr_text += "        }\n"
+
+
         if my_mon[0][0] == my_mon[1][0]:
             my_mon[1][0] += 1
         # Dispersion
         ids = []
         for i in range(len(my_mon)):
-            ids.append("m" + str(i+1) + " == \"" + my_mon[i][1] + "\"")
+            ids.append("mon_id" + str(i+1) + " == \"" + my_mon[i][1] + "\"")
         my_dispersion_text = "    } else if (" + " and ".join(ids) + ") {\n"
     
         for i in range(len(my_number_types)):
@@ -408,7 +384,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         # Repulsion
         ids = []
         for i in range(len(my_mon)):
-            ids.append("m" + str(i+1) + " == \"" + my_mon[i][1] + "\"")
+            ids.append("mon_id" + str(i+1) + " == \"" + my_mon[i][1] + "\"")
         my_buckingham_text = "    } else if (" + " and ".join(ids) + ") {\n"
 
         for i in range(len(my_number_types)):
@@ -449,59 +425,401 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             my_buckingham_text += b_text[i]
 
 
+    print("Writing files to MBX_files folder...")
+
     # Write the C++ code in a file
     fcpp = open(sofdir + "/MBX_cpp_code.txt", 'w')
 
-    # Print constructor information
-    fcpp.write("// SECTION CONSTRUCTOR\n")
-    fcpp.write("// " + holdercpp + "\n")
-    fcpp.write(my_constructor_text)
+    
+    if not ttm_only:
+        fcpp.write("// SECTION CONSTRUCTOR\n")
+        fcpp.write("// " + holdercpp + "\n")
+        fcpp.write(my_constructor_text)
 
-    fcpp.write("\n\n\n// SECTION SITES\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_monomer_sites_text)
+        fcpp.write("\n\n\n SECTION INCLUDE{}B\n".format(number_of_monomers))
+        fcpp.write("src/potential/{0}b/energy{0}b.h\n".format(number_of_monomers))
+        fcpp.write(my_potential_include)
 
-    fcpp.write("\n\n\n// SECTION CHARGES\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_monomer_charges_text)
+        fcpp.write("\n\n\n SECTION {}B_NO_GRADIENT\n".format(number_of_monomers))
+        fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
+        fcpp.write(my_nb_conditional_nograd)
 
-    fcpp.write("\n\n\n// SECTION POLFACS\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_monomer_polfacs_text)
+        fcpp.write("\n\n\n SECTION {}B_GRADIENT\n".format(number_of_monomers))
+        fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
+        fcpp.write(my_nb_conditional_grad)
 
-    fcpp.write("\n\n\n// SECTION POLS\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_monomer_pols_text)
+        # TODO add CMakeLists files
 
-    fcpp.write("\n\n\n// SECTION EXCLUDED\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_monomer_excluded_text)
+    if number_of_monomers == 1:
+        fcpp.write("\n\n\n// SECTION SITES\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_monomer_sites_text)
 
-    fcpp.write("\n\n\n SECTION INCLUDE{}B\n".format(number_of_monomers))
-    fcpp.write("src/potential/{0}b/energy{0}b.h\n".format(number_of_monomers))
-    fcpp.write(my_potential_include)
+        fcpp.write("\n\n\n// SECTION CHARGES\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_monomer_charges_text)
 
-    fcpp.write("\n\n\n SECTION {}B_NO_GRADIENT\n".format(number_of_monomers))
-    fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
-    fcpp.write(my_nb_conditional_nograd)
+        fcpp.write("\n\n\n// SECTION POLFACS\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_monomer_polfacs_text)
 
-    fcpp.write("\n\n\n SECTION {}B_GRADIENT\n".format(number_of_monomers))
-    fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
-    fcpp.write(my_nb_conditional_grad)
+        fcpp.write("\n\n\n// SECTION POLS\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_monomer_pols_text)
 
-    fcpp.write("\n\n\n SECTION C6_LONG_RANGE\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_c6_lr_text)
+        fcpp.write("\n\n\n// SECTION EXCLUDED\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_monomer_excluded_text)
 
-    fcpp.write("\n\n\n SECTION DISPERSION\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_dispersion_text)
+        fcpp.write("\n\n\n SECTION C6_LONG_RANGE\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_c6_lr_text)
 
-    fcpp.write("\n\n\n SECTION BUCKINGHAM\n")
-    fcpp.write("src/bblock/sys_tools.h\n")
-    fcpp.write(my_buckingham_text)
+    if number_of_monomers < 3:
+        fcpp.write("\n\n\n SECTION DISPERSION\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_dispersion_text)
+
+        fcpp.write("\n\n\n SECTION BUCKINGHAM\n")
+        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write(my_buckingham_text)
 
     fcpp.close()
+
+    # Now we add the files to MBX if indicated
+    if MBX_HOME is not None:
+        # Start with monomer properties
+        if number_of_monomers == 1:
+            this_mon = mon_ids[0]
+            these_monomers = [mon_ids[0],mon_ids[0]]
+            with open(MBX_HOME + "/src/bblock/sys_tools.cpp", 'r') as systools:
+                lines = systools.readlines()
+            # Sites
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION SITES" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION SITES" in lines[i]:
+                        if "\"" + this_mon + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_monomer_sites_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a monomer {} defined in SECTION SITES. Won't replace anything.".format(this_mon))
+                    break
+                else:
+                    i += 1
+            # Charges
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION CHARGES" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION CHARGES" in lines[i]:
+                        if "\"" + this_mon + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_monomer_charges_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a monomer {} defined in SECTION CHARGES. Won't replace anything.".format(this_mon))
+                    break
+                else:
+                    i += 1
+            # Polarizability
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION POLS" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION POLS" in lines[i]:
+                        if "\"" + this_mon + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_monomer_pols_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a monomer {} defined in SECTION POLS. Won't replace anything.".format(this_mon))
+                    break
+                else:
+                    i += 1
+            # Polarizability Factor
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION POLFACS" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION POLFACS" in lines[i]:
+                        if "\"" + this_mon + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_monomer_polfacs_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a monomer {} defined in SECTION POLFACS. Won't replace anything.".format(this_mon))
+                    break
+                else:
+                    i += 1
+            # Long Range C6
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION C6_LONG_RANGE" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION C6_LONG_RANGE" in lines[i]:
+                        if "\"" + this_mon + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_c6_lr_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a monomer {} defined in SECTION C6_LONG_RANGE. Won't replace anything.".format(this_mon))
+                    break
+                else:
+                    i += 1
+            # Excluded pairs
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION EXCLUDED" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION EXCLUDED" in lines[i]:
+                        if "\"" + this_mon + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_monomer_excluded_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a monomer {} defined in SECTION EXCLUDED. Won't replace anything.".format(this_mon))
+                    break
+                else:
+                    i += 1
+            with open(MBX_HOME + "/src/bblock/sys_tools.cpp", 'w') as systools:
+                for line in lines:
+                    systools.write(line)
+
+        # Dispersion
+        if number_of_monomers < 3:
+            with open(MBX_HOME + "/src/potential/dispersion/disptools.cpp", 'r') as disptools:
+                lines = disptools.readlines()
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION DISPERSION" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION DISPERSION" in lines[i]:
+                        if "\"" + these_monomers[0] + "\"" in lines[i] and "\"" + these_monomers[1] + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_dispersion_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a dimer {} -- {} defined in SECTION DISPERSION. Won't replace anything.".format(these_monomers[0],these_monomers[1]))
+                    break
+                else:
+                    i += 1
+
+            with open(MBX_HOME + "/src/potential/dispersion/disptools.cpp", 'w') as disptools:
+                for line in lines:
+                    disptools.write(line)
+
+            # Buckingham
+            with open(MBX_HOME + "/src/potential/buckingham/bucktools.cpp", 'r') as bucktools:
+                lines = bucktools.readlines()
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION BUCKINGHAM" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION BUCKINGHAM" in lines[i]:
+                        if "\"" + these_monomers[0] + "\"" in lines[i] and "\"" + these_monomers[1] + "\"" in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_buckingham_text)
+                    else:
+                        print("***WARNING*** Seems like there is already a dimer {} -- {} defined in SECTION BUCKINGHAM. Won't replace anything.".format(these_monomers[0],these_monomers[1]))
+                    break
+                else:
+                    i += 1
+
+            with open(MBX_HOME + "/src/potential/buckingham/bucktools.cpp", 'w') as bucktools:
+                for line in lines:
+                    bucktools.write(line)
+
+
+        if not ttm_only:
+            # Include section
+            with open(MBX_HOME + "/src/potential/{0}b/energy{0}b.h".format(number_of_monomers), 'r') as mbnrg:
+                lines = mbnrg.readlines()
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION INCLUDE{}B".format(number_of_monomers) in lines[i]:
+                    mon_there = False
+                    while not "END SECTION INCLUDE{}B".format(number_of_monomers) in lines[i]:
+                        if holderh in lines[i]:
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_potential_include)
+                    else:
+                        print("***WARNING*** Seems like there is already a {} file included in SECTION INCLUDE{}B. Won't replace anything.".format(holderh, number_of_monomers))
+                    break
+                else:
+                    i += 1
+
+            with open(MBX_HOME + "/src/potential/{0}b/energy{0}b.h".format(number_of_monomers), 'w') as mbnrg:
+                for line in lines:
+                    mbnrg.write(line)
+
+            # Energy with no gradients section
+            with open(MBX_HOME + "/src/potential/{0}b/energy{0}b.cpp".format(number_of_monomers), 'r') as mbnrg:
+                lines = mbnrg.readlines()
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION {}B_NO_GRADIENT".format(number_of_monomers) in lines[i]:
+                    mon_there = False
+                    while not "END SECTION {}B_NO_GRADIENT".format(number_of_monomers) in lines[i]:
+                        if all("\"" + x + "\"" in lines[i] for x in mon_ids):
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_nb_conditional_nograd)
+                    else:
+                        nmer = " -- ".join(mon_ids)
+                        print("***WARNING*** Seems like there is already a n-mer {} defined in SECTION {}B_NO_GRADIENT. Won't replace anything.".format(nmer, number_of_monomers))
+                    break
+                else:
+                    i += 1
+
+            # Energy with gradients section
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION {}B_GRADIENT".format(number_of_monomers) in lines[i]:
+                    mon_there = False
+                    while not "END SECTION {}B_GRADIENT".format(number_of_monomers) in lines[i]:
+                        if all("\"" + x + "\"" in lines[i] for x in mon_ids):
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_nb_conditional_grad)
+                    else:
+                        nmer = " -- ".join(mon_ids)
+                        print("***WARNING*** Seems like there is already a n-mer {} defined in SECTION {}B_GRADIENT. Won't replace anything.".format(nmer, number_of_monomers))
+                    break
+                else:
+                    i += 1
+
+            with open(MBX_HOME + "/src/potential/{0}b/energy{0}b.cpp".format(number_of_monomers), 'w') as mbnrg:
+                for line in lines:
+                    mbnrg.write(line)
+
+            # Update constructor
+            mbnrg_exists = os.path.exists(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + holdercpp)
+            # If the holder exists, we need to add the constructor info there
+            # If not, we will update the one in MBX_files
+            if mbnrg_exists:
+                # In this case, let's make sure that the polynomial holders and 
+                # polynomials are actually the same
+                # Compare polynomial with grads
+                we_are_good = filecmp.cmp(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + cppgrad, sofdir + "/" + cppgrad)
+                # Compare polynomial with no grads
+                we_are_good = we_are_good and filecmp.cmp(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + cppnograd, sofdir + "/" + cppnograd)
+                # Compare polynomial header
+                we_are_good = we_are_good and filecmp.cmp(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + headerf, sofdir + "/" + headerf)
+                # poly holder header
+                we_are_good = we_are_good and filecmp.cmp(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + holderh, sofdir + "/" + holderh)
+                if not we_are_good:
+                    print("***WARNING*** Although the file {} already exists in {}/src/potential/{}b/, the polynomial files do not seem to match with the ones generated here. Parameters will be added in {}, but nothing will be copied to MBX for safety. Do that manually.".format(holdercpp, MBX_HOME, number_of_monomers, sofdir))
+            else:
+                we_are_good = True
+
+            copy_holder = False
+            if mbnrg_exists and we_are_good:
+                mbnrg_file = MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + holdercpp
+            else:
+                mbnrg_file = sofdir + "/" + holdercpp
+                copy_holder = True
+            with open(mbnrg_file, 'r') as mbnrg:
+                lines = mbnrg.readlines()
+            i = 0
+            while i < len(lines):
+                if "BEGIN SECTION CONSTRUCTOR" in lines[i]:
+                    mon_there = False
+                    while not "END SECTION CONSTRUCTOR" in lines[i]:
+                        if all("\"" + x + "\"" in lines[i] for x in mon_ids):
+                            mon_there = True
+                            break
+                        i += 1
+                    if not mon_there:
+                        lines.insert(i,my_constructor_text)
+                    else:
+                        nmer = " -- ".join(mon_ids)
+                        print("***WARNING*** Seems like there is already a n-mer {} defined in SECTION CONSTRUCTOR. Won't replace anything.".format(nmer))
+                    break
+                else:
+                    i += 1
+
+            with open(mbnrg_file, 'w') as mbnrg:
+                for line in lines:
+                    mbnrg.write(line)
+
+            if we_are_good:
+                os.system("cd " + sofdir + " ; cp " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "; cd ../ ")
+
+                # Now update CMake
+                with open(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "CMakeLists.txt", 'r') as cmakelists:
+                    lines = cmakelists.readlines()
+                i = 0
+                while i < len(lines):
+                    if "BEGIN SECTION CMAKELISTS" in lines[i]:
+                        holder_there = False
+                        polygrad_there = False
+                        polynograd_there = False
+                        while not "END SECTION CMAKELISTS" in lines[i]:
+                            if cppgrad in lines[i]:
+                                polygrad_there = True
+                            if cppnograd in lines[i]:
+                                polynograd_there = True
+                            if holdercpp in lines[i]:
+                                holder_there =  True
+                            something_there = holder_there or polynograd_there or polygrad_there
+                            if something_there:
+                                break
+                            i += 1
+                        if not something_there:
+                            lines.insert(i,"                 " + cppgrad + "\n")
+                            lines.insert(i,"                 " + cppnograd + "\n")
+                            lines.insert(i,"                 " + holdercpp + "\n")
+                        else:
+                            nmer = " or ".join([cppgrad, cppnograd, holdercpp])
+                            print("***WARNING*** Seems like there are already some of these files ({}) in CMakeLists... Won't replace anything.".format(nmer))
+                        break
+                    else:
+                        i += 1
+
+                with open(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "CMakeLists.txt", 'w') as cmakelists:
+                    for line in lines:
+                        cmakelists.write(line)
+
+
+                if copy_holder:
+                    os.system("cp " + sofdir + "/" + holdercpp + " " + MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers))
+
+
+
+
+
+
+
+
+
+
 
 
 

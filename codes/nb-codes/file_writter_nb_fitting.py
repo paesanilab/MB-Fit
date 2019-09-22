@@ -2667,10 +2667,11 @@ namespace ''' + namespace + """ {
 
 """ + struct_name + "::" + struct_name + "(" + arg_constr + """) {
 
-    // =====>> SECTION CONSTRUCTOR <<=====
+    // =====>> BEGIN SECTION CONSTRUCTOR <<=====
     // =>> PASTE RIGHT BELOW THIS LINE <==
 
 
+    // =====>> END SECTION CONSTRUCTOR <<=====
 }
 
 //----------------------------------------------------------------------------//

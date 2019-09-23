@@ -186,7 +186,7 @@ def get_frequencies_log_path(log_path, molecule, method, basis, suffix):
 def get_qchem_input_string(molecule, fragment_indicies, model, cp, settings):
     method, basis = model.split("/")
     # initialize qchem input string
-    qchem_input = "";
+    qchem_input = ""
 
     # molecule format
     qchem_input += "$molecule\n"
@@ -215,44 +215,3 @@ def get_qchem_input_string(molecule, fragment_indicies, model, cp, settings):
     qchem_input += "$end"
 
     return qchem_input
-
-def write_qchem_input(settings, qchem_in_path, jobtype, template_input = ""):
-    with open(qchem_in_path, "w") as qchem_in_file:
-
-        # indicate to qchem that the molecule begins here
-        qchem_in_file.write("$molecule\n")
-
-        # tells qchem the charge and spin multiplicity of this molecule
-        qchem_in_file.write("{} {}\n".format(molecule.get_charge(), molecule.get_spin_multiplicity()))
-        
-        
-        # add molecule's xyz to qchem input
-        qchem_in_file.write(molecule.to_xyz(fragment_indicies, cp) + "\n")
-
-        # indicate to qchem that the molecule ends here
-        qchem_in_file.write("$end\n")
-
-        # indicate to qchem that settings start here
-        qchem_in_file.write("$rem\n")
-        
-
-        # indicate what type of calculation to run
-        qchem_in_file.write("jobtype {}\n".format(jobtype))
-
-        # indicate the method and basis to use in the calculation
-        qchem_in_file.write("method {}\n".format(model.split('/')[0]))
-        qchem_in_file.write("basis {}\n".format(model.split('/')[1]))
-
-        try:
-            # if the user whishes to specify ecp, then specify an ecp
-            qchem_in_file.write("ecp {}\n".format(settings.get("qchem", "ecp")))
-
-        except (ConfigMissingSectionError, ConfigMissingPropertyError):
-            # if the user did not specify ecp, then ommit it
-            pass
-
-        # if the user included a special input template with additional arguments, include it.
-        qchem_in_file.write(template_input)
-
-        # indicate to qchem that settings end here
-        qchem_in_file.write("$end")

@@ -672,7 +672,7 @@ class Database():
                 self.batch_size))
             training_set = self.cursor.fetchall()
 
-            for atom_coordinates, binding_energy, interaction_energy, deformation_energies in training_set:
+            for atom_coordinates, binding_energy, nb_energy, deformation_energies in training_set:
                 molecule = copy.deepcopy(empty_molecule)
 
                 for atom in molecule.get_atoms():
@@ -686,7 +686,7 @@ class Database():
                 deformation_energies = [deformation_energies[i] for i in energies_order[:len(deformation_energies)]]
 
                 yield molecule.get_reordered_copy(order, frag_orders,
-                                                  SMILES), binding_energy, interaction_energy, deformation_energies
+                                                  SMILES), binding_energy, nb_energy, deformation_energies
 
             batch_offset += self.batch_size
 

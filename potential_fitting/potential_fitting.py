@@ -198,7 +198,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     and restarted.
     
     Args:
-        settings_path       - Local path to the file containing all relevent settings information.
+        settings_path       - Local path to the file containing all relevant settings information.
         database_config_path - .ini file containing host, port, database, username, and password.
                     Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
@@ -213,6 +213,50 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
         calculation_count = sys.maxsize
 
     database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
+
+def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+    """
+    Makes a Job file for each energy that still needs to be calculated in this Database.
+
+    Args:
+        settings_path       - Local path to the file containing all relevant settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        client_name         - Name of the client that will perform these jobs
+        job_dir             - Local path to the directory to place the job files in.
+        tags                - Onlt  make jobs for calculations marked with at least one of these tags.
+        num_jobs            - The number of jobs to generate. Unlimted if None.
+
+    Returns:
+        None.
+    """
+
+    job_handler = database.get_job_handler(settings_path)
+
+    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
+
+def read_jobs(settings_path, database_config_path, job_dir):
+    """
+    Searches the given directory for completed job directories and enters
+    the results into the database.
+
+    Any directory that starts with job_ will be considered a completed job directory.
+    After data is entered into the database, these directories will be renamed from
+    job_* to job_*_done.
+
+    Args:
+        settings_path       - Local path to the file containing all relevant settings information.
+        database_config_path - .ini file containing host, port, database, username, and password.
+                    Make sure only you have access to this file or your password will be compromised!
+        job_dir             - Local path the the directory to search.
+
+    Returns:
+        None.
+    """
+
+    job_handler = database.get_job_handler(settings_path)
+
+    job_handler.read_all_jobs(database_config_path, job_dir)
 
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
         cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),
@@ -914,6 +958,28 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
 
 def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10, ttm = False):
+    """
+    Prepares fits to be run by creating directories with executable scripts in them.
+
+    Each directory will contain a run_fit.sh script, which when ran will run one fit.
+
+    The directories will appear in the directory with your other log files.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        fit_executable_path - Local path to the compiled fit executable.
+        training_set_path   - Local path to training set to use for all the fits.
+        DE                  - Low DE places more weight on low energy training set items. 
+                              Large DE places even weight on all training set items. Weights w_n are computed as
+                              w_n = (DE / (E_n - E_min + DE))**2
+        alpha               - Weight for the regularization parameter in the fits. Large alpha means coefficients will
+                be smaller. (Less likely for one or more coefficients to blow up.)
+        num_fits            - How many new directories with executables to make. Existing ones will not be changed.
+        ttm                 - True if these are ttm fits. False otherwise.
+
+    Returns:
+        None.
+    """
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
@@ -924,7 +990,7 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
     fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
     if not os.path.exists(fit_folder_prefix):
         os.mkdir(fit_folder_prefix)
-    
+
     # initialize indexes
     fit_index = 1
     count = 0
@@ -941,10 +1007,11 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
             # Link the training set to the fit folder
             system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), ".")
             # Create bash script that will run the fit
-            my_bash = open("run_fit.sh",'w')
-            my_bash.write("#!/bin/bash\n")
-            my_bash.write("\n{}/{} {} {} {} > fit.log 2> fit.err \n".format(workdir,fit_executable_path,training_set_path, DE, alpha))  
-            my_bash.close()
+            with open("run_fit.sh",'w') as my_bash:
+                my_bash.write("#!/bin/bash\n")
+                my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(os.path.join(workdir, fit_executable_path),
+                                                                         training_set_path, DE, alpha))
+
             system.call("chmod", "744", "run_fit.sh")
             fit_index += 1
             count += 1 
@@ -953,6 +1020,19 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
     os.chdir(workdir)
 
 def execute_fits(settings_path, ttm = False):
+    """
+    Looks for fit executables in fit directories in the logs directory and runs the fits.
+
+    Will ignore any fits that already have a log file - suggesting they have already been run.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        ttm                 - True if you want to run ttm fits, False otherwise.
+
+    Returns:
+        None.
+    """
+
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
@@ -979,6 +1059,22 @@ def execute_fits(settings_path, ttm = False):
     os.chdir(workdir)
     
 def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
+    """
+    Looks through all log files in all fit directories in the log path and finds the best fit.
+
+    The best_fit will end up inside a directory in the logs directory called "best_fit".
+
+    If any new fit is better than the current best fit, it will replace best_fit with the new
+    best one.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        ttm                 - True to look at ttm fits. False otherwise.
+        fitted_nc_path      - Generate a .nc file with the parameters for the best fit at this location.
+
+    Returns:
+        None.
+    """
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
@@ -998,16 +1094,26 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
         try:
             with open("fit.log",'r') as logfile:
                 log_lines = logfile.readlines()
+                try:
+                    converged = (log_lines[-10].split()[1] == "converged") or (log_lines[-15].split()[1] == "converged")
+                except IndexError:
+                    converged = False
                 full_rmsd = float(log_lines[-7].split()[2])
                 wfull_rmsd = float(log_lines[-6].split()[2])
                 max_error = float(log_lines[-5].split()[2])
                 low_rmsd = float(log_lines[-4].split()[2])
                 low_max_error = float(log_lines[-3].split()[2])
-                results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error])
-        except:
+
+                if not converged:
+                    print("Looks like the fit in " + fit + " didn't converge...")
+                    print("Maybe you want to rerun " + fit + " again.")
+                    results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, False])
+                else:
+                    results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, True])
+        except (FileNotFoundError, IndexError):
             print("Doesn't seem that the log file in " + fit + " is correct...")
             print("Maybe you want to rerun " + fit + " again.")
-            results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf')])
+            results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), False])
 
         os.chdir("../")
 
@@ -1017,32 +1123,48 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     # Get the best result
     best_fit = sorted_results[0][0]
     best_results = sorted_results[0]
+
+    print("Best fit is fit {}.".format(best_fit))
+
+    if not best_results[6]:
+        print("Fit with lowest RMSD did not converge, maybe run it again with more iterations?")
+        print("Still using that fit as the best one.")
     
     # Check if best fit folder exists.
     # If it does exist, check the output in best folder to ensure that the new best
     # fit is actually the best
     # If not, just store the best fit in there
     if not os.path.exists("best_fit"):
+        print("No previous best fit, so just storing the current best fit.")
         system.call("cp", "-r", best_fit, "best_fit")
     else:
         os.chdir("best_fit")
         with open("fit.log",'r') as logfile:
             log_lines = logfile.readlines()
+            try:
+                converged = (log_lines[-10].split()[1] == "converged") or (log_lines[-15].split()[1] == "converged")
+            except IndexError:
+                converged = False
             full_rmsd = float(log_lines[-7].split()[2])
             wfull_rmsd = float(log_lines[-6].split()[2])
             max_error = float(log_lines[-5].split()[2])
             low_rmsd = float(log_lines[-4].split()[2])
             low_max_error = float(log_lines[-3].split()[2])
-            previous_best = [fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error]
+            previous_best = [fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, converged]
         os.chdir("../")
 
-        if previous_best[2] <= sorted_results[0][2]:
-            print("Previous fit is better than any fit tested")
-            best_results = previous_best
-        else:
-            print("Replacing best_fit by {}".format(sorted_results[0][0]))
+        replace = previous_best[2] > best_results[2]
+
+        if replace:
+            print("New best fit is better than the old one.")
+            print("Replacing best_fit by {}.".format(sorted_results[0][0]))
             system.call("rm", "-rf", "best_fit")
             system.call("cp", "-r", sorted_results[0][0], "best_fit")
+        else:
+            print("New best fit is not better than the old one.")
+            print("Keeping the old best fit.".format(sorted_results[0][0]))
+            best_results = previous_best
+
 
     os.chdir("best_fit")
     nb = len(settings.get("molecule","names").split(","))
@@ -1055,6 +1177,18 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     os.chdir(workdir)
 
 def update_config_with_ttm(settings_path, config_path):
+    """
+    Updates a fit config.ini file with the A and d constants from the best ttm fit.
+
+    The best ttm fit values will be taken from the best_fit directory inside the logs directory.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_path         - Local path to the config file to update.
+
+    Returns:
+        None.
+    """
     config = SettingsReader(config_path) 
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()

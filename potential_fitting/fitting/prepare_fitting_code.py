@@ -93,7 +93,7 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     print("Executing python generator script")
     
     # Execute the python script that generates the 1b fit code    
-    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path)
+    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path + " " + poly_path)
 
     # restore settings
     os.system("mv " + config_path + ".tmp " + config_path)

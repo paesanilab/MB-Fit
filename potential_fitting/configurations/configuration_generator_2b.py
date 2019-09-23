@@ -24,7 +24,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
             settings_path       - Local path to '.ini' settings file with all relevant settings.
             min_distance        - The minimum distance between the centers of mass of the two monomers.
             max_distance        - The maximum distance between the centers of mass of the two monomers.
-            min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+            min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der Waals radii of two
                     atoms.
             progression         - If True, a smooth progression will be used over the chosen distribution. Otherwise,
                     random points on the distribution will be sampled.
@@ -80,7 +80,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
             None.
         """
 
-        # put both geoemtries in standard orientation if they are not already
+        # put both geometries in standard orientation if they are not already
         molecule1.move_to_center_of_mass()
         molecule2.move_to_center_of_mass()
         molecule1.rotate_on_principal_axes()

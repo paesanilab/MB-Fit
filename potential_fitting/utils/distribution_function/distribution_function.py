@@ -229,7 +229,7 @@ class PiecewiseDistributionFunction(DistributionFunction):
         self.functions = functions
         self.cutoffs = cutoffs
 
-        if not len(functions) + 1 != len(cutoffs):
+        if len(functions) != len(cutoffs) + 1:
             raise InconsistentValueError("len(functions)", "len(cutoffs)", len(functions), len(cutoffs),
                                          "there should be one more function that cutoff.")
 

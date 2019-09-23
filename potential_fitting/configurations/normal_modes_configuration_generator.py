@@ -89,7 +89,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         # If the user did not specify a specific temperature, linear, or geometric, generate configs over a
         # piecewise temperature distribution.
         elif not linear and not geometric:
-            system.format_print("Neither linear nor geometric specified, Will generate configurations over a piecewise temperature distribution.",
+            system.format_print("Neither linear nor geometric specified, will generate configurations over a piecewise temperature distribution.",
                                 italics=True)
             self.temp_distribution = PiecewiseDistributionFunction(
                 [
@@ -113,7 +113,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             self.A_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, 2)
 
         # If geometric is specifed (but not linear), generate configs over a geometric distribution over temp and A.
-        elif geometric:
+        elif geometric and not linear:
             system.format_print("Geometric specified. Will generate configurations over a geometric temp and A distribution.",
                                 italics=True)
             self.temp_distribution = GeometricDistributionFunction(self.frequencies[0], (self.frequencies[0] / (2 * self.frequencies[-1])) ** -1)
@@ -144,7 +144,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         Reads a normal modes file and parses the frequencies, reduced masses, and normal modes from it.
 
         Args:
-            normal_modes_path   - Local path to the '.dat' file containin gnormal modes information.
+            normal_modes_path   - Local path to the '.dat' file containing normal modes information.
 
         Returns:
             (frequencies, reduced_masses, normal_modes) as parsed from input file.
@@ -336,7 +336,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
 
         Args:
             molecule_lists  - A List of lists containing only a single element such that molecule_lists[0][0] is the
-                    optimized geoemtry for the configuration generation.
+                    optimized geometry for the configuration generation.
             num_configs     - The number of configurations to generate.
             seed            - Seed for the random number generator. The same seed will yield the same configurations
                     when all else is held equal.

@@ -80,7 +80,7 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         number_of_configs=100, seed=None, linear=False, geometric=False, temperature=None, classical=True,
         temp_distribution=None, A_distribution=None):
     """
-    Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
+    Generates normal mode configurations for a given molecule from a set of normal modes.
 
     If both linear and geometric are False, will use a piecewise distribution over temperature.
 

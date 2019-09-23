@@ -2,10 +2,10 @@
 import os, sys, contextlib, glob
 
 # local module imports
-from .utils import SettingsReader, files, system, constants
+from .utils import SettingsReader, files, system
 from . import configurations, database, polynomials, fitting
-from .database import Database
 from .molecule import xyz_to_molecules
+from potential_fitting.exceptions import InconsistentValueError
 
 
 def apply_standard_order(settings_path, geo_path):
@@ -134,9 +134,13 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
         min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False, use_grid=False,
-        step_size=0.5, num_attempts=100, logarithmic=False, distribution=None, seed=None):
+        step_size=0.5, num_attempts=100, logarithmic=False, distribution=None,
+        mol1_atom_index=None, mol2_atom_index=None, seed=None):
     """
-    Generates 2b configurations for a given dimer.
+    Generates 2b configurations for a given dimer by rotating them randomly over a distribution of
+    distances.
+
+    If one of mol1_atom_index is specified, then both must be specified.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
@@ -165,22 +169,41 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                 is ignored and this distribution is used to choose the distances between configurations. Should
                 be implemented over the domain [0,1]. So the first config will have distance
                 distribution.get_value(0) and the last config will have distance distribution.get_value(1).
+        mol1_atom_index     - If specified, then the first molecule will be centered around the atom at this index
+                rather than its center of mass.
+        mol2_atom_index     - If specified, then the second molecule will be centered around the atom at this index
+                rather than its center of mass.
         seed                - The same seed will generate the same configurations.
 
     Returns:
         None.
     """
 
-    config_generator = configurations.DistanceSamplingConfigurationGenerator(settings_path,
+    if mol1_atom_index is not None and mol2_atom_index is not None:
+        config_generator = configurations.AtomDistanceConfigurationGenerator(settings_path, mol1_atom_index,
+                                                                             mol2_atom_index,
                                                                              min_distance=min_distance,
                                                                              max_distance=max_distance,
                                                                              min_inter_distance=min_inter_distance,
                                                                              progression=progression,
-                                                                             use_grid=use_grid,
-                                                                             step_size=step_size,
+                                                                             use_grid=use_grid, step_size=step_size,
                                                                              num_attempts=num_attempts,
                                                                              logarithmic=logarithmic,
                                                                              distribution=distribution)
+    elif mol1_atom_index is None and mol2_atom_index is None:
+        config_generator = configurations.DistanceSamplingConfigurationGenerator(settings_path,
+                                                                                 min_distance=min_distance,
+                                                                                 max_distance=max_distance,
+                                                                                 min_inter_distance=min_inter_distance,
+                                                                                 progression=progression,
+                                                                                 use_grid=use_grid,
+                                                                                 step_size=step_size,
+                                                                                 num_attempts=num_attempts,
+                                                                                 logarithmic=logarithmic,
+                                                                                 distribution=distribution)
+    else:
+        raise InconsistentValueError("mol1_atom_index", "mol2_atom_index", mol1_atom_index, mol2_atom_index,
+                                     "either one or both of these values must be specified")
 
     configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
                                                                              configurations_path,
@@ -196,8 +219,6 @@ def generate_atom_distance_configurations(settings_path, geo1_path, geo2_path, n
 
     Args:
         settings_path       - Local path to '.ini' settings file with all relevant settings.
-        mol1_atom_index     - The index of the atom in the first monomer to rotate around.
-        mol2_atom_index     - The index of the atom in the second monomer to rotate around.
         min_distance        - The minimum distance between the centers of mass of the two monomers.
         max_distance        - The maximum distance between the centers of mass of the two monomers.
         min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two

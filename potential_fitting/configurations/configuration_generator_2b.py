@@ -56,7 +56,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         self.random = Random()
 
         if distribution is not None:
-            self.distance_distribution=distribution
+            self.distance_distribution = distribution
         elif logarithmic:
             self.distance_distribution = LogarithmicDistributionFunction(min_distance, max_distance, 0, 1)
         else:

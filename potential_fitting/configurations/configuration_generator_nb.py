@@ -4,8 +4,9 @@ from random import Random, randint
 
 # Absolute module impots
 from potential_fitting.utils import Quaternion
-from potential_fitting.molecule import Molecule, xyz_to_molecules
-from potential_fitting.utils import files, SettingsReader, system
+from potential_fitting.molecule import Molecule
+from potential_fitting.utils import system
+from potential_fitting.utils.distribution_function import LogarithmicDistributionFunction, LinearDistributionFunction
 
 from .configuration_generator import ConfigurationGenerator
 
@@ -15,7 +16,8 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
     within a sphere of a given radius.
     """
 
-    def __init__(self, settings_path, radius=10, min_inter_distance=0.8, num_attempts=100, logarithmic=False):
+    def __init__(self, settings_path, radius=10, min_inter_distance=0.8, num_attempts=100, logarithmic=False,
+                 distribution=None):
         """
         Constructs a new RandomSamplingConfigurationGenerator.
 
@@ -28,6 +30,10 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
                     up and moving to the next distance.
             logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
                     This means more configs are generated closer to the center of the sphere.
+            distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                    is ignored and this distribution is used to choose the distances between configurations. Should
+                    be implemented over the domain [0,1]. So the first config will have distance =
+                    distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
 
         Returns:
             A new RandomSamplingConfigurationGenerator.
@@ -35,25 +41,16 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
 
         super(RandomSamplingConfigurationGenerator, self).__init__(settings_path)
 
-        self.radius = radius
         self.min_inter_distance = min_inter_distance
         self.num_attempts = num_attempts
-        self.logarithmic = logarithmic
 
-    def logarithmic_progression(self, min, max, num_configs, config_num):
-        """
-        Gives a distance of a point on a logarithmic distribution.
+        if distribution is not None:
+            self.distance_distribution = distribution
+        elif logarithmic:
+            self.distance_distribution = LogarithmicDistributionFunction(0, radius, 0, 1)
+        else:
+            self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, radius)
 
-        Args:
-            min                 - The minimun distance.
-            max                 - The maximum distance.
-            num_configs         - The total number of configs in this progression.
-            config_num          - The number of the current config, in range [0, num_configs - 1]
-                    Config 0 will be at min distance while config num_configs - 1 will be at max distance.
-        """
-
-        dx = (math.log(max) - math.log(min)) / (num_configs - 1)
-        return math.e ** (math.log(min) + config_num * dx)
 
     def move_to_config(self, random, molecules, distances):
         """
@@ -130,15 +127,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
             color=system.Color.GREEN)
 
         while total_configs > 0:
-
-            # random distance between min_distance and max_distance
-
-            if self.logarithmic:
-                distances = [self.logarithmic_progression(0, self.radius, num_configs,
-                                                     random.uniform(0, num_configs - 1)) for molecules in
-                             molecule_lists]
-            else:
-                distances = [random.uniform(0, self.radius) for molecules in molecule_lists]
+            distances = [self.distance_distribution.get_value(random.uniform(0, 1)) for molecules in molecule_lists]
 
             molecules = [random.choice(molecules_list) for molecules_list in molecule_lists]
 

@@ -238,7 +238,7 @@ def generate_atom_distance_configurations(settings_path, geo1_path, geo2_path, n
                                                                              seed=seed)
 
 def generate_configurations(settings_path, number_of_configs, configurations_path, *geo_paths, radius=10,
-                            min_inter_distance=0.8, num_attempts=100, seed=None, logarithmic=False):
+                            min_inter_distance=0.8, num_attempts=100, seed=None, logarithmic=False, distribution=None):
     """
     Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
 
@@ -257,16 +257,21 @@ def generate_configurations(settings_path, number_of_configs, configurations_pat
         seed                - Seed to use, the same seed will give the same configurations.
         logarithmic         - If True, will use logarithmic progression to chose distances from center of sphere
                 for monomers.
+        distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                is ignored and this distribution is used to choose the distances between configurations. Should
+                be implemented over the domain [0,1]. So the first config will have distance =
+                distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
 
     Returns:
         None
     """
 
     config_generator = configurations.RandomSamplingConfigurationGenerator(settings_path,
-                                                                             radius=radius,
-                                                                             min_inter_distance=min_inter_distance,
-                                                                             num_attempts=num_attempts,
-                                                                             logarithmic=logarithmic)
+                                                                           radius=radius,
+                                                                           min_inter_distance=min_inter_distance,
+                                                                           num_attempts=num_attempts,
+                                                                           logarithmic=logarithmic,
+                                                                           distribution=distribution)
 
     configurations.ConfigurationGenerator.generate_configs_from_file_to_file(geo_paths,
                                                                              configurations_path,

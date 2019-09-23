@@ -426,16 +426,28 @@ def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name, extension
     mon_id = 'a'
     string_pointers = ""
     string_pointers_vs = ""
+
+    atom_start_indices = {}
+
     for monomer in monomer_atom_types:
         num_ats = int(len(monomer)/2 + 0.49999)
         for i in range(num_ats):
             atom = monomer[2*i]
+
+            # set atom_start_index
+            try:
+                atom_start_index = atom_start_indices[atom]
+                atom_start_indices[atom] += monomer[2*i + 1]
+            except KeyError:
+                atom_start_index = 0
+                atom_start_indices[atom] = monomer[2*i + 1]
+
             if not atom in vsites:
-                for j in range(monomer[2*i + 1]):
+                for j in range(atom_start_index, atom_start_index + monomer[2*i + 1]):
                     string_pointers += spaces + "const double* " + atom + "_" + str(j+1) + "_" + mon_id + extension + " = " + xyz_var_name + " + " + str(crd_shift) + ";\n"
                     crd_shift += 3
             else:
-                for j in range(monomer[2*i + 1]):
+                for j in range(atom_start_index, atom_start_index + monomer[2*i + 1]):
                     string_pointers_vs += spaces + "double " + atom + "_" + str(j+1) + "_" + mon_id + extension + "[3];\n"
         string_pointers += "\n"
         string_pointers_vs += "\n"

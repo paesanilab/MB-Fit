@@ -4,3 +4,4 @@ from .variable import Variable
 from .monomial import Monomial
 from .filters import *
 from .molecule_in_parser import MoleculeInParser, FragmentParser, AtomTypeParser
+from .molecule_in_parser import SymmetryParser, FragmentSymmetryParser, AtomSymmetryParser

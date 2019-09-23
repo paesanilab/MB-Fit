@@ -1,6 +1,7 @@
 import os, sys
 import json
 import math
+import filecmp
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/../../../")
 from potential_fitting.utils import SettingsReader
 from potential_fitting.polynomials import FragmentParser

@@ -2274,7 +2274,7 @@ fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) 
 eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@    
 """
-    ff.write(a)
+        ff.write(a)
     a = """
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) -c $< $(LIBS) -o $@
@@ -2808,7 +2808,7 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const siz
     a = """
         sw = """ + sw_string + """;
 
-        energies[j] = my_poly.eval(coefficients.data(),xs);
+        energies[j] = my_poly.eval(xs,coefficients.data());
         energies_sw[j] = energies[j]*sw;
 
     }
@@ -2941,7 +2941,7 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     a = """
         sw = """ + sw_string + """;
 
-        energies[j] = my_poly.eval(coefficients.data(),xs,gxs);
+        energies[j] = my_poly.eval(xs,coefficients.data(),gxs);
         energies_sw[j] = energies[j]*sw;
 
         for (size_t i = 0; i < """ + str(number_of_variables) + """; i++) {
@@ -2977,8 +2977,8 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
         switch_text = " + ".join(switch_grad)
         ff.write("        g" + sw[0] + " *= (" + switch_text + ")*energies[j]/" + d[0] + "r;\n")
 
-
     a = """
+
         for (size_t i = 0; i < 3; i++) {
 """
 
@@ -3000,8 +3000,20 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
                 
         counter += number_of_atoms[i]*3
 
+    count = 0
+    for i in range(len(number_of_atoms)):
+        a = """
+        }
 
-    a = """        }
+        for (size_t i = 0; i < """ + str(3*number_of_atoms[i]) + """; i++) {
+            grad""" + str(i+1) + """[i + j*""" + str(3*number_of_atoms[i]) + """] += gradients[""" + str(count) + """ + i];
+        }
+"""
+        count += 3*number_of_atoms[i]
+        ff.write(a)
+
+
+    a = """
 
     }
     

@@ -98,25 +98,24 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     polycoef = []
     npoly = -1
     
-    cdl = open(mbnrg_best_fit + "/" + cdl_file,'r')
-    line = cdl.readline()
-    while True:
-        # Skip name tag
-        if line.strip().startswith(":"):
-            if not "name" in line:
-                constants.append(line.replace(":", "  m_"))
-        # Find number of polynomial linear coefficients
-        if line.startswith("  poly"):
-            npoly = int(line.strip().split()[2].replace(";",""))
-        # Store polynomial coefficients
-        if line.startswith("poly"):
-            for i in range(npoly):
-                polycoef.append("            " + cdl.readline().replace(";","};"))
+    with open(mbnrg_best_fit + "/" + cdl_file,'r') as cdl:
         line = cdl.readline()
-        if line == "":
-            break
+        while True:
+            # Skip name tag
+            if line.strip().startswith(":"):
+                if not "name" in line:
+                    constants.append(line.replace(":", "  m_"))
+            # Find number of polynomial linear coefficients
+            if line.startswith("  poly"):
+                npoly = int(line.strip().split()[2].replace(";",""))
+            # Store polynomial coefficients
+            if line.startswith("poly"):
+                for i in range(npoly):
+                    polycoef.append("            " + cdl.readline().replace(";","};"))
+            line = cdl.readline()
+            if line == "":
+                break
 
-    cdl.close()
 
     my_constructor_text = ""
     mon_id_sorted = sorted(list(enumerate(mon_ids)), key=lambda x: x[1])

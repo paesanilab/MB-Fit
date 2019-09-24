@@ -4,5 +4,6 @@ from .prepare_1b_fitting_code import prepare_1b_fitting_code
 from .prepare_2b_fitting_code import prepare_2b_fitting_code
 from .prepare_fitting_code import prepare_fitting_code
 from .generate_software_files_1b import generate_software_files_1b
+from .generate_software_files import generate_software_files
 from .generate_software_files_2b import generate_software_files_2b
 from . import fit_visualizer

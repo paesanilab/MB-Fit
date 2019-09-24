@@ -825,21 +825,7 @@ class TestDatabase(unittest.TestCase):
         calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=6)
 
         calculation_results = []
-
-        print("OPT:")
-        print(opt_mol.to_xyz())
-
-        print("MOLS:")
-        for mol in molecules:
-            print(mol.get_symmetry())
-            print(mol.to_xyz())
-            print("\n")
-
-        print("T SET:")
         for molecule, method, basis, cp, use_cp, frag_indices in calculations:
-            print(molecule.get_reorder_copy(["ethane"], ["C1(H)(H)H.C1(H)(H)H"]).get_symmetry())
-            print(molecule.get_reorder_copy(["ethane"], ["C1(H)(H)H.C1(H)(H)H"]).to_xyz())
-            print("\n")
             if molecule == opt_mol.get_standard_copy():
                 energy = opt_energy
             else:

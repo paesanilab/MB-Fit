@@ -1070,30 +1070,26 @@ class Molecule(object):
         fragments = []
 
         prev_frag_name = None
+        next_symmetry = 'A'
 
-        next_starting_symmetry = 'A'
-        next_symmetry = None
+        symmetry_dict = {}
 
         for fragment, frag_order, SMILE in zip([self.get_fragments()[index] for index in order], frag_orders, SMILES):
 
-            if prev_frag_name is not None and fragment.get_name() != prev_frag_name:
-                next_starting_symmetry = chr(ord(next_symmetry) + 1)
             prev_frag_name = fragment.get_name()
-
-            next_symmetry = next_starting_symmetry
 
             fragments.append(fragment.get_reordered_copy(frag_order, SMILE))
 
-            prev_symmetry = None
-
             for atom in fragments[-1].get_atoms():
 
-                if prev_symmetry is not None and atom.get_symmetry_class() != prev_symmetry:
+                try:
+                    symmetry = symmetry_dict[atom.get_symmetry_class()]
+                except:
+                    symmetry = next_symmetry
+                    symmetry_dict[atom.get_symmetry_class()] = symmetry
                     next_symmetry = chr(ord(next_symmetry) + 1)
 
-                prev_symmetry = atom.get_symmetry_class()
-
-                atom.set_symmetry_class(next_symmetry)
+                atom.set_symmetry_class(symmetry)
 
         return Molecule(fragments)
 

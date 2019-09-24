@@ -43,6 +43,22 @@ class TestDatabase(unittest.TestCase):
         return molecule
 
     @staticmethod
+    def get_ethane_monomer():
+
+        frag1 = Fragment([Atom("C", "A", random.random(), random.random(), random.random()),
+                          Atom("H", "B", random.random(), random.random(), random.random()),
+                          Atom("H", "B", random.random(), random.random(), random.random()),
+                          Atom("H", "B", random.random(), random.random(), random.random()),
+                          Atom("C", "A", random.random(), random.random(), random.random()),
+                          Atom("H", "B", random.random(), random.random(), random.random()),
+                          Atom("H", "B", random.random(), random.random(), random.random()),
+                          Atom("H", "B", random.random(), random.random(), random.random())], "ethane", 0, 1, "C1(H)(H)H.C1(H)(H)H")
+
+        molecule = Molecule([frag1])
+
+        return molecule
+
+    @staticmethod
     def get_I_monomer():
         I = Atom("I", "A", random.random(), random.random(), random.random())
 
@@ -789,6 +805,73 @@ class TestDatabase(unittest.TestCase):
                           energies[index][4] + energies[index][2] + energies[index][0]
             binding = monomer1 + monomer2 + monomer3 + nb_energy
             self.assertIn((molecule, round(binding, 5), round(nb_energy, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)
+
+    def test_set_properties_and_get_training_set_nested_symmetry(self):
+
+        # no cp
+
+        opt_mol = self.get_ethane_monomer()
+        opt_energy = random.random()
+
+        molecules = []
+        energies = []
+        for i in range(5):
+            molecules.append(self.get_ethane_monomer())
+            energies.append([random.random()])
+
+        self.database.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
+        self.database.add_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", optimized=True)
+
+        calculations = self.database.get_all_calculations("testclient", "database_test", calculations_to_do=6)
+
+        calculation_results = []
+
+        print("OPT:")
+        print(opt_mol.to_xyz())
+
+        print("MOLS:")
+        for mol in molecules:
+            print(mol.get_symmetry())
+            print(mol.to_xyz())
+            print("\n")
+
+        print("T SET:")
+        for molecule, method, basis, cp, use_cp, frag_indices in calculations:
+            print(molecule.get_reorder_copy(["ethane"], ["C1(H)(H)H.C1(H)(H)H"]).get_symmetry())
+            print(molecule.get_reorder_copy(["ethane"], ["C1(H)(H)H.C1(H)(H)H"]).to_xyz())
+            print("\n")
+            if molecule == opt_mol.get_standard_copy():
+                energy = opt_energy
+            else:
+                index = molecules.index(molecule.get_reorder_copy(["ethane"], ["C1(H)(H)H.C1(H)(H)H"]))
+                if frag_indices == [0]:
+                    energy = energies[index][0]
+                elif frag_indices == [1]:
+                    energy = energies[index][1]
+                else:
+                    energy = energies[index][2]
+            calculation_results.append(
+                [molecule, method, basis, cp, use_cp, frag_indices, True, energy, "some log test"])
+
+        self.database.set_properties(calculation_results)
+
+        training_set = list(
+            self.database.get_training_set(["ethane"], ["C1(H)(H)H.C1(H)(H)H"], "testmethod", "testbasis", False,
+                                           "database_test"))
+
+        self.assertEqual(len(training_set), 6)
+
+        for index in range(len(training_set)):
+            training_set[index] = list(training_set[index])
+            training_set[index][1] = round(training_set[index][1], 5)
+            training_set[index][2] = round(training_set[index][2], 5)
+            training_set[index][3][0] = round(training_set[index][3][0], 5)
+            training_set[index] = tuple(training_set[index])
+
+        for molecule in molecules:
+            index = molecules.index(molecule)
+            binding = energies[index][0] - opt_energy
+            self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
 
     def test_import_calculations(self):
 

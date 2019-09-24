@@ -80,8 +80,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         A_buck = [0.0] * len(C6)
         b_buck = [0.0] * len(C6)
         d6 = [0.0] * len(C6)
-        # Throw warning if 1b or 2b. This should be defined by the time 
-        # this is called in those cases
+        print("***WARNING*** Seems like either A or d6 are not defined in the config file.These values will be filled as 0, but at this point of the process you should have the TTM-nrg fit perfermed.")
 
     ############################################################################
     ## Polynomial ##############################################################

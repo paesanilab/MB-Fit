@@ -381,11 +381,9 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         c6_text = []
         d6_text = []
     
-        print(my_number_types)
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
                 c6index = max(my_number_types[my_mon[1][0]])*i + j
-                print(c6index)
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
                 c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")

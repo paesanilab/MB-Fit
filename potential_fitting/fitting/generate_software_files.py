@@ -56,6 +56,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
     excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
     excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14", int)
+    vsites = config.getlist("fitting", "virtual_site_labels", str)
     
     #Obtain charges (in the order of input), pols and polfacs
     charges = config.getlist("fitting", "charges", float)
@@ -251,9 +252,13 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         my_nb_conditional_nograd += ", ".join(ids) + ");\n"
         
         ids = []
+        if number_of_monomers == 1:
+            return_key = "energies = "
+        else:
+            return_key = "return "
         for i in range(len(mon_id_sorted)):
             ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
-        my_nb_conditional_nograd += "        energies = pot.eval(" + ", ".join(ids) + ", nm);\n"
+        my_nb_conditional_nograd += "        " + return_key + "pot.eval(" + ", ".join(ids) + ", nm);\n"
 
         # Write code that needs to be added in the ONEBODY_GRD section of the code
         #cppout.write("=====>> SECTION ONEBODY_GRD <<=====\n")
@@ -275,10 +280,14 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         
         ids = []
         idgs = []
+        if number_of_monomers == 1:
+            return_key = "energies = "
+        else:
+            return_key = "energy = "
         for i in range(len(mon_id_sorted)):
             ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
             idgs.append("grad" + str(mon_id_sorted[i][0] + 1) + ".data()")
-        my_nb_conditional_grad += "        energies = pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
+        my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
 
         # Write code that needs to be added in the INCLUDE1B section of the code
         #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
@@ -316,6 +325,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             atom_types_letter.append([])
             count = 0
             for i in range(1,len(fragment),2):
+                if fragment[i-1] in vsites:
+                    continue
                 for j in range(fragment[i]):
                     atom_types_number[-1].append(count)
                     atom_types_letter[-1].append(fragment[i-1])
@@ -370,9 +381,11 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         c6_text = []
         d6_text = []
     
+        print(my_number_types)
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
                 c6index = max(my_number_types[my_mon[1][0]])*i + j
+                print(c6index)
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
                 c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")

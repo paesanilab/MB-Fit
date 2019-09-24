@@ -2501,6 +2501,9 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
         line = poly.readline()
         while line != "":
             if any(line.startswith(key) for key in keyword_start):
+                while not ";" in line:
+                    poly_lines += line
+                    line = poly.readline()
                 poly_lines += line
             line = poly.readline()
 
@@ -2601,6 +2604,11 @@ def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, 
     arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
     arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
 
+    if number_of_monomers == 1:
+       declare_key = "std::vector<double> "
+    else:
+       declare_key = "double "
+
     a = """
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2616,8 +2624,8 @@ struct """ + struct_name + """ {
 
     typedef """ + poly_name + """ polynomial;
 
-    std::vector<double> eval(""" + arg_xyz + """, const size_t n);
-    std::vector<double> eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n);
+    """ + declare_key + """eval(""" + arg_xyz + """, const size_t n);
+    """ + declare_key + """eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n);
 
   private:
 """
@@ -2661,6 +2669,11 @@ def write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_m
     arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
     arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
 
+    if number_of_monomers == 1:
+       declare_key = "std::vector<double> "
+    else:
+       declare_key = "double "
+
     a = '''#include "''' + hname + '''"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2696,7 +2709,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
 //----------------------------------------------------------------------------//
 
-std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const size_t n) {
+ """ + declare_key + struct_name + """::eval(""" + arg_xyz + """, const size_t n) {
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
@@ -2812,13 +2825,28 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const siz
         energies_sw[j] = energies[j]*sw;
 
     }
-    
-    return energies_sw;
+"""   
+    ff.write(a)
+
+    if number_of_monomers == 1:
+        ff.write("    return energies_sw;\n")
+    else:
+        a = """
+    double energy = 0.0;
+    for (size_t i = 0; i < n; i++)
+        energy += energies_sw[i];
+
+    return energy;
+"""
+        ff.write(a)
+
+
+    a = """
 }
 
 //----------------------------------------------------------------------------//
 
-std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n) {
+""" + declare_key + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n) {
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
@@ -2960,7 +2988,7 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        m""" + str(i+1) + """.grads(""" + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][0] + "_1_" + char_code + """);
+        m""" + str(i+1) + """.grads(""" + monomer_atom_types[i][4] + "_1_" + char_code + "_g, " + monomer_atom_types[i][4] + "_2_" + char_code + """_g, w12, wcross, """ + monomer_atom_types[i][0] + "_1_" + char_code + """_g);
 """
 
             ff.write(a)
@@ -3000,10 +3028,10 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
                 
         counter += number_of_atoms[i]*3
 
+    ff.write("        }\n")
     count = 0
     for i in range(len(number_of_atoms)):
         a = """
-        }
 
         for (size_t i = 0; i < """ + str(3*number_of_atoms[i]) + """; i++) {
             grad""" + str(i+1) + """[i + j*""" + str(3*number_of_atoms[i]) + """] += gradients[""" + str(count) + """ + i];
@@ -3016,8 +3044,22 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     a = """
 
     }
-    
-    return energies_sw;
+"""
+    ff.write(a)
+
+    if number_of_monomers == 1:    
+        ff.write("    return energies_sw;\n")
+    else:
+        a = """
+    double energy = 0.0;
+    for (size_t i = 0; i < n; i++)
+        energy += energies_sw[i];
+
+    return energy;
+"""
+        ff.write(a)
+
+    a = """
 }
 
 //----------------------------------------------------------------------------//

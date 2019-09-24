@@ -7,7 +7,7 @@ from potential_fitting.exceptions import ParsingError, InvalidInputError, Incons
 
 # relative module imports
 from . import filters
-from .molecule_in_parser import MoleculeInParser, FragmentParser
+from .molecule_in_parser import MoleculeSymmetryParser, FragmentParser
 from .monomial import Monomial
 from .variable import Variable
 
@@ -83,13 +83,13 @@ class PolynomialGenerator(object):
         fragments, variables, monomial_filters = self.read_input_file(input_path)
 
         # create a molecule parser of all the fragments.
-        molecule_in_parser = MoleculeInParser("_".join(fragments))
+        symmetry_parser = MoleculeSymmetryParser("_".join(fragments))
 
         # Parse the fragment names to name the atoms in the system
 
         # list of names of atoms in the molecule, each name consists of a type (ex: 'A', 'B', etc) concatenated to
         # a letter that indicates the fragment (ex: 'a', 'b', etc).
-        atom_names = []
+        atom_names = [sym + str(ind) + frag for sym, ind, frag in symmetry_parser.get_atoms()]
 
         # holds the index of the first atom in each fragment.
         index_each_fragment = []
@@ -97,12 +97,9 @@ class PolynomialGenerator(object):
         # index of the next atom to parse.
         index = 0
 
-        for fragment_parser in molecule_in_parser.get_fragments():
+        for fragment_parser in symmetry_parser.get_sub_parsers():
             index_each_fragment.append(index)
-            for atom_type_parser in fragment_parser.get_atom_and_virtual_site_types():
-                for atom in atom_type_parser.get_atoms():
-                    atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
-                    index += 1
+            index += fragment_parser.get_num_atoms()
 
         print("Atom names", atom_names)
 

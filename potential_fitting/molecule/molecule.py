@@ -791,11 +791,8 @@ class Molecule(object):
 
             symmetry = ""
 
-            try:
-                symmetry_class = ord(max(self.get_symmetry().strip("_"))) + 1
-                print("SYM START:", symmetry) 
-            except ValueError:
-                symmetry_class = 65
+            
+            symmetry_class = 65
 
             # loop over each atom assigning it a unique symmetry class
             for atom_index in range(total_atoms):
@@ -1012,6 +1009,20 @@ class Molecule(object):
         """
         order, frag_orders = self.get_reorder_order(names, SMILES)
         return self.get_reordered_copy(order, frag_orders, SMILES)
+
+    def get_copy(self):
+        """
+        Gets a copy of this molecule.
+
+        Args:
+            None.
+
+        Returns:
+            An exact copy of this molecule.
+        """
+
+        return self.get_reorder_copy([fragment.get_name() for fragment in self.get_fragments()],
+                                     [fragment.get_SMILE() for fragment in self.get_fragments()])
 
     def get_standard_order_order(self):
         """

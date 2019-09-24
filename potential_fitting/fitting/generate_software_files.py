@@ -81,8 +81,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         A_buck = [0.0] * len(C6)
         b_buck = [0.0] * len(C6)
         d6 = [0.0] * len(C6)
-        # Throw warning if 1b or 2b. This should be defined by the time 
-        # this is called in those cases
+        print("***WARNING*** Seems like either A or d6 are not defined in the config file.These values will be filled as 0, but at this point of the process you should have the TTM-nrg fit perfermed.")
 
     ############################################################################
     ## Polynomial ##############################################################
@@ -99,25 +98,24 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     polycoef = []
     npoly = -1
     
-    cdl = open(mbnrg_best_fit + "/" + cdl_file,'r')
-    line = cdl.readline()
-    while True:
-        # Skip name tag
-        if line.strip().startswith(":"):
-            if not "name" in line:
-                constants.append(line.replace(":", "  m_"))
-        # Find number of polynomial linear coefficients
-        if line.startswith("  poly"):
-            npoly = int(line.strip().split()[2].replace(";",""))
-        # Store polynomial coefficients
-        if line.startswith("poly"):
-            for i in range(npoly):
-                polycoef.append("            " + cdl.readline().replace(";","};"))
+    with open(mbnrg_best_fit + "/" + cdl_file,'r') as cdl:
         line = cdl.readline()
-        if line == "":
-            break
+        while True:
+            # Skip name tag
+            if line.strip().startswith(":"):
+                if not "name" in line:
+                    constants.append(line.replace(":", "  m_"))
+            # Find number of polynomial linear coefficients
+            if line.startswith("  poly"):
+                npoly = int(line.strip().split()[2].replace(";",""))
+            # Store polynomial coefficients
+            if line.startswith("poly"):
+                for i in range(npoly):
+                    polycoef.append("            " + cdl.readline().replace(";","};"))
+            line = cdl.readline()
+            if line == "":
+                break
 
-    cdl.close()
 
     my_constructor_text = ""
     mon_id_sorted = sorted(list(enumerate(mon_ids)), key=lambda x: x[1])

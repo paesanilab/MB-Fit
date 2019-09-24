@@ -298,7 +298,7 @@ class IndividualDegreeFilter(Filter):
                     # intra)
                     fits_type = False
 
-                    var_type, atoms_string = variable_string.split("-")[1:]
+                    var_type, atoms_string = variable_string.split("-")[1:-1]
                     atom1, atom2 = atoms_string.split("+")
 
                     # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
@@ -461,7 +461,7 @@ class SumDegreeFilter(Filter):
                     # intra)
                     fits_type = False
 
-                    var_type, atoms_string = variable_string.split("-")[1:]
+                    var_type, atoms_string = variable_string.split("-")[1:-1]
                     atom1, atom2 = atoms_string.split("+")
 
                     # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
@@ -633,7 +633,7 @@ class NumFragmentsFilter(Filter):
                     # intra)
                     fits_type = False
 
-                    var_type, atoms_string = variable_string.split("-")[1:]
+                    var_type, atoms_string = variable_string.split("-")[1:-1]
                     atom1, atom2 = atoms_string.split("+")
 
                     # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
@@ -850,7 +850,7 @@ class DegreeFilter(Filter):
                     # intra)
                     fits_type = False
 
-                    var_type, atoms_string = variable_string.split("-")[1:]
+                    var_type, atoms_string = variable_string.split("-")[1:-1]
                     atom1, atom2 = atoms_string.split("+")
 
                     # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all

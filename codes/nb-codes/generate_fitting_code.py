@@ -149,11 +149,6 @@ E_range = config.getfloat("fitting", "energy_range")
 ## Prepare pair information ####################################################
 ################################################################################
 
-# Obtain types for each monomer
-monomer_atom_types = []
-for mon in monomers:
-    monomer_atom_types.append(utils_nb_fitting.get_atom_types(mon))
-
 # create dictionary mapping from atom index to atom name
 atom_list = [[sym + str(ind) for sym, ind, frag in fragment_symmetry_parser.get_atoms()] for fragment_symmetry_parser in symmetry_parser.get_sub_parsers()]
 

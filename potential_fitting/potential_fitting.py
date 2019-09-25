@@ -2,10 +2,10 @@
 import os, sys, contextlib, glob
 
 # local module imports
-from .utils import SettingsReader, files, system, constants
+from .utils import SettingsReader, files, system
 from . import configurations, database, polynomials, fitting
-from .database import Database
 from .molecule import xyz_to_molecules
+from potential_fitting.exceptions import InconsistentValueError
 
 
 def apply_standard_order(settings_path, geo_path):
@@ -77,9 +77,12 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs = 100, seed = None, temperature = None):
+        number_of_configs=100, seed=None, linear=False, geometric=False, temperature=None, classical=True,
+        temp_distribution=None, A_distribution=None):
     """
-    Generates normal mode configurations for a given monomer (or dimer or trimer) from a set of normal modes.
+    Generates normal mode configurations for a given molecule from a set of normal modes.
+
+    If both linear and geometric are False, will use a piecewise distribution over temperature.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
@@ -90,24 +93,54 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         number_of_configs   - Number of configurations to generate
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
+        linear              - If True, then use a linear distribution over temp and A.
+                    Default: False
+        geometric           - If True, then use a geometric distribution over temp and A.
+                    Default: False
         temperature         - Temperature at which normal mode sampling is done. If specified, configurations
                 will use clasical normal mode distribution at the specified temperature instead of either geometric
                 or linear progression.
+        classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
+                distribution. QM distributions generate a wider distribution over energy.
+                Default: True
+        temp_distribution   - Implementation of DistributionFunction. If specified, then the temperature
+                distribution specified by the linear, geometric, or temperature arguments will be ignored and this
+                distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
+                will have temperature = temp_distribution.get_value(0) and the last config will have temperature =
+                temp_distribution.get_value(1).
+        A_distribution      - Implementation of DistributionFunction. If specified, then the A
+                distribution specified by the linear, geometric, or temperature arguments will be ignored and this
+                distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
+                will have A = A_distribution.get_value(0) and the last config will have A =
+                A_distribution.get_value(1).
 
     Returns:
         None.
     """
 
-    if temperature is not None:
-        temperature *= constants.kelvin_to_au
-    configurations.generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-            number_of_configs, seed = seed, temperature=temperature)
+    config_generator = configurations.NormalModesConfigurationGenerator(settings_path, normal_modes_path,
+                                                                        linear=linear,
+                                                                        geometric=geometric,
+                                                                        temperature=temperature,
+                                                                        classical=classical,
+                                                                        temp_distribution=temp_distribution,
+                                                                        A_distribution=A_distribution)
+
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file([opt_geo_path],
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
 
 def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path, 
-        min_distance = 1, max_distance = 5, min_inter_distance = 0.8, progression = False, use_grid = False, 
-        step_size = 0.5, num_attempts = 100, logarithmic = False, seed = None):
+        min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False, use_grid=False,
+        step_size=0.5, num_attempts=100, logarithmic=False, distribution=None,
+        mol1_atom_index=None, mol2_atom_index=None, seed=None):
     """
-    Generates 2b configurations for a given dimer.
+    Generates 2b configurations for a given dimer by rotating them randomly over a distribution of
+    distances.
+
+    If one of mol1_atom_index is specified, then both must be specified.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
@@ -132,24 +165,108 @@ def generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_co
                 moving to the next one.
         logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
                 This means more configs are generated at lower distances.
+        distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                is ignored and this distribution is used to choose the distances between configurations. Should
+                be implemented over the domain [0,1]. So the first config will have distance
+                distribution.get_value(0) and the last config will have distance distribution.get_value(1).
+        mol1_atom_index     - If specified, then the first molecule will be centered around the atom at this index
+                rather than its center of mass.
+        mol2_atom_index     - If specified, then the second molecule will be centered around the atom at this index
+                rather than its center of mass.
         seed                - The same seed will generate the same configurations.
 
     Returns:
         None.
     """
 
-    configurations.generate_2b_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
-            min_distance, max_distance, min_inter_distance, progression, use_grid, step_size, num_attempts, logarithmic, seed)
+    if mol1_atom_index is not None and mol2_atom_index is not None:
+        config_generator = configurations.AtomDistanceConfigurationGenerator(settings_path, mol1_atom_index,
+                                                                             mol2_atom_index,
+                                                                             min_distance=min_distance,
+                                                                             max_distance=max_distance,
+                                                                             min_inter_distance=min_inter_distance,
+                                                                             progression=progression,
+                                                                             use_grid=use_grid, step_size=step_size,
+                                                                             num_attempts=num_attempts,
+                                                                             logarithmic=logarithmic,
+                                                                             distribution=distribution)
+    elif mol1_atom_index is None and mol2_atom_index is None:
+        config_generator = configurations.DistanceSamplingConfigurationGenerator(settings_path,
+                                                                                 min_distance=min_distance,
+                                                                                 max_distance=max_distance,
+                                                                                 min_inter_distance=min_inter_distance,
+                                                                                 progression=progression,
+                                                                                 use_grid=use_grid,
+                                                                                 step_size=step_size,
+                                                                                 num_attempts=num_attempts,
+                                                                                 logarithmic=logarithmic,
+                                                                                 distribution=distribution)
+    else:
+        raise InconsistentValueError("mol1_atom_index", "mol2_atom_index", mol1_atom_index, mol2_atom_index,
+                                     "either one or both of these values must be specified")
 
-def generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius = 10, min_inter_distance=0.8, num_attempts=100,
-                                      seed=None, logarithmic = False):
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
+def generate_atom_distance_configurations(settings_path, geo1_path, geo2_path, number_of_configs, configurations_path,
+        mol1_atom_index, mol2_atom_index, min_distance=1, max_distance=5, min_inter_distance=0.8, progression=False,
+        use_grid=False, step_size=0.5, num_attempts=100, logarithmic=False, distribution=None, seed=None):
+    """
+    Generates 2b configurations for a given dimer by placing two atoms a certain distance apart and applying
+    random rotations.
+
+    Args:
+        settings_path       - Local path to '.ini' settings file with all relevant settings.
+        min_distance        - The minimum distance between the centers of mass of the two monomers.
+        max_distance        - The maximum distance between the centers of mass of the two monomers.
+        min_inter_distance  - Minimum intermolecular distance is this times the sum of the van der walls radii of two
+                atoms.
+        progression         - If True, a smooth progression will be used over the chosen distribution. Otherwise,
+                random points on the distribution will be sampled.
+        use_grid            - If True, then distance between the center of mass of the monomers will be on a grid.
+                Otherwise, it will be smooth.
+        step_size           - Only used if use_grid is True, this is the step size of the grid in angstroms.
+        num_attempts        - The number of attempts to generate a configuration at any given distance before giving
+                up and moving to the next distance.
+        logarithmic         - If True, then a logarithmic progression is used to generate the configurations.
+                This means more configs are generated at lower distances.
+        distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                is ignored and this distribution is used to choose the distances between configurations. Should
+                be implemented over the domain [0,1]. So the first config will have distance =
+                distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
+        seed                - The same seed will generate the same configurations.
+
+    Returns:
+        None.
+    """
+
+    config_generator = configurations.AtomDistanceConfigurationGenerator(settings_path, mol1_atom_index, mol2_atom_index,
+                                                                         min_distance=min_distance,
+                                                                         max_distance=max_distance,
+                                                                         min_inter_distance=min_inter_distance,
+                                                                         progression=progression,
+                                                                         use_grid=use_grid, step_size=step_size,
+                                                                         num_attempts=num_attempts,
+                                                                         logarithmic=logarithmic,
+                                                                         distribution=distribution)
+
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file([geo1_path, geo2_path],
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
+
+def generate_configurations(settings_path, number_of_configs, configurations_path, *geo_paths, radius=10,
+                            min_inter_distance=0.8, num_attempts=100, seed=None, logarithmic=False, distribution=None):
     """
     Generates a set of n body configurations by randomly placing monomer geometries in a sphere.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         number_of_configs   - Number of configurations to generate.
-        config_path         - Local path to the file to write the configurations.
+        configurations_path         - Local path to the file to write the configurations.
         geo_paths           - Paths of all the geometries to make the nb configurations from. Can be single optimized
                 geometry or a set of distorted geometries. Will take random configs from these files to make the
                 nb configs.
@@ -161,13 +278,27 @@ def generate_configurations(settings_path, number_of_configs, config_path, *geo_
         seed                - Seed to use, the same seed will give the same configurations.
         logarithmic         - If True, will use logarithmic progression to chose distances from center of sphere
                 for monomers.
+        distribution        - An implementation of DistributionFunction. If specified, the logarithmic argument
+                is ignored and this distribution is used to choose the distances between configurations. Should
+                be implemented over the domain [0,1]. So the first config will have distance =
+                distribution.get_value(0) and the last config will have distance = distribution.get_value(1).
 
     Returns:
         None
     """
 
-    configurations.generate_configurations(settings_path, number_of_configs, config_path, *geo_paths, radius=radius, min_inter_distance=min_inter_distance, num_attempts=num_attempts,
-                                      seed=seed, logarithmic=logarithmic)
+    config_generator = configurations.RandomSamplingConfigurationGenerator(settings_path,
+                                                                           radius=radius,
+                                                                           min_inter_distance=min_inter_distance,
+                                                                           num_attempts=num_attempts,
+                                                                           logarithmic=logarithmic,
+                                                                           distribution=distribution)
+
+    configurations.ConfigurationGenerator.generate_configs_from_file_to_file(geo_paths,
+                                                                             configurations_path,
+                                                                             config_generator,
+                                                                             number_of_configs,
+                                                                             seed=seed)
 
 def init_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = False):
     """

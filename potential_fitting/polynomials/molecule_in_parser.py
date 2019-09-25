@@ -136,6 +136,10 @@ class FragmentSymmetryParser(object):
     def get_fragment_id(parser_index):
         return chr(ord('a') + parser_index)
 
+    def get_atom_type_count_pairs(self):
+        atom_type_count_pairs = []
+        for sub
+
 class MoleculeSymmetryParser(FragmentSymmetryParser):
 
     def get_fragment_symmetries(self):

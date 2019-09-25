@@ -3,9 +3,8 @@ import itertools as it
 
 def write_monomer_class_header(mon_index):
     filename = "mon" + str(mon_index) + ".h"
-    ff = open(filename,'w')
 
-    a="""#ifndef MON""" + str(mon_index) + """_H
+    header_text = """#ifndef MON""" + str(mon_index) + """_H
 #define MON""" + str(mon_index) + """_H
 #include "molecule.h"
 #include "constants.h"
@@ -46,14 +45,14 @@ namespace x   {
 #endif
 """
 
-    ff.write(a)
-    ff.close()
+    with open(filename, 'w') as header_file:
+        header_file.write(header_text)
+
 
 def write_monomer_class_cpp(mon_index, nsites, natoms, excl12, excl13, excl14, chg, pol, polfac):
     filename = "mon" + str(mon_index) + ".cpp"
-    ff = open(filename,'w')
 
-    a = """#include "mon""" + str(mon_index) + """.h"
+    cpp_text = """#include "mon""" + str(mon_index) + """.h"
 
 namespace x  {
 
@@ -78,24 +77,24 @@ namespace x  {
     // Excluded pairs
 """
 
-    ff.write(a)
     for p in excl12:
-        ff.write('    excluded12.insert(std::make_pair(' + str(p[0]) + ',' + str(p[1]) + '));\n')
+        cpp_text += '    excluded12.insert(std::make_pair(' + str(p[0]) + ',' + str(p[1]) + '));\n'
     for p in excl13:
-        ff.write('    excluded13.insert(std::make_pair(' + str(p[0]) + ',' + str(p[1]) + '));\n')
+        cpp_text += '    excluded13.insert(std::make_pair(' + str(p[0]) + ',' + str(p[1]) + '));\n'
     for p in excl14:
-        ff.write('    excluded14.insert(std::make_pair(' + str(p[0]) + ',' + str(p[1]) + '));\n')
-    a = """
+        cpp_text += '    excluded14.insert(std::make_pair(' + str(p[0]) + ',' + str(p[1]) + '));\n'
+    cpp_text += """
 
   }
 
   double* mon""" + str(mon_index) + """::set_charges(double* atmcrds) {
     charge = memory;
 """
-    ff.write(a)
+
     for i in range(len(chg)):
-        ff.write('    charge[' + str(i) + '] = ' + str(chg[i]) + '*constants::CHARGECON;\n')
-    a = """
+        cpp_text += '    charge[' + str(i) + '] = ' + str(chg[i]) + '*constants::CHARGECON;\n'
+
+    cpp_text += """
 
     return charge;
   }
@@ -103,10 +102,11 @@ namespace x  {
   double* mon""" + str(mon_index) + """::set_pol() {
     atmpolar = memory + nsites + nsites*3;
 """
-    ff.write(a)
+
     for i in range(len(pol)):
-        ff.write('    atmpolar[' + str(i) + '] = ' + str(pol[i]) + ';\n')
-    a = """
+        cpp_text += '    atmpolar[' + str(i) + '] = ' + str(pol[i]) + ';\n'
+
+    cpp_text += """
     return atmpolar;
   }
 
@@ -114,10 +114,10 @@ namespace x  {
     polfac = memory + nsites + nsites*3 + nsites;
     
 """
-    ff.write(a)
     for i in range(len(polfac)):
-        ff.write('    polfac[' + str(i) + '] = ' + str(polfac[i]) + ';\n')
-    a = """
+        cpp_text += '    polfac[' + str(i) + '] = ' + str(polfac[i]) + ';\n'
+
+    cpp_text += """
     return polfac;
   }
 
@@ -151,14 +151,13 @@ namespace x  {
 } // namespace x
 """
 
-    ff.write(a)
-    ff.close()
+    with open(filename, 'w') as cpp_file:
+        cpp_file.write(cpp_text)
 
 def write_mbpol_monomer(mon_index):
     filename = "mon" + str(mon_index) + ".cpp"
-    ff = open(filename,'w')
 
-    a = """
+    cpp_text = """
 #include "mon""" + str(mon_index) + """.h"
 
 namespace {
@@ -271,24 +270,28 @@ excluded_set_type::iterator mon""" + str(mon_index) + """::get_end_14() { return
 } // namespace x
 
 """
-    ff.write(a)
-    ff.close()
+    with open(filename, 'w') as cpp_file:
+        cpp_file.write(cpp_text)
 
 def write_fit_polynomial_holder_header(system_name, number_of_monomers, non_linear_parameters, ri, ro):
+
     defflag = "MBNRG_" + str(number_of_monomers) + "B_" + system_name + "_FIT"
+
     system_keyword_mbnrg = "mbnrg_" + str(number_of_monomers) + "b_" + system_name
+
     system_keyword_poly = "poly_" + str(number_of_monomers) + "b_" + system_name
+
     system_keyword_polyholder = "polyholder_" + str(number_of_monomers) + "b_" + system_name
+
     header_mbnrg_fit = system_keyword_mbnrg + "_fit.h"
     header_poly_fit = system_keyword_poly + "_fit.h"
 
     # Generate arguments for the eval
     args_eval = "const std::vector<double> mon1"
-    for i in range(2,number_of_monomers + 1):
+    for i in range(2, number_of_monomers + 1):
         args_eval += ", const std::vector<double> mon" + str(i)
 
-    ff = open(header_mbnrg_fit,'w')
-    a = """#ifndef """ + defflag + """
+    header_text = """#ifndef """ + defflag + """
 #define """ + defflag + '''
 
 #include <cmath>
@@ -334,15 +337,10 @@ struct """ + system_keyword_polyholder + """_fit {
   private:
 
 """
-
-    ff.write(a)
-    a=""
     for nl_param in non_linear_parameters:
-        a += "    double m_" + nl_param + ";\n"
+        header_text += "    double m_" + nl_param + ";\n"
 
-    ff.write(a)
-
-    a = """protected:
+    header_text += """protected:
     double m_ri = """ + str(ri) + """;
     double m_ro = """ + str(ro) + """;
 
@@ -403,8 +401,8 @@ inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<d
 
 """
 
-    ff.write(a)
-    ff.close()
+    with open(header_mbnrg_fit) as header_file:
+        header_file.write(header_text)
 
 def get_individual_atoms_with_type(monomer_atom_types, vsites):
     mon_id = 'a'

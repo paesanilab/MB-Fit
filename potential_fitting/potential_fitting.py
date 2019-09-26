@@ -1327,8 +1327,8 @@ def update_config_with_ttm(settings_path, config_path):
     fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/best_fit/"
 
     with open(fit_folder_prefix + "ttm-nrg_params.dat",'r') as ttm_file:
-        a_buck = ttm_file.readline().strip().split()
-        b_buck = ttm_file.readline().strip().split()
+        a_buck = [float(x) for x in ttm_file.readline().strip().split()]
+        b_buck = [float(x) for x in ttm_file.readline().strip().split()]
 
     config.set("fitting","A",a_buck)    
     config.set("fitting","d6",b_buck)   

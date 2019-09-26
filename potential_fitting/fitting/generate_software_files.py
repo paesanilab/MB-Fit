@@ -56,6 +56,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
     excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
     excluded_pairs_14 = config.getlist("fitting", "excluded_pairs_14", int)
+    vsites = config.getlist("fitting", "virtual_site_labels", str)
     
     #Obtain charges (in the order of input), pols and polfacs
     charges = config.getlist("fitting", "charges", float)
@@ -74,7 +75,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     # last element of A_constants is list of the inter_molecular A constants
     # Initialize A and b to 0, for now
     try:
-        A_buck = config.getlist("fitting", "A", float)
+        A_buck = config.getlist("fitting", "a", float)
         b_buck = config.getlist("fitting", "d6", float)
         d6 = b_buck
     except:
@@ -87,64 +88,74 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     ## Polynomial ##############################################################
     ############################################################################
     
-    print("Getting polynomial fitted parameters...")
-    # Define a couple things
-    workdir = os.getcwd()
-    mbnrg_best_fit = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/best_fit"
-    cdl_file = "fit-" + str(number_of_monomers) + "b.cdl"
-
-    # Obtain polynomial coefficients and non_linear parameters
-    constants = []
-    polycoef = []
-    npoly = -1
-    
-    with open(mbnrg_best_fit + "/" + cdl_file,'r') as cdl:
-        line = cdl.readline()
-        while True:
-            # Skip name tag
-            if line.strip().startswith(":"):
-                if not "name" in line:
-                    constants.append(line.replace(":", "  m_"))
-            # Find number of polynomial linear coefficients
-            if line.startswith("  poly"):
-                npoly = int(line.strip().split()[2].replace(";",""))
-            # Store polynomial coefficients
-            if line.startswith("poly"):
-                for i in range(npoly):
-                    polycoef.append("            " + cdl.readline().replace(";","};"))
-            line = cdl.readline()
-            if line == "":
-                break
-
-
-    my_constructor_text = ""
     mon_id_sorted = sorted(list(enumerate(mon_ids)), key=lambda x: x[1])
 
-    my_constructor_text += "    if ("
-    ids = []
-    for i in range(len(mon_id_sorted)):
-        ids.append("mon" + str(i+1) + " == \"" + mon_ids[i] + "\"")
+    # Folder where everything related to MBX is gonna go
+    workdir = os.getcwd()
+    sofdir = workdir + "/MBX_files"
 
-    my_constructor_text += " and ".join(ids) + ") {\n"
+    # create folder with the files for the software
+    os.system("mkdir -p " + sofdir)
 
-    my_constructor_text += "        coefficients = std::vector<double> {\n"
-
-    ## Open file that contains the code to add
-    #cppout = open("software_code.txt",'w')
-
-    ## Write code that needs to be added in the constructor
-    #cppout.write("=====>> SECTION CONSTRUCTOR <<=====\n")
-    #cppout.write("File: newly generated x1b...degN_v1x.cpp\n")
-    #a = '''
-    for c in polycoef:
-        my_constructor_text += c
-
-    c += "\n\n"
+    # Obtain polynomial coefficients and non_linear parameters
     
-    for p in constants:
-        my_constructor_text += p
+    if not ttm_only: 
+        print("Getting polynomial fitted parameters...")
+        # Define a couple things
+        mbnrg_best_fit = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/best_fit"
+        cdl_file = "fit-" + str(number_of_monomers) + "b.cdl"
 
-    my_constructor_text += "\n    } // end if " + " and ".join(ids) + "\n" 
+        # Obtain polynomial coefficients and non_linear parameters
+        constants = []
+        polycoef = []
+        npoly = -1
+        
+        with open(mbnrg_best_fit + "/" + cdl_file,'r') as cdl:
+            line = cdl.readline()
+            while True:
+                # Skip name tag
+                if line.strip().startswith(":"):
+                    if not "name" in line:
+                        constants.append(line.replace(":", "  m_"))
+                # Find number of polynomial linear coefficients
+                elif line.startswith("  poly"):
+                    npoly = int(line.strip().split()[2].replace(";",""))
+                # Store polynomial coefficients
+                elif line.startswith("poly"):
+                    for i in range(npoly):
+                        polycoef.append("            " + cdl.readline().replace(";","};"))
+                line = cdl.readline()
+                if line == "":
+                    break
+
+
+        my_constructor_text = ""
+
+        my_constructor_text += "    if ("
+        ids = []
+        for i in range(len(mon_id_sorted)):
+            ids.append("mon" + str(i+1) + " == \"" + mon_ids[i] + "\"")
+
+        my_constructor_text += " and ".join(ids) + ") {\n"
+
+        my_constructor_text += "        coefficients = std::vector<double> {\n"
+
+        ## Open file that contains the code to add
+        #cppout = open("software_code.txt",'w')
+
+        ## Write code that needs to be added in the constructor
+        #cppout.write("=====>> SECTION CONSTRUCTOR <<=====\n")
+        #cppout.write("File: newly generated x1b...degN_v1x.cpp\n")
+        #a = '''
+        for c in polycoef:
+            my_constructor_text += c
+
+        c += "\n\n"
+        
+        for p in constants:
+            my_constructor_text += p
+
+        my_constructor_text += "\n    } // end if " + " and ".join(ids) + "\n" 
 
     ############################################################################
     ## Monomer Properties ##### Only if one-body ###############################
@@ -239,9 +250,13 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         my_nb_conditional_nograd += ", ".join(ids) + ");\n"
         
         ids = []
+        if number_of_monomers == 1:
+            return_key = "energies = "
+        else:
+            return_key = "return "
         for i in range(len(mon_id_sorted)):
             ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
-        my_nb_conditional_nograd += "        energies = pot.eval(" + ", ".join(ids) + ", nm);\n"
+        my_nb_conditional_nograd += "        " + return_key + "pot.eval(" + ", ".join(ids) + ", nm);\n"
 
         # Write code that needs to be added in the ONEBODY_GRD section of the code
         #cppout.write("=====>> SECTION ONEBODY_GRD <<=====\n")
@@ -263,22 +278,20 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         
         ids = []
         idgs = []
+        if number_of_monomers == 1:
+            return_key = "energies = "
+        else:
+            return_key = "energy = "
         for i in range(len(mon_id_sorted)):
             ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
             idgs.append("grad" + str(mon_id_sorted[i][0] + 1) + ".data()")
-        my_nb_conditional_grad += "        energies = pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
+        my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
 
         # Write code that needs to be added in the INCLUDE1B section of the code
         #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
         #cppout.write("File: src/potential/1b/energy1b.h\n")
 
         my_potential_include = "#include \"potential/" + str(number_of_monomers) + "b/mbnrg_{}b_{}_deg{}_{}.h\"\n".format(number_of_monomers,system_name,degree,version)
-
-        # Folder where everything related to MBX is gonna go
-        sofdir = workdir + "/MBX_files"
-
-        # create folder with the files for the software
-        os.system("mkdir -p " + sofdir)
 
         # define names for files
         headerf = "poly_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
@@ -310,6 +323,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             atom_types_letter.append([])
             count = 0
             for i in range(1,len(fragment),2):
+                if fragment[i-1] in vsites:
+                    continue
                 for j in range(fragment[i]):
                     atom_types_number[-1].append(count)
                     atom_types_letter[-1].append(fragment[i-1])
@@ -363,10 +378,9 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     
         c6_text = []
         d6_text = []
-    
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                c6index = max(my_number_types[my_mon[1][0]])*i + j
+                c6index = (max(my_number_types[my_mon[1][0]])+1)*i + j
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
                 c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")
@@ -483,12 +497,16 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
     fcpp.close()
 
+    if number_of_monomers == 1:
+        this_mon = mon_ids[0]
+        these_monomers = [mon_ids[0],mon_ids[0]]
+    else:
+        these_monomers = [mon_ids[0],mon_ids[1]]
+
     # Now we add the files to MBX if indicated
     if MBX_HOME is not None:
         # Start with monomer properties
         if number_of_monomers == 1:
-            this_mon = mon_ids[0]
-            these_monomers = [mon_ids[0],mon_ids[0]]
             with open(MBX_HOME + "/src/bblock/sys_tools.cpp", 'r') as systools:
                 lines = systools.readlines()
             # Sites

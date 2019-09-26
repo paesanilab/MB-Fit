@@ -2523,6 +2523,7 @@ def write_poly_fit_header(number_of_monomers, system_name, degree, nvars, npoly)
         nvars                  - Number of variables in the polynomial
         npoly                  - Number of terms in the polynomial  
     """
+
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.h"
     ff = open(fname,'w')
     a = """
@@ -2880,6 +2881,23 @@ def get_arguments_for_functions(arg_string, number_of_monomers):
     return arg_text
 
 def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
+    """
+    Writes the polynomial holder header file 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been perfor
+med
+        non_linear_parameters  - All the non linear parameters
+        ri                     - Inner cutoff (not used if 1b)
+        ro                     - Outer cutoff (not used in 2b)
+        vsites                 - Virtual site labels
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
@@ -2960,6 +2978,33 @@ struct """ + struct_name + """ {
     ff.close()
     
 def write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
+    """
+    Writes the polynomial holder header file 
+    
+    Args:
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        vsites                 - Virtual site labels
+        use_lonepairs          - List with 0 and 1 of the same size as monomers. If 0, no lone pairs will be used or declared. If 1, lone pairs will be used. NOTE: TODO As for 09/25/2019, only water can have lone pairs.
+        non_linear_parameters  - All the non linear parameters
+        variables              - List of lists with the information in the poly.in file
+        number_of_variables    - Number of variables
+        degree                 - The degree of the polynomial
+        ri                     - Inner cutoff (not used if 1b)
+        ro                     - Outer cutoff (not used in 2b)
+        k_min_intra            - Minimum value allowed for k_intra
+        k_max_intra            - Maximum value allowed for k_intra
+        k_min                  - Minimum value allowed for k      
+        k_max                  - Maximum value allowed for k      
+        d_min_intra            - Minimum value allowed for d_intra
+        d_max_intra            - Maximum value allowed for d_intra
+        d_min                  - Minimum value allowed for d      
+        d_max                  - Maximum value allowed for d
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".cpp"

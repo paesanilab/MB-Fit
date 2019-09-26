@@ -38,11 +38,14 @@ number_of_sites = number_of_atoms
 # Get which monomer should be mb-pol monomer (if any)
 use_mbpol = [int(i) for i in settings.get("molecule", "use_mbpol").split(",")]
 
+# Define list of variables that are fictitious
+virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
+
 # Define if lone pairs are used based on monomer names
 # Update number of sites if needed
 use_lonepairs = [0]*number_of_monomers
 for i in range(number_of_monomers):
-    if "X" in monomers[i] or "Y" in monomers[i] or "Z" in monomers[i]:
+    if any(x in virtual_sites_poly for x in monomers[i]):
         use_lonepairs[i] = 1
     if use_mbpol[i] != 0:
         number_of_sites[i] += 1
@@ -105,11 +108,10 @@ d_max_intra = d_max
 
 # Obtain inner and outer cutoff from config.ini
 # This must be required 
-ri = 7.0 # polynomials start to decrease
+# TODO pass this from config
+ri = 7.0 # polynomials start to decrease (Angstrom)
 ro = 8.0 # polynomials are completely removed
 
-# Define list of variables that are fictitious
-virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
 
 # Define kind of variables for intra, inter and lone pairs
 # Options are:
@@ -133,6 +135,7 @@ E_range = config.getfloat("fitting", "energy_range")
 ################################################################################
 
 # Obtain types for each monomer
+# Gets something like ["A",2,"B",5] for A2B5 for each monomer
 monomer_atom_types = []
 for mon in monomers:
     monomer_atom_types.append(utils_nb_fitting.get_atom_types(mon)) 
@@ -140,6 +143,7 @@ for mon in monomers:
 # create dictionary mapping from atom index to atom name
 atom_list = []
 
+# Will get ["A1","A2","B1","B2","B3"...]
 for i in range(len(monomers)):
     atom_list.append([])
     for type_index in range(0, len(monomer_atom_types[i]), 2):

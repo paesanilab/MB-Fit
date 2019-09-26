@@ -118,10 +118,10 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
                     if not "name" in line:
                         constants.append(line.replace(":", "  m_"))
                 # Find number of polynomial linear coefficients
-                if line.startswith("  poly"):
+                elif line.startswith("  poly"):
                     npoly = int(line.strip().split()[2].replace(";",""))
                 # Store polynomial coefficients
-                if line.startswith("poly"):
+                elif line.startswith("poly"):
                     for i in range(npoly):
                         polycoef.append("            " + cdl.readline().replace(";","};"))
                 line = cdl.readline()
@@ -233,9 +233,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     if not ttm_only:
         # Write code that needs to be added in the ONEBODY_NOGRD section of the code
         print("Getting energy calls...")
-        system_name = monomers[0]
-        for i in range(1,number_of_monomers):
-            system_name += "_" + monomers[i]
+        system_name = "_".join(monomers)
 
         ids = []
         for i in range(len(mon_id_sorted)):

@@ -905,6 +905,16 @@ double """ + system_keyword_polyholder + """_fit::f_switch(const double r, doubl
 
 
 def write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck):
+    """
+    Writes the buckingham header
+    
+    Args:
+        monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
+        virtual_sites_poly     - Virtual site labels
+        A_buck                 - List of all the A coefficients for the system. If 1b, they should correspond to the A of the homodimer. If 2b, the A of the dimer itself.
+        b_buck                 - List of all the b (d6) coefficients for the system. If 1b, they should correspond to the b (d6) of the homodimer. If 2b, the b (d6) of the dimer itself.
+    """
+
     hname = "buckingham.h"
     ff = open(hname,'w')
     a = """
@@ -1023,6 +1033,17 @@ struct mbnrg_buck {
     ff.close()
 
 def write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+    """
+    Writes the buckingham C++ file for the fitting
+    
+    Args:
+        monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
+        virtual_sites_poly     - Virtual site labels
+        excl12                 - List with the pairs that are excluded at 1-2 distance
+        excl13                 - List with the pairs that are excluded at 1-3 distance
+        excl14                 - List with the pairs that are excluded at 1-4 distance
+    """
+
     # We will need the pairs:
     # Need to select if we have 1b or 2b
     if len(monomer_atom_types) == 1:
@@ -2689,6 +2710,17 @@ int main(int argc, char** argv) {
     ff.close()
 
 def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
+    """
+    Writes the polynomial header for MBX 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
@@ -2726,6 +2758,14 @@ struct """ + struct_name + """ {
     ff.close()
 
 def retrieve_polynomial_lines(keyword_start, poly_file):
+    """
+    From a given polynomial file it returns a string with just the polynomial terms that start with a given keyword
+    
+    Args:
+        keyword_start          - The keyword that will state if a line belongs to a polynomial term
+        poly_file              - The file containing the polynomial expression
+    """
+
     poly_lines = ""
     with open(poly_file,'r') as poly:
         line = poly.readline()
@@ -2740,6 +2780,19 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
     return poly_lines
 
 def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file with gradients for MBX 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been performed
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
@@ -2769,6 +2822,20 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.close()
 
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file without gradients for MBX 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been perfor
+med
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
@@ -2797,6 +2864,14 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.close()
 
 def get_arguments_for_functions(arg_string, number_of_monomers):
+    """
+    Helper function that returns a set of arguments in a function for multiple monomers
+
+    Args:
+        arg_string             - The argument that depends on the monomer (xyz, mon, grad...)
+        number_of_monomers     - The number of monomers
+    """
+
     arg_text = ""
     for i in range(number_of_monomers):
         arg_text += arg_string + str(i+1) 

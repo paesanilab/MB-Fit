@@ -118,10 +118,10 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
                     if not "name" in line:
                         constants.append(line.replace(":", "  m_"))
                 # Find number of polynomial linear coefficients
-                if line.startswith("  poly"):
+                elif line.startswith("  poly"):
                     npoly = int(line.strip().split()[2].replace(";",""))
                 # Store polynomial coefficients
-                if line.startswith("poly"):
+                elif line.startswith("poly"):
                     for i in range(npoly):
                         polycoef.append("            " + cdl.readline().replace(";","};"))
                 line = cdl.readline()

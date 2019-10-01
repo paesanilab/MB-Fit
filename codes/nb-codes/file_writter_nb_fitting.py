@@ -418,8 +418,8 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
         mon_id = chr(ord(mon_id)+1)
     return atoms
 
-def get_coords_var_name():
-    pass
+def get_coords_var_name(symmetry_class, atom_index, fragment_index, extension = ""):
+    return "_".join([symmetry_class, str(atom_index), fragment_index, extension])
 
 def get_pointer_setup_string(atoms, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
     crd_shift = 0
@@ -427,8 +427,6 @@ def get_pointer_setup_string(atoms, vsites, xyz_var_name, extension = "", nspace
     mon_id = 'a'
     string_pointers = ""
     string_pointers_vs = ""
-
-    atom_start_indices = {}
     prefix = ""
 
     if is_const:
@@ -436,10 +434,10 @@ def get_pointer_setup_string(atoms, vsites, xyz_var_name, extension = "", nspace
 
     for symmetry_class, atom_index, fragment_index in atoms:
         if not symmetry_class in vsites:
-                string_pointers += "{}{}double* {}_{}_{}{} = {} + {};\n".format(spaces, prefix, symmetry_class, atom_index, fragment_index, extension, xyz_var_name, crd_shift)
+                string_pointers += "{}{}double* {} = {} + {};\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension), xyz_var_name, crd_shift)
                 crd_shift += 3
         else:
-                string_pointers_vs += "{}{}double* {}_{}_{}{}[3];\n".format(spaces, prefix, symmetry_class, atom_index, fragment_index, extension)
+                string_pointers_vs += "{}{}double* {}[3];\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
         string_pointers += "\n"
         string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)
@@ -673,7 +671,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     ff.write(a)
 
     # Get the pointers to the atoms
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()")
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, vsites, "xyz.data()")
     
     ff.write(pointer_to_coordinates)
     ff.write(pointer_to_vsites)
@@ -688,6 +686,8 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
 
     """
     ff.write(a)
+
+    atoms = symmetry_parser.get_atoms()
 
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'

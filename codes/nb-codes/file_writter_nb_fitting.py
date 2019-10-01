@@ -418,7 +418,10 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
         mon_id = chr(ord(mon_id)+1)
     return atoms
 
-def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
+def get_coords_var_name():
+    pass
+
+def get_pointer_setup_string(atoms, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
     crd_shift = 0
     spaces = " "*nspaces
     mon_id = 'a'
@@ -431,26 +434,12 @@ def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name, extension
     if is_const:
         prefix = "const "
 
-    for monomer in monomer_atom_types:
-        num_ats = int(len(monomer)/2 + 0.49999)
-        for i in range(num_ats):
-            atom = monomer[2*i]
-
-            # set atom_start_index
-            try:
-                atom_start_index = atom_start_indices[atom]
-                atom_start_indices[atom] += monomer[2*i + 1]
-            except KeyError:
-                atom_start_index = 0
-                atom_start_indices[atom] = monomer[2*i + 1]
-
-            if not atom in vsites:
-                for j in range(atom_start_index, atom_start_index + monomer[2*i + 1]):
-                    string_pointers += spaces + prefix + "double* " + atom + "_" + str(j+1) + "_" + mon_id + extension + " = " + xyz_var_name + " + " + str(crd_shift) + ";\n"
-                    crd_shift += 3
-            else:
-                for j in range(atom_start_index, atom_start_index + monomer[2*i + 1]):
-                    string_pointers_vs += spaces + "double " + atom + "_" + str(j+1) + "_" + mon_id + extension + "[3];\n"
+    for symmetry_class, atom_index, fragment_index in atoms:
+        if not symmetry_class in vsites:
+                string_pointers += "{}{}double* {}_{}_{}{} = {} + {};\n".format(spaces, prefix, symmetry_class, atom_index, fragment_index, extension, xyz_var_name, crd_shift)
+                crd_shift += 3
+        else:
+                string_pointers_vs += "{}{}double* {}_{}_{}{}[3];\n".format(spaces, prefix, symmetry_class, atom_index, fragment_index, extension)
         string_pointers += "\n"
         string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)
@@ -498,7 +487,7 @@ def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
     return variables_string
 
 
-def write_fit_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max):
+def write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max):
     system_keyword_mbnrg = "mbnrg_" + str(number_of_monomers) + "b_" + system_name
     system_keyword_poly = "poly_" + str(number_of_monomers) + "b_" + system_name
     system_keyword_polyholder = "polyholder_" + str(number_of_monomers) + "b_" + system_name
@@ -698,7 +687,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     double wcross =   9.859272078406150e-02;
 
     """
-    ff.write(a) 
+    ff.write(a)
 
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'

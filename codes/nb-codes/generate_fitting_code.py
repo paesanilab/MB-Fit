@@ -201,7 +201,7 @@ system_name = symmetry_parser.get_symmetry()
 
 file_writter_nb_fitting.write_fit_polynomial_holder_header(system_name, number_of_monomers, nl_param_all, ri, ro)
 
-file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max)
+file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max)
 
 
 ################################################################################

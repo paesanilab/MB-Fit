@@ -51,17 +51,17 @@ def read_poly_in(poly_in, vsites, var_intra, var_inter, var_virtual_sites):
                 if category.startswith("x-intra"):
 
                         if has_vsites:
-                            variables[-1].append(var_virtual_sites)
+                            variables[-1] = (*variables[-1], var_virtual_sites)
                         else:
-                            variables[-1].append(var_intra)
+                            variables[-1] = (*variables[-1], var_intra)
                         if pair not in intra_poly_pairs:
                             intra_poly_pairs.append(pair)
                 else:
 
                     if has_vsites:
-                        variables[-1].append(var_virtual_sites)
+                        variables[-1] = (*variables[-1], var_virtual_sites)
                     else:
-                        variables[-1].append(var_inter)
+                        variables[-1] = (*variables[-1], var_inter)
                     if pair not in inter_poly_pairs:
                         inter_poly_pairs.append(pair)
 

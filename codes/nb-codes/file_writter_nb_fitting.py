@@ -401,7 +401,7 @@ inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<d
 
 """
 
-    with open(header_mbnrg_fit) as header_file:
+    with open(header_mbnrg_fit, "w") as header_file:
         header_file.write(header_text)
 
 def get_individual_atoms_with_type(monomer_atom_types, vsites):
@@ -461,10 +461,10 @@ def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
     spaces = " "*nspaces
     for i in range(len(variables)):
         var = variables[i]
-        types_1 = utils_nb_fitting.get_atom_types(var[0])
-        types_2 = utils_nb_fitting.get_atom_types(var[2])
+        types_1 = utils_nb_fitting.get_atom_types(var[0] + str(var[1]))
+        types_2 = utils_nb_fitting.get_atom_types(var[3] + str(var[4]))
         atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[1])
-        atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[3])
+        atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[4])
         
         sorted_atoms = "".join(sorted([types_1[0], types_2[0]]))
 

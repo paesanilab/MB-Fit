@@ -124,7 +124,7 @@ class FragmentSymmetryParser(object):
                       atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type)
 
     def get_intermolecular_variables(self):
-        yield from (atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type
+        yield from ((atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type)
                     for atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type
                     in self.get_variables()
                     if atom1_fragment_index != atom2_fragment_index)

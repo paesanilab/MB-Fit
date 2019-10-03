@@ -1451,10 +1451,10 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
               
     return electrostatics_string
 
-def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
+def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
 
     # We need the pairs again to know how many linear and non linear terms we have
-    pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+    pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
 
     num_terms = len(pairs)
 
@@ -1802,9 +1802,9 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
-def write_eval_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
+def write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
     # We need the pairs again to know how many linear and non linear terms we have
-    pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+    pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
 
     cppname = "eval-" + str(number_of_monomers) + "b-ttm.cpp"
     ff = open(cppname,'w')
@@ -2676,7 +2676,7 @@ struct """ + struct_name + """ {
     ff.write(a)
     ff.close()
     
-def write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
+def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".cpp"
@@ -2793,16 +2793,18 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const siz
     """
     ff.write(a)
 
+    fragments = symmetry_parser.get_sub_parsers()
+
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        monomer m""" + str(i+1) + """;
-        m""" + str(i+1) + """.setup(""" + monomer_atom_types[i][0] + "_1_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """);
+        monomer m""" + str(i + 1) + """;
+        m""" + str(i + 1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
-        char_code = chr(ord(char_code)+1)
+        char_code = chr(ord(char_code) + 1)
 
     ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
     ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
@@ -2904,13 +2906,13 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
         counter += number_of_atoms[i]*3
 
     # Get the pointers to the atoms
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()", nspaces = 8)
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, vsites, "xyz.data()", nspaces = 8)
 
     ff.write(pointer_to_coordinates)
     ff.write(pointer_to_vsites)
     ff.write("\n")
 
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "gradients.data()", "_g", nspaces = 8, is_const = False)
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, vsites, "gradients.data()", "_g", nspaces = 8, is_const = False)
 
     ff.write(pointer_to_coordinates)
     ff.write(pointer_to_vsites)
@@ -2925,16 +2927,18 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     """
     ff.write(a)
 
+    fragments = symmetry_parser.get_sub_parsers()
+
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        monomer m""" + str(i+1) + """;
-        m""" + str(i+1) + """.setup(""" + monomer_atom_types[i][0] + "_1_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """);
+        monomer m""" + str(i + 1) + """;
+        m""" + str(i + 1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
-        char_code = chr(ord(char_code)+1)
+        char_code = chr(ord(char_code) + 1)
 
     ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
     ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
@@ -2983,18 +2987,20 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
 
     string_vars = get_grad_var_string(variables, "vs", "gxs", nspaces = 8)
     ff.write(string_vars)
+    
+    
 
-    # Redistribution of gradients
+    fragments = symmetry_parser.get_sub_parsers()
+
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        m""" + str(i+1) + """.grads(""" + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][0] + "_1_" + char_code + """);
+        m""" + str(i+1) + """.grads(""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """);
 """
-
             ff.write(a)
-        char_code = chr(ord(char_code)+1)
+        char_code = chr(ord(char_code) + 1)
 
     # Now finalize switch gradients
     all_switch_summands = sw_string.split(" + ")

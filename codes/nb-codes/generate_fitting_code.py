@@ -244,13 +244,13 @@ file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, num
 ## TTM-nrg fitting code ########################################################
 ################################################################################
 if number_of_monomers == 2:
-    file_writter_nb_fitting.write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max)
+    file_writter_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max)
 
 ################################################################################
 ## TTM-nrg evaluation code #####################################################
 ################################################################################
 
-    file_writter_nb_fitting.write_eval_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
+    file_writter_nb_fitting.write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
 
 ################################################################################
 ## Makefile ####################################################################
@@ -274,7 +274,7 @@ file_writter_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_nam
 
 file_writter_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
 
-file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
+file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
 
 
 

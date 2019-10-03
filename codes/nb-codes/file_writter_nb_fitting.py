@@ -418,10 +418,22 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
         mon_id = chr(ord(mon_id)+1)
     return atoms
 
-def get_coords_var_name(symmetry_class, atom_index, fragment_index, extension = ""):
-    return "_".join([symmetry_class, str(atom_index), fragment_index, extension])
+def get_coords_var_name(symmetry_class, atom_index, fragment_index, extension=""):
+    return "_".join(["coords", symmetry_class, str(atom_index), fragment_index, extension])
 
-def get_pointer_setup_string(atoms, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
+def get_C6_var_name(symmetry_class1, symmetry_class2, extension=""):
+    return "_".join(["m", "C6", symmetry_class1, symmetry_class2, extension])
+
+def get_d6_var_name(symmetry_class1, symmetry_class2, extension=""):
+    return "_".join(["m", "d6", symmetry_class1, symmetry_class2, extension])
+
+def get_A_var_name(symmetry_class1, symmetry_class2, extension=""):
+    return "_".join(["m", "A", symmetry_class1, symmetry_class2, extension])
+
+def get_b_var_name(symmetry_class1, symmetry_class2, extension=""):
+    return "_".join(["m", "b", symmetry_class1, symmetry_class2, extension])
+
+def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
     crd_shift = 0
     spaces = " "*nspaces
     mon_id = 'a'
@@ -432,7 +444,7 @@ def get_pointer_setup_string(atoms, vsites, xyz_var_name, extension = "", nspace
     if is_const:
         prefix = "const "
 
-    for symmetry_class, atom_index, fragment_index in atoms:
+    for symmetry_class, atom_index, fragment_index in symmetry_parser.get_atoms():
         if not symmetry_class in vsites:
                 string_pointers += "{}{}double* {} = {} + {};\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension), xyz_var_name, crd_shift)
                 crd_shift += 3
@@ -687,7 +699,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     """
     ff.write(a)
 
-    atoms = symmetry_parser.get_atoms()
+    fragments = symmetry_parser.get_sub_parsers()
 
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
@@ -695,7 +707,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
         if use_lonepairs[i] != 0:
             a = """
     monomer m""" + str(i+1) + """;
-    m""" + str(i+1) + """.setup(""" + monomer_atom_types[i][0] + "_1_" + char_code + """, w12, wcross, """ + monomer_atom_types[i][4] + "_1_" + char_code + ", " + monomer_atom_types[i][4] + "_2_" + char_code + """);
+    m""" + str(i+1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
         char_code = chr(ord(char_code)+1)
@@ -799,7 +811,7 @@ double """ + system_keyword_polyholder + """_fit::f_switch(const double r, doubl
     ff.close()
 
 
-def write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck):
+def write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck):
     hname = "buckingham.h"
     ff = open(hname,'w')
     a = """
@@ -818,17 +830,17 @@ struct mbnrg_buck {
     ff.write(a)
 
     # Need to select if we have 1b or 2b
-    if len(monomer_atom_types) == 1:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
+    if symmetry_parser.get_num_fragments() == 1:
+        pairs = symmetry_parser.get_pairs(vsites=virtual_sites_poly)
     else:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+        pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
 
     # Write A and b declaration
     a = ""
     b = ""
-    for pair in pairs:
-        a += "  double m_A_" + pair + " = " + str(A_buck[pairs.index(pair)]) + ";\n"
-        b += "  double m_b_" + pair + " = " + str(b_buck[pairs.index(pair)]) + ";\n"
+    for pair_index, pair in enumerate(pairs):
+        a += "  double " + get_A_var_name(pair[0], pair[1]) + " = " + str(A_buck[pair_index]) + ";\n"
+        b += "  double " + get_b_var_name(pair[0], pair[1]) + " = " + str(b_buck[pair_index]) + ";\n"
 
     ff.write(a + "\n")
     ff.write(b)
@@ -846,8 +858,8 @@ struct mbnrg_buck {
     ff.write(a)
     
     a = ""
-    for pair in pairs:
-        a += "    m_b_" + pair + " = b[" + str(pairs.index(pair)) + "];\n"
+    for pair_index, pair in enumerate(pairs):
+        a += "    " + get_b_var_name(pair[0], pair[1]) + " = b[" + str(pair_index) + "];\n"
 
     ff.write(a)
 
@@ -859,8 +871,8 @@ struct mbnrg_buck {
     ff.write(a)
 
     a = ""
-    for pair in pairs:
-        a += "    m_A_" + pair + " = a[" + str(pairs.index(pair)) + "];\n"
+    for pair_index, pair in enumerate(pairs):
+        a += "    " + get_A_var_name(pair[0], pair[1]) + " = a[" + str(pair_index) + "];\n"
 
     ff.write(a)
 
@@ -917,13 +929,13 @@ struct mbnrg_buck {
     ff.write(a)
     ff.close()
 
-def write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+def write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
     # We will need the pairs:
     # Need to select if we have 1b or 2b
-    if len(monomer_atom_types) == 1:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
+    if symmetry_parser.get_num_fragments() == 1:
+        pairs = symmetry_parser.get_pairs(vsites=virtual_sites_poly)
     else:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+        pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
 
     cppname = "buckingham.cpp"
     ff = open(cppname,'w')
@@ -942,32 +954,33 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
     ff.write(a)
 
     # Get pointer to coordinates only for real sites
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, virtual_sites_poly, "xyz.data()")
 
     ff.write(pointer_to_coordinates)
 
-    # Write the dispersion calculations that are excluded
-    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
-    # Case in which we have a monomer
     a = ""
-    if len(monomer_atom_types) == 1:
-        mon = atom_types[0]
-        for i in range(len(mon)-1):
-            for j in range(i+1,len(mon)):
-                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
-                     pair = "".join(sorted([mon[i][0], mon[j][0]]))
-                     vector_index = str(pairs.index(pair))
-                     
-                     a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
 
-    elif len(monomer_atom_types) == 2:
-        mon1 = atom_types[0]
-        mon2 = atom_types[1]
-        for i in range(len(mon1)):
-            for j in range(len(mon2)):
-                 pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
-                 vector_index = str(pairs.index(pair))
-                 a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+    # case where we have a monomer
+    if symmetry_parser.get_num_fragments() == 1:
+        mon = sorted(symmetry_parser.get_atoms())
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
+                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    vector_index = str(pairs.index(pair))
+
+                    a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, {}, {}, {});\n".format(get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
+
+    # case in which we have a dimer
+    elif symmetry_parser.get_num_fragments() == 2:
+        mons = symmetry_parser.get_atoms()
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
+                if atom1_frag_index == atom2_frag_index:
+                    continue
+                pair = sorted([atom1_symmetry, atom2_symmetry])
+                vector_index = str(pairs.index(pair))
+                a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, {}, {}, {});\n".format(get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     ff.write(a)
 
@@ -984,29 +997,33 @@ double mbnrg_buck::get_buckingham() {
     ff.write(a)
 
     # Get pointer to coordinates only for real sites
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, virtual_sites_poly, "xyz.data()")
 
     ff.write(pointer_to_coordinates)
 
-    # Write the dispersion calculations that are excluded
-    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
-    # Case in which we have a monomer
     a = ""
-    if len(monomer_atom_types) == 1:
-        mon = atom_types[0]
-        for i in range(len(mon)-1):
-            for j in range(i+1,len(mon)):
-                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
-                     pair = "".join(sorted([mon[i][0], mon[j][0]]))
-                     a += "    buck += buck_energy(m_A_{}, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
 
-    elif len(monomer_atom_types) == 2:
-        mon1 = atom_types[0]
-        mon2 = atom_types[1]
-        for i in range(len(mon1)):
-            for j in range(len(mon2)):
-                 pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
-                 a += "    buck += buck_energy(m_A_{}, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+    # case where we have a monomer
+    if symmetry_parser.get_num_fragments() == 1:
+        mon = sorted(symmetry_parser.get_atoms())
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
+                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    vector_index = str(pairs.index(pair))
+
+                    a += "    buck += buck_energy({}, {}, {}, {});\n".format(get_A_var_name(pair[0], pair[1]), get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
+
+    # case in which we have a dimer
+    elif symmetry_parser.get_num_fragments() == 2:
+        mons = symmetry_parser.get_atoms()
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
+                if atom1_frag_index == atom2_frag_index:
+                    continue
+                pair = sorted([atom1_symmetry, atom2_symmetry])
+                vector_index = str(pairs.index(pair))
+                a += "    buck += buck_energy({}, {}, {}, {});\n".format(get_A_var_name(pair[0], pair[1]), get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     ff.write(a)
 
@@ -1019,7 +1036,9 @@ double mbnrg_buck::get_buckingham() {
     ff.write(a)
     ff.close()
 
-def write_dispersion_header(monomer_atom_types, virtual_sites_poly, c6, d6):
+
+
+def write_dispersion_header(symmetry_parser, virtual_sites_poly, c6, d6):
     hname = "dispersion.h"
     ff = open(hname,'w')
     a = """
@@ -1041,19 +1060,19 @@ struct mbnrg_disp {
     ff.write(a)
 
     # Need to select if we have 1b or 2b
-    if len(monomer_atom_types) == 1:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
-    elif len(monomer_atom_types) == 2:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+    if symmetry_parser.get_num_fragments() == 1:
+        pairs = symmetry_parser.get_pairs()
+    elif symmetry_parser.get_num_fragments() == 2:
+        pairs = symmetry_parser.get_intermolecular_pairs()
     else:
         pairs = []
 
     # Write C6 declaration
     a = ""
     b = ""
-    for pair in pairs:
-        a += "  double m_C6_" + pair + " = " + str(c6[pairs.index(pair)]) + ";\n"
-        b += "  double m_d6_" + pair + " = " + str(d6[pairs.index(pair)]) + ";\n"
+    for pair_index, (symmetry1, symmetry2) in enumerate(pairs):
+        a += "  double " + get_C6_var_name(symmetry1, symmetry2) + " = " + str(c6[pair_index]) + ";\n"
+        b += "  double " + get_d6_var_name(symmetry1, symmetry2) + " = " + str(d6[pair_index]) + ";\n"
 
     ff.write(a + "\n")
     ff.write(b)
@@ -1076,8 +1095,8 @@ struct mbnrg_disp {
     ff.write(a)
 
     a = ""
-    for pair in pairs:
-        a += "    m_d6_" + pair + " = d6[" + str(pairs.index(pair)) + "];\n"
+    for pair_index, (symmetry1, symmetry2) in enumerate(pairs):
+        a += "    " + get_d6_var_name(symmetry1, symmetry2) + " = d6[" + str(pair_index) + "];\n"
 
     ff.write(a)
 
@@ -1089,8 +1108,8 @@ struct mbnrg_disp {
     ff.write(a)
 
     a = ""
-    for pair in pairs:
-        a += "    m_C6_" + pair + " = c6[" + str(pairs.index(pair)) + "];\n"
+    for pair_index, (symmetry1, symmetry2) in enumerate(pairs):
+        a += "    " + get_C6_var_name(symmetry1, symmetry2) + " = c6[" + str(pair_index) + "];\n"
 
     ff.write(a)
 
@@ -1176,12 +1195,12 @@ struct mbnrg_disp {
     ff.close()
 
 
-def write_dispersion_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+def write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
     # Need to select if we have 1b or 2b
-    if len(monomer_atom_types) == 1:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0])
-    elif len(monomer_atom_types) == 2:
-        pairs = utils_nb_fitting.get_nonbonded_pairs(virtual_sites_poly,monomer_atom_types[0],monomer_atom_types[1])
+    if symmetry_parser.get_num_fragments() == 1:
+        pairs = symmetry_parser.get_pairs(vsites=virtual_sites_poly)
+    elif symmetry_parser.get_num_fragments() == 2:
+        pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
     else:
         pairs = []
 
@@ -1202,32 +1221,41 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
     ff.write(a)
 
     # Get pointer to coordinates only for real sites
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, virtual_sites_poly, "xyz.data()")
 
     ff.write(pointer_to_coordinates)
 
-    # Write the dispersion calculations that are excluded
-    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
-    # Case in which we have a monomer
+    # Need to select if we have 1b or 2b
+    if symmetry_parser.get_num_fragments() == 1:
+        pairs = symmetry_parser.get_pairs(vsites=virtual_sites_poly)
+    elif symmetry_parser.get_num_fragments() == 2:
+        pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
+    else:
+        pairs = []
+
     a = ""
-    if len(monomer_atom_types) == 1:
-        mon = atom_types[0]
-        for i in range(len(mon)-1):
-            for j in range(i+1,len(mon)):
-                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
-                     pair = "".join(sorted([mon[i][0], mon[j][0]]))
-                     vector_index = str(pairs.index(pair))
 
-                     a += "    nl_terms[" + vector_index + "] += x6(1.0, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
+    # case where we have a monomer
+    if symmetry_parser.get_num_fragments() == 1:
+        mon = sorted(symmetry_parser.get_atoms())
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
+                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    vector_index = str(pairs.index(pair))
 
-    elif len(monomer_atom_types) == 2:
-        mon1 = atom_types[0]
-        mon2 = atom_types[1]
-        for i in range(len(mon1)):
-            for j in range(len(mon2)):
-                 pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
-                 vector_index = str(pairs.index(pair))
-                 a += "    nl_terms[" + vector_index + "] += x6(1.0, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+                    a += "    nl_terms[" + vector_index + "] += x6(1.0, {}, m_C8, m_d8, {}, {});\n".format(get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
+
+    # case in which we have a dimer
+    elif symmetry_parser.get_num_fragments() == 2:
+        mons = symmetry_parser.get_atoms()
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
+                if atom1_frag_index == atom2_frag_index:
+                    continue
+                pair = sorted([atom1_symmetry, atom2_symmetry])
+                vector_index = str(pairs.index(pair))
+                a += "    nl_terms[" + vector_index + "] += x6(1.0, {}, m_C8, m_d8, {}, {});\n".format(get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     ff.write(a)
 
@@ -1244,29 +1272,31 @@ double mbnrg_disp::get_dispersion() {
     ff.write(a)
 
     # Get pointer to coordinates only for real sites
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, virtual_sites_poly, "xyz.data()")
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, virtual_sites_poly, "xyz.data()")
 
     ff.write(pointer_to_coordinates)
 
-    # Write the dispersion calculations that are excluded
-    atom_types = get_individual_atoms_with_type(monomer_atom_types, virtual_sites_poly)
-    # Case in which we have a monomer
     a = ""
-    if len(monomer_atom_types) == 1:
-        mon = atom_types[0]
-        for i in range(len(mon)-1):
-            for j in range(i+1,len(mon)):
-                if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
-                    pair = "".join(sorted([mon[i][0], mon[j][0]]))
-                    a += "    disp += x6(m_C6_{}, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
 
-    elif len(monomer_atom_types) == 2:
-        mon1 = atom_types[0]
-        mon2 = atom_types[1]
-        for i in range(len(mon1)):
-            for j in range(len(mon2)):
-                pair = "".join(sorted([mon1[i][0], mon2[j][0]]))
-                a += "    disp += x6(m_C6_{}, m_d6_{}, m_C8, m_d8, {}_{}_{}, {}_{}_{});\n".format(pair, pair, mon1[i][0], mon1[i][1], mon1[i][2], mon2[j][0], mon2[j][1], mon2[j][2])
+    # Case in which we have a monomer
+    if symmetry_parser.get_num_fragments() == 1:
+        mon = sorted(symmetry_parser.get_atoms())
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
+                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    a += "    disp += x6({}, {}, m_C8, m_d8, {}, {});\n".format(get_C6_var_name(pair[0], pair[1]), get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
+
+    # Case in which we have a dimer
+    elif symmetry_parser.get_num_fragments() == 2:
+        mons = symmetry_parser.get_atoms()
+        for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
+            for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
+                if atom1_frag_index == atom2_frag_index:
+                    continue
+                pair = sorted([atom1_symmetry, atom2_symmetry])
+                vector_index = str(pairs.index(pair))
+                a += "    disp += x6({}, {}, m_C8, m_d8, {}, {});\n".format(get_C6_var_name(pair[0], pair[1]), get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     ff.write(a)
 

@@ -34,10 +34,10 @@ system.format_print("Generating fitcode for molecule with symmetry {}...".format
 
 # Obtain monomers from settings
 monomers_symmetries = symmetry_parser.get_fragment_symmetries()
-number_of_monomers = len(monomers_symmetries)
 
 # Get number of atoms in each monomer.
 number_of_atoms = [int(i) for i in settings.get("molecule", "fragments").split(",")]
+number_of_monomers = len(number_of_atoms)
 
 # Set the number of electrostatic sites
 number_of_sites = number_of_atoms
@@ -208,17 +208,17 @@ file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, symmetry_pa
 ## Write dispersion header and cpp #############################################
 ################################################################################
 
-file_writter_nb_fitting.write_dispersion_header(monomer_atom_types, virtual_sites_poly, C6, d6)
+file_writter_nb_fitting.write_dispersion_header(symmetry_parser, virtual_sites_poly, C6, d6)
 
-file_writter_nb_fitting.write_dispersion_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
+file_writter_nb_fitting.write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 
 ################################################################################
 ## Write buckingham header and cpp #############################################
 ################################################################################
-file_writter_nb_fitting.write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck)
+file_writter_nb_fitting.write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
 
-file_writter_nb_fitting.write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
+file_writter_nb_fitting.write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 ################################################################################
 ## Polynomial header and cpp ###################################################

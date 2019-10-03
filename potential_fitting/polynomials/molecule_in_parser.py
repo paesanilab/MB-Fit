@@ -123,6 +123,32 @@ class FragmentSymmetryParser(object):
                 yield (atom1_symmetry_class, atom1_index, atom1_fragment_index,
                       atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type)
 
+    def get_intermolecular_variables(self):
+        yield from (atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type
+                    for atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type
+                    in self.get_variables()
+                    if atom1_fragment_index != atom2_fragment_index)
+
+    def get_pairs(self, vsites=[]):
+        pairs = set()
+        for parser in self.get_sub_parsers():
+            pairs = pairs.union(parser.get_pairs(vsites=vsites))
+
+        pairs = pairs.union(self.get_intermolecular_pairs(vsites=vsites))
+
+        return pairs
+
+    def get_intermolecular_pairs(self, vsites=[]):
+        pairs = set()
+        for parser1, parser2 in itertools.combinations(self.get_sub_parsers(), 2):
+            atoms1 = parser1.get_atoms()
+            atoms2 = parser2.get_atoms()
+
+            for atom1_symmetry, atom1_index, atom1_fragment_index in atoms1:
+                for atom2_symmetry, atom2_index, atom2_fragment_index in atoms2:
+                    if atom1_symmetry not in vsites and atom2_symmetry not in vsites:
+                        pairs.add(sorted((atom1_symmetry[0], atom2_symmetry[0])))
+
     def get_symmetry(self):
         if self.has_sub_fragments:
 
@@ -202,6 +228,14 @@ class AtomSymmetryParser(FragmentSymmetryParser):
                 atom2_frag = ""
                 variable_type = "x-intra-{}+{}-0".format(atom1, atom2)
                 yield (atom1, atom2, atom1_frag, atom2_frag, variable_type)
+
+    def get_pairs(self, vsites=[]):
+        return
+        yield
+
+    def get_intermolecular_pairs(self, vsites=[]):
+        return
+        yield
 
     def get_symmetry(self):
         return self.symmetry_class + str(self.num_atoms)

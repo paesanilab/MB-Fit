@@ -150,9 +150,9 @@ E_range = config.getfloat("fitting", "energy_range")
 ################################################################################
 
 # create dictionary mapping from atom index to atom name
-atom_list = [[sym + str(ind) for sym, ind, frag in fragment_symmetry_parser.get_atoms()] for fragment_symmetry_parser in symmetry_parser.get_sub_parsers()]
+atom_list = [sym + str(ind) for sym, ind, frag in symmetry_parser.get_atoms()]
 
-system.format_print("Atoms in the molecule: {}.".format(" ".join([" ".join(atom_list_frag) for atom_list_frag in atom_list])),
+system.format_print("Atoms in the molecule: {}.".format(" ".join(atom_list)),
                     italics=True)
 
 # read the poly.in file to get the variables

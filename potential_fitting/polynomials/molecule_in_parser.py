@@ -147,7 +147,9 @@ class FragmentSymmetryParser(object):
             for atom1_symmetry, atom1_index, atom1_fragment_index in atoms1:
                 for atom2_symmetry, atom2_index, atom2_fragment_index in atoms2:
                     if atom1_symmetry not in vsites and atom2_symmetry not in vsites:
-                        pairs.add(sorted((atom1_symmetry[0], atom2_symmetry[0])))
+                        pairs.add(tuple(sorted((atom1_symmetry[0], atom2_symmetry[0]))))
+
+        return pairs
 
     def get_symmetry(self):
         if self.has_sub_fragments:

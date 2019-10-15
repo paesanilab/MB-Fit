@@ -966,7 +966,7 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
                 if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
-                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                     vector_index = str(pairs.index(pair))
 
                     a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, {}, {}, {});\n".format(get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
@@ -1009,7 +1009,7 @@ double mbnrg_buck::get_buckingham() {
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
                 if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
-                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                     vector_index = str(pairs.index(pair))
 
                     a += "    buck += buck_energy({}, {}, {}, {});\n".format(get_A_var_name(pair[0], pair[1]), get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
@@ -1241,7 +1241,7 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
                 if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
-                    pair = sorted([atom1_symmetry, atom2_symmetry])
+                    pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                     vector_index = str(pairs.index(pair))
 
                     a += "    nl_terms[" + vector_index + "] += x6(1.0, {}, m_C8, m_d8, {}, {});\n".format(get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))

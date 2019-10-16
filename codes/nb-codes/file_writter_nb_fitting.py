@@ -154,6 +154,7 @@ namespace x  {
     with open(filename, 'w') as cpp_file:
         cpp_file.write(cpp_text)
 
+
 def write_mbpol_monomer(mon_index):
     filename = "mon" + str(mon_index) + ".cpp"
 
@@ -273,6 +274,7 @@ excluded_set_type::iterator mon""" + str(mon_index) + """::get_end_14() { return
     with open(filename, 'w') as cpp_file:
         cpp_file.write(cpp_text)
 
+
 def write_fit_polynomial_holder_header(system_name, number_of_monomers, non_linear_parameters, ri, ro):
 
     defflag = "MBNRG_" + str(number_of_monomers) + "B_" + system_name + "_FIT"
@@ -282,6 +284,11 @@ def write_fit_polynomial_holder_header(system_name, number_of_monomers, non_line
     system_keyword_poly = "poly_" + str(number_of_monomers) + "b_" + system_name
 
     system_keyword_polyholder = "polyholder_" + str(number_of_monomers) + "b_" + system_name
+
+    defflag = defflag.replace("(", "_o_").replace(")", "_c_")
+    system_keyword_mbnrg = system_keyword_mbnrg.replace("(", "_o_").replace(")", "_c_")
+    system_keyword_poly = system_keyword_poly.replace("(", "_o_").replace(")", "_c_")
+    system_keyword_polyholder = system_keyword_polyholder.replace("(", "_o_").replace(")", "_c_")
 
     header_mbnrg_fit = system_keyword_mbnrg + "_fit.h"
     header_poly_fit = system_keyword_poly + "_fit.h"
@@ -404,6 +411,7 @@ inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<d
     with open(header_mbnrg_fit, "w") as header_file:
         header_file.write(header_text)
 
+
 def get_individual_atoms_with_type(monomer_atom_types, vsites):
     mon_id = 'a'
     atoms = []
@@ -418,20 +426,36 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
         mon_id = chr(ord(mon_id)+1)
     return atoms
 
+
 def get_coords_var_name(symmetry_class, atom_index, fragment_index, extension=""):
-    return "_".join(["coords", symmetry_class, str(atom_index), fragment_index, extension])
+    return "_".join(["coords", symmetry_class, str(atom_index), fragment_index, extension]
+                    if extension != ""
+                    else ["coords", symmetry_class, str(atom_index), fragment_index])
+
 
 def get_C6_var_name(symmetry_class1, symmetry_class2, extension=""):
-    return "_".join(["m", "C6", symmetry_class1, symmetry_class2, extension])
+    return "_".join(["m", "C6", symmetry_class1, symmetry_class2, extension]
+                    if extension != ""
+                    else ["m", "C6", symmetry_class1, symmetry_class2])
+
 
 def get_d6_var_name(symmetry_class1, symmetry_class2, extension=""):
-    return "_".join(["m", "d6", symmetry_class1, symmetry_class2, extension])
+    return "_".join(["m", "d6", symmetry_class1, symmetry_class2, extension]
+                    if extension != ""
+                    else ["m", "d6", symmetry_class1, symmetry_class2])
+
 
 def get_A_var_name(symmetry_class1, symmetry_class2, extension=""):
-    return "_".join(["m", "A", symmetry_class1, symmetry_class2, extension])
+    return "_".join(["m", "A", symmetry_class1, symmetry_class2, extension]
+                    if extension != ""
+                    else ["m", "A", symmetry_class1, symmetry_class2])
+
 
 def get_b_var_name(symmetry_class1, symmetry_class2, extension=""):
-    return "_".join(["m", "b", symmetry_class1, symmetry_class2, extension])
+    return "_".join(["m", "b", symmetry_class1, symmetry_class2, extension]
+                    if extension != ""
+                    else ["m", "b", symmetry_class1, symmetry_class2])
+
 
 def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
     crd_shift = 0
@@ -446,12 +470,12 @@ def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = 
 
     for symmetry_class, atom_index, fragment_index in symmetry_parser.get_atoms():
         if not symmetry_class in vsites:
-                string_pointers += "{}{}double* {} = {} + {};\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension), xyz_var_name, crd_shift)
-                crd_shift += 3
+            string_pointers += "{}{}double* {} = {} + {};\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension), xyz_var_name, crd_shift)
+            string_pointers += "\n"
+            crd_shift += 3
         else:
-                string_pointers_vs += "{}{}double* {}[3];\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
-        string_pointers += "\n"
-        string_pointers_vs += "\n"
+            string_pointers_vs += "{}{}double* {}[3];\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
+            string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)
     return string_pointers, string_pointers_vs
             
@@ -459,28 +483,22 @@ def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = 
 def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
     variables_string = ""
     spaces = " "*nspaces
-    for i in range(len(variables)):
-        var = variables[i]
-        types_1 = utils_nb_fitting.get_atom_types(var[0] + str(var[1]))
-        types_2 = utils_nb_fitting.get_atom_types(var[3] + str(var[4]))
-        atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[1])
-        atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[4])
-        
-        sorted_atoms = "".join(sorted([types_1[0], types_2[0]]))
+    for variable_index, (atom1_sym, atom1_ind, atom1_frag, atom2_sym, atom2_ind, atom2_frag, category, type) in enumerate(variables):
+        types_1 = utils_nb_fitting.get_atom_types(atom1_sym + str(atom1_ind))
+        types_2 = utils_nb_fitting.get_atom_types(atom2_sym + str(atom2_ind))
 
-        kconst = "m_k_"
-        dconst = "m_d_"
-        if var[1] == var[3]:
-            kconst += "intra_"
-            dconst += "intra_"
- 
-        argument_constants = kconst + sorted_atoms
-        if "0" in var[-1]:
-            argument_constants = dconst + sorted_atoms + ', ' + kconst
+        nl_param_k = "m_k_" + category.replace("-", "_").replace("+", "_")
+        nl_param_d = "m_d_" + category.replace("-", "_").replace("+", "_")
+        atom1_coords = get_coords_var_name(atom1_sym, atom1_ind, atom1_frag)
+        atom2_coords = get_coords_var_name(atom2_sym, atom2_ind, atom2_frag)
 
-        variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout,i,name_vstruct,i,var[-1],argument_constants,atom1_name,atom2_name)
+        if "0" in type:
+            variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_d, nl_param_k, atom1_coords, atom2_coords)
+        else:
+            variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_k, atom1_coords, atom2_coords)
 
     return variables_string     
+
 
 def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
     variables_string = ""
@@ -501,6 +519,11 @@ def write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_mono
     system_keyword_mbnrg = "mbnrg_" + str(number_of_monomers) + "b_" + system_name
     system_keyword_poly = "poly_" + str(number_of_monomers) + "b_" + system_name
     system_keyword_polyholder = "polyholder_" + str(number_of_monomers) + "b_" + system_name
+
+    system_keyword_mbnrg = system_keyword_mbnrg.replace("(", "_o_").replace(")", "_c_")
+    system_keyword_poly = system_keyword_poly.replace("(", "_o_").replace(")", "_c_")
+    system_keyword_polyholder = system_keyword_polyholder.replace("(", "_o_").replace(")", "_c_")
+
     header_mbnrg_fit = system_keyword_mbnrg + "_fit.h"
     header_poly_fit = system_keyword_poly + "_fit.h"
     header_poly = system_keyword_poly + ".h"
@@ -929,6 +952,7 @@ struct mbnrg_buck {
     ff.write(a)
     ff.close()
 
+
 def write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
     # We will need the pairs:
     # Need to select if we have 1b or 2b
@@ -1035,7 +1059,6 @@ double mbnrg_buck::get_buckingham() {
 
     ff.write(a)
     ff.close()
-
 
 
 def write_dispersion_header(symmetry_parser, virtual_sites_poly, c6, d6):
@@ -1309,6 +1332,7 @@ double mbnrg_disp::get_dispersion() {
     ff.write(a)
     ff.close()
 
+
 def get_nl_params_initialization_string(nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
     nl_params_string = ""
     for i in range(len(nl_param_all)):
@@ -1324,6 +1348,7 @@ def get_nl_params_initialization_string(nl_param_all, k_min, k_max, d_min, d_max
                 nl_params_string += '      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n'
 
     return nl_params_string
+
 
 def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_of_sites, ptr_to_coords):
     electrostatics_string = ""
@@ -1451,8 +1476,9 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
               
     return electrostatics_string
 
-def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
 
+def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     # We need the pairs again to know how many linear and non linear terms we have
     pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
 
@@ -1802,7 +1828,9 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
+
 def write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     # We need the pairs again to know how many linear and non linear terms we have
     pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
 
@@ -1925,8 +1953,8 @@ int main(int argc, char** argv) {
     ff.close()
 
 
-
 def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     cppname = "fit-" + str(number_of_monomers) + "b.cpp"
     ff = open(cppname,'w')
     a = """#include <cmath>
@@ -2256,6 +2284,7 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
+
 def write_makefile(number_of_monomers, system_name):
 
     mon_files = []
@@ -2268,6 +2297,9 @@ def write_makefile(number_of_monomers, system_name):
 
     mon_objects = " ".join(mon_files)
     ff = open("Makefile", 'w')
+
+    escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     a = """
 CXX=icpc
 CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 -I/opt/intel/mkl/include
@@ -2280,8 +2312,8 @@ INCLUDE = -I./
 
 FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
 training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\
-electrostatics.o coulomb.o wlsq.o rwlsq.o ps.o mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o \\
-""" + mon_objects + """ poly_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o
+electrostatics.o coulomb.o wlsq.o rwlsq.o ps.o mbnrg_""" + str(number_of_monomers) + "b_" + escaped_name + """_fit.o \\
+""" + mon_objects + """ poly_""" + str(number_of_monomers) + "b_" + escaped_name + """_fit.o
 
 all: libfit.a """ + fit_exes + """
 
@@ -2321,6 +2353,7 @@ clean:
 
 
 def write_poly_fit_header(number_of_monomers, system_name, degree, nvars, npoly):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.h"
     ff = open(fname,'w')
     a = """
@@ -2346,7 +2379,9 @@ struct poly_model{
     ff.write(a)
     ff.close()
 
+
 def write_poly_fit_cpp(number_of_monomers, system_name, nvars, npoly, directcpp):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     fnamecpp = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.cpp"
     ff = open(fnamecpp,'w')
     fnameh = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.h"
@@ -2377,7 +2412,9 @@ for(int i = 0; i < """ + str(npoly) + """; ++i)
     ff.write(a)
     ff.close()
 
+
 def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     cppname = "eval-" + str(number_of_monomers) + "b.cpp"
     ff = open(cppname,'w')
     a = """#include <cmath>
@@ -2488,6 +2525,7 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
+
 def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
@@ -2525,6 +2563,7 @@ struct """ + struct_name + """ {
     ff.write(a)
     ff.close()
 
+
 def retrieve_polynomial_lines(keyword_start, poly_file):
     poly_lines = ""
     with open(poly_file,'r') as poly:
@@ -2535,6 +2574,7 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
             line = poly.readline()
 
     return poly_lines
+
 
 def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
@@ -2565,6 +2605,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
+
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
@@ -2593,6 +2634,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
+
 def get_arguments_for_functions(arg_string, number_of_monomers):
     arg_text = ""
     for i in range(number_of_monomers):
@@ -2600,6 +2642,7 @@ def get_arguments_for_functions(arg_string, number_of_monomers):
         if i+1 != number_of_monomers:
             arg_text += ", "
     return arg_text
+
 
 def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
@@ -2675,7 +2718,8 @@ struct """ + struct_name + """ {
 """
     ff.write(a)
     ff.close()
-    
+
+
 def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version

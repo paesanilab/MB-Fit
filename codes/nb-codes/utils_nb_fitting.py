@@ -88,13 +88,13 @@ def get_non_linear_parameters(variables):
         if category.startswith("x-intra"):
             # loop over different constants
             for nl_p in nlp_to_use:
-                nl_constant = "{}_intra_{}".format(nl_p, pair)
+                nl_constant = nl_p + "_" + category.replace("-", "_").replace("+", "_")
                 if not nl_constant in intra_nl_params:
                     intra_nl_params.append(nl_constant)
                     nl_params_ordered.append(nl_constant)
         else:
             for nl_p in nlp_to_use:
-                nl_constant = "{}_{}".format(nl_p, pair)
+                nl_constant = nl_p + "_" + category.replace("-", "_").replace("+", "_")
                 if not nl_constant in inter_nl_params:
                     inter_nl_params.append(nl_constant)
                     nl_params_ordered.append(nl_constant)

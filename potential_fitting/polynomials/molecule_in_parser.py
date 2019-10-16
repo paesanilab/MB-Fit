@@ -100,12 +100,13 @@ class FragmentSymmetryParser(object):
 
     def get_variables(self):
 
-        atoms = list(self.get_atoms())
+        atoms = sorted(list(self.get_atoms()), key=lambda x: x[0])
 
         for index1, atom1 in enumerate(atoms):
             atom1_symmetry_class = atom1[0]
             atom1_index          = atom1[1]
             atom1_fragment_index = atom1[2]
+
             for index2, atom2 in enumerate(atoms[index1 + 1:]):
                 atom2_symmetry_class = atom2[0]
                 atom2_index          = atom2[1]
@@ -141,13 +142,13 @@ class FragmentSymmetryParser(object):
     def get_intermolecular_pairs(self, vsites=[]):
         pairs = set()
         for parser1, parser2 in itertools.combinations(self.get_sub_parsers(), 2):
-            atoms1 = parser1.get_atoms()
-            atoms2 = parser2.get_atoms()
+            atoms1 = list(parser1.get_atoms())
+            atoms2 = list(parser2.get_atoms())
 
             for atom1_symmetry, atom1_index, atom1_fragment_index in atoms1:
                 for atom2_symmetry, atom2_index, atom2_fragment_index in atoms2:
                     if atom1_symmetry not in vsites and atom2_symmetry not in vsites:
-                        pairs.add(tuple(sorted((atom1_symmetry[0], atom2_symmetry[0]))))
+                        pairs.add(tuple(sorted((atom1_symmetry, atom2_symmetry))))
 
         return list(pairs)
 

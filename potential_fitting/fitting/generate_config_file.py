@@ -235,6 +235,8 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
             atom_a += 1
         # now construct the c6 constants 2d array by averagining all equivelent c6 constants,
 
+        print("C6 CONSTANTS:", c6_constant_lists)
+
         c6_constants = []
 
         for c6_dictionary in c6_constant_lists:

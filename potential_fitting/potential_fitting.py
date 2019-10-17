@@ -1181,6 +1181,7 @@ def execute_fits(settings_path, ttm = False):
         os.chdir(fit)
         if not os.path.exists("fit.log"):
             print("{} is running.".format(fit))
+            print(os.path.dirname(os.curdir))
             system.call("./run_fit.sh")
             print("{} is completed.".format(fit))
         else:

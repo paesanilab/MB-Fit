@@ -137,7 +137,7 @@ class FragmentSymmetryParser(object):
 
         pairs = pairs.union(set(self.get_intermolecular_pairs(vsites=vsites)))
 
-        return list(pairs)
+        return sorted(list(pairs))
 
     def get_intermolecular_pairs(self, vsites=[]):
         pairs = set()
@@ -150,7 +150,7 @@ class FragmentSymmetryParser(object):
                     if atom1_symmetry not in vsites and atom2_symmetry not in vsites:
                         pairs.add(tuple(sorted((atom1_symmetry, atom2_symmetry))))
 
-        return list(pairs)
+        return sorted(list(pairs))
 
     def get_symmetry(self):
         if self.has_sub_fragments:

@@ -233,7 +233,12 @@ class AtomSymmetryParser(FragmentSymmetryParser):
                 yield (atom1, atom2, atom1_frag, atom2_frag, variable_type)
 
     def get_pairs(self, vsites=[]):
-        return []
+        pairs = set()
+
+        if len(list(self.get_atoms())) > 0:
+            pairs.add((self.symmetry_class, self.symmetry_class))
+
+        return sorted(list(pairs))
 
     def get_intermolecular_pairs(self, vsites=[]):
         return []

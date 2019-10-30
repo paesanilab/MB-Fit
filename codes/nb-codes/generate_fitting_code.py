@@ -262,19 +262,19 @@ file_writter_nb_fitting.write_makefile(number_of_monomers, system_name)
 ## Write polynomial header and cpp for MBX #####################################
 ################################################################################
 
-#file_writter_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
+file_writter_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
 
-#file_writter_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+file_writter_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
 
-#file_writter_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+file_writter_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
 
 ################################################################################
 ## Write polynomial holder and cpp for MBX #####################################
 ################################################################################
 
-#file_writter_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
+file_writter_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
 
-#file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
+file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
 
 
 

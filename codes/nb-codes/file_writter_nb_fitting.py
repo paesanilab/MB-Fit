@@ -2527,6 +2527,8 @@ int main(int argc, char** argv) {
 
 
 def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
@@ -2577,6 +2579,9 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
 
 
 def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
@@ -2607,6 +2612,9 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
 
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
@@ -2645,6 +2653,8 @@ def get_arguments_for_functions(arg_string, number_of_monomers):
 
 
 def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
@@ -2721,6 +2731,8 @@ struct """ + struct_name + """ {
 
 
 def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".cpp"
@@ -2824,7 +2836,7 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const siz
         counter += number_of_atoms[i]*3
 
     # Get the pointers to the atoms
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()", nspaces = 8)
+    pointer_to_coordinates, pointer_to_vsites= get_pointer_setup_string(symmetry_parser, vsites, "xyz.data()", nspaces = 8)
 
     ff.write("\n\n" + pointer_to_coordinates)
     ff.write(pointer_to_vsites)

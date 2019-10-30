@@ -505,8 +505,10 @@ def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
     spaces = " "*nspaces
     for i in range(len(variables)):
         var = variables[i]
-        types_1 = utils_nb_fitting.get_atom_types(var[0])
-        types_2 = utils_nb_fitting.get_atom_types(var[2])
+        var1 = var[0] + str(var[1])
+        var2 = var[3] + str(var[4])
+        types_1 = utils_nb_fitting.get_atom_types(var1)
+        types_2 = utils_nb_fitting.get_atom_types(var2)
         atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[1])
         atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[3])
 

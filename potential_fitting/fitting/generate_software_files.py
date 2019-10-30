@@ -223,6 +223,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         # Write code that needs to be added in the ONEBODY_NOGRD section of the code
         print("Getting energy calls...")
         system_name = monomers[0]
+        system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
         for i in range(1,number_of_monomers):
             system_name += "_" + monomers[i]
 
@@ -331,7 +333,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             my_c6_lr_text = "    }} else if (mon_id == \"{}\") {{\n".format(mon_ids[0])
             my_c6_lr_text += "        for (size_t nv = 0; nv < n_mon; nv++) { \n"
             for j in range(len(atom_types_letter[0])):
-                c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j] 
+                c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j]
+                print(c6index)
                 my_c6_long_range = C6[c6index]
                 my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
             my_c6_lr_text += "        }\n"

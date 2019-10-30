@@ -302,9 +302,12 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
     if number_of_monomers < 3:
     # Get the atomlist
+
         atom_types = []
         for fragment in monomers:
             atom_types.append(get_atom_types(fragment))
+
+        print("Atom types:", atom_types)
 
         # Get the list with actual types
         atom_types_number = []
@@ -318,6 +321,9 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
                     atom_types_number[-1].append(count)
                     atom_types_letter[-1].append(fragment[i-1])
                 count += 1
+
+        print("Atom Types Number:", atom_types_number)
+        print("Atom Types Letter:", atom_types_letter)
          
         if number_of_monomers == 1:
             my_mon = [list(mon_id_sorted[0]), list(mon_id_sorted[0])]

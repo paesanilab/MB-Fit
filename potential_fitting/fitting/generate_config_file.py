@@ -41,7 +41,7 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
                             basis="aug-cc-pvtz"):
     # Define the names
     name1 = settings_list[0].get("molecule","names")
-    name2 = settings_list[0].get("molecule","names")
+    name2 = settings_list[1].get("molecule","names")
 
     print("Running C6 calculation for the dimer {}_{} with {}/{}.".format(name1, name2, method, basis))
 

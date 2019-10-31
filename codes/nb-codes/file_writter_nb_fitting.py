@@ -1006,12 +1006,14 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
 
     # case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = symmetry_parser.get_atoms()
+        mons = sorted(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
-                if atom1_frag_index == atom2_frag_index:
+                if atom1_frag_index[0] == atom2_frag_index[0]:
                     continue
-                pair = sorted([atom1_symmetry, atom2_symmetry])
+                if atom1_symmetry in virtual_sites_poly or atom2_symmetry in virtual_sites_poly:
+                    continue
+                pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                 vector_index = str(pairs.index(pair))
                 a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, {}, {}, {});\n".format(get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
@@ -1049,13 +1051,14 @@ double mbnrg_buck::get_buckingham() {
 
     # case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = symmetry_parser.get_atoms()
+        mons = sorted(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
-                if atom1_frag_index == atom2_frag_index:
+                if atom1_frag_index[0] == atom2_frag_index[0]:
                     continue
-                pair = sorted([atom1_symmetry, atom2_symmetry])
-                vector_index = str(pairs.index(pair))
+                if atom1_symmetry in virtual_sites_poly or atom2_symmetry in virtual_sites_poly:
+                    continue
+                pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                 a += "    buck += buck_energy({}, {}, {}, {});\n".format(get_A_var_name(pair[0], pair[1]), get_b_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     ff.write(a)
@@ -1093,9 +1096,9 @@ struct mbnrg_disp {
 
     # Need to select if we have 1b or 2b
     if symmetry_parser.get_num_fragments() == 1:
-        pairs = symmetry_parser.get_pairs()
+        pairs = symmetry_parser.get_pairs(vsites=virtual_sites_poly)
     elif symmetry_parser.get_num_fragments() == 2:
-        pairs = symmetry_parser.get_intermolecular_pairs()
+        pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
     else:
         pairs = []
 
@@ -1265,6 +1268,8 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
     else:
         pairs = []
 
+    print("PAIRS:", pairs)
+
     a = ""
 
     # case where we have a monomer
@@ -1280,12 +1285,14 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
 
     # case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = symmetry_parser.get_atoms()
+        mons = sorted(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
-                if atom1_frag_index == atom2_frag_index:
+                if atom1_frag_index[0] == atom2_frag_index[0]:
                     continue
-                pair = sorted([atom1_symmetry, atom2_symmetry])
+                if atom1_symmetry in virtual_sites_poly or atom2_symmetry in virtual_sites_poly:
+                    continue
+                pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                 vector_index = str(pairs.index(pair))
                 a += "    nl_terms[" + vector_index + "] += x6(1.0, {}, m_C8, m_d8, {}, {});\n".format(get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
@@ -1321,13 +1328,14 @@ double mbnrg_disp::get_dispersion() {
 
     # Case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = symmetry_parser.get_atoms()
+        mons = sorted(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
-                if atom1_frag_index == atom2_frag_index:
+                if atom1_frag_index[0] == atom2_frag_index[0]:
                     continue
-                pair = sorted([atom1_symmetry, atom2_symmetry])
-                vector_index = str(pairs.index(pair))
+                if atom1_symmetry in virtual_sites_poly or atom2_symmetry in virtual_sites_poly:
+                    continue
+                pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                 a += "    disp += x6({}, {}, m_C8, m_d8, {}, {});\n".format(get_C6_var_name(pair[0], pair[1]), get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     ff.write(a)

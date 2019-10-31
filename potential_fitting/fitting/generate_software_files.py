@@ -316,11 +316,19 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             atom_types_number.append([])
             atom_types_letter.append([])
             count = 0
+
+            atom_number_dict = {}
+
             for i in range(1,len(fragment),2):
+                try:
+                    c = atom_number_dict[fragment[i-1]]
+                except KeyError:
+                    atom_number_dict[fragment[i-1]] = count
+                    c = count
+                    count += 1
                 for j in range(fragment[i]):
-                    atom_types_number[-1].append(count)
+                    atom_types_number[-1].append(c)
                     atom_types_letter[-1].append(fragment[i-1])
-                count += 1
 
         print("Atom Types Number:", atom_types_number)
         print("Atom Types Letter:", atom_types_letter)

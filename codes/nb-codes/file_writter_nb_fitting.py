@@ -509,10 +509,17 @@ def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
         var2 = var[3] + str(var[4])
         types_1 = utils_nb_fitting.get_atom_types(var1)
         types_2 = utils_nb_fitting.get_atom_types(var2)
-        atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[1])
-        atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[3])
+        atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[2])
+        atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[5])
 
-        variables_string += spaces + "{0}[{1}].grads({2}[{1}], {3}_g, {4}_g, {3}, {4});\n".format(name_vin,i,name_g,atom1_name,atom2_name)
+        variables_string += spaces + "{0}[{1}].grads({2}[{1}], {3}, {4}, {5}, {6});\n".format(
+                name_vin,
+                i,
+                name_g,
+                get_coords_var_name(var[0], var[1], var[2], extension="g"),
+                get_coords_var_name(var[3], var[4], var[5], extension="g"),
+                get_coords_var_name(var[0], var[1], var[2]),
+                get_coords_var_name(var[3], var[4], var[5]))
 
     return variables_string
 
@@ -2574,7 +2581,11 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
         line = poly.readline()
         while line != "":
             if any(line.startswith(key) for key in keyword_start):
-                poly_lines += line
+                while True:
+                    poly_lines += line
+                    if ";" in line:
+                        break
+                    line = poly.readline()
             line = poly.readline()
 
     return poly_lines
@@ -2970,7 +2981,7 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     ff.write(pointer_to_vsites)
     ff.write("\n")
 
-    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, vsites, "gradients.data()", "_g", nspaces = 8, is_const = False)
+    pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(symmetry_parser, vsites, "gradients.data()", "g", nspaces = 8, is_const = False)
 
     ff.write(pointer_to_coordinates)
     ff.write(pointer_to_vsites)

@@ -320,6 +320,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             atom_number_dict = {}
 
             for i in range(1,len(fragment),2):
+                if fragment[i-1] in ['X', 'Y', 'Z']:
+                    continue
                 try:
                     c = atom_number_dict[fragment[i-1]]
                 except KeyError:
@@ -347,7 +349,9 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             my_c6_lr_text = "    }} else if (mon_id == \"{}\") {{\n".format(mon_ids[0])
             my_c6_lr_text += "        for (size_t nv = 0; nv < n_mon; nv++) { \n"
             for j in range(len(atom_types_letter[0])):
-                c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j]
+                # formula for finding index of diagonal c6 constants in the list of c6 constants.
+                # example: for A1B1C1, AA is at index 0, BB is at index 3, CC is at index 5
+                c6index = sum(range(max(atom_types_number[0]) - atom_types_number[0][j] + 2, max(atom_types_number[0]) + 2))
                 print(c6index)
                 my_c6_long_range = C6[c6index]
                 my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
@@ -384,10 +388,11 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         d6_text = []
     
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
-            for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                c6index = max(my_number_types[my_mon[1][0]])*i + j
+            for j in range(i, max(my_number_types[my_mon[1][0]]) + 1):
+                c6index = sum(range(max(my_number_types[my_mon[1][0]]) + 2 - i, max(my_number_types[my_mon[1][0]]) + 2)) + j - i
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
+                print(i, j, c6index)
                 c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")
                 d6_text.append("        d6.push_back(" + str(d6[c6index]) + ");  " + d6_units + " " + let1 + "--" + let2 + "\n")
 

@@ -474,7 +474,7 @@ def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = 
             string_pointers += "\n"
             crd_shift += 3
         else:
-            string_pointers_vs += "{}{}double* {}[3];\n".format(spaces, prefix, get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
+            string_pointers_vs += "{}{}double {}[3];\n".format(spaces, "", get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
             string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)
     return string_pointers, string_pointers_vs
@@ -728,7 +728,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     double w13 =     -9.721486914088159e-02;
     double wcross =   9.859272078406150e-02;
 
-    """
+"""
     ff.write(a)
 
     fragments = symmetry_parser.get_sub_parsers()
@@ -737,10 +737,11 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-    monomer m""" + str(i+1) + """;
-    m""" + str(i+1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
-"""
+            atoms = list(fragments[i].get_atoms())
+            a = "    monomer m{};\n".format(str(i + 1))
+            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], 1, char_code),
+                                                                    get_coords_var_name(atoms[3][0], 1, char_code),
+                                                                    get_coords_var_name(atoms[4][0], 2, char_code))
             ff.write(a)
         char_code = chr(ord(char_code)+1)
 

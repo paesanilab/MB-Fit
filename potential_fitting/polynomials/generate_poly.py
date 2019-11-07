@@ -362,7 +362,6 @@ class PolynomialGenerator(object):
         else:
             parser = FragmentParser(molecule_in, 'a')
             return self.get_fragment_permutations(parser.get_atom_and_virtual_site_types())
-        # TODO FINISH THIS
 
     def split_molecule_in(self, molecule_in):
         fragments = []

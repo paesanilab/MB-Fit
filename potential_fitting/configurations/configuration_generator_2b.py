@@ -184,7 +184,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
                         # if we didn't find a valid configuration, skip this config
                         continue
 
-                    mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz())
+                    mol = Molecule.read_xyz_direct(str(molecule1.get_num_atoms() + molecule2.get_num_atoms()) + "\n\n" + molecule1.to_xyz() + "\n" + molecule2.to_xyz(), settings=self.settings)
 
                     yield mol
 

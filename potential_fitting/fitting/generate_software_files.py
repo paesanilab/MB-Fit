@@ -223,10 +223,10 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         # Write code that needs to be added in the ONEBODY_NOGRD section of the code
         print("Getting energy calls...")
         system_name = monomers[0]
-        system_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
         for i in range(1,number_of_monomers):
             system_name += "_" + monomers[i]
+        system_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
         ids = []
         for i in range(len(mon_id_sorted)):

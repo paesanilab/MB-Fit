@@ -791,7 +791,6 @@ class Molecule(object):
 
             symmetry = ""
 
-            
             symmetry_class = 65
 
             # loop over each atom assigning it a unique symmetry class

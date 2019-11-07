@@ -139,7 +139,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
                 # if we didn't find a valid configuration, skip this config
                 continue
 
-            mol = Molecule.read_xyz_direct(str(sum([molecule.get_num_atoms() for molecule in molecules])) + "\n\n" + "\n".join([molecule.to_xyz() for molecule in molecules]))
+            mol = Molecule.read_xyz_direct(str(sum([molecule.get_num_atoms() for molecule in molecules])) + "\n\n" + "\n".join([molecule.to_xyz() for molecule in molecules]), settings=self.settings)
             yield mol
 
             # decrementing required number of configs

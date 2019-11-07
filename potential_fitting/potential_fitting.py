@@ -497,7 +497,7 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
 
-def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path,
+def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, generate_direct_gradients=False
                          num_gradient_terms_per_line=1):
     """
     Generates polynomial input for maple and some ".cpp" and ".h" polynomial files.
@@ -509,6 +509,9 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path,
                 "thisplace/thatplace/A3.in".
         order               - The order of the polynomial to generate.
         poly_dir_path       - Local path to the directory to write the polynomial files in.
+        generate_direct_gradients - If True, then a gradients cpp file is generate additionally to the polynomial
+                cpp file. This may take a while.
+                defualt: False.
         num_gradient_terms_per_line - The number of terms to put in each line in the cpp file
                 for computing the gradients. Larger numbers may result in slower compilation times.
 
@@ -519,7 +522,8 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path,
     poly_generator = polynomials.PolynomialGenerator(settings_path,
                                                      num_gradient_terms_per_line=num_gradient_terms_per_line)
 
-    poly_generator.generate_polynomial(poly_in_path, order, poly_dir_path)
+    poly_generator.generate_polynomial(poly_in_path, order, poly_dir_path,
+            generate_direct_gradients=generate_direct_gradients)
 
 def execute_maple(settings_path, poly_dir_path):
     """

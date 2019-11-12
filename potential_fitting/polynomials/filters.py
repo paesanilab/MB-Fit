@@ -926,3 +926,143 @@ class DegreeFilter(Filter):
 
         # if the degree of one of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True
+
+class PatternMatcher(object):
+
+    def match(self, string):
+        raise NotImplementedError
+
+class CompoundPatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        patterns = pattern.split("/")
+
+        self.pattern_matchers = []
+        for pattern in patterns:
+            self.pattern_matchers.append(self.get_sub_parser(pattern))
+
+    def get_sub_parser(self, pattern):
+        raise NotImplementedError
+
+    def match(self, string):
+        return any(pattern_matcher.match(string) for pattern_matcher in self.pattern_matchers)
+
+class VariablePatternMatcher(CompoundPatternMatcher):
+
+    def get_sub_parser(self, pattern):
+        if pattern == "*":
+            return WildCardPatternMatcher(pattern)
+        else:
+            var_type_pattern, atoms_pattern, level_pattern = pattern.split("-")[1:]
+
+            if var_type_pattern == "*":
+                var_type_matcher = WildCardPatternMatcher(var_type_pattern)
+            else:
+                var_type_matcher = StringPatternMatcher(var_type_pattern)
+
+            if atoms_pattern == "*" or atoms_pattern == "*+*":
+                atoms_matcher = WildCardPatternMatcher("*")
+            elif atoms_pattern.split("+")[0] == "*":
+                atoms_matcher = OneAtomMatcher(atoms_pattern.split("+")[1])
+            elif atoms_pattern.split("+")[1] == "*":
+                atoms_matcher = OneAtomMatcher(atoms_pattern.split("+")[0])
+            else:
+                atoms_matcher = BothAtomsMatcher(atoms_pattern)
+
+            level_matcher = NumberPatternMatcher(level_pattern)
+
+        return SingleVariablePatternMatcher(var_type_matcher, atoms_matcher, level_matcher)
+
+class SingleVariablePatternMatcher(PatternMatcher):
+
+    def __init__(self, var_type_matcher, atoms_matcher, level_matcher):
+        self.var_type_matcher = var_type_matcher
+        self.atoms_matcher = atoms_matcher
+        self.level_matcher = level_matcher
+
+    def match(self, string):
+        var_type, atoms, level = string.split("-")[1:]
+
+        return self.var_type_matcher.match(var_type) and self.atoms_matcher.match(atoms) and self.level_matcher.match(level)
+
+
+class OneAtomMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.atom = pattern
+
+    def match(self, string):
+        atom1, atom2 = string.split("+")
+        return self.atom == atom1 or self.atom == atom2
+
+class BothAtomsMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.atom1, self.atom2 = pattern.split("+")
+
+    def match(self, string):
+        atom1, atom2 = string.split("+")
+        return (self.atom1 == atom1 and self.atom2 == atom2) or (self.atom1 == atom2 and self.atom2 == atom1)
+
+class StringPatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.pattern = pattern
+
+    def match(self, string):
+        return self.pattern == string
+
+class NumberPatternMatcher(CompoundPatternMatcher):
+
+    def get_sub_parser(self, pattern):
+        if pattern == "*":
+            return WildCardPatternMatcher(pattern)
+        elif pattern.endswith("-"):
+            return LessThanOrEqualToPatternMatcher(pattern)
+        elif pattern.endswith("+"):
+            return GreaterThanOrEqualToPatternMatcher(pattern)
+        elif "-" in pattern:
+            return RangePatternMatcher(pattern)
+        else:
+            return EqualToPatternMatcher(pattern)
+
+class LessThanOrEqualToPatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.value = int(pattern[:-1])
+
+    def match(self, string):
+        return int(string) <= self.value
+
+class GreaterThanOrEqualToPatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.value = int(pattern[:-1])
+
+    def match(self, string):
+        return int(string) >= self.value
+
+class EqualToPatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.value = int(pattern)
+
+    def match(self, string):
+        return int(string) == self.value
+
+class RangePatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        self.value1 = int(pattern[:pattern.index("-")])
+        self.value2 = int(pattern[pattern.index("-") + 1:])
+
+    def match(self, string):
+        return int(string) >= self.value1 and int(string) <= self.value2
+
+class WildCardPatternMatcher(PatternMatcher):
+
+    def __init__(self, pattern):
+        pass
+
+    def match(self, string):
+        return True

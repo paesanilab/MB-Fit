@@ -65,12 +65,12 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
 
         if polynomial_filtering == "purely-inter":
             # this filter filters out all terms that have any intra-molecular components
-            poly_in_file.write("add_filter['degree', 'x-intra-*+*', '1+', '*']")
+            poly_in_file.write("add_filter['ind-degree', 'x-intra-*+*-*', '1+']")
             system.format_print("Adding filter to filter out terms that use ANY intramolecular variables.",
                     italics=True)
         elif polynomial_filtering == "partly-inter":
             # this filter filters out all terms that have no inter-molecular components
-            poly_in_file.write("add_filter['not', 'degree', 'x-inter-*+*', '1+', '*']")
+            poly_in_file.write("add_filter['sum-degree', 'x-inter-*+*', '0']")
             system.format_print("Adding filter to filter out terms that ONLY use intramolecular variables.",
                     italics=True)
 

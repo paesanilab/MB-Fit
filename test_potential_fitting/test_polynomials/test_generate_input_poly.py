@@ -130,7 +130,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "C", 1, "b", "x-inter-B+C-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 1, "b", "x-inter-B+D-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 2, "b", "x-inter-B+D-0"), lines)
-        self.assertIn("add_filter['not', 'degree', 'x-inter-*+*', '1+', '*']", lines)
+        self.assertIn("add_filter['sum-degree', 'x-inter-*+*', '0']", lines)
         self.assertEqual(len(lines), 18)
 
     def test_A1B2_C1D2_partly_inter(self):
@@ -156,7 +156,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "C", 1, "b", "x-inter-B+C-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 1, "b", "x-inter-B+D-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 2, "b", "x-inter-B+D-0"), lines)
-        self.assertIn("add_filter['not', 'degree', 'x-inter-*+*', '1+', '*']", lines)
+        self.assertIn("add_filter['sum-degree', 'x-inter-*+*', '0']", lines)
 
         self.assertEqual(len(lines), 18)
 
@@ -183,7 +183,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "C", 1, "b", "x-inter-B+C-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 1, "b", "x-inter-B+D-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 2, "b", "x-inter-B+D-0"), lines)
-        self.assertIn("add_filter['degree', 'x-intra-*+*', '1+', '*']", lines)
+        self.assertIn("add_filter['ind-degree', 'x-intra-*+*-*', '1+']", lines)
 
         self.assertEqual(len(lines), 18)
 
@@ -241,7 +241,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("A", 2, "b", "B", 2, "a", "x-inter-A+B-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "B", 3, "b", "x-inter-B+B-0"), lines)
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "B", 4, "b", "x-inter-B+B-0"), lines)
-        self.assertIn("add_filter['degree', 'x-intra-*+*', '1+', '*']", lines)
+        self.assertIn("add_filter['ind-degree', 'x-intra-*+*-*', '1+']", lines)
 
         self.assertEqual(len(lines), 18)
 suite = unittest.TestLoader().loadTestsFromTestCase(TestGenerateInputPoly)

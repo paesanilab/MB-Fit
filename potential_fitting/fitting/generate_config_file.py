@@ -578,7 +578,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "d_max", str(6.0))
 
     configwriter.set("fitting", "C6", str(c6_list[-1]))
-    configwriter.set("fitting", "d6", str([0.0 for x in c6_list[-1]]))
+    configwriter.set("fitting", "d6", str([0.0]*len(c6_list[-1])))
 
     configwriter.set("fitting", "var_intra", "exp")
     configwriter.set("fitting", "var_inter", "exp")

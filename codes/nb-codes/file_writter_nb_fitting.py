@@ -2,6 +2,13 @@ import utils_nb_fitting
 import itertools as it
 
 def write_monomer_class_header(mon_index):
+    """
+    Writes the monomer header for the fitting code
+    
+    Args:
+        mon_index - The index of the monomer you want to write the header for.
+    """
+
     filename = "mon" + str(mon_index) + ".h"
 
     header_text = """#ifndef MON""" + str(mon_index) + """_H
@@ -50,6 +57,21 @@ namespace x   {
 
 
 def write_monomer_class_cpp(mon_index, nsites, natoms, excl12, excl13, excl14, chg, pol, polfac):
+    """
+    Writes the monomer cpp for the fitting code
+    
+    Args:
+        mon_index - The index of the monomer you want to write the cpp for
+        nsites    - Number of sites (electrostatic sites) of the monomer
+        natoms    - Number of real atoms in the monomer
+        excl12    - List with the pairs that are excluded at 1-2 distance
+        excl13    - List with the pairs that are excluded at 1-3 distance
+        excl14    - List with the pairs that are excluded at 1-4 distance
+        chg       - Charges of each site
+        pol       - Polarizability of each site
+        polfac    - Polarizability factor of each site
+    """
+
     filename = "mon" + str(mon_index) + ".cpp"
 
     cpp_text = """#include "mon""" + str(mon_index) + """.h"
@@ -156,6 +178,14 @@ namespace x  {
 
 
 def write_mbpol_monomer(mon_index):
+    """
+    Writes the mb-pol monomer cpp for the fitting code
+    NOTE: If used, order of atoms MUST be OHH
+    
+    Args:
+        mon_index - The index of the monomer you want to write the cpp for.
+    """
+
     filename = "mon" + str(mon_index) + ".cpp"
 
     cpp_text = """
@@ -276,6 +306,17 @@ excluded_set_type::iterator mon""" + str(mon_index) + """::get_end_14() { return
 
 
 def write_fit_polynomial_holder_header(system_name, number_of_monomers, non_linear_parameters, ri, ro):
+
+    """
+    Writes the polynomial holder for the fitting
+    
+    Args:
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        number_of_monomers     - Number of monomers in the system
+        non_linear_parameters  - All the non linear parameters
+        ri                     - Inner cutoff (not used if 1b)
+        ro                     - Outer cutoff (not used in 2b)
+    """
 
     defflag = "MBNRG_" + str(number_of_monomers) + "B_" + system_name + "_FIT"
 
@@ -413,6 +454,13 @@ inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<d
 
 
 def get_individual_atoms_with_type(monomer_atom_types, vsites):
+    """
+    From the monomer atom types ([A,1,B,1],[C,2],...) generates a list of lists that contain information about atom type, index, and monomer identity.
+    
+    Args:
+        monomer_atom_types    - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
+        vsites                - Virtual site labels
+    """
     mon_id = 'a'
     atoms = []
     for monomer in monomer_atom_types:
@@ -425,7 +473,6 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
                     atoms[-1].append([atom,j+1,mon_id])
         mon_id = chr(ord(mon_id)+1)
     return atoms
-
 
 def get_coords_var_name(symmetry_class, atom_index, fragment_index, extension=""):
     return "_".join(["coords", symmetry_class, str(atom_index), fragment_index, extension]
@@ -456,8 +503,20 @@ def get_b_var_name(symmetry_class1, symmetry_class2, extension=""):
                     if extension != ""
                     else ["m", "b", symmetry_class1, symmetry_class2])
 
-
 def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
+    """
+    Returns a string with C++ code that initializes all the pointers to the coordinates or gradients.
+    
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        vsites                 - Virtual site labels
+        xyz_var_name           - Name of the variable in C++ that contains the data for coordinates, gradients or any 3N array
+        extension              - Extra characters that need to be added at the end of the variable name (A_1_a --> A_1_a_g)
+                Default: ""
+        nspaces                - Number of spaces in front of the variable declaration; 4 spaces = 1 indentation level
+        is_const               - Specifies if the pointer is a constant or not
+    """
+
     crd_shift = 0
     spaces = " "*nspaces
     mon_id = 'a'
@@ -481,6 +540,17 @@ def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = 
             
 
 def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
+    """
+    Returns a string with C++ code that initializes all the variables for the polynomials
+    
+    Args:
+        variables              - List of lists with the information in the poly.in file
+        name_vout              - Name of the variable that will be at the left side of the =
+        name_vstruct           - Name of the variable that is the array of "variables"
+        monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
+        nspaces                - Number of spaces in front of the variable declaration; 4 spaces = 1 indentation level
+    """
+
     variables_string = ""
     spaces = " "*nspaces
     for variable_index, (atom1_sym, atom1_ind, atom1_frag, atom2_sym, atom2_ind, atom2_frag, category, type) in enumerate(variables):
@@ -501,6 +571,15 @@ def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
 
 
 def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
+    """
+    Returns a string with C++ code that initializes all the gradient redistribution for the variables of the polynomials
+    
+    Args:
+        variables              - List of lists with the information in the poly.in file
+        name_vin               - Name of the variable that contains the variable struct
+        name_g                 - Name of the array that has the gradients of the variables
+        nspaces                - Number of spaces in front of the variable declaration; 4 spaces = 1 indentation level
+    """
     variables_string = ""
     spaces = " "*nspaces
     for i in range(len(variables)):
@@ -525,6 +604,31 @@ def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
 
 
 def write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max):
+    """
+    Writes the polynomial holder C++ file
+    
+    Args:
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        vsites                 - Virtual site labels
+        use_lonepairs          - List with 0 and 1 of the same size as monomers. If 0, no lone pairs will be used or declared. If 1, lone pairs will be used. NOTE: TODO As for 09/25/2019, only water can have lone pairs.
+        non_linear_parameters  - All the non linear parameters
+        variables              - List of lists with the information in the poly.in file
+        number_of_variables    - Number of variables
+        ri                     - Inner cutoff (not used if 1b)
+        ro                     - Outer cutoff (not used in 2b)
+        k_min_intra            - Minimum value allowed for k_intra
+        k_max_intra            - Maximum value allowed for k_intra
+        k_min                  - Minimum value allowed for k      
+        k_max                  - Maximum value allowed for k      
+        d_min_intra            - Minimum value allowed for d_intra
+        d_max_intra            - Maximum value allowed for d_intra
+        d_min                  - Minimum value allowed for d      
+        d_max                  - Maximum value allowed for d      
+    """
+
     system_keyword_mbnrg = "mbnrg_" + str(number_of_monomers) + "b_" + system_name
     system_keyword_poly = "poly_" + str(number_of_monomers) + "b_" + system_name
     system_keyword_polyholder = "polyholder_" + str(number_of_monomers) + "b_" + system_name
@@ -845,6 +949,15 @@ double """ + system_keyword_polyholder + """_fit::f_switch(const double r, doubl
 
 
 def write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck):
+    """
+    Writes the buckingham header
+    
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        virtual_sites_poly     - Virtual site labels
+        A_buck                 - List of all the A coefficients for the system. If 1b, they should correspond to the A of the homodimer. If 2b, the A of the dimer itself.
+        b_buck                 - List of all the b (d6) coefficients for the system. If 1b, they should correspond to the b (d6) of the homodimer. If 2b, the b (d6) of the dimer itself.
+    """
     hname = "buckingham.h"
     ff = open(hname,'w')
     a = """
@@ -964,6 +1077,16 @@ struct mbnrg_buck {
 
 
 def write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+    """
+    Writes the buckingham C++ file for the fitting
+    
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        virtual_sites_poly     - Virtual site labels
+        excl12                 - List with the pairs that are excluded at 1-2 distance
+        excl13                 - List with the pairs that are excluded at 1-3 distance
+        excl14                 - List with the pairs that are excluded at 1-4 distance
+    """
     # We will need the pairs:
     # Need to select if we have 1b or 2b
     if symmetry_parser.get_num_fragments() == 1:
@@ -1075,6 +1198,15 @@ double mbnrg_buck::get_buckingham() {
 
 
 def write_dispersion_header(symmetry_parser, virtual_sites_poly, c6, d6):
+    """
+    Writes the header file for the dispersion energy calculation in the fitting
+
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        virtual_sites_poly    - Virtual site labels
+        c6                    - List of all the C6 coefficients for the system. If 1b, they should correspond to the C6 of the homodimer. If 2b, the C6 of the dimer itself.
+        d6                    - List of all the d6 coefficients for the system. If 1b, they should correspond to the d6 of the homodimer. If 2b, the d6 of the dimer itself.
+    """
     hname = "dispersion.h"
     ff = open(hname,'w')
     a = """
@@ -1232,6 +1364,16 @@ struct mbnrg_disp {
 
 
 def write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
+    """
+    Writes the C++ file for the dispersion energy calculation in the fitting
+
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        virtual_sites_poly    - Virtual site labels
+        excl12                - List with the pairs that are excluded at 1-2 distance
+        excl13                - List with the pairs that are excluded at 1-3 distance
+        excl14                - List with the pairs that are excluded at 1-4 distance
+    """
     # Need to select if we have 1b or 2b
     if symmetry_parser.get_num_fragments() == 1:
         pairs = symmetry_parser.get_pairs(vsites=virtual_sites_poly)
@@ -1352,6 +1494,21 @@ double mbnrg_disp::get_dispersion() {
 
 
 def get_nl_params_initialization_string(nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
+    """
+    Returns a string that initializes the non-linear parameters in the C+++ code within the proper range.
+
+    Args:
+        nl_param_all           - All the non linear parameters
+        k_min_intra            - Minimum value allowed for k_intra
+        k_max_intra            - Maximum value allowed for k_intra
+        k_min                  - Minimum value allowed for k      
+        k_max                  - Maximum value allowed for k      
+        d_min_intra            - Minimum value allowed for d_intra
+        d_max_intra            - Maximum value allowed for d_intra
+        d_min                  - Minimum value allowed for d      
+        d_max                  - Maximum value allowed for d
+    """
+
     nl_params_string = ""
     for i in range(len(nl_param_all)):
         if nl_param_all[i].startswith('d'):
@@ -1369,6 +1526,15 @@ def get_nl_params_initialization_string(nl_param_all, k_min, k_max, d_min, d_max
 
 
 def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_of_sites, ptr_to_coords):
+    """
+    Returns a string that contains the C++ code with the n-body electrostatics calculation for the n-body system that is being fit.
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        number_of_sites        - Number of sites (electrostatic sites) of the monomer
+        ptr_to_coords          - Name of the variable that points to the coordinates in the C++ code.
+    """
     electrostatics_string = ""
 
     # generate first index list to locate monomers
@@ -1496,6 +1662,20 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
 
 
 def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
+    """
+    Writes the fitting code for TTM-nrg"
+
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        virtual_sites_poly     - Virtual site labels
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        number_of_sites        - Number of sites (electrostatic sites) of the monomer
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        k_min                  - Minimum value allowed for k
+        k_max                  - Maximum value allowed for k
+    """
+
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     # We need the pairs again to know how many linear and non linear terms we have
     pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
@@ -1846,8 +2026,19 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
-
 def write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
+    """
+    Writes the eval code for TTM-nrg"
+
+    Args:
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        virtual_sites_poly     - Virtual site labels
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        number_of_sites        - Number of sites (electrostatic sites) of the monomer
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+    """
+
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     # We need the pairs again to know how many linear and non linear terms we have
     pairs = symmetry_parser.get_intermolecular_pairs(vsites=virtual_sites_poly)
@@ -1972,7 +2163,27 @@ int main(int argc, char** argv) {
 
 
 def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
+
+    """
+    Writes the fitting code for MB-nrg"
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        number_of_sites        - Number of sites (electrostatic sites) of the monomer
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        nl_param_all           - All the non linear parameters
+        k_min                  - Minimum value allowed for k      
+        k_max                  - Maximum value allowed for k      
+        d_min                  - Minimum value allowed for d      
+        d_max                  - Maximum value allowed for d
+        k_min_intra            - Minimum value allowed for k_intra
+        k_max_intra            - Maximum value allowed for k_intra
+        d_min_intra            - Minimum value allowed for d_intra
+        d_max_intra            - Maximum value allowed for d_intra
+    """
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     cppname = "fit-" + str(number_of_monomers) + "b.cpp"
     ff = open(cppname,'w')
     a = """#include <cmath>
@@ -2304,6 +2515,13 @@ int main(int argc, char** argv) {
 
 
 def write_makefile(number_of_monomers, system_name):
+    """
+    Writes the Makefile
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+    """
 
     mon_files = []
     for i in range(number_of_monomers):
@@ -2371,7 +2589,18 @@ clean:
 
 
 def write_poly_fit_header(number_of_monomers, system_name, degree, nvars, npoly):
+    """
+    Writes the header file for the polynomial structure
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial  
+    """
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.h"
     ff = open(fname,'w')
     a = """
@@ -2399,7 +2628,19 @@ struct poly_model{
 
 
 def write_poly_fit_cpp(number_of_monomers, system_name, nvars, npoly, directcpp):
+    """
+    Writes the C++ file for the polynomial structure
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial  
+        directcpp              - Path to the poly-direct.cpp file
+    """
+
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     fnamecpp = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.cpp"
     ff = open(fnamecpp,'w')
     fnameh = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.h"
@@ -2432,7 +2673,17 @@ for(int i = 0; i < """ + str(npoly) + """; ++i)
 
 
 def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name):
+    """
+    Writes the header file for the polynomial structure
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        number_of_sites        - Number of sites (electrostatic sites) of the monomer
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+    """
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
     cppname = "eval-" + str(number_of_monomers) + "b.cpp"
     ff = open(cppname,'w')
     a = """#include <cmath>
@@ -2545,8 +2796,19 @@ int main(int argc, char** argv) {
 
 
 def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
-    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    """
+    Writes the polynomial header for MBX 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
 
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
@@ -2585,6 +2847,14 @@ struct """ + struct_name + """ {
 
 
 def retrieve_polynomial_lines(keyword_start, poly_file):
+    """
+    From a given polynomial file it returns a string with just the polynomial terms that start with a given keyword
+    
+    Args:
+        keyword_start          - The keyword that will state if a line belongs to a polynomial term
+        poly_file              - The file containing the polynomial expression
+    """
+
     poly_lines = ""
     with open(poly_file,'r') as poly:
         line = poly.readline()
@@ -2601,9 +2871,20 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
 
 
 def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file with gradients for MBX 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been performed
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
 
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
-
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
@@ -2634,9 +2915,21 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
 
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file without gradients for MBX 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been perfor
+med
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
 
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
-
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
@@ -2666,6 +2959,14 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
 
 def get_arguments_for_functions(arg_string, number_of_monomers):
+    """
+    Helper function that returns a set of arguments in a function for multiple monomers
+
+    Args:
+        arg_string             - The argument that depends on the monomer (xyz, mon, grad...)
+        number_of_monomers     - The number of monomers
+    """
+
     arg_text = ""
     for i in range(number_of_monomers):
         arg_text += arg_string + str(i+1) 
@@ -2675,8 +2976,25 @@ def get_arguments_for_functions(arg_string, number_of_monomers):
 
 
 def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
-    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    """
+    Writes the polynomial holder header file 
+    
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been perfor
+med
+        non_linear_parameters  - All the non linear parameters
+        ri                     - Inner cutoff (not used if 1b)
+        ro                     - Outer cutoff (not used in 2b)
+        vsites                 - Virtual site labels
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
 
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
@@ -2706,6 +3024,11 @@ def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, 
     arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
     arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
 
+    if number_of_monomers == 1:
+       declare_key = "std::vector<double> "
+    else:
+       declare_key = "double "
+
     a = """
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2721,8 +3044,8 @@ struct """ + struct_name + """ {
 
     typedef """ + poly_name + """ polynomial;
 
-    std::vector<double> eval(""" + arg_xyz + """, const size_t n);
-    std::vector<double> eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n);
+    """ + declare_key + """eval(""" + arg_xyz + """, const size_t n);
+    """ + declare_key + """eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n);
 
   private:
 """
@@ -2753,8 +3076,34 @@ struct """ + struct_name + """ {
 
 
 def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
-    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    """
+    Writes the polynomial holder header file 
+    
+    Args:
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        symmetry_parser        - The SymmetryParser object that gives the symmetry of the system.
+        number_of_monomers     - Number of monomers in the system
+        number_of_atoms        - Number of real atoms in the monomer
+        vsites                 - Virtual site labels
+        use_lonepairs          - List with 0 and 1 of the same size as monomers. If 0, no lone pairs will be used or declared. If 1, lone pairs will be used. NOTE: TODO As for 09/25/2019, only water can have lone pairs.
+        non_linear_parameters  - All the non linear parameters
+        variables              - List of lists with the information in the poly.in file
+        number_of_variables    - Number of variables
+        degree                 - The degree of the polynomial
+        ri                     - Inner cutoff (not used if 1b)
+        ro                     - Outer cutoff (not used in 2b)
+        k_min_intra            - Minimum value allowed for k_intra
+        k_max_intra            - Maximum value allowed for k_intra
+        k_min                  - Minimum value allowed for k      
+        k_max                  - Maximum value allowed for k      
+        d_min_intra            - Minimum value allowed for d_intra
+        d_max_intra            - Maximum value allowed for d_intra
+        d_min                  - Minimum value allowed for d      
+        d_max                  - Maximum value allowed for d
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
 
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
     namespace = "mbnrg_" + system_name + "_deg" + str(degree)
     struct_name = "mbnrg_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "mbnrg_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".cpp"
@@ -2768,6 +3117,11 @@ def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_mono
     # Get the monomer arguments for the evals (xyz and grad)
     arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
     arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
+
+    if number_of_monomers == 1:
+       declare_key = "std::vector<double> "
+    else:
+       declare_key = "double "
 
     a = '''#include "''' + hname + '''"
 
@@ -2804,7 +3158,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
 //----------------------------------------------------------------------------//
 
-std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const size_t n) {
+ """ + declare_key + struct_name + """::eval(""" + arg_xyz + """, const size_t n) {
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
@@ -2922,13 +3276,28 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + """, const siz
         energies_sw[j] = energies[j]*sw;
 
     }
-    
-    return energies_sw;
+"""   
+    ff.write(a)
+
+    if number_of_monomers == 1:
+        ff.write("    return energies_sw;\n")
+    else:
+        a = """
+    double energy = 0.0;
+    for (size_t i = 0; i < n; i++)
+        energy += energies_sw[i];
+
+    return energy;
+"""
+        ff.write(a)
+
+
+    a = """
 }
 
 //----------------------------------------------------------------------------//
 
-std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n) {
+""" + declare_key + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n) {
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
@@ -3075,7 +3444,7 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        m""" + str(i+1) + """.grads(""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """);
+        m""" + str(i+1) + """.grads(""" + list(fragments[i].get_atoms())[3][0] + "_1_g" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_g" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[0][0] + "_1_g" + char_code + """);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
@@ -3114,10 +3483,10 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
                 
         counter += number_of_atoms[i]*3
 
+    ff.write("        }\n")
     count = 0
     for i in range(len(number_of_atoms)):
         a = """
-        }
 
         for (size_t i = 0; i < """ + str(3*number_of_atoms[i]) + """; i++) {
             grad""" + str(i+1) + """[i + j*""" + str(3*number_of_atoms[i]) + """] += gradients[""" + str(count) + """ + i];
@@ -3130,8 +3499,22 @@ std::vector<double> """ + struct_name + """::eval(""" + arg_xyz + ", " + arg_gra
     a = """
 
     }
-    
-    return energies_sw;
+"""
+    ff.write(a)
+
+    if number_of_monomers == 1:    
+        ff.write("    return energies_sw;\n")
+    else:
+        a = """
+    double energy = 0.0;
+    for (size_t i = 0; i < n; i++)
+        energy += energies_sw[i];
+
+    return energy;
+"""
+        ff.write(a)
+
+    a = """
 }
 
 //----------------------------------------------------------------------------//

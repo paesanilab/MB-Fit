@@ -48,11 +48,14 @@ use_mbpol = [int(i) for i in settings.get("molecule", "use_mbpol").split(",")]
 system.format_print("Using mbpol for {} fragments.".format(sum(use_mbpol)),
                     italics=True)
 
+# Define list of variables that are fictitious
+virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
+
 # Define if lone pairs are used based on monomer names
 # Update number of sites if needed
 use_lonepairs = [0]*number_of_monomers
 for i in range(number_of_monomers):
-    if "X" in monomers_symmetries[i] or "Y" in monomers_symmetries[i] or "Z" in monomers_symmetries[i]:
+    if any(x in monomers_symmetries[i] for x in virtual_sites_poly):
         use_lonepairs[i] = 1
     if use_mbpol[i] != 0:
         number_of_sites[i] += 1
@@ -112,11 +115,10 @@ d_max_intra = d_max
 
 # Obtain inner and outer cutoff from config.ini
 # This must be required 
-ri = 7.0 # polynomials start to decrease
+# TODO pass this from config
+ri = 7.0 # polynomials start to decrease (Angstrom)
 ro = 8.0 # polynomials are completely removed
 
-# Define list of variables that are fictitious
-virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
 
 # Define kind of variables for intra, inter and lone pairs
 # Options are:

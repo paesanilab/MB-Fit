@@ -2,6 +2,13 @@ from potential_fitting.polynomials import FragmentParser
 from potential_fitting.exceptions import InconsistentValueError
 
 def get_atom_types(fragment):
+    """
+    Returns a list with the atom types and the number of atoms of that type. For A1B3, returns ["A",1,"B",3]
+
+    Args:
+        fragment              - The fragment you want to decompose
+    """
+
     fragment_parser = FragmentParser(fragment, 'a')
 
     atom_list = []
@@ -13,7 +20,15 @@ def get_atom_types(fragment):
     return atom_list
 
 def get_nonbonded_pairs(vsites, mon_types_a, mon_types_b = None):
-    # Case in which we only pass one monomer (for 1b)
+    """
+    Returns a list with all the pairs belonging to real atoms in the order they appear in both monomers, without repeating them. ['A', 1, 'B', 4, 'C', 2] will return ['AA', 'AB', 'AC', 'BB', 'BC', 'CC'], while if two arguments for the types are passed it will do all the pairs.
+
+    Args:
+        vsites                - Virtual site labels
+        mon_types_a           - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2 for the first monomer
+        mon_types_b           - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2 for the second monomer
+    """
+
     pairs = []
     if mon_types_b is None:
         for i in range(0,len(mon_types_a),2):
@@ -32,6 +47,17 @@ def get_nonbonded_pairs(vsites, mon_types_a, mon_types_b = None):
     
 
 def read_poly_in(poly_in, vsites, var_intra, var_inter, var_virtual_sites):
+    """
+    Reads the poly.in file, and returns a list of variables, the intramolecular pairs and the intermolecular pairs.
+
+    Args:
+        poly_in               - The polynomial input file
+        vsites                - Virtual site labels
+        var_intra             - The intramolecular variable type
+        var_inter             - The intermolecular variable type
+        var_virtual_sites     - The virtual sites variable type
+    """
+
     variables = []
     intra_poly_pairs = []
     inter_poly_pairs = []
@@ -68,7 +94,12 @@ def read_poly_in(poly_in, vsites, var_intra, var_inter, var_virtual_sites):
     return variables, intra_poly_pairs, inter_poly_pairs
 
 def get_non_linear_parameters(variables):
+    """
+    From the variables it returns all the non linear parameters, that will be used in the polynomial evaluation
 
+    Args:
+        variables              - List of lists with the information in the poly.in file
+    """
     intra_nl_params = []
     inter_nl_params = []
     nl_params_ordered = []
@@ -102,7 +133,13 @@ def get_non_linear_parameters(variables):
     return intra_nl_params, inter_nl_params, nl_params_ordered
 
 def get_list_of_numeric_pairs(prefix,number_of_monomers):
-    # returns, for n monomers (if prefix is d) [d12, d13,...,d1n,d23, d24...]
+    """
+    Helper function that returns the combinations of pairs within the number of monomers prepended with a string. This is to get the switches and the distances; for n monomers (if prefix is d) [d12, d13,...,d1n,d23, d24...]
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+    """
+
     my_labels = []
     for i in range(1,number_of_monomers):
         for j in range(i+1,number_of_monomers + 1):

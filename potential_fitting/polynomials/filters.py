@@ -260,8 +260,8 @@ class IndividualDegreeFilter(Filter):
 
         """
 
-        self.variables = variable_string.split("/")
-        self.degrees = degree_string.split("/")
+        self.variable_matcher = VariablePatternMatcher(variable_string)
+        self.degree_matcher = NumberPatternMatcher(degree_string)
 
     def keep(self, monomial, variables):
         """
@@ -278,100 +278,8 @@ class IndividualDegreeFilter(Filter):
         # loop over each degree, variable pair in this monomial
         for degree, variable in zip(monomial, variables):
 
-            # used to track whether this variable matches one of this filter's applicable variables
-            applicable_variable = False
-
-            # loop over each variable this filter effects
-            for variable_string in self.variables:
-
-                # if the variable string is the wildcard, this filter is applicable to all variables
-                if variable_string == "*":
-                    applicable_variable = True
-                    break
-
-                # if the variable string has an *, we must perform detailed analysis to figure out what it does
-                if "*" in variable_string:
-
-                    # tracks if the atom portion of this variable string matches the current variable's
-                    fits_atoms = False
-                    # tracks if the type portion of this variable string matches the current variable's (inter or
-                    # intra)
-                    fits_type = False
-
-                    var_type, atoms_string = variable_string.split("-")[1:-1]
-                    atom1, atom2 = atoms_string.split("+")
-
-                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
-                    # variables regardless of atom type
-                    if atom1 == "*" and atom2 == "*":
-                        fits_atoms = True
-
-                    # if the second to last character or the last character of the variable string is a wildcard (but
-                    # not both), then this filter is eligable to apply to all variables where one of the atoms is the
-                    # other atom specified by the variable string
-                    elif atom1 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom2
-                                      or variable.category.split("-")[-1].split("+")[1] == atom2)
-                    elif atom2 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom1
-                                      or variable.category.split("-")[-1].split("+")[1] == atom1)
-
-                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
-                    # filter
-                    else:
-                        fits_atoms = variable.category.split("-")[-1].split("+")[0] == atom1 and \
-                                     variable.category.split("-")[-1].split("+")[1] == atom2
-
-                    # check if the middle bit of this filter is an "*"
-                    if variable_string.split("-")[1] == "*":
-                        fits_type = True
-
-                    # otherwise, this variable string specifies an exact inter/intra type (x- or x-intra-)
-                    else:
-                        fits_type = variable_string.split("-")[1] == variable.category.split("-")[1]
-
-                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
-                    # this variable!
-                    if fits_type and fits_atoms:
-                        applicable_variable = True
-                        break
-
-                # otherwise, this string simply specifies an exact variable
-                elif variable_string == variable.category:
-                    applicable_variable = True
-                    break
-
-            # if this filter is not applicable to the current variable, go to the next one
-            if not applicable_variable:
-                continue
-
-            # loop over each degree affected by this filter
-            for degree_string in self.degrees:
-
-                # if this degree string is the wildcard, then it affects all variables regardless of their degree
-                if degree_string == "*":
-                    return False
-
-                # if this degree string ends in a "-", then it is a less than or equal to specifier
-                elif degree_string.endswith("-"):
-                    if degree <= int(degree_string[:-1]):
-                        return False
-
-                # if this degree string ends in a "+", then it is a greater than or equal to specifier
-                elif degree_string.endswith("+"):
-                    if degree >= int(degree_string[:-1]):
-                        return False
-
-                # if this degree contains a "-" (but does not end in "-") then it is a range specifier
-                elif "-" in degree_string:
-                    if (degree >= int(degree_string[:degree_string.index("-")]) and degree <=
-                            int(degree_string[degree_string.index("-") + 1:])):
-                        return False
-
-                # otherwise, it is an exact value specifier
-                else:
-                    if degree == int(degree_string):
-                        return False
+            if self.variable_matcher.match(variable.category) and self.degree_matcher.match(degree):
+                return False
 
         # if the degree of one of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True
@@ -420,8 +328,8 @@ class SumDegreeFilter(Filter):
 
         """
 
-        self.variables = variable_string.split("/")
-        self.degrees = degree_string.split("/")
+        self.variable_matcher = VariablePatternMatcher(variable_string)
+        self.degree_matcher = NumberPatternMatcher(degree_string)
 
     def keep(self, monomial, variables):
         """
@@ -441,103 +349,14 @@ class SumDegreeFilter(Filter):
         # loop over each degree, variable pair in this monomial
         for degree, variable in zip(monomial, variables):
 
-            # used to track whether this variable matches one of this filter's applicable variables
-            applicable_variable = False
-
-            # loop over each variable this filter effects
-            for variable_string in self.variables:
-
-                # if the variable string is the wildcard, this filter is applicable to all variables
-                if variable_string == "*":
-                    applicable_variable = True
-                    break
-
-                # if the variable string has an *, we must perform detailed analysis to figure out what it does
-                if "*" in variable_string:
-
-                    # tracks if the atom portion of this variable string matches the current variable's
-                    fits_atoms = False
-                    # tracks if the type portion of this variable string matches the current variable's (inter or
-                    # intra)
-                    fits_type = False
-
-                    var_type, atoms_string = variable_string.split("-")[1:-1]
-                    atom1, atom2 = atoms_string.split("+")
-
-                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
-                    # variables regardless of atom type
-                    if atom1 == "*" and atom2 == "*":
-                        fits_atoms = True
-
-                    # if the second to last character or the last character of the variable string is a wildcard (but
-                    # not both), then this filter is eligable to apply to all variables where one of the atoms is the
-                    # other atom specified by the variable string
-                    elif atom1 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom2
-                                      or variable.category.split("-")[-1].split("+")[1] == atom2)
-                    elif atom2 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom1
-                                      or variable.category.split("-")[-1].split("+")[1] == atom1)
-
-                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
-                    # filter
-                    else:
-                        fits_atoms = variable.category.split("-")[-1].split("+")[0] == atom1 and \
-                                     variable.category.split("-")[-1].split("+")[1] == atom2
-
-                    # check if the middle bit of this filter is an "*"
-                    if variable_string.split("-")[1] == "*":
-                        fits_type = True
-
-                    # otherwise, this variable string specifies an exact inter/intra type (x- or x-intra-)
-                    else:
-                        fits_type = variable_string.split("-")[1] == variable.category.split("-")[1]
-
-                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
-                    # this variable!
-                    if fits_type and fits_atoms:
-                        applicable_variable = True
-                        break
-
-                # otherwise, this string simply specifies an exact variable
-                elif variable_string == variable.category:
-                    applicable_variable = True
-                    break
-
             # if this filter is  applicable to the current variable, add its degree to total_degree
-            if applicable_variable:
+            if self.variable_matcher.match(variable.category):
                 total_degree += degree
 
         # now that we have summed the degrees of all filtered variables, check if that total degree is filtered
         # by this filter.
-
-        # loop over each degree affected by this filter
-        for degree_string in self.degrees:
-
-            # if this degree string is the wildcard, then it affects all variables regardless of their degree
-            if degree_string == "*":
-                return False
-
-            # if this degree string ends in a "-", then it is a less than or equal to specifier
-            elif degree_string.endswith("-"):
-                if total_degree <= int(degree_string[:-1]):
-                    return False
-
-            # if this degree string ends in a "+", then it is a greater than or equal to specifier
-            elif degree_string.endswith("+"):
-                if total_degree >= int(degree_string[:-1]):
-                    return False
-
-            # if this degree contains a "-" (but does not end in "-") then it is a range specifier
-            elif "-" in degree_string:
-                if (total_degree >= int(degree_string[:degree_string.index("-")]) and degree <=
-                        int(degree_string[degree_string.index("-") + 1:])):
-                    return False
-
-            # otherwise, it is an exact value specifier
-            else:
-                if total_degree == int(degree_string):
-                    return False
+        if self.degree_matcher.match(total_degree):
+            return False
 
         # if the total_degree of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True
@@ -588,8 +407,8 @@ class NumFragmentsFilter(Filter):
 
         """
 
-        self.variables = variable_string.split("/")
-        self.fragment_nums = fragment_string.split("/")
+        self.variable_matcher = VariablePatternMatcher(variable_string)
+        self.fragment_num_matcher = NumberPatternMatcher(fragment_string)
 
     def keep(self, monomial, variables):
         """
@@ -613,71 +432,8 @@ class NumFragmentsFilter(Filter):
             if degree == 0:
                 continue
 
-            # used to track whether this variable matches one of this filter's applicable variables
-            applicable_variable = False
-
-            # loop over each variable this filter effects
-            for variable_string in self.variables:
-
-                # if the variable string is the wildcard, this filter is applicable to all variables
-                if variable_string == "*":
-                    applicable_variable = True
-                    break
-
-                # if the variable string has an *, we must perform detailed analysis to figure out what it does
-                if "*" in variable_string:
-
-                    # tracks if the atom portion of this variable string matches the current variable's
-                    fits_atoms = False
-                    # tracks if the type portion of this variable string matches the current variable's (inter or
-                    # intra)
-                    fits_type = False
-
-                    var_type, atoms_string = variable_string.split("-")[1:-1]
-                    atom1, atom2 = atoms_string.split("+")
-
-                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
-                    # variables regardless of atom type
-                    if atom1 == "*" and atom2 == "*":
-                        fits_atoms = True
-
-                    # if the second to last character or the last character of the variable string is a wildcard (but
-                    # not both), then this filter is eligable to apply to all variables where one of the atoms is the
-                    # other atom specified by the variable string
-                    elif atom1 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom2
-                                      or variable.category.split("-")[-1].split("+")[1] == atom2)
-                    elif atom2 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom1
-                                      or variable.category.split("-")[-1].split("+")[1] == atom1)
-
-                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
-                    # filter
-                    else:
-                        fits_atoms = variable.category.split("-")[-1].split("+")[0] == atom1 and \
-                                     variable.category.split("-")[-1].split("+")[1] == atom2
-
-                    # check if the middle bit of this filter is an "*"
-                    if variable_string.split("-")[1] == "*":
-                        fits_type = True
-
-                    # otherwise, this variable string specifies an exact inter/intra type (x- or x-intra-)
-                    else:
-                        fits_type = variable_string.split("-")[1] == variable.category.split("-")[1]
-
-                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
-                    # this variable!
-                    if fits_type and fits_atoms:
-                        applicable_variable = True
-                        break
-
-                # otherwise, this string simply specifies an exact variable
-                elif variable_string == variable.category:
-                    applicable_variable = True
-                    break
-
             # if this filter is  applicable to the current variable, record the fragments it uses.
-            if applicable_variable:
+            if self.variable_matcher.match(variable.category):
                 unique_fragments.add(variable.atom1_fragment)
                 unique_fragments.add(variable.atom2_fragment)
 
@@ -686,34 +442,8 @@ class NumFragmentsFilter(Filter):
 
         # now that we have found the number of fragments of all filtered variables, check if that number is filtered
         # by this filter.
-
-        # loop over each fragment number affected by this filter
-        for fragment_string in self.fragment_nums:
-
-            # if this fragment_num string is the wildcard, then it affects all variables regardless of their fragment number
-            if fragment_string == "*":
-                return False
-
-            # if this fragment_num string ends in a "-", then it is a less than or equal to specifier
-            elif fragment_string.endswith("-"):
-                if num_fragments <= int(fragment_string[:-1]):
-                    return False
-
-            # if this fragment_num string ends in a "+", then it is a greater than or equal to specifier
-            elif fragment_string.endswith("+"):
-                if num_fragments >= int(fragment_string[:-1]):
-                    return False
-
-            # if this fragment_num contains a "-" (but does not end in "-") then it is a range specifier
-            elif "-" in fragment_string:
-                if (num_fragments >= int(fragment_string[:fragment_string.index("-")]) and degree <=
-                        int(fragment_string[fragment_string.index("-") + 1:])):
-                    return False
-
-            # otherwise, it is an exact value specifier
-            else:
-                if num_fragments == int(fragment_string):
-                    return False
+        if self.fragment_num_matcher.match(num_fragments):
+            return False
 
         # if the fragment number of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True
@@ -768,9 +498,9 @@ class DegreeFilter(Filter):
 
         """
 
-        self.variables = variable_string.split("/")
-        self.degrees = degree_string.split("/")
-        self.terms = term_string.split("/")
+        self.variable_matcher = VariablePatternMatcher(variable_string)
+        self.degree_matcher = NumberPatternMatcher(degree_string)
+        self.term_matcher = NumberPatternMatcher(term_string)
 
     def keep(self, monomial, variables):
         """
@@ -787,142 +517,15 @@ class DegreeFilter(Filter):
         # calculate the total degree of this monomial
         term = monomial.get_total_degree()
 
-        # used to track whether this monomial's TOTAl degree matches one of this filter's applicable terms
-        applicable_term = False
-
-        # loop over each term string this filter effects
-        for term_string in self.terms:
-
-            # if the term string is the wildcard, this filter is applicable to all monomials
-            if term_string == "*":
-                applicable_term = True
-                break
-
-            # if the term string ends in "-" then it is a less than or equal to specifier
-            elif term_string.endswith("-"):
-                if term <= int(term_string[:-1]):
-                    applicable_term = True
-                    break
-
-            # if the term string ends in "+" then it is a greater than or equal to specifier
-            elif term_string.endswith("+"):
-                if term >= int(term_string[:-1]):
-                    applicable_term = True
-                    break
-
-            # if the term has a "-" (but did not end in "-") then it is a range specifier
-            elif "-" in term_string:
-                if term >= int(term_string[:term_string.index("-")]) and term <= int(term_string[term_string.index("-")
-                        + 1:]):
-                    applicable_term = True
-                    break
-
-            # otherwise, it is a specific number specifier
-            else:
-                if term == int(term_string):
-                    applicable_term = True
-                    break
-
         # if this filter does not apply to the monomial's total degree, then it should not be filtered out
-        if not applicable_term:
+        if not self.term_matcher.match(term):
             return True
 
         # loop over each degree, variable pair in this monomial
         for degree, variable in zip(monomial, variables):
-
-            # used to track whether this variable matches one of this filter's applicable variables
-            applicable_variable = False
-
-            # loop over each variable this filter effects
-            for variable_string in self.variables:
-
-                # if the variable string is the wildcard, this filter is applicable to all variables
-                if variable_string == "*":
-                    applicable_variable = True
-                    break
-
-                # if the variable string has an *, we must perform detailed analysis to figure out what it does
-                if "*" in variable_string:
-
-                    # tracks if the atom portion of this variable string matches the current variable's
-                    fits_atoms = False
-                    # tracks if the type portion of this variable string matches the current variable's (inter or
-                    # intra)
-                    fits_type = False
-
-                    var_type, atoms_string = variable_string.split("-")[1:-1]
-                    atom1, atom2 = atoms_string.split("+")
-
-                    # if the variable string ends in 2 wildcards, then this filter is eligable to apply to all
-                    # variables regardless of atom type
-                    if atom1 == "*" and atom2 == "*":
-                        fits_atoms = True
-
-                    # if the second to last character or the last character of the variable string is a wildcard (but
-                    # not both), then this filter is eligable to apply to all variables where one of the atoms is the
-                    # other atom specified by the variable string
-                    elif atom1 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom2
-                                or variable.category.split("-")[-1].split("+")[1] == atom2)
-                    elif atom2 == "*":
-                        fits_atoms = (variable.category.split("-")[-1].split("+")[0] == atom1
-                                or variable.category.split("-")[-1].split("+")[1] == atom1)
-
-                    # otherwise, this variable string simply specifies an exact pair of atoms to be effected by this
-                    # filter
-                    else:
-                        fits_atoms = variable.category.split("-")[-1].split("+")[0] == atom1 and variable.category.split("-")[-1].split("+")[1] == atom2
-
-                    # check if the middle bit of this filter is an "*"
-                    if variable_string.split("-")[1] == "*":
-                        fits_type = True
-
-                    # otherwise, this variable string specifies an exact inter/intra type (x- or x-intra-)
-                    else:
-                        fits_type = variable_string.split("-")[1] == variable.category.split("-")[1]
-
-                    # if this variable string fits both the atoms and the inter/intra type, then it is applicable to
-                    # this variable! 
-                    if fits_type and fits_atoms:
-                        applicable_variable = True
-                        break 
-
-                # otherwise, this string simply specifies an exact variable
-                elif variable_string == variable.category:
-                    applicable_variable = True
-                    break
             
-            # if this filter is not applicable to the current variable, go to the next one
-            if not applicable_variable:
-                continue
-
-            # loop over each degree affected by this filter
-            for degree_string in self.degrees:
-
-                # if this degree string is the wildcard, then it affects all variables regardless of their degree
-                if degree_string == "*":
-                    return False
-
-                # if this degree string ends in a "-", then it is a less than or equal to specifier
-                elif degree_string.endswith("-"):
-                    if degree <= int(degree_string[:-1]):
-                        return False
-
-                # if this degree string ends in a "+", then it is a greater than or equal to specifier
-                elif degree_string.endswith("+"):
-                    if degree >= int(degree_string[:-1]):
-                        return False
-
-                # if this degree contains a "-" (but does not end in "-") then it is a range specifier
-                elif "-" in degree_string:
-                    if (degree >= int(degree_string[:degree_string.index("-")]) and degree <=
-                            int(degree_string[degree_string.index("-") + 1:])):
-                        return False
-
-                # otherwise, it is an exact value specifier
-                else:
-                    if degree == int(degree_string):
-                        return False
+            if self.variable_matcher.match(variable.category) and self.degree_matcher.match(degree):
+                return False
 
         # if the degree of one of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True

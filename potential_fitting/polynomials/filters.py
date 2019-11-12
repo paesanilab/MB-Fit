@@ -556,7 +556,19 @@ class VariablePatternMatcher(CompoundPatternMatcher):
         if pattern == "*":
             return WildCardPatternMatcher(pattern)
         else:
-            var_type_pattern, atoms_pattern, level_pattern = pattern.split("-")[1:]
+            # remove "x-" part of pattern
+            pattern = pattern[pattern.index("-") + 1:]
+
+            # read "inter" or "intra" part of the pattern
+            var_type_pattern = pattern[:pattern.index("-")]
+            pattern = pattern[pattern.index("-") + 1:]
+
+            # read the "A+B" part of the pattern
+            atoms_pattern = pattern[:pattern.index("-")]
+            pattern = pattern[pattern.index("-") + 1:]
+
+            # the rest of the pattern refers to the level
+            level_pattern = pattern
 
             if var_type_pattern == "*":
                 var_type_matcher = WildCardPatternMatcher(var_type_pattern)

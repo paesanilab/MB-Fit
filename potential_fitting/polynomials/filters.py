@@ -434,8 +434,8 @@ class NumFragmentsFilter(Filter):
 
             # if this filter is  applicable to the current variable, record the fragments it uses.
             if self.variable_matcher.match(variable.category):
-                unique_fragments.add(variable.atom1_fragment)
-                unique_fragments.add(variable.atom2_fragment)
+                unique_fragments.add(variable.atom1_fragment[0])
+                unique_fragments.add(variable.atom2_fragment[0])
 
         # count the number of fragments used by this monomial in all filtered variables
         num_fragments = len(unique_fragments)
@@ -599,7 +599,6 @@ class SingleVariablePatternMatcher(PatternMatcher):
         var_type, atoms, level = string.split("-")[1:]
 
         return self.var_type_matcher.match(var_type) and self.atoms_matcher.match(atoms) and self.level_matcher.match(level)
-
 
 class OneAtomMatcher(PatternMatcher):
 

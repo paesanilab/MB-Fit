@@ -202,9 +202,9 @@ class TestFilters(unittest.TestCase):
 
         filter = filters.NumFragmentsFilter("x-intra-A+B-*", "1-")
         not_filter = filters.parse_filter("not", "num-fragments", "x-intra-A+B-*", "1-")
-        variables = [Variable('A', 1, 'a', 'B', 'a', 1, 'x-intra-A+B-1'),
-                     Variable('A', 1, 'b', 'B', 'b', 2, 'x-intra-A+B-1'),
-                     Variable('B', 1, 'c', 'B', 'd', 2, 'x-intra-B+B-0')]
+        variables = [Variable('A', 1, 'a', 'B', 1, 'a', 'x-intra-A+B-1'),
+                     Variable('A', 1, 'b', 'B', 2, 'b', 'x-intra-A+B-1'),
+                     Variable('B', 1, 'c', 'B', 2, 'd', 'x-intra-B+B-0')]
 
         for i in range(1000):
             monomial = Monomial([random.randint(0, 5), random.randint(0, 5), random.randint(0, 5)])
@@ -470,5 +470,355 @@ class TestFilters(unittest.TestCase):
         self.assertFalse(filter.keep(Monomial([1, 1, 2, 0]), variables))
         self.assertFalse(filter.keep(Monomial([0, 5, 0, 1]), variables))
 
+    def test_individual_degree_filter_with_levels(self):
+        filter = filters.IndividualDegreeFilter("x-intra-A+A-1", "1+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.IndividualDegreeFilter("x-intra-A+A-1-", "1+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.IndividualDegreeFilter("x-intra-A+A-0+", "1+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.IndividualDegreeFilter("x-intra-A+A-0-1", "1+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.IndividualDegreeFilter("x-intra-A+A-1", "1+")
+        variables = [Variable('A', 1, 'aa', 'A', 2, 'aa', 'x-intra-A+A-2'),
+                     Variable('A', 1, 'aa', 'A', 3, 'ab', 'x-intra-A+A-1'),
+                     Variable('A', 4, 'ab', 'A', 5, 'ab', 'x-intra-A+A-2')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+    def test_sum_degree_filter_with_levels(self):
+        filter = filters.SumDegreeFilter("x-intra-A+A-1", "2+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 2, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([2, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 2]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.SumDegreeFilter("x-intra-A+A-1-", "2+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.SumDegreeFilter("x-intra-A+A-0+", "3+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.SumDegreeFilter("x-intra-A+A-0-1", "1+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.SumDegreeFilter("x-intra-A+A-1", "1+")
+        variables = [Variable('A', 1, 'aa', 'A', 2, 'aa', 'x-intra-A+A-2'),
+                     Variable('A', 1, 'aa', 'A', 3, 'ab', 'x-intra-A+A-1'),
+                     Variable('A', 4, 'ab', 'A', 5, 'ab', 'x-intra-A+A-2')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+    def test_num_fragments_filter_with_levels(self):
+        filter = filters.NumFragmentsFilter("x-intra-A+A-1", "2+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([2, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 2]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 2, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 3, 2]), variables))
+        self.assertFalse(filter.keep(Monomial([3, 1, 2]), variables))
+
+        filter = filters.NumFragmentsFilter("x-intra-A+A-1-", "2+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([2, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 3]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.NumFragmentsFilter("x-intra-A+A-0+", "3+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.NumFragmentsFilter("x-intra-A+A-0-1", "1+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.NumFragmentsFilter("x-intra-A+A-1-2", "2+")
+        variables = [Variable('A', 1, 'aa', 'A', 2, 'aa', 'x-intra-A+A-2'),
+                     Variable('A', 1, 'aa', 'A', 3, 'ab', 'x-intra-A+A-1'),
+                     Variable('A', 3, 'ab', 'A', 4, 'ab', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([2, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 3]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 2]), variables))
+
+    def test_degree_filter_with_levels(self):
+        filter = filters.DegreeFilter("x-intra-A+A-1", "2+", "2")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([3, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 3]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 2]), variables))
+
+        self.assertFalse(filter.keep(Monomial([2, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 2]), variables))
+
+
+        filter = filters.DegreeFilter("x-intra-A+A-1-", "2+", "2+")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
+
+        filter = filters.DegreeFilter("x-intra-A+A-0+", "3+", "4-5")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 5, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 6]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 2]), variables))
+        self.assertTrue(filter.keep(Monomial([2, 1, 2]), variables))
+        self.assertTrue(filter.keep(Monomial([3, 3, 0]), variables))
+
+        self.assertFalse(filter.keep(Monomial([5, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 4, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([5, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([2, 3, 0]), variables))
+
+        filter = filters.DegreeFilter("x-intra-A+A-0-1", "1+", "2-")
+        variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
+                     Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
+                     Variable('A', 3, 'b', 'A', 4, 'b', 'x-intra-A+A-1')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 1, 2]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 0, 1]), variables))
+
+        filter = filters.DegreeFilter("x-intra-A+A-1", "1+", "*")
+        variables = [Variable('A', 1, 'aa', 'A', 2, 'aa', 'x-intra-A+A-2'),
+                     Variable('A', 1, 'aa', 'A', 3, 'ab', 'x-intra-A+A-1'),
+                     Variable('A', 4, 'ab', 'A', 5, 'ab', 'x-intra-A+A-2')]
+
+        self.assertTrue(filter.keep(Monomial([0, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 0]), variables))
+        self.assertTrue(filter.keep(Monomial([0, 0, 1]), variables))
+        self.assertTrue(filter.keep(Monomial([1, 0, 1]), variables))
+
+        self.assertFalse(filter.keep(Monomial([0, 1, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 3, 0]), variables))
+        self.assertFalse(filter.keep(Monomial([0, 2, 1]), variables))
+        self.assertFalse(filter.keep(Monomial([1, 1, 2]), variables))
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFilters)

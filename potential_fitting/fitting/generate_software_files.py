@@ -433,7 +433,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         shift = 0;
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                c6index = max(my_number_types[my_mon[1][0]])*my_number_types[my_mon[0][0]][i] + my_number_types[my_mon[1][0]][j]
+                c6index = sum(range(max(my_number_types[my_mon[1][0]]) + 2 - i, max(my_number_types[my_mon[1][0]]) + 2)) + j - i
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
                 A_text.append("        a.push_back(" + str(A_buck[c6index]) + ");  " + A_units + " " + let1 + "--" + let2 + "\n")

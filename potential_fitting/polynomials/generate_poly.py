@@ -44,7 +44,7 @@ class PolynomialGenerator(object):
             output_dir_path - Local path to the directory in which to write all files.
             generate_direct_gradients - If True, then a gradients cpp file is generate additionally to the polynomial
                     cpp file. This may take a while.
-                    defualt: False.
+                    default: False.
 
         Returns:
             None.
@@ -237,7 +237,7 @@ class PolynomialGenerator(object):
             output_dir_path - Local path to directory in which to write output files.
             generate_direct_gradients - If True, then a gradients cpp file is generate additionally to the polynomial
                     cpp file. This may take a while.
-                    defualt: False.
+                    default: False.
 
         Returns:
             None.

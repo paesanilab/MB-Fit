@@ -1,5 +1,5 @@
 # external package imports
-import itertools
+import itertools, os
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system, ProgressBar
@@ -258,7 +258,7 @@ class PolynomialGenerator(object):
 
         # open the three files we will now write to
         with open(output_dir_path + "/poly-direct.cpp", "w") as cpp_file, \
-             open(output_dir_path + "/poly-grd-direct.cpp", "w") if generate_direct_gradients else type('obj', (object,), {"__enter__": lambda self: None, "__exit__": lambda self, x, y, z: False})() as cpp_grd_file, \
+             open(output_dir_path + "/poly-grd-direct.cpp", "w") if generate_direct_gradients else open(os.devnull, "w") as cpp_grd_file, \
              open(output_dir_path + "/poly-grd.maple", "w") as grd_file, \
              open(output_dir_path + "/poly-nogrd.maple", "w") as nogrd_file:
 

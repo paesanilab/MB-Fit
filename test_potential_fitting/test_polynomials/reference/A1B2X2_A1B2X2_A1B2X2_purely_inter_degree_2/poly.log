@@ -6,7 +6,7 @@ A1B2X2
 
 <> atoms (15) <>
 
-A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b:A1c:B1c:B2c:X1c:X2c
+A1a:B1a:B2a:X1a:X2a:A2b:B3b:B4b:X3b:X4b:A3c:B5c:B6c:X5c:X6c
 
 <> permutations (384) <>
 
@@ -397,90 +397,90 @@ A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b:A1c:B1c:B2c:X1c:X2c
 
 <> variables (84) <>
 
- 0 :  B1(a) <===>  B2(a) : x-intra-B+B
- 1 :  A1(a) <===>  B1(a) : x-intra-A+B
- 2 :  A1(a) <===>  B2(a) : x-intra-A+B
- 3 :  B1(b) <===>  B2(b) : x-intra-B+B
- 4 :  A1(b) <===>  B1(b) : x-intra-A+B
- 5 :  A1(b) <===>  B2(b) : x-intra-A+B
- 6 :  B1(c) <===>  B2(c) : x-intra-B+B
- 7 :  A1(c) <===>  B1(c) : x-intra-A+B
- 8 :  A1(c) <===>  B2(c) : x-intra-A+B
- 9 :  A1(a) <===>  A1(b) : x-inter-A+A
-10 :  A1(a) <===>  B1(b) : x-inter-A+B
-11 :  A1(a) <===>  B2(b) : x-inter-A+B
-12 :  A1(a) <===>  X1(b) : x-inter-A+X
-13 :  A1(a) <===>  X2(b) : x-inter-A+X
-14 :  B1(a) <===>  A1(b) : x-inter-A+B
-15 :  B2(a) <===>  A1(b) : x-inter-A+B
-16 :  B1(a) <===>  B1(b) : x-inter-B+B
-17 :  B1(a) <===>  B2(b) : x-inter-B+B
-18 :  B2(a) <===>  B1(b) : x-inter-B+B
-19 :  B2(a) <===>  B2(b) : x-inter-B+B
-20 :  B1(a) <===>  X1(b) : x-inter-B+X
-21 :  B1(a) <===>  X2(b) : x-inter-B+X
-22 :  B2(a) <===>  X1(b) : x-inter-B+X
-23 :  B2(a) <===>  X2(b) : x-inter-B+X
-24 :  X1(a) <===>  A1(b) : x-inter-A+X
-25 :  X2(a) <===>  A1(b) : x-inter-A+X
-26 :  X1(a) <===>  B1(b) : x-inter-B+X
-27 :  X1(a) <===>  B2(b) : x-inter-B+X
-28 :  X2(a) <===>  B1(b) : x-inter-B+X
-29 :  X2(a) <===>  B2(b) : x-inter-B+X
-30 :  X1(a) <===>  X1(b) : x-inter-X+X
-31 :  X1(a) <===>  X2(b) : x-inter-X+X
-32 :  X2(a) <===>  X1(b) : x-inter-X+X
-33 :  X2(a) <===>  X2(b) : x-inter-X+X
-34 :  A1(a) <===>  A1(c) : x-inter-A+A
-35 :  A1(a) <===>  B1(c) : x-inter-A+B
-36 :  A1(a) <===>  B2(c) : x-inter-A+B
-37 :  A1(a) <===>  X1(c) : x-inter-A+X
-38 :  A1(a) <===>  X2(c) : x-inter-A+X
-39 :  B1(a) <===>  A1(c) : x-inter-A+B
-40 :  B2(a) <===>  A1(c) : x-inter-A+B
-41 :  B1(a) <===>  B1(c) : x-inter-B+B
-42 :  B1(a) <===>  B2(c) : x-inter-B+B
-43 :  B2(a) <===>  B1(c) : x-inter-B+B
-44 :  B2(a) <===>  B2(c) : x-inter-B+B
-45 :  B1(a) <===>  X1(c) : x-inter-B+X
-46 :  B1(a) <===>  X2(c) : x-inter-B+X
-47 :  B2(a) <===>  X1(c) : x-inter-B+X
-48 :  B2(a) <===>  X2(c) : x-inter-B+X
-49 :  X1(a) <===>  A1(c) : x-inter-A+X
-50 :  X2(a) <===>  A1(c) : x-inter-A+X
-51 :  X1(a) <===>  B1(c) : x-inter-B+X
-52 :  X1(a) <===>  B2(c) : x-inter-B+X
-53 :  X2(a) <===>  B1(c) : x-inter-B+X
-54 :  X2(a) <===>  B2(c) : x-inter-B+X
-55 :  X1(a) <===>  X1(c) : x-inter-X+X
-56 :  X1(a) <===>  X2(c) : x-inter-X+X
-57 :  X2(a) <===>  X1(c) : x-inter-X+X
-58 :  X2(a) <===>  X2(c) : x-inter-X+X
-59 :  A1(b) <===>  A1(c) : x-inter-A+A
-60 :  A1(b) <===>  B1(c) : x-inter-A+B
-61 :  A1(b) <===>  B2(c) : x-inter-A+B
-62 :  A1(b) <===>  X1(c) : x-inter-A+X
-63 :  A1(b) <===>  X2(c) : x-inter-A+X
-64 :  B1(b) <===>  A1(c) : x-inter-A+B
-65 :  B2(b) <===>  A1(c) : x-inter-A+B
-66 :  B1(b) <===>  B1(c) : x-inter-B+B
-67 :  B1(b) <===>  B2(c) : x-inter-B+B
-68 :  B2(b) <===>  B1(c) : x-inter-B+B
-69 :  B2(b) <===>  B2(c) : x-inter-B+B
-70 :  B1(b) <===>  X1(c) : x-inter-B+X
-71 :  B1(b) <===>  X2(c) : x-inter-B+X
-72 :  B2(b) <===>  X1(c) : x-inter-B+X
-73 :  B2(b) <===>  X2(c) : x-inter-B+X
-74 :  X1(b) <===>  A1(c) : x-inter-A+X
-75 :  X2(b) <===>  A1(c) : x-inter-A+X
-76 :  X1(b) <===>  B1(c) : x-inter-B+X
-77 :  X1(b) <===>  B2(c) : x-inter-B+X
-78 :  X2(b) <===>  B1(c) : x-inter-B+X
-79 :  X2(b) <===>  B2(c) : x-inter-B+X
-80 :  X1(b) <===>  X1(c) : x-inter-X+X
-81 :  X1(b) <===>  X2(c) : x-inter-X+X
-82 :  X2(b) <===>  X1(c) : x-inter-X+X
-83 :  X2(b) <===>  X2(c) : x-inter-X+X
+ 0 :  A1(a) <===>  A2(b) : x-inter-A+A-0
+ 1 :  A1(a) <===>  A3(c) : x-inter-A+A-0
+ 2 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 3 :  A1(a) <===>  B2(a) : x-intra-A+B-1
+ 4 :  A1(a) <===>  B3(b) : x-inter-A+B-0
+ 5 :  A1(a) <===>  B4(b) : x-inter-A+B-0
+ 6 :  A1(a) <===>  B5(c) : x-inter-A+B-0
+ 7 :  A1(a) <===>  B6(c) : x-inter-A+B-0
+ 8 :  A1(a) <===>  X3(b) : x-inter-A+X-0
+ 9 :  A1(a) <===>  X4(b) : x-inter-A+X-0
+10 :  A1(a) <===>  X5(c) : x-inter-A+X-0
+11 :  A1(a) <===>  X6(c) : x-inter-A+X-0
+12 :  A2(b) <===>  A3(c) : x-inter-A+A-0
+13 :  A2(b) <===>  B1(a) : x-inter-A+B-0
+14 :  A2(b) <===>  B2(a) : x-inter-A+B-0
+15 :  A2(b) <===>  B3(b) : x-intra-A+B-1
+16 :  A2(b) <===>  B4(b) : x-intra-A+B-1
+17 :  A2(b) <===>  B5(c) : x-inter-A+B-0
+18 :  A2(b) <===>  B6(c) : x-inter-A+B-0
+19 :  A2(b) <===>  X1(a) : x-inter-A+X-0
+20 :  A2(b) <===>  X2(a) : x-inter-A+X-0
+21 :  A2(b) <===>  X5(c) : x-inter-A+X-0
+22 :  A2(b) <===>  X6(c) : x-inter-A+X-0
+23 :  A3(c) <===>  B1(a) : x-inter-A+B-0
+24 :  A3(c) <===>  B2(a) : x-inter-A+B-0
+25 :  A3(c) <===>  B3(b) : x-inter-A+B-0
+26 :  A3(c) <===>  B4(b) : x-inter-A+B-0
+27 :  A3(c) <===>  B5(c) : x-intra-A+B-1
+28 :  A3(c) <===>  B6(c) : x-intra-A+B-1
+29 :  A3(c) <===>  X1(a) : x-inter-A+X-0
+30 :  A3(c) <===>  X2(a) : x-inter-A+X-0
+31 :  A3(c) <===>  X3(b) : x-inter-A+X-0
+32 :  A3(c) <===>  X4(b) : x-inter-A+X-0
+33 :  B1(a) <===>  B2(a) : x-intra-B+B-1
+34 :  B1(a) <===>  B3(b) : x-inter-B+B-0
+35 :  B1(a) <===>  B4(b) : x-inter-B+B-0
+36 :  B1(a) <===>  B5(c) : x-inter-B+B-0
+37 :  B1(a) <===>  B6(c) : x-inter-B+B-0
+38 :  B1(a) <===>  X3(b) : x-inter-B+X-0
+39 :  B1(a) <===>  X4(b) : x-inter-B+X-0
+40 :  B1(a) <===>  X5(c) : x-inter-B+X-0
+41 :  B1(a) <===>  X6(c) : x-inter-B+X-0
+42 :  B2(a) <===>  B3(b) : x-inter-B+B-0
+43 :  B2(a) <===>  B4(b) : x-inter-B+B-0
+44 :  B2(a) <===>  B5(c) : x-inter-B+B-0
+45 :  B2(a) <===>  B6(c) : x-inter-B+B-0
+46 :  B2(a) <===>  X3(b) : x-inter-B+X-0
+47 :  B2(a) <===>  X4(b) : x-inter-B+X-0
+48 :  B2(a) <===>  X5(c) : x-inter-B+X-0
+49 :  B2(a) <===>  X6(c) : x-inter-B+X-0
+50 :  B3(b) <===>  B4(b) : x-intra-B+B-1
+51 :  B3(b) <===>  B5(c) : x-inter-B+B-0
+52 :  B3(b) <===>  B6(c) : x-inter-B+B-0
+53 :  B3(b) <===>  X1(a) : x-inter-B+X-0
+54 :  B3(b) <===>  X2(a) : x-inter-B+X-0
+55 :  B3(b) <===>  X5(c) : x-inter-B+X-0
+56 :  B3(b) <===>  X6(c) : x-inter-B+X-0
+57 :  B4(b) <===>  B5(c) : x-inter-B+B-0
+58 :  B4(b) <===>  B6(c) : x-inter-B+B-0
+59 :  B4(b) <===>  X1(a) : x-inter-B+X-0
+60 :  B4(b) <===>  X2(a) : x-inter-B+X-0
+61 :  B4(b) <===>  X5(c) : x-inter-B+X-0
+62 :  B4(b) <===>  X6(c) : x-inter-B+X-0
+63 :  B5(c) <===>  B6(c) : x-intra-B+B-1
+64 :  B5(c) <===>  X1(a) : x-inter-B+X-0
+65 :  B5(c) <===>  X2(a) : x-inter-B+X-0
+66 :  B5(c) <===>  X3(b) : x-inter-B+X-0
+67 :  B5(c) <===>  X4(b) : x-inter-B+X-0
+68 :  B6(c) <===>  X1(a) : x-inter-B+X-0
+69 :  B6(c) <===>  X2(a) : x-inter-B+X-0
+70 :  B6(c) <===>  X3(b) : x-inter-B+X-0
+71 :  B6(c) <===>  X4(b) : x-inter-B+X-0
+72 :  X1(a) <===>  X3(b) : x-inter-X+X-0
+73 :  X1(a) <===>  X4(b) : x-inter-X+X-0
+74 :  X1(a) <===>  X5(c) : x-inter-X+X-0
+75 :  X1(a) <===>  X6(c) : x-inter-X+X-0
+76 :  X2(a) <===>  X3(b) : x-inter-X+X-0
+77 :  X2(a) <===>  X4(b) : x-inter-X+X-0
+78 :  X2(a) <===>  X5(c) : x-inter-X+X-0
+79 :  X2(a) <===>  X6(c) : x-inter-X+X-0
+80 :  X3(b) <===>  X5(c) : x-inter-X+X-0
+81 :  X3(b) <===>  X6(c) : x-inter-X+X-0
+82 :  X4(b) <===>  X5(c) : x-inter-X+X-0
+83 :  X4(b) <===>  X6(c) : x-inter-X+X-0
 
 <> 1 degree <>
 

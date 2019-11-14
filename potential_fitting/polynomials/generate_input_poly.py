@@ -70,7 +70,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
                     italics=True)
         elif polynomial_filtering == "partly-inter":
             # this filter filters out all terms that have no inter-molecular components
-            poly_in_file.write("add_filter['sum-degree', 'x-inter-*+*', '0']")
+            poly_in_file.write("add_filter['sum-degree', 'x-inter-*+*-*', '0']")
             system.format_print("Adding filter to filter out terms that ONLY use intramolecular variables.",
                     italics=True)
 

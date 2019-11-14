@@ -5,7 +5,7 @@ A1B2X2
 
 <> atoms (10) <>
 
-A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b
+A1a:B1a:B2a:X1a:X2a:A2b:B3b:B4b:X3b:X4b
 
 <> permutations (32) <>
 
@@ -44,37 +44,37 @@ A1a:B1a:B2a:X1a:X2a:A1b:B1b:B2b:X1b:X2b
 
 <> variables (31) <>
 
- 0 :  B1(a) <===>  B2(a) : x-intra-B+B
- 1 :  B1(b) <===>  B2(b) : x-intra-B+B
- 2 :  A1(a) <===>  B1(a) : x-intra-A+B
- 3 :  A1(a) <===>  B2(a) : x-intra-A+B
- 4 :  A1(b) <===>  B1(b) : x-intra-A+B
- 5 :  A1(b) <===>  B2(b) : x-intra-A+B
- 6 :  B1(a) <===>  B1(b) : x-inter-B+B
- 7 :  B1(a) <===>  B2(b) : x-inter-B+B
- 8 :  B2(a) <===>  B1(b) : x-inter-B+B
- 9 :  B2(a) <===>  B2(b) : x-inter-B+B
-10 :  A1(a) <===>  B1(b) : x-inter-A+B
-11 :  A1(a) <===>  B2(b) : x-inter-A+B
-12 :  B1(a) <===>  A1(b) : x-inter-A+B
-13 :  B2(a) <===>  A1(b) : x-inter-A+B
-14 :  A1(a) <===>  A1(b) : x-inter-A+A
-15 :  B1(a) <===>  X1(b) : x-inter-B+X
-16 :  B1(a) <===>  X2(b) : x-inter-B+X
-17 :  B2(a) <===>  X1(b) : x-inter-B+X
-18 :  B2(a) <===>  X2(b) : x-inter-B+X
-19 :  X1(a) <===>  B1(b) : x-inter-B+X
-20 :  X1(a) <===>  B2(b) : x-inter-B+X
-21 :  X2(a) <===>  B1(b) : x-inter-B+X
-22 :  X2(a) <===>  B2(b) : x-inter-B+X
-23 :  A1(a) <===>  X1(b) : x-inter-A+X
-24 :  A1(a) <===>  X2(b) : x-inter-A+X
-25 :  X1(a) <===>  A1(b) : x-inter-A+X
-26 :  X2(a) <===>  A1(b) : x-inter-A+X
-27 :  X1(a) <===>  X1(b) : x-inter-X+X
-28 :  X1(a) <===>  X2(b) : x-inter-X+X
-29 :  X2(a) <===>  X1(b) : x-inter-X+X
-30 :  X2(a) <===>  X2(b) : x-inter-X+X
+ 0 :  A1(a) <===>  A2(b) : x-inter-A+A-0
+ 1 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 2 :  A1(a) <===>  B2(a) : x-intra-A+B-1
+ 3 :  A1(a) <===>  B3(b) : x-inter-A+B-0
+ 4 :  A1(a) <===>  B4(b) : x-inter-A+B-0
+ 5 :  A1(a) <===>  X3(b) : x-inter-A+X-0
+ 6 :  A1(a) <===>  X4(b) : x-inter-A+X-0
+ 7 :  A2(b) <===>  B1(a) : x-inter-A+B-0
+ 8 :  A2(b) <===>  B2(a) : x-inter-A+B-0
+ 9 :  A2(b) <===>  B3(b) : x-intra-A+B-1
+10 :  A2(b) <===>  B4(b) : x-intra-A+B-1
+11 :  A2(b) <===>  X1(a) : x-inter-A+X-0
+12 :  A2(b) <===>  X2(a) : x-inter-A+X-0
+13 :  B1(a) <===>  B2(a) : x-intra-B+B-1
+14 :  B1(a) <===>  B3(b) : x-inter-B+B-0
+15 :  B1(a) <===>  B4(b) : x-inter-B+B-0
+16 :  B1(a) <===>  X3(b) : x-inter-B+X-0
+17 :  B1(a) <===>  X4(b) : x-inter-B+X-0
+18 :  B2(a) <===>  B3(b) : x-inter-B+B-0
+19 :  B2(a) <===>  B4(b) : x-inter-B+B-0
+20 :  B2(a) <===>  X3(b) : x-inter-B+X-0
+21 :  B2(a) <===>  X4(b) : x-inter-B+X-0
+22 :  B3(b) <===>  B4(b) : x-intra-B+B-1
+23 :  B3(b) <===>  X1(a) : x-inter-B+X-0
+24 :  B3(b) <===>  X2(a) : x-inter-B+X-0
+25 :  B4(b) <===>  X1(a) : x-inter-B+X-0
+26 :  B4(b) <===>  X2(a) : x-inter-B+X-0
+27 :  X1(a) <===>  X3(b) : x-inter-X+X-0
+28 :  X1(a) <===>  X4(b) : x-inter-X+X-0
+29 :  X2(a) <===>  X3(b) : x-inter-X+X-0
+30 :  X2(a) <===>  X4(b) : x-inter-X+X-0
 
 <> 1 degree <>
 

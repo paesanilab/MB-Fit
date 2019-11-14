@@ -1,5 +1,5 @@
 # external package imports
-import itertools
+import itertools, os
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system, ProgressBar
@@ -33,7 +33,7 @@ class PolynomialGenerator(object):
         self.settings = SettingsReader(settings_path)
         self.num_gradient_terms_per_line = num_gradient_terms_per_line
 
-    def generate_polynomial(self, input_path, order, output_dir_path):
+    def generate_polynomial(self, input_path, order, output_dir_path, generate_direct_gradients=False):
 
         """
         Generates .h, .cpp, .maple, and .log polynomial files for a new polynomial based on the input file and order.
@@ -42,6 +42,9 @@ class PolynomialGenerator(object):
             input_path      - Local path to '.in' polynomial input file.
             order           - Order of the polynomial to generate.
             output_dir_path - Local path to the directory in which to write all files.
+            generate_direct_gradients - If True, then a gradients cpp file is generate additionally to the polynomial
+                    cpp file. This may take a while.
+                    default: False.
 
         Returns:
             None.
@@ -54,7 +57,7 @@ class PolynomialGenerator(object):
 
         monomials, variables, variable_permutations = self.get_monomials_and_variables(input_path, order, log_path)
 
-        self.write_cpp_files(monomials, variables, variable_permutations, output_dir_path)
+        self.write_cpp_files(monomials, variables, variable_permutations, output_dir_path, generate_direct_gradients=generate_direct_gradients)
 
         system.format_print("Successfully generated polynomial files into directory {}.".format(output_dir_path),
                             bold=True, color=system.Color.GREEN)
@@ -222,7 +225,7 @@ class PolynomialGenerator(object):
 
             return total_monomials, variables, variable_permutations
 
-    def write_cpp_files(self, monomials, variables, variable_permutations, output_dir_path):
+    def write_cpp_files(self, monomials, variables, variable_permutations, output_dir_path, generate_direct_gradients=False):
         """
         Write the .cpp, .h, and .maple files for a polynomial.
 
@@ -232,6 +235,9 @@ class PolynomialGenerator(object):
             variable_permutations - List of all permutations of the Variables in this polynomial that can be used to
                     permute the monomials to get the permutations of each Monomial.
             output_dir_path - Local path to directory in which to write output files.
+            generate_direct_gradients - If True, then a gradients cpp file is generate additionally to the polynomial
+                    cpp file. This may take a while.
+                    default: False.
 
         Returns:
             None.
@@ -252,23 +258,25 @@ class PolynomialGenerator(object):
 
         # open the three files we will now write to
         with open(output_dir_path + "/poly-direct.cpp", "w") as cpp_file, \
-             open(output_dir_path + "/poly-grd-direct.cpp", "w") as cpp_grd_file, \
+             open(output_dir_path + "/poly-grd-direct.cpp", "w") if generate_direct_gradients else open(os.devnull, "w") as cpp_grd_file, \
              open(output_dir_path + "/poly-grd.maple", "w") as grd_file, \
              open(output_dir_path + "/poly-nogrd.maple", "w") as nogrd_file:
 
             # write the opening for the cpp file
             self.write_cpp_opening(cpp_file, len(monomials), len(variables))
-            self.write_cpp_grd_opening(cpp_grd_file, len(monomials), len(variables))
 
-            system.format_print('Writing gradients...',
-                                italics=True)
-            progress_bar = ProgressBar(start=0, end=len(variables) - 1)
-            progress_bar.update(0)
+            if generate_direct_gradients:
+                self.write_cpp_grd_opening(cpp_grd_file, len(monomials), len(variables))
 
-            for index in range(len(variables)):
-                self.write_cpp_gradient(cpp_grd_file, index, monomials, variable_permutations)
-                progress_bar.update(index)
-            progress_bar.finish()
+                system.format_print('Writing gradients...',
+                                    italics=True)
+                progress_bar = ProgressBar(start=0, end=len(variables) - 1)
+                progress_bar.update(0)
+
+                for index in range(len(variables)):
+                    self.write_cpp_gradient(cpp_grd_file, index, monomials, variable_permutations)
+                    progress_bar.update(index)
+                progress_bar.finish()
 
             # keeps track of what index in a list of all monomials the current monomial would occupy
             monomial_index = 0
@@ -281,7 +289,8 @@ class PolynomialGenerator(object):
             # loop thru every degree in this polynomial
             for monomial in monomials:
                 self.write_cpp_monomial(cpp_file, monomial_index, monomial, variable_permutations)
-                self.write_cpp_monomial(cpp_grd_file, monomial_index, monomial, variable_permutations)
+                if generate_direct_gradients:
+                    self.write_cpp_monomial(cpp_grd_file, monomial_index, monomial, variable_permutations)
                 self.write_grd_monomial(grd_file, monomial_index, monomial, variable_permutations)
                 self.write_nogrd_monomial(nogrd_file, monomial_index, monomial, variable_permutations)
                 monomial_index += 1
@@ -290,11 +299,14 @@ class PolynomialGenerator(object):
             progress_bar.finish()
 
             cpp_file.write("\n")
+            if generate_direct_gradients:
+                cpp_grd_file.write("\n")
             grd_file.write("\n")
             nogrd_file.write("\n")
 
             self.write_cpp_closing(cpp_file, len(monomials))
-            self.write_cpp_grd_closing(cpp_grd_file, len(monomials))
+            if generate_direct_gradients:
+                self.write_cpp_grd_closing(cpp_grd_file, len(monomials))
             self.write_grd_closing(grd_file, len(monomials), len(variables))
             self.write_nogrd_closing(nogrd_file, len(monomials), len(variables))
 

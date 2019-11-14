@@ -50,7 +50,7 @@ one filter will be removed from the polynomial.
 The filters below require several arguments. Each of these arguments is
 a string. Format them like this:
 
-'variable-string': 'x-$a-$b+$c/x-$a-$b+$c/...'
+'variable-string': 'x-$a-$b+$c-$d/x-$a-$b+$c-$d/...'
 * $a is:
     * 'intra' to match only intramolecular variables.
     * 'inter' to match only intermolecular variables.
@@ -61,11 +61,29 @@ and the other.
     * '*' to match all variables regardless of this atom type.
     * The order of $b and $c does not matter. $b and $c may be both atom types, both wildcards,
 or one of each.
-    * You may specify multiple variable-strings by delineating with a '/'. Variables
+* $c is:
+    * This argument refers the the 'fragmentation divergence level'
+of a variable. This is equal to the number of fragmentation levels
+for which the two atoms in the variable are in the same fragments
+before the first layer where they are in different fragments. For
+example, in a monomer with no sub-fragments, 'fragmentation divergence' 
+of all variables will be 1. In a dimer with no sub-fragments, it
+will be 1 for those atoms in the same monomer, and 0 for those in different
+monomers. For a dimer with 1 layer of sub-fragmentation in each
+monomer, it will be 0 for those atoms in different monomers, 1
+for those in the same monomer but different subfragments, and 2
+for those in the same monomer and same subfragment.
+    * '*' to match all fragmentation divergence levels.
+    * 'y' where y is a single number to match levels of that number.
+    * 'y+' where y is a single number to match levels of that number or greater.
+    * 'y-' where y is a single number to match levels of that number or less.
+    * 'y-z' where y and z are single numbers to match levels in the range [y, z]
+* You may specify multiple variable-strings by delineating with a '/'. Variables
 will be matched as long as they match at least one of them.
 
 'degree-string': '$a/$b/$c/...'
 * $a, $b, and $c are each:
+    * '*' to match all degrees.
     * 'y' where y is a single number to match degrees of that number.
     * 'y+' where y is a single number to match degrees of that number or greater.
     * 'y-' where y is a single number to match degrees of that number or less.
@@ -76,6 +94,7 @@ will be matched as long as they match at least one of them.
 
 'fragments-string': '$a/$b/$c/...'
 * $a, $b, and $c are each:
+    * '*' to match any number of unique fragment counts.
     * 'y' where y is a single number to match unique fragments counts of that number.
     * 'y+' where y is a single number to match unique fragments counts of that number or greater.
     * 'y-' where y is a single number to match unique fragments counts of that number or less.
@@ -86,6 +105,7 @@ will be matched as long as they match at least one of them.
 
 'term-string': '$a/$b/$c/...'
 * $a, $b, and $c are each:
+    * '*' to match any total degree.
     * 'y' where y is a single number to match total degrees of that number.
     * 'y+' where y is a single number to match total degrees of that number or greater.
     * 'y-' where y is a single number to match total degrees of that number or less.
@@ -148,60 +168,58 @@ Here are some example filters and descriptions of what they do.
 `add_filter['ind-degree', '*', '2']` <br>
 Filters out all monomials that have degree two in at least one variable.
 
-`add_filter['sum-degree', 'x-intra-*+*', '2+']`
+`add_filter['sum-degree', 'x-intra-*+*-*', '2+']`
 Filters out all monomials that have sum degree two or more between all intramolecular variables.
 
-`add_filter['num-fragments', 'x-inter-*+*', '2-']`
+`add_filter['num-fragments', 'x-inter-*+*-*', '2-']`
 Filters out all monomials that have 2 or fewer unique fragments between all intermolecular variables.
 
-`add_filter['not', 'ind-degree', 'x-inter-*+*', '2+']`
+`add_filter['not', 'ind-degree', 'x-inter-*+*-*', '2+']`
 Filters out all monomials that do not have at least degree 2 in at least one intermolecular variable.
 
-`add_filter['degree', 'x-intra-A+*', '3/4', '5']`
+`add_filter['degree', 'x-intra-A+*-*', '3/4', '5']`
 Filters out all degree 5 monomials that have degree 3 or 4 in at least one intramolecular variable involving
 an atom of type A.
 
 Note: 'degree' filters can always be replicated using a 'sum-degree' filter combined with
 an 'ind-degree' filter with an 'and'. For example: <br>
-This: `add_filter['degree', 'x-intra-A+*', '3/4', '5']` <br>
-Is the same as: `add_filter['sum-degree', '*', '5', and, 'ind-degree', 'x-intra-A+*', '3/4']` <br>
+This: `add_filter['degree', 'x-intra-A+*-*', '3/4', '5']` <br>
+Is the same as: `add_filter['sum-degree', '*', '5', and, 'ind-degree', 'x-intra-A+*-*', '3/4']` <br>
 Because of this, 'degree' filters may be depricated at some point in the future.
-
-#### mbpol 1b filters:
 
 #### mbpol 2b filters:
 
-`add_filter['sum-degree', '*', '1', 'and', 'sum-degree', 'x-intra-*+*', '1+']` <br>
+`add_filter['sum-degree', '*', '1', 'and', 'sum-degree', 'x-intra-*+*-*', '1+']` <br>
 Filters out all degree 1 monomials that have any intramolecular variables. <br>
-`add_filter['sum-degree', '*', '2', 'and', 'sum-degree', 'x-intra-*+*', '2']` <br>
+`add_filter['sum-degree', '*', '2', 'and', 'sum-degree', 'x-intra-*+*-*', '2']` <br>
 Filters out all degree 2 monomials that have sum degree 2 between all intramolecular variables. 
 This leaves all degree 2 monomials that are at most linear in intramolecular variables. <br>
-`add_filter['sum-degree', '*', '3', 'and', 'sum-degree', 'x-intra-*+*', '3']` <br>
+`add_filter['sum-degree', '*', '3', 'and', 'sum-degree', 'x-intra-*+*-*', '3']` <br>
 Filters out all degree 3 monomials that have sum degree 3 between all intramolecular variables.
 This leaves all degree 3 monomials that are at most quadratic in intramolecular variables. <br>
-`add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-intra-*+*', '1-/3+']` <br>
+`add_filter['sum-degree', '*', '4', 'and', 'sum-degree', 'x-intra-*+*-*', '1-/3+']` <br>
 Filters out all degree 4 monomials that have sum degree of 1 or less or 3 or more between all intramolecular variables. <br>
 
 ####mbpol 3b filters:
 
-`add_filter[num-fragments', 'x-inter-*+*', '2-']` <br>
+`add_filter[num-fragments', 'x-inter-*+*-*', '2-']` <br>
 Filters out all monomials that have two or fewer unique fragments between all intermolecular variables. <br>
 
-`add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-A+B', '1+']` <br>
+`add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-A+B-*', '1+']` <br>
 Filters out all degree 2 monomials with any contribution from a x-intra-A+B variable. <br>
-`add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-B+B', '1+']` <br>
+`add_filter['sum-degree', '*', '2', 'and', sum-degree', 'x-intra-B+B-*', '1+']` <br>
 Filters out all degree 2 monomials with any contribution from a x-intra-B+B variable. <br>
 
-`add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-A+B', '2+']` <br>
+`add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-A+B-*', '2+']` <br>
 Filters out all degree 3 monomials with sum degree 2 or more between all x-intra-A+B variables. <br>
-`add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-B+B', '2+']` <br>
+`add_filter['sum-degree', '*', '3', 'and', sum-degree', 'x-intra-B+B-*', '2+']` <br>
 Filters out all degree 3 monomials with sum degree 2 or more between all x-intra-B+B variables. <br>
 
-`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-A+B', '2+']` <br>
+`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-A+B-*', '2+']` <br>
 Filters out all degree 4 monomials with sum degree 2 or more between all x-intra-A+B variables. <br>
-`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-B+B', '2+']` <br>
+`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-intra-B+B-*', '2+']` <br>
 Filters out all degree 4 monomials with sum degree 2 or more between all x-intra-B+B variables. <br>
-`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-inter-A+A', '2+']` <br>
+`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-inter-A+A-*', '2+']` <br>
 Filters out all degree 4 monomials with sum degree 2 or more between all x-inter-A+A variables. <br>
-`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-inter-B+B', '2+']` <br>
+`add_filter['sum-degree', '*', '4', 'and', sum-degree', 'x-inter-B+B-*', '2+']` <br>
 Filters out all degree 4 monomials with sum degree 2 or more between all x-inter-B+B variables. <br>

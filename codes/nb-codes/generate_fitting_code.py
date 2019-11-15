@@ -33,7 +33,7 @@ number_of_monomers = len(monomers)
 number_of_atoms = [int(i) for i in settings.get("molecule", "fragments").split(",")]
 
 # Set the number of sites
-number_of_sites = number_of_atoms
+number_of_sites = number_of_atoms.copy()
 
 # Get which monomer should be mb-pol monomer (if any)
 use_mbpol = [int(i) for i in settings.get("molecule", "use_mbpol").split(",")]

@@ -3,28 +3,30 @@ import os
 def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
 
     molecule = ""
+    nmons = 0
     with open(in_path) as in_poly:
         while(True):
             fragment = in_poly.readline()
             if not fragment.startswith("add_molecule"):
                 break
-        
+
             if molecule is not "":
                 molecule += "_"
             molecule += fragment[fragment.index("[") + 2:fragment.index("]") - 1]
+            nmons += 1
 
     # copy needed files from poly_path to fit_path
     os.system("cp " + in_path + " " + fit_path + "/")
     os.system("cp " + poly_path + "/poly-direct.cpp " + fit_path + "/")
 #    os.system("cp " + poly_path + "/poly-grd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1x.cpp")
 #    os.system("cp " + poly_path + "/poly-nogrd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1.cpp")
-#    os.system("cp " + poly_path + "/poly-model.h " + fit_path + "/poly_2b_" + molecule + "_v1x.h") 
+#    os.system("cp " + poly_path + "/poly-model.h " + fit_path + "/poly_2b_" + molecule + "_v1x.h")
     # find the number of variables and number of polynomials from the log file
     with open(poly_path + "/poly.log", "r") as poly_log:
-        
+
         # loop thru each line
         for line in poly_log:
-            
+
             # check if this line has the number of variables
             if "<> variables" in line:
 
@@ -91,8 +93,8 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 #                nogrd.write(line)
 
     print("Executing python generator script")
-    
-    # Execute the python script that generates the 1b fit code    
+
+    # Execute the python script that generates the 1b fit code
     os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path + " " + poly_path)
 
     # restore settings
@@ -102,13 +104,14 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/template/* " + fit_path)
 
     # move files from cwd into fit directory
-    os.system("mv dispersion.* " + fit_path + "/")
-    os.system("mv buckingham.* " + fit_path + "/")
+    if (nmons<3):
+        os.system("mv dispersion.* " + fit_path + "/")
+        os.system("mv buckingham.* " + fit_path + "/")
     os.system("mv eval*b.cpp " + fit_path + "/")
     os.system("mv fit*b.cpp " + fit_path + "/")
 
     # only move ttm files if they were generated (for 2+ b).
-    if len(molecule.split("_")) > 1:
+    if len(molecule.split("_")) > 1 and nmons<3:
         os.system("mv eval*b-ttm.cpp " + fit_path + "/")
         os.system("mv fit*b-ttm.cpp " + fit_path + "/")
 

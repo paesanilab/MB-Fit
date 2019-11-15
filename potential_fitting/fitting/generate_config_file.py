@@ -11,7 +11,7 @@ qchem_template = "qchem_template"
 
 # TODO This function should be removed and use the fancier fucntion that Ethan has
 
-# to get the list of atoms 
+# to get the list of atoms
 def get_atom_types(fragment):
     atom_list = []
     was_digit = False
@@ -75,7 +75,7 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
     if os.path.exists(qchem_out_path):
         print("Skipping dimer {}_{}. This calculation has already been performed.".format(name1,name2))
     else:
-    
+
         with open(qchem_in_path, "w") as qchem_in:
             # tells qchem that the molecule has started
             qchem_in.write("$molecule\n")
@@ -88,22 +88,22 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
             qchem_in.write("\n")
             qchem_in.write(molecule2.to_xyz())
             qchem_in.write("\n")
-            
+
             # tells qchem that the molecule has ended
             qchem_in.write("$end\n")
-    
+
             qchem_in.write("$rem\n")
             qchem_in.write("method " + method + "\n")
             qchem_in.write("basis " + basis + "\n")
-    
+
             # read the qchem template and append it to the qchem in
             qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
             with open(qchem_template_path, "r") as template:
                 for line in template:
                     qchem_in.write(line)
-    
+
             num_threads = dimer_settings.getint("qchem", "num_threads", 1)
-    
+
         with open(qchem_log_path, "w") as qchem_log:
             system.call("qchem", "-nt", str(num_threads), qchem_in_path, qchem_out_path, out_file=qchem_log)
 
@@ -200,7 +200,7 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
 
                 atoms_a_first = atom_type_a + atom_type_b
                 atoms_b_first = atom_type_b + atom_type_a
-                
+
                 # check if this is an intrafragmental c6 constant
                 if fragment_index_a == fragment_index_b:
                     # loop over all fragments and add this c6 constant to any dictionary of an equivelent fragment
@@ -247,7 +247,7 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
 
     return c6_constants
 
-    
+
 
 def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_published_polarizabilities,
                                  method="wb97m-v",
@@ -307,7 +307,7 @@ def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_
         # perform qchem system call
         with open(qchem_log_path, "w") as qchem_log:
             system.call("qchem", "-nt", str(num_threads), qchem_in_path, qchem_out_path, out_file=qchem_log)
-    
+
     print("Parsing qchem output {}.".format(qchem_out_path))
 
     charges, pols = get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_published_polarizabilities)
@@ -333,7 +333,7 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         # read the effective and free volumes from the qchem output into a dictionary that maps from the letter to a list of equivelent values (A -> [0.934, 0.935, 0.934])
         effective_polarizability_dictionary = {}
 
-        
+
         # used to keep track of total atoms counted in order to look up atoms in atomic_symbols
         atom_count = 0
 
@@ -581,7 +581,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "var_intra", "exp")
     configwriter.set("fitting", "var_inter", "exp")
     configwriter.set("fitting", "var_virtual_sites", "coul")
-    configwriter.set("fitting", "energy_range", str(25.0))
+    configwriter.set("fitting", "alpha", str(0.0005))
+    configwriter.set("fitting", "energy_range", str(20.0))
     configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 
     config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
@@ -589,4 +590,4 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     with open(config_path, "w") as config_file:
         configwriter.write(config_file)
 
-    print("Completed generating config file {}.".format(config_path)) 
+    print("Completed generating config file {}.".format(config_path))

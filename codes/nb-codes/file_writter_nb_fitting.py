@@ -4,7 +4,7 @@ import itertools as it
 def write_monomer_class_header(mon_index):
     """
     Writes the monomer header for the fitting code
-    
+
     Args:
         mon_index - The index of the monomer you want to write the header for.
     """
@@ -26,9 +26,9 @@ namespace x   {
       public :
       mon""" + str(mon_index) + """();
       ~mon""" + str(mon_index) + """();
-      
+
       mon""" + str(mon_index) + """(double* crd);
-      double* set_sitecrds(double* xyz);            
+      double* set_sitecrds(double* xyz);
       double* set_charges(double* xyz);
       double* set_polfacs(double* atmpolar);
       double* set_pol();
@@ -48,7 +48,7 @@ namespace x   {
       excluded_set_type::iterator get_end_13();
       excluded_set_type::iterator get_end_14();
 
-   };   
+   };
 }
 #endif
 """
@@ -59,7 +59,7 @@ namespace x   {
 def write_monomer_class_cpp(mon_index, nsites, natoms, excl12, excl13, excl14, chg, pol, polfac):
     """
     Writes the monomer cpp for the fitting code
-    
+
     Args:
         mon_index - The index of the monomer you want to write the cpp for
         nsites    - Number of sites (electrostatic sites) of the monomer
@@ -86,12 +86,12 @@ namespace x  {
   }
 
   mon""" + str(mon_index) + """::mon""" + str(mon_index) + """( double* crd) {
-    
-    nsites = """ + str(nsites) + """; 
+
+    nsites = """ + str(nsites) + """;
     realsites = """ + str(natoms) + """;
     is_w = 0;
     allocate();
-    
+
     sitecrds = set_sitecrds(crd);
     atmpolar = set_pol();
     charge = set_charges(crd);
@@ -121,7 +121,7 @@ namespace x  {
 
     return charge;
   }
-  
+
   double* mon""" + str(mon_index) + """::set_pol() {
     atmpolar = memory + nsites + nsites*3;
 """
@@ -134,7 +134,7 @@ namespace x  {
 
   double* mon""" + str(mon_index) + """::set_polfacs(double* atmpol) {
     polfac = memory + nsites + nsites*3 + nsites;
-    
+
 """
     ff.write(a)
     for i in range(len(polfac)):
@@ -145,14 +145,14 @@ namespace x  {
 
   double* mon""" + str(mon_index) + """::set_sitecrds(double* atmcrds) {
     sitecrds = memory + nsites;
-    
-    return atmcrds;  
+
+    return atmcrds;
   }
 
   void mon""" + str(mon_index) + """::allocate() {
     memory = new double [nsites  //charge
       + nsites*3  //site coordinates
-      + nsites  //polarizabilities 
+      + nsites  //polarizabilities
       + nsites];  //polfac
     }
 
@@ -180,7 +180,7 @@ def write_mbpol_monomer(mon_index):
     """
     Writes the mb-pol monomer cpp for the fitting code
     NOTE: If used, order of atoms MUST be OHH
-    
+
     Args:
         mon_index - The index of the monomer you want to write the cpp for.
     """
@@ -237,7 +237,7 @@ mon""" + str(mon_index) + """::mon""" + str(mon_index) + """(double* crd) {
 
 double* mon""" + str(mon_index) + """::set_sitecrds(double* atmcrds) {
     sitecrds = memory + nsites;
-    // assumes O H H 
+    // assumes O H H
     compute_M_site_crd(atmcrds, atmcrds + 3, atmcrds + 6, sitecrds + 9);
     std::copy(atmcrds, atmcrds + 9, sitecrds);
     return sitecrds;
@@ -278,7 +278,7 @@ double* mon""" + str(mon_index) + """::set_polfacs(double* atmpol) {
 
 void mon""" + str(mon_index) + """::allocate() {
     memory = new double [nsites // charges
-  + nsites*3              // sitecrds 
+  + nsites*3              // sitecrds
   + nsites                // polarizabilities
   + nsites];              // polfacs
 }
@@ -307,7 +307,7 @@ excluded_set_type::iterator mon""" + str(mon_index) + """::get_end_14() { return
 def write_fit_polynomial_holder_header(system_name, number_of_monomers, non_linear_parameters, ri, ro):
     """
     Writes the polynomial holder for the fitting
-    
+
     Args:
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         number_of_monomers     - Number of monomers in the system
@@ -365,7 +365,7 @@ struct """ + system_keyword_polyholder + """_fit {
     void get_nonlinear_parameters(double*);
     bool nonlinear_parameters_out_of_range();
     void load_netcdf(const char* fn);
-    
+
     inline double calculate_nl_part_of_terms(const std::vector<double> xyz, std::vector<double> &nl_part_of_terms);
     inline size_t nparams() { return poly_type_fit::size;}
 
@@ -387,7 +387,7 @@ struct """ + system_keyword_polyholder + """_fit {
     double m_ri = """ + str(ri) + """;
     double m_ro = """ + str(ro) + """;
 
-    double f_switch(const double, double&); 
+    double f_switch(const double, double&);
 
 private:
     double m_poly[poly_type_fit::size];
@@ -412,7 +412,7 @@ inline double """ + system_keyword_polyholder + """_fit::calculate_nl_part_of_te
     for (unsigned n = 0; n < poly_type_fit::size; ++n)
         nl_part_of_terms[n] *= s;
 
-    return 0; 
+    return 0;
 }
 
 inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<double> xyz) {
@@ -431,7 +431,7 @@ inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<d
         energy += nl_part_of_terms[n];
     }
 
-    return energy; 
+    return energy;
 }
 
 //----------------------------------------------------------------------------//
@@ -450,7 +450,7 @@ inline double """ + system_keyword_polyholder + """_fit::calculate(std::vector<d
 def get_individual_atoms_with_type(monomer_atom_types, vsites):
     """
     From the monomer atom types ([A,1,B,1],[C,2],...) generates a list of lists that contain information about atom type, index, and monomer identity.
-    
+
     Args:
         monomer_atom_types    - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
         vsites                - Virtual site labels
@@ -471,7 +471,7 @@ def get_individual_atoms_with_type(monomer_atom_types, vsites):
 def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name, extension = "", nspaces = 4, is_const = True):
     """
     Returns a string with C++ code that initializes all the pointers to the coordinates or gradients.
-    
+
     Args:
         monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
         vsites                 - Virtual site labels
@@ -502,14 +502,14 @@ def get_pointer_setup_string(monomer_atom_types, vsites, xyz_var_name, extension
                     string_pointers_vs += spaces + "double " + atom + "_" + str(j+1) + "_" + mon_id + extension + "[3];\n"
         string_pointers += "\n"
         string_pointers_vs += "\n"
-        mon_id = chr(ord(mon_id)+1)    
+        mon_id = chr(ord(mon_id)+1)
     return string_pointers, string_pointers_vs
-            
+
 
 def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
     """
     Returns a string with C++ code that initializes all the variables for the polynomials
-    
+
     Args:
         variables              - List of lists with the information in the poly.in file
         name_vout              - Name of the variable that will be at the left side of the =
@@ -526,7 +526,7 @@ def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
         types_2 = utils_nb_fitting.get_atom_types(var[2])
         atom1_name = "{}_{}_{}".format(types_1[0], types_1[1], var[1])
         atom2_name = "{}_{}_{}".format(types_2[0], types_2[1], var[3])
-        
+
         sorted_atoms = "".join(sorted([types_1[0], types_2[0]]))
 
         kconst = "m_k_"
@@ -534,19 +534,19 @@ def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
         if var[1] == var[3]:
             kconst += "intra_"
             dconst += "intra_"
- 
+
         argument_constants = kconst + sorted_atoms
         if "0" in var[-1]:
             argument_constants = dconst + sorted_atoms + ', ' + kconst
 
         variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout,i,name_vstruct,i,var[-1],argument_constants,atom1_name,atom2_name)
 
-    return variables_string     
+    return variables_string
 
 def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
     """
     Returns a string with C++ code that initializes all the gradient redistribution for the variables of the polynomials
-    
+
     Args:
         variables              - List of lists with the information in the poly.in file
         name_vin               - Name of the variable that contains the variable struct
@@ -570,7 +570,7 @@ def get_grad_var_string(variables, name_vin, name_g, nspaces = 4):
 def write_fit_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max):
     """
     Writes the polynomial holder C++ file
-    
+
     Args:
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
@@ -585,12 +585,12 @@ def write_fit_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_m
         ro                     - Outer cutoff (not used in 2b)
         k_min_intra            - Minimum value allowed for k_intra
         k_max_intra            - Maximum value allowed for k_intra
-        k_min                  - Minimum value allowed for k      
-        k_max                  - Maximum value allowed for k      
+        k_min                  - Minimum value allowed for k
+        k_max                  - Maximum value allowed for k
         d_min_intra            - Minimum value allowed for d_intra
         d_max_intra            - Maximum value allowed for d_intra
-        d_min                  - Minimum value allowed for d      
-        d_max                  - Maximum value allowed for d      
+        d_min                  - Minimum value allowed for d
+        d_max                  - Maximum value allowed for d
     """
 
     system_keyword_mbnrg = "mbnrg_" + str(number_of_monomers) + "b_" + system_name
@@ -614,7 +614,7 @@ namespace {
 
 void error(int kode) {
 
-    std::cerr << " ** Fatal Error in ''' + system_keyword_polyholder + '''_fit::load_netcdf() ** :" 
+    std::cerr << " ** Fatal Error in ''' + system_keyword_polyholder + '''_fit::load_netcdf() ** :"
               << nc_strerror(kode) << std::endl;
     std::exit(EXIT_FAILURE);
 }
@@ -623,7 +623,7 @@ void error(int kode) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace ''' + system_keyword_mbnrg + """_fit { 
+namespace ''' + system_keyword_mbnrg + """_fit {
 
 void """ + system_keyword_polyholder + """_fit::set_linear_parameters(const double* xxx) {
   std::copy(xxx, xxx + nparams(), m_poly);
@@ -632,7 +632,7 @@ void """ + system_keyword_polyholder + """_fit::set_linear_parameters(const doub
 
 """
     ff.write(a)
-    
+
     ff.write('void ' + system_keyword_polyholder + '_fit::set_nonlinear_parameters(const double* xxx) { \n ')
     for nl in non_linear_parameters:
         ff.write("    m_" + nl + " = *xxx++; \n")
@@ -696,7 +696,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     ff.write('    const double k_max =  ' + k_max + ' ;\n')
     ff.write('    const double k_min_intra =  ' + k_min_intra + ' ;\n')
     ff.write('    const double k_max_intra =  ' + k_max_intra + ' ;\n\n')
-    
+
     ff.write('    const double d_min =  ' + d_min + ' ;\n')
     ff.write('    const double d_max =  ' + d_max + ' ;\n')
     ff.write('    const double d_min_intra =  ' + d_min_intra + ' ;\n')
@@ -719,7 +719,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
             else:
                 ff.write('\n       || m_' + nl + ' < k_min ')
                 ff.write('\n       || m_' + nl + ' > k_max ')
-    
+
     ff.write('; \n')
     a = """
 }
@@ -729,9 +729,9 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
 
     all_distances = utils_nb_fitting.get_list_of_numeric_pairs("d",number_of_monomers)
     all_switches = utils_nb_fitting.get_list_of_numeric_pairs("sw",number_of_monomers)
-    
+
     ff.write('void ' + system_keyword_polyholder + '_fit::cart_to_vars(const std::vector<double> xyz, std::vector<double> &vars, double& s, double& gs) { \n\n')
-    
+
     # Write the distances
     for d in all_distances:
         shift1 = 0
@@ -743,9 +743,9 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
         shift1 *= 3
         shift2 *= 3
         a = """
-    const double """ + d[0] + """[3] = 
+    const double """ + d[0] + """[3] =
                          {xyz[""" + str(shift1 + 0) + """] - xyz[""" + str(shift2 + 0) + """],
-                          xyz[""" + str(shift1 + 1) + """] - xyz[""" + str(shift2 + 1) + """], 
+                          xyz[""" + str(shift1 + 1) + """] - xyz[""" + str(shift2 + 1) + """],
                           xyz[""" + str(shift1 + 2) + """] - xyz[""" + str(shift2 + 2) + """]};
 
     const double """ + d[0] + """rsq = """ + d[0] + """[0]*""" + d[0] + """[0] + """ + d[0] + """[1]*""" + d[0] + """[1] + """ + d[0] + """[2]*""" + d[0] + """[2];
@@ -771,7 +771,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
     }
 
     double sw = 0.0;
-    
+
 
 """
 
@@ -779,20 +779,20 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
 
     # Get the pointers to the atoms
     pointer_to_coordinates, pointer_to_vsites = get_pointer_setup_string(monomer_atom_types, vsites, "xyz.data()")
-    
+
     ff.write(pointer_to_coordinates)
     ff.write(pointer_to_vsites)
 
     # Write water monomer setup if needed
     # w12, w13 qne wcross will be unused if none of the monomers is water. Is OK.
-    
+
     a = """
     double w12 =     -9.721486914088159e-02;  //from MBpol
     double w13 =     -9.721486914088159e-02;
     double wcross =   9.859272078406150e-02;
 
     """
-    ff.write(a) 
+    ff.write(a)
 
     # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
@@ -806,7 +806,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
         char_code = chr(ord(char_code)+1)
 
     ff.write("\n    variable vs[" + str(number_of_variables) + "];\n\n")
-    string_vars = get_variables_string(variables, "vars", "vs")    
+    string_vars = get_variables_string(variables, "vars", "vs")
     ff.write(string_vars)
 
     # write the switches
@@ -832,7 +832,7 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
             term = "*"
             term = term.join(swc)
             terms.append(term)
-        
+
         sw_string = sw_string.join(terms)
 
     a = """
@@ -907,7 +907,7 @@ double """ + system_keyword_polyholder + """_fit::f_switch(const double r, doubl
 def write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck):
     """
     Writes the buckingham header
-    
+
     Args:
         monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
         virtual_sites_poly     - Virtual site labels
@@ -959,7 +959,7 @@ struct mbnrg_buck {
   inline void set_nonlinear_parameters(std::vector<double> b) {
 """
     ff.write(a)
-    
+
     a = ""
     for pair in pairs:
         a += "    m_b_" + pair + " = b[" + str(pairs.index(pair)) + "];\n"
@@ -993,7 +993,7 @@ struct mbnrg_buck {
 
     const double rsq = dx*dx + dy*dy + dz*dz;
     const double r = std::sqrt(rsq);
-    
+
     const double fac = a*exp(-b*r);
     const double grd = b/r*fac;
 
@@ -1035,7 +1035,7 @@ struct mbnrg_buck {
 def write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excl12 = None, excl13 = None, excl14 = None):
     """
     Writes the buckingham C++ file for the fitting
-    
+
     Args:
         monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
         virtual_sites_poly     - Virtual site labels
@@ -1083,7 +1083,7 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
                 if [i,j] not in excl12 and [i,j] not in excl13 and [i,j] not in excl14:
                      pair = "".join(sorted([mon[i][0], mon[j][0]]))
                      vector_index = str(pairs.index(pair))
-                     
+
                      a += "    nl_terms[" + vector_index + "] += buck_energy(1.0, m_b_{}, {}_{}_{}, {}_{}_{});\n".format(pair, mon[i][0], mon[i][1], mon[i][2], mon[j][0], mon[j][1], mon[j][2])
 
     elif len(monomer_atom_types) == 2:
@@ -1105,7 +1105,7 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
 double mbnrg_buck::get_buckingham() {
 
     double buck = 0.0;
-  
+
 """
     ff.write(a)
 
@@ -1139,7 +1139,7 @@ double mbnrg_buck::get_buckingham() {
     a = """
     return buck;
 }
-        
+
 """
 
     ff.write(a)
@@ -1302,7 +1302,7 @@ struct mbnrg_disp {
 
     return - (e6 + e8);
   }
-  
+
 };
 
 #endif
@@ -1385,7 +1385,7 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
 double mbnrg_disp::get_dispersion() {
 
     double disp = 0.0;
-  
+
 """
     ff.write(a)
 
@@ -1419,7 +1419,7 @@ double mbnrg_disp::get_dispersion() {
     a = """
     return disp;
 }
-        
+
 """
 
     ff.write(a)
@@ -1433,11 +1433,11 @@ def get_nl_params_initialization_string(nl_param_all, k_min, k_max, d_min, d_max
         nl_param_all           - All the non linear parameters
         k_min_intra            - Minimum value allowed for k_intra
         k_max_intra            - Maximum value allowed for k_intra
-        k_min                  - Minimum value allowed for k      
-        k_max                  - Maximum value allowed for k      
+        k_min                  - Minimum value allowed for k
+        k_max                  - Maximum value allowed for k
         d_min_intra            - Minimum value allowed for d_intra
         d_max_intra            - Maximum value allowed for d_intra
-        d_min                  - Minimum value allowed for d      
+        d_min                  - Minimum value allowed for d
         d_max                  - Maximum value allowed for d
     """
 
@@ -1517,7 +1517,7 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
             double xyz_sites[num_sites*3];
             double chg_sites[num_sites];
             double pol_sites[num_sites];
-            double polfac_sites[num_sites]; 
+            double polfac_sites[num_sites];
             excluded_set_type excl12;
             excluded_set_type excl13;
             excluded_set_type excl14;
@@ -1529,7 +1529,7 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
                 mon_index = comb.index(mon)
                 a = """
             std::fill(isw_sites + {1}, isw_sites + {1} + m{0}.get_nsites(), m{0}.is_w);
-            std::copy(m{0}.get_sitecrds(), m{0}.get_sitecrds() + 3*m{0}.get_nsites(), xyz_sites + 3*{1});    
+            std::copy(m{0}.get_sitecrds(), m{0}.get_sitecrds() + 3*m{0}.get_nsites(), xyz_sites + 3*{1});
             std::copy(m{0}.get_charges(), m{0}.get_charges() + m{0}.get_nsites(), chg_sites + {1});
             std::copy(m{0}.get_pol(), m{0}.get_pol() + m{0}.get_nsites(), pol_sites + {1});
             std::copy(m{0}.get_polfacs(), m{0}.get_polfacs() + m{0}.get_nsites(), polfac_sites + {1});
@@ -1565,16 +1565,16 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
             nb_elec_string[-1].append("elec_" + elec_keyword)
 
             a = """
-    
+
             ttm::electrostatics m_electrostatics;
 
-            ttm::smear_ttm4x smr; 
+            ttm::smear_ttm4x smr;
             smr.m_aDD_intra_12 = 0.3;
             smr.m_aDD_intra_13 = 0.3;
             smr.m_aDD_intra_14 = 0.055;
-      
+
             elec_{2} = m_electrostatics(num_sites, chg_sites, polfac_sites, pol_sites,
-                                          xyz_sites, excl12, excl13, excl14, 
+                                          xyz_sites, excl12, excl13, excl14,
                                           isw_sites, smr, 0);
         }}
 """.format(mon+1,fi_of_nmer_sites[mon_index],elec_keyword)
@@ -1587,11 +1587,11 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
          nb_elec[-1] += " + ".join(nb_elec_string[i])
          nb_elec[-1] += ")"
 
-    electrostatics_string += "\n        elec_e.push_back(" + " + ".join(nb_elec) + ");\n" 
-              
+    electrostatics_string += "\n        elec_e.push_back(" + " + ".join(nb_elec) + ");\n"
+
     return electrostatics_string
 
-def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
+def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range):
     """
     Writes the fitting code for TTM-nrg"
 
@@ -1602,8 +1602,9 @@ def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_mon
         number_of_atoms        - Number of real atoms in the monomer
         number_of_sites        - Number of sites (electrostatic sites) of the monomer
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
-        k_min                  - Minimum value allowed for k      
+        k_min                  - Minimum value allowed for k
         k_max                  - Maximum value allowed for k
+        E_range                - Energy range used for computing weights for each point in the fittings
     """
 
     # We need the pairs again to know how many linear and non linear terms we have
@@ -1646,7 +1647,7 @@ def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_mon
     a = """
 namespace {
 
-double E_range = 20.0; // kcal/mol
+double E_range = """ + str(E_range) + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 
@@ -1703,15 +1704,15 @@ double compute_chisq(const gsl_vector* X, void* unused) {
 
         // Update energy
         y[n] = training_set[n].nb_energy - disp_e[n];
-        
+
         // Update the A matrix
         for (size_t p = 0; p < num_linear_params; ++p) {
             A[num_linear_params*n + p] = nl_terms[p];
         }
     }
-    
+
     double chisq = 0.0;
-    int rank = 0;   
+    int rank = 0;
 
     kit::wlsq::solve(training_set.size(), num_linear_params,
                       A, y, ts_weights.data(), params, chisq, rank);
@@ -1798,8 +1799,8 @@ int main(int argc, char** argv) {
     std::vector<double> ts_energies(training_set.size(),0.0);
 
         for (size_t n = 0; n < training_set.size(); n++) {
-        // Saving reference energies  
-        ts_energies[n] = training_set[n].nb_energy ;   
+        // Saving reference energies
+        ts_energies[n] = training_set[n].nb_energy ;
 """
 
     ff.write(a)
@@ -1848,7 +1849,7 @@ int main(int argc, char** argv) {
 
         const double size = gsl_multimin_fminimizer_size(s);
         status = gsl_multimin_test_size(size, 1e-4);
-        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence
 
         if (status == GSL_SUCCESS)
             std::cout << "!!! converged !!!" << std::endl;
@@ -1876,7 +1877,7 @@ int main(int argc, char** argv) {
 
     for (size_t i = 0; i < training_set.size(); ++i)
         training_set[i].nb_energy += elec_e[i];
-        
+
 
     std::ofstream correlation_file;
     correlation_file.open ("correlation.dat");
@@ -1884,7 +1885,7 @@ int main(int argc, char** argv) {
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
 
     for (size_t i = 0; i < training_set.size(); ++i) {
-        
+
         // Calculate dispersion
         mbnrg_disp disp(training_set[i].xyz);
         disp.set_nonlinear_parameters(final_l);
@@ -1901,10 +1902,10 @@ int main(int argc, char** argv) {
         if (std::abs(delta) > err_Linf)
             err_Linf = std::abs(delta);
 
-        correlation_file <<  std::setw(10) << i+1   
-                         << std::setw(15) << std::scientific 
+        correlation_file <<  std::setw(10) << i+1
+                         << std::setw(15) << std::scientific
                          << std::setprecision(4)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model  
+                         << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -2013,7 +2014,7 @@ int main(int argc, char** argv) {
 
     std::vector<double> l_params(""" + str(len(pairs)) + """,0.0);
     std::vector<double> nl_params(""" + str(len(pairs)) + """,0.0);
-    
+
     if (argc < 3) {
         std::cerr << "usage: ./eval-""" + str(number_of_monomers) + """b-ttm  <parameters.dat> <test_set.xyz> "
                   << std::endl;
@@ -2032,12 +2033,12 @@ int main(int argc, char** argv) {
     my_assign_l = ""
     my_assign_nl = ""
     for i in range(len(pairs)):
-        my_assign_l += " >> l_params[{}] ".format(i)        
-        my_assign_nl += " >> nl_params[{}] ".format(i)        
+        my_assign_l += " >> l_params[{}] ".format(i)
+        my_assign_nl += " >> nl_params[{}] ".format(i)
 
     a = """
         params """ + my_assign_l + """;
-        params """ + my_assign_nl + """; 
+        params """ + my_assign_nl + """;
 
         ++argv;
         --argc;
@@ -2075,9 +2076,9 @@ int main(int argc, char** argv) {
 
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
-                  << std::setw(10) << "frame[" 
+                  << std::setw(10) << "frame["
                   << std::setw(6) << std::setfill('.') << n
-                  << std::setw(3) << "]= " << std::setfill(' ') 
+                  << std::setw(3) << "]= " << std::setfill(' ')
                   << std::setw(25) << nb_energy[n] << std::endl;
     }
 
@@ -2090,7 +2091,7 @@ int main(int argc, char** argv) {
 
 
 
-def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
+def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha):
     """
     Writes the fitting code for MB-nrg"
 
@@ -2102,14 +2103,16 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
         number_of_sites        - Number of sites (electrostatic sites) of the monomer
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         nl_param_all           - All the non linear parameters
-        k_min                  - Minimum value allowed for k      
-        k_max                  - Maximum value allowed for k      
-        d_min                  - Minimum value allowed for d      
+        k_min                  - Minimum value allowed for k
+        k_max                  - Maximum value allowed for k
+        d_min                  - Minimum value allowed for d
         d_max                  - Maximum value allowed for d
         k_min_intra            - Minimum value allowed for k_intra
         k_max_intra            - Maximum value allowed for k_intra
         d_min_intra            - Minimum value allowed for d_intra
         d_max_intra            - Maximum value allowed for d_intra
+        E_range                - Energy range used for computing weights for each point in the fittings
+        alpha                  - Parameter used for regularization during the fittings
     """
 
     cppname = "fit-" + str(number_of_monomers) + "b.cpp"
@@ -2135,8 +2138,16 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
 #include "mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.h"
 #include "electrostatics.h"
 #include "coulomb.h"
-#include "dispersion.h"
-#include "constants.h"
+"""
+
+    ff.write(a)
+
+    a = """#include "dispersion.h"
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """#include "constants.h"
 """
 
     ff.write(a)
@@ -2149,16 +2160,22 @@ namespace {
 
 static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyholder_""" + str(number_of_monomers) + "b_" + system_name + """_fit model;
 
-double alpha = 0.0005;
+double alpha = """ + str(alpha) + """;
 
-double E_range = 20.0; // kcal/mol
+double E_range = """ + str(E_range) + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 
 static std::vector<tset::nb_system> training_set;
 static std::vector<double> elec_e;
-static std::vector<double> disp_e;
-static std::vector<double> ts_weights;
+"""
+    ff.write(a)
+
+    a = """static std::vector<double> disp_e;
+"""
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """static std::vector<double> ts_weights;
 
 namespace linear {
 
@@ -2197,7 +2214,7 @@ double compute_chisq(const gsl_vector* X, void* unused)
     }
 
     double chisq;
-   
+
     double penaltysq;
     kit::rwlsq::solve(training_set.size(), model.nparams(),
                       A, y, ts_weights.data(), alpha, params, chisq, penaltysq);
@@ -2291,8 +2308,8 @@ int main(int argc, char** argv) {
 
     std::vector<double> ts_energies(training_set.size(),0.0);
     for (size_t n = 0; n < training_set.size(); n++) {
-        // Saving reference energies  
-        ts_energies[n] = training_set[n].nb_energy ;   
+        // Saving reference energies
+        ts_energies[n] = training_set[n].nb_energy ;
 """
 
     ff.write(a)
@@ -2304,11 +2321,20 @@ int main(int argc, char** argv) {
 
     a = """
         training_set[n].nb_energy -= elec_e[n];
+"""
 
+    ff.write(a)
+
+    a = """
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
 
         training_set[n].nb_energy -= disp_e[n];
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """
     }
 
     linear::allocate();
@@ -2348,7 +2374,7 @@ int main(int argc, char** argv) {
 
         const double size = gsl_multimin_fminimizer_size(s);
         status = gsl_multimin_test_size(size, 1e-4);
-        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence
 
         if (status == GSL_SUCCESS)
             std::cout << "!!! converged !!!" << std::endl;
@@ -2374,9 +2400,22 @@ int main(int argc, char** argv) {
     // report
     //
 
-    for (size_t i = 0; i < training_set.size(); ++i)
+    for (size_t i = 0; i < training_set.size(); ++i)"""
+
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a = """
         training_set[i].nb_energy += elec_e[i] + disp_e[i];
-        
+"""
+    else:
+        a = """
+        training_set[i].nb_energy += elec_e[i];
+"""
+
+    ff.write(a)
+
+    a = """
 
     std::ofstream correlation_file;
     correlation_file.open ("correlation.dat");
@@ -2384,16 +2423,27 @@ int main(int argc, char** argv) {
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
 
     for (size_t i = 0; i < training_set.size(); ++i) {
-        
-        const double E_model = model.calculate(training_set[i].xyz) + elec_e[i] + disp_e[i];
+"""
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a = """
+        const double E_model = model.calculate(training_set[i].xyz) + elec_e[i] + disp_e[i];"""
+    else:
+        a = """
+        const double E_model = model.calculate(training_set[i].xyz) + elec_e[i];"""
+
+    ff.write(a)
+
+    a = """
         const double delta = E_model - training_set[i].nb_energy;
         if (std::abs(delta) > err_Linf)
             err_Linf = std::abs(delta);
 
-        correlation_file <<  std::setw(10) << i+1   
-                         << std::setw(15) << std::scientific 
+        correlation_file <<  std::setw(10) << i+1
+                         << std::setw(15) << std::scientific
                          << std::setprecision(4)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model  
+                         << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -2469,9 +2519,18 @@ AR = /usr/bin/ar
 OBJDIR = .
 LIBDIR = ./
 INCLUDE = -I./
-
+"""
+    ff.write(a)
+    if (number_of_monomers<3):
+        a = """
 FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
-training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\
+training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\"""
+    else:
+        a = """
+FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o\\
+training_set.o variable.o vsites.o water_monomer_lp.o gammq.o\\"""
+    ff.write(a)
+    a = """
 electrostatics.o coulomb.o wlsq.o rwlsq.o ps.o mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o \\
 """ + mon_objects + """ poly_""" + str(number_of_monomers) + "b_" + system_name + """_fit.o
 
@@ -2494,7 +2553,7 @@ fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) 
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
 
 eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@    
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
 """
         ff.write(a)
     a = """
@@ -2521,7 +2580,7 @@ def write_poly_fit_header(number_of_monomers, system_name, degree, nvars, npoly)
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         degree                 - The degree of the polynomial
         nvars                  - Number of variables in the polynomial
-        npoly                  - Number of terms in the polynomial  
+        npoly                  - Number of terms in the polynomial
     """
 
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.h"
@@ -2557,7 +2616,7 @@ def write_poly_fit_cpp(number_of_monomers, system_name, nvars, npoly, directcpp)
         number_of_monomers     - Number of monomers in the system
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         nvars                  - Number of variables in the polynomial
-        npoly                  - Number of terms in the polynomial  
+        npoly                  - Number of terms in the polynomial
         directcpp              - Path to the poly-direct.cpp file
     """
     fnamecpp = "poly_" + str(number_of_monomers) + "b_" + system_name + "_fit.cpp"
@@ -2573,7 +2632,7 @@ void poly_model::eval(const double x[""" + str(nvars) + """], double a[""" + str
     double p[""" + str(npoly) + """];
 """
     ff.write(a)
-    
+
     with open(directcpp, 'r') as fdirect:
         for line in fdirect.readlines():
             if line.startswith('    p['):
@@ -2619,8 +2678,16 @@ def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system
 #include "mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.h"
 #include "electrostatics.h"
 #include "coulomb.h"
-#include "dispersion.h"
-#include "constants.h"
+"""
+
+    ff.write(a)
+
+    a = """#include "dispersion.h"
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """#include "constants.h"
 """
 
     ff.write(a)
@@ -2635,8 +2702,16 @@ static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyh
 
 static std::vector<tset::nb_system> training_set;
 static std::vector<double> elec_e;
-static std::vector<double> disp_e;
-static std::vector<double> nb_energy;
+"""
+
+    ff.write(a)
+
+    a = """static std::vector<double> disp_e;
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """static std::vector<double> nb_energy;
 
 } // namespace
 
@@ -2647,8 +2722,16 @@ int main(int argc, char** argv) {
 
     std::vector<tset::nb_system> training_set;
     std::vector<double> elec_e;
-    std::vector<double> disp_e;
-    std::vector<double> poly_e;
+"""
+
+    ff.write(a)
+
+    a = """    std::vector<double> disp_e;
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """    std::vector<double> poly_e;
     std::vector<double> nb_energy;
     std::vector<double> ts_weights;
 
@@ -2689,17 +2772,33 @@ int main(int argc, char** argv) {
     a = """
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
+"""
 
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """
         poly_e.push_back(model.calculate(training_set[n].xyz));
+"""
 
-        nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a = """
+        nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);"""
+    else:
+        a = """
+        nb_energy.push_back(elec_e[n] + poly_e[n]);"""
+
+    ff.write(a)
+
+    a = """
     }
-    
+
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
-                  << std::setw(10) << "frame[" 
+                  << std::setw(10) << "frame["
                   << std::setw(6) << std::setfill('.') << n
-                  << std::setw(3) << "]= " << std::setfill(' ') 
+                  << std::setw(3) << "]= " << std::setfill(' ')
                   << std::setw(25) << nb_energy[n] << std::endl;
     }
 
@@ -2712,8 +2811,8 @@ int main(int argc, char** argv) {
 
 def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
     """
-    Writes the polynomial header for MBX 
-    
+    Writes the polynomial header for MBX
+
     Args:
         number_of_monomers     - Number of monomers in the system
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
@@ -2738,14 +2837,14 @@ struct """ + struct_name + """ {
 
     static const unsigned size = """ + str(npoly) + """;
 
-    double eval(const double x[""" + str(nvars) + """], 
+    double eval(const double x[""" + str(nvars) + """],
               const double a[""" + str(npoly) + """]);
-    double eval_direct(const double x[""" + str(nvars) + """], 
+    double eval_direct(const double x[""" + str(nvars) + """],
                      const double a[""" + str(npoly) + """]);
-    double eval(const double x[""" + str(nvars) + """], 
+    double eval(const double x[""" + str(nvars) + """],
               const double a[""" + str(npoly) + """],
                     double g[""" + str(nvars) + """]);
-    double eval_direct(const double x[""" + str(nvars) + """], 
+    double eval_direct(const double x[""" + str(nvars) + """],
                      const double a[""" + str(npoly) + """],
                            double g[""" + str(nvars) + """]);
 };
@@ -2761,7 +2860,7 @@ struct """ + struct_name + """ {
 def retrieve_polynomial_lines(keyword_start, poly_file):
     """
     From a given polynomial file it returns a string with just the polynomial terms that start with a given keyword
-    
+
     Args:
         keyword_start          - The keyword that will state if a line belongs to a polynomial term
         poly_file              - The file containing the polynomial expression
@@ -2782,8 +2881,8 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
 
 def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
     """
-    Writes the polynomial C++ file with gradients for MBX 
-    
+    Writes the polynomial C++ file with gradients for MBX
+
     Args:
         number_of_monomers     - Number of monomers in the system
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
@@ -2802,7 +2901,7 @@ def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npol
 
 namespace """ + namespace + """ {
 
-double """ + struct_name + """::eval(const double x[""" + str(nvars) + """], 
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
             const double a[""" + str(npoly) + """],
                   double g[""" + str(nvars) + """]) {
 """
@@ -2824,8 +2923,8 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
 
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
     """
-    Writes the polynomial C++ file without gradients for MBX 
-    
+    Writes the polynomial C++ file without gradients for MBX
+
     Args:
         number_of_monomers     - Number of monomers in the system
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
@@ -2845,7 +2944,7 @@ med
 
 namespace """ + namespace + """ {
 
-double """ + struct_name + """::eval(const double x[""" + str(nvars) + """], 
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
             const double a[""" + str(npoly) + """]) {
 """
 
@@ -2875,15 +2974,15 @@ def get_arguments_for_functions(arg_string, number_of_monomers):
 
     arg_text = ""
     for i in range(number_of_monomers):
-        arg_text += arg_string + str(i+1) 
+        arg_text += arg_string + str(i+1)
         if i+1 != number_of_monomers:
             arg_text += ", "
     return arg_text
 
 def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
     """
-    Writes the polynomial holder header file 
-    
+    Writes the polynomial holder header file
+
     Args:
         number_of_monomers     - Number of monomers in the system
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
@@ -2907,7 +3006,7 @@ med
     ff = open(fname,'w')
 
     a = """#ifndef {0}
-#define {0} 
+#define {0}
 
 #include <cmath>
 #include <string>
@@ -2972,15 +3071,15 @@ struct """ + struct_name + """ {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif 
+#endif
 """
     ff.write(a)
     ff.close()
-    
+
 def write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
     """
-    Writes the polynomial holder header file 
-    
+    Writes the polynomial holder header file
+
     Args:
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         monomer_atom_types     - List with the atom symmetry and the number of atoms of that symmetry, e.g. [[A,1,B,1],[C,2]] for A1B2_C2
@@ -2996,11 +3095,11 @@ def write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_m
         ro                     - Outer cutoff (not used in 2b)
         k_min_intra            - Minimum value allowed for k_intra
         k_max_intra            - Maximum value allowed for k_intra
-        k_min                  - Minimum value allowed for k      
-        k_max                  - Maximum value allowed for k      
+        k_min                  - Minimum value allowed for k
+        k_max                  - Maximum value allowed for k
         d_min_intra            - Minimum value allowed for d_intra
         d_max_intra            - Maximum value allowed for d_intra
-        d_min                  - Minimum value allowed for d      
+        d_min                  - Minimum value allowed for d
         d_max                  - Maximum value allowed for d
         version                - Will be appended to the class and files to differentiate multiple versions of the same system
     """
@@ -3063,7 +3162,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
-    std::vector<double> xyz(""" + str(sum(number_of_atoms)*3) + """); 
+    std::vector<double> xyz(""" + str(sum(number_of_atoms)*3) + """);
     double sw = 0.0;
     polynomial my_poly;
 
@@ -3071,7 +3170,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 """
     ff.write(a)
 
-    
+
     for i in range(len(number_of_atoms)):
         ff.write("        const double *mon" + str(i+1) + " = xyz" + str(i+1) + " + " + str(3*number_of_atoms[i]) + "*j;\n")
     ff.write("\n")
@@ -3082,7 +3181,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     # Write the distances
     for d in all_distances:
         a = """
-        const double """ + d[0] + """[3] = 
+        const double """ + d[0] + """[3] =
                          {mon""" + str(d[1]) + """[0] - mon""" + str(d[2]) + """[0],
                           mon""" + str(d[1]) + """[1] - mon""" + str(d[2]) + """[1],
                           mon""" + str(d[1]) + """[2] - mon""" + str(d[2]) + """[2]};
@@ -3175,7 +3274,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
         energies_sw[j] = energies[j]*sw;
 
     }
-"""   
+"""
     ff.write(a)
 
     if number_of_monomers == 1:
@@ -3200,7 +3299,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
-    std::vector<double> xyz(""" + str(sum(number_of_atoms)*3) + """); 
+    std::vector<double> xyz(""" + str(sum(number_of_atoms)*3) + """);
     double sw = 0.0;
     polynomial my_poly;
 
@@ -3219,7 +3318,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     # Write the distances
     for d in all_distances:
         a = """
-        const double """ + d[0] + """[3] = 
+        const double """ + d[0] + """[3] =
                          {mon""" + str(d[1]) + """[0] - mon""" + str(d[2]) + """[0],
                           mon""" + str(d[1]) + """[1] - mon""" + str(d[2]) + """[1],
                           mon""" + str(d[1]) + """[2] - mon""" + str(d[2]) + """[2]};
@@ -3263,7 +3362,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     ff.write(pointer_to_coordinates)
     ff.write(pointer_to_vsites)
     ff.write("\n")
-    
+
 
     a = """
         double w12 =     -9.721486914088159e-02;  //from MBpol
@@ -3365,7 +3464,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     # And put the switch grads into the atoms
     counter = 0
     for i in range(len(number_of_atoms)):
-        string_to_add = "            gradients[" + str(counter) + " + i] += 0.0 " 
+        string_to_add = "            gradients[" + str(counter) + " + i] += 0.0 "
         current_mon = i + 1
         for sw, d in zip(all_switches, all_distances):
             if current_mon == sw[1]:
@@ -3375,7 +3474,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
         string_to_add += ";\n"
         ff.write(string_to_add)
-                
+
         counter += number_of_atoms[i]*3
 
     ff.write("        }\n")
@@ -3397,7 +3496,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 """
     ff.write(a)
 
-    if number_of_monomers == 1:    
+    if number_of_monomers == 1:
         ff.write("    return energies_sw;\n")
     else:
         a = """
@@ -3418,26 +3517,3 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
     ff.write(a)
     ff.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

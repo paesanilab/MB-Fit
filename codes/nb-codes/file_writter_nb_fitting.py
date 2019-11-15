@@ -1591,7 +1591,7 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
 
     return electrostatics_string
 
-def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max):
+def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range):
     """
     Writes the fitting code for TTM-nrg"
 
@@ -1604,6 +1604,7 @@ def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_mon
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         k_min                  - Minimum value allowed for k
         k_max                  - Maximum value allowed for k
+        E_range                - Energy range used for computing weights for each point in the fittings
     """
 
     # We need the pairs again to know how many linear and non linear terms we have
@@ -1646,7 +1647,7 @@ def write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_mon
     a = """
 namespace {
 
-double E_range = 20.0; // kcal/mol
+double E_range = """ + str(E_range) + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 
@@ -2090,7 +2091,7 @@ int main(int argc, char** argv) {
 
 
 
-def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra):
+def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range):
     """
     Writes the fitting code for MB-nrg"
 
@@ -2110,6 +2111,7 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
         k_max_intra            - Maximum value allowed for k_intra
         d_min_intra            - Minimum value allowed for d_intra
         d_max_intra            - Maximum value allowed for d_intra
+        E_range                - Energy range used for computing weights for each point in the fittings
     """
 
     cppname = "fit-" + str(number_of_monomers) + "b.cpp"
@@ -2159,7 +2161,7 @@ static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyh
 
 double alpha = 0.0005;
 
-double E_range = 20.0; // kcal/mol
+double E_range = """ + str(E_range) + """; // kcal/mol
 
 //----------------------------------------------------------------------------//
 

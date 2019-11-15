@@ -127,8 +127,10 @@ var_inter = config.get("fitting", "var_inter")
 npoly = config.getint("fitting", "npoly")
 
 # Define Energy Range for the fitting
-E_range = config.getfloat("fitting", "energy_range")
-
+try:
+    E_range = config.getfloat("fitting", "energy_range")
+except:
+    E_range = 20.0
 
 ################################################################################
 ## Prepare pair information ####################################################
@@ -224,7 +226,7 @@ file_writter_nb_fitting.write_poly_fit_cpp(number_of_monomers, system_name, nvar
 ## Fitting code ################################################################
 ################################################################################
 
-file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra)
+file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range)
 
 ################################################################################
 ## Evaluation code #############################################################
@@ -236,7 +238,7 @@ file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, num
 ## TTM-nrg fitting code ########################################################
 ################################################################################
 if number_of_monomers == 2:
-    file_writter_nb_fitting.write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max)
+    file_writter_nb_fitting.write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range)
 
 ################################################################################
 ## TTM-nrg evaluation code #####################################################

@@ -127,16 +127,10 @@ var_inter = config.get("fitting", "var_inter")
 npoly = config.getint("fitting", "npoly")
 
 # Define Energy Range for the fitting
-try:
-    E_range = config.getfloat("fitting", "energy_range")
-except:
-    E_range = 20.0
+E_range = config.getfloat("fitting", "energy_range", default=20.0)
 
 # Define alpha for the fitting
-try:
-    alpha = config.getfloat("fitting", "alpha")
-except:
-    alpha = 0.0005
+alpha = config.getfloat("fitting", "alpha", default=0.0005)
 
 ################################################################################
 ## Prepare pair information ####################################################

@@ -2091,7 +2091,7 @@ int main(int argc, char** argv) {
 
 
 
-def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range):
+def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha):
     """
     Writes the fitting code for MB-nrg"
 
@@ -2112,6 +2112,7 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
         d_min_intra            - Minimum value allowed for d_intra
         d_max_intra            - Maximum value allowed for d_intra
         E_range                - Energy range used for computing weights for each point in the fittings
+        alpha                  - Parameter used for regularization during the fittings
     """
 
     cppname = "fit-" + str(number_of_monomers) + "b.cpp"
@@ -2159,7 +2160,7 @@ namespace {
 
 static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyholder_""" + str(number_of_monomers) + "b_" + system_name + """_fit model;
 
-double alpha = 0.0005;
+double alpha = """ + str(alpha) + """;
 
 double E_range = """ + str(E_range) + """; // kcal/mol
 

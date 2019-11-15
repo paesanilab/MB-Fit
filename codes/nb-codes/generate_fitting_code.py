@@ -132,6 +132,12 @@ try:
 except:
     E_range = 20.0
 
+# Define alpha for the fitting
+try:
+    alpha = config.getfloat("fitting", "alpha")
+except:
+    alpha = 0.0005
+
 ################################################################################
 ## Prepare pair information ####################################################
 ################################################################################
@@ -226,7 +232,7 @@ file_writter_nb_fitting.write_poly_fit_cpp(number_of_monomers, system_name, nvar
 ## Fitting code ################################################################
 ################################################################################
 
-file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range)
+file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha)
 
 ################################################################################
 ## Evaluation code #############################################################

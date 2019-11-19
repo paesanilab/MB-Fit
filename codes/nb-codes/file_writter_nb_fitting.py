@@ -1544,7 +1544,7 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
     fi_s = 0
     for i in range(number_of_monomers):
         first_index_of_atoms.append(fi)
-        first_index_of_sites.append(fi)
+        first_index_of_sites.append(fi_s)
         fi += number_of_atoms[i]
         fi_s += number_of_sites[i]
 

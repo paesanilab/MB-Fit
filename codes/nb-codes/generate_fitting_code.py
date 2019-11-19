@@ -40,7 +40,7 @@ number_of_atoms = [int(i) for i in settings.get("molecule", "fragments").split("
 number_of_monomers = len(number_of_atoms)
 
 # Set the number of electrostatic sites
-number_of_sites = number_of_atoms
+number_of_sites = [i for i in number_of_atoms]
 
 # Get which monomer should be mb-pol monomer (if any) 1 means yes, 0 means no.
 use_mbpol = [int(i) for i in settings.get("molecule", "use_mbpol").split(",")]

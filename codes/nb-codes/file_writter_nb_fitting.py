@@ -1117,12 +1117,18 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
 
     a = ""
 
+    excl = []
+    for excl_level in [excl12, excl13, excl14]:
+        for excl_pair in excl_level:
+            excl.append(excl_pair)
+
     # case where we have a monomer
     if symmetry_parser.get_num_fragments() == 1:
-        mon = sorted(symmetry_parser.get_atoms())
+        mon = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
-                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                index_pair = [atom1_index, atom2_index + 1 + atom1_index]
+                if index_pair not in excl:
                     pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                     vector_index = str(pairs.index(pair))
 
@@ -1130,7 +1136,7 @@ std::vector<double> mbnrg_buck::get_nonlinear_terms() {
 
     # case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = sorted(symmetry_parser.get_atoms())
+        mons = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
                 if atom1_frag_index[0] == atom2_frag_index[0]:
@@ -1162,12 +1168,18 @@ double mbnrg_buck::get_buckingham() {
 
     a = ""
 
+    excl = []
+    for excl_level in [excl12, excl13, excl14]:
+        for excl_pair in excl_level:
+            excl.append(excl_pair)
+
     # case where we have a monomer
     if symmetry_parser.get_num_fragments() == 1:
-        mon = sorted(symmetry_parser.get_atoms())
+        mon = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
-                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                index_pair = [atom1_index, atom2_index + 1 + atom1_index]
+                if index_pair not in excl:
                     pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                     vector_index = str(pairs.index(pair))
 
@@ -1175,7 +1187,7 @@ double mbnrg_buck::get_buckingham() {
 
     # case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = sorted(symmetry_parser.get_atoms())
+        mons = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
                 if atom1_frag_index[0] == atom2_frag_index[0]:
@@ -1411,16 +1423,20 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
     else:
         pairs = []
 
-    print("PAIRS:", pairs)
-
     a = ""
+
+    excl = []
+    for excl_level in [excl12, excl13, excl14]:
+        for excl_pair in excl_level:
+            excl.append(excl_pair)
 
     # case where we have a monomer
     if symmetry_parser.get_num_fragments() == 1:
-        mon = sorted(symmetry_parser.get_atoms())
+        mon = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
-                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                index_pair = [atom1_index, atom2_index + 1 + atom1_index]
+                if index_pair not in excl:
                     pair = tuple(sorted([atom1_symmetry, atom2_symmetry]))
                     vector_index = str(pairs.index(pair))
 
@@ -1428,7 +1444,7 @@ std::vector<double> mbnrg_disp::get_nonlinear_terms() {
 
     # case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = sorted(symmetry_parser.get_atoms())
+        mons = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
                 if atom1_frag_index[0] == atom2_frag_index[0]:
@@ -1460,18 +1476,24 @@ double mbnrg_disp::get_dispersion() {
 
     a = ""
 
+    excl = []
+    for excl_level in [excl12, excl13, excl14]:
+        for excl_pair in excl_level:
+            excl.append(excl_pair)
+
     # Case in which we have a monomer
     if symmetry_parser.get_num_fragments() == 1:
-        mon = sorted(symmetry_parser.get_atoms())
+        mon = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mon):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mon[atom1_index+1:]):
-                if [atom1_index, atom2_index] not in excl12 and [atom1_index, atom2_index] not in excl13 and [atom1_index, atom2_index] not in excl14:
+                index_pair = [atom1_index, atom2_index + 1 + atom1_index]
+                if index_pair not in excl:
                     pair = sorted([atom1_symmetry, atom2_symmetry])
                     a += "    disp += x6({}, {}, m_C8, m_d8, {}, {});\n".format(get_C6_var_name(pair[0], pair[1]), get_d6_var_name(pair[0], pair[1]), get_coords_var_name(atom1_symmetry, atom1_sym_index, atom1_frag_index), get_coords_var_name(atom2_symmetry, atom2_sym_index, atom2_frag_index))
 
     # Case in which we have a dimer
     elif symmetry_parser.get_num_fragments() == 2:
-        mons = sorted(symmetry_parser.get_atoms())
+        mons = list(symmetry_parser.get_atoms())
         for atom1_index, (atom1_symmetry, atom1_sym_index, atom1_frag_index) in enumerate(mons):
             for atom2_index, (atom2_symmetry, atom2_sym_index, atom2_frag_index) in enumerate(mons[atom1_index+1:]):
                 if atom1_frag_index[0] == atom2_frag_index[0]:

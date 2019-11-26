@@ -5,7 +5,7 @@ A2B1
 
 <> atoms (6) <>
 
-A1a:A2a:B1a:A1b:A2b:B1b
+A1a:A2a:B1a:A3b:A4b:B2b
 
 <> permutations (8) <>
 
@@ -20,21 +20,21 @@ A1a:A2a:B1a:A1b:A2b:B1b
 
 <> variables (15) <>
 
- 0 :  A1(a) <===>  A2(a) : x-intra-A+A
- 1 :  A1(a) <===>  B1(a) : x-intra-A+B
- 2 :  A2(a) <===>  B1(a) : x-intra-A+B
- 3 :  A1(b) <===>  A2(b) : x-intra-A+A
- 4 :  A1(b) <===>  B1(b) : x-intra-A+B
- 5 :  A2(b) <===>  B1(b) : x-intra-A+B
- 6 :  A1(a) <===>  A1(b) : x-inter-A+A
- 7 :  A1(a) <===>  A2(b) : x-inter-A+A
- 8 :  A2(a) <===>  A1(b) : x-inter-A+A
- 9 :  A2(a) <===>  A2(b) : x-inter-A+A
-10 :  A1(a) <===>  B1(b) : x-inter-A+B
-11 :  A2(a) <===>  B1(b) : x-inter-A+B
-12 :  B1(a) <===>  A1(b) : x-inter-A+B
-13 :  B1(a) <===>  A2(b) : x-inter-A+B
-14 :  B1(a) <===>  B1(b) : x-inter-B+B
+ 0 :  A1(a) <===>  A2(a) : x-intra-A+A-1
+ 1 :  A1(a) <===>  A3(b) : x-inter-A+A-0
+ 2 :  A1(a) <===>  A4(b) : x-inter-A+A-0
+ 3 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 4 :  A1(a) <===>  B2(b) : x-inter-A+B-0
+ 5 :  A2(a) <===>  A3(b) : x-inter-A+A-0
+ 6 :  A2(a) <===>  A4(b) : x-inter-A+A-0
+ 7 :  A2(a) <===>  B1(a) : x-intra-A+B-1
+ 8 :  A2(a) <===>  B2(b) : x-inter-A+B-0
+ 9 :  A3(b) <===>  A4(b) : x-intra-A+A-1
+10 :  A3(b) <===>  B1(a) : x-inter-A+B-0
+11 :  A3(b) <===>  B2(b) : x-intra-A+B-1
+12 :  A4(b) <===>  B1(a) : x-inter-A+B-0
+13 :  A4(b) <===>  B2(b) : x-intra-A+B-1
+14 :  B1(a) <===>  B2(b) : x-inter-B+B-0
 
 <> 1 degree <>
 

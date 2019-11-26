@@ -69,6 +69,7 @@ class QchemCalculator(Calculator):
 
             in_file.write("method {}\n".format(model.get_method()))
             in_file.write("basis {}\n".format(model.get_basis()))
+            in_file.write("sym_ignore TRUE\n")
 
             in_file.write("GEOM_OPT_MAX_CYCLES 200\n")
 

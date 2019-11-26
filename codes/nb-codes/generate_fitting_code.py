@@ -1,6 +1,7 @@
 import sys, os, json
 from potential_fitting.utils import SettingsReader
-from potential_fitting.utils import constants
+from potential_fitting.utils import constants, system
+from potential_fitting.polynomials import MoleculeSymmetryParser
 import utils_nb_fitting
 import file_writter_nb_fitting
 
@@ -21,22 +22,31 @@ else:
 settings = SettingsReader(settings_path)
 config = SettingsReader(config_path)
 
+
 ################################################################################
 ## MONOMER PROPERTIES ##########################################################
 ################################################################################
 
+symmetry_parser = MoleculeSymmetryParser("_".join(settings.get("molecule", "symmetry").split(",")))
+
+system.format_print("Generating fitcode for molecule with symmetry {}...".format(symmetry_parser.get_symmetry()),
+                    bold=True, color=system.Color.YELLOW)
+
 # Obtain monomers from settings
-monomers = settings.get("molecule", "symmetry").split(",")
-number_of_monomers = len(monomers)
+monomers_symmetries = list(symmetry_parser.get_fragment_symmetries())
 
-# Store number of atoms in each monomer in nat1 and nat2
+# Get number of atoms in each monomer.
 number_of_atoms = [int(i) for i in settings.get("molecule", "fragments").split(",")]
+number_of_monomers = len(number_of_atoms)
 
-# Set the number of sites
-number_of_sites = number_of_atoms.copy()
+# Set the number of electrostatic sites
+number_of_sites = [i for i in number_of_atoms]
 
-# Get which monomer should be mb-pol monomer (if any)
+# Get which monomer should be mb-pol monomer (if any) 1 means yes, 0 means no.
 use_mbpol = [int(i) for i in settings.get("molecule", "use_mbpol").split(",")]
+
+system.format_print("Using mbpol for {} fragments.".format(sum(use_mbpol)),
+                    italics=True)
 
 # Define list of variables that are fictitious
 virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
@@ -45,11 +55,13 @@ virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
 # Update number of sites if needed
 use_lonepairs = [0]*number_of_monomers
 for i in range(number_of_monomers):
-    if any(x in virtual_sites_poly for x in monomers[i]):
+    if any(x in monomers_symmetries[i] for x in virtual_sites_poly):
         use_lonepairs[i] = 1
     if use_mbpol[i] != 0:
         number_of_sites[i] += 1
 
+system.format_print("{} fragments have lone pairs.".format(sum(use_lonepairs)),
+                    italics=True)
 # Obtain the lists with the excluded pairs
 excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
 excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
@@ -67,16 +79,8 @@ polarizability_factors = config.getlist("fitting", "polarizability_factors", flo
 # Obtain A, C6 and d6 from user in the same order as the given pairs AA, AB ...
 # By default, if not specified in the config.ini file, these lists
 # will be set to a list of the same length, but with all coefficients 0.0
-# __FOR__ETHAN__
-#c6_constants = config.getlist("fitting", "c6")
-#C6 = c6_constants[len(c6_constants) - 1]
 C6 = config.getlist("fitting", "c6", float)
 
-# last element of d6_constants is list of the inter_molecular d6 constants
-#d6_constants = config.getlist("fitting", "d6")
-#d6 = d6_constants[len(d6_constants) - 1]
-
-# last element of A_constants is list of the inter_molecular A constants
 # Initialize A and b to 0, for now
 try:
     A_buck = config.getlist("fitting", "A", float)
@@ -86,9 +90,11 @@ except:
     A_buck = [0.0] * len(C6)
     b_buck = [0.0] * len(C6)
     d6 = [0.0] * len(C6)
-#A_constants = config.getlist("fitting", "A")
-#Abuck = A_constants[len(A_constants) - 1]
-
+    if number_of_monomers < 3:
+        system.format_print("You are using less than 3 monomers, but have no A or d6 constants in your input file.",
+                            italics=True, color=system.Color.PURPLE)
+        system.format_print("Are you sure this is correct?",
+                            italics=True, color=system.Color.PURPLE)
 
 ################################################################################
 ## POLYNOMIAL PROPERTIES #######################################################
@@ -124,7 +130,17 @@ var_intra = config.get("fitting", "var_intra")
 var_virtual_sites = config.get("fitting", "var_virtual_sites")
 var_inter = config.get("fitting", "var_inter")
 
+system.format_print("Using {} variables for intramolecular interactions.".format(var_intra),
+                    italics=True)
+system.format_print("Using {} variables for intermolecular interactions.".format(var_inter),
+                    italics=True)
+system.format_print("Using {} variables for lone pair interactions.".format(var_virtual_sites),
+                    italics=True)
+
 npoly = config.getint("fitting", "npoly")
+
+system.format_print("{} terms in the polynomial.".format(npoly),
+                     italics=True)
 
 # Define Energy Range for the fitting
 E_range = config.getfloat("fitting", "energy_range", default=20.0)
@@ -136,25 +152,17 @@ alpha = config.getfloat("fitting", "alpha", default=0.0005)
 ## Prepare pair information ####################################################
 ################################################################################
 
-# Obtain types for each monomer
-# Gets something like ["A",2,"B",5] for A2B5 for each monomer
-monomer_atom_types = []
-for mon in monomers:
-    monomer_atom_types.append(utils_nb_fitting.get_atom_types(mon))
-
 # create dictionary mapping from atom index to atom name
-atom_list = []
+atom_list = [sym + str(ind) for sym, ind, frag in symmetry_parser.get_atoms()]
 
-# Will get ["A1","A2","B1","B2","B3"...]
-for i in range(len(monomers)):
-    atom_list.append([])
-    for type_index in range(0, len(monomer_atom_types[i]), 2):
-        for atom_index in range(1, int(monomer_atom_types[i][type_index + 1]) + 1):
-            atom_list[i].append(monomer_atom_types[i][type_index] + str(atom_index))
+system.format_print("Atoms in the molecule: {}.".format(" ".join(atom_list)),
+                    italics=True)
 
 # read the poly.in file to get the variables
 variables, intra_poly_pairs, inter_poly_pairs = utils_nb_fitting.read_poly_in(name, virtual_sites_poly, var_intra, var_inter, var_virtual_sites)
 nvars = len(variables)
+
+system.format_print("{} variables in the polynomial.".format(nvars))
 
 ################################################################################
 ## Prepare non-linear terms information ########################################
@@ -165,6 +173,8 @@ nlparam_intra, nlparam_inter, nl_param_all = utils_nb_fitting.get_non_linear_par
 # Save number in num_nonlinear
 num_nonlinear = len(nl_param_all)
 
+system.format_print("{} non-linear parameters in the polynomial.".format(num_nonlinear))
+
 
 ################################################################################
 ## Write monomer classes header and cpp ########################################
@@ -172,47 +182,46 @@ num_nonlinear = len(nl_param_all)
 
 # Write the header files
 for i in range(number_of_monomers):
-    file_writter_nb_fitting.write_monomer_class_header(i+1)
+    file_writter_nb_fitting.write_monomer_class_header(i + 1)
 
 # Write the cpp files
 for i in range(number_of_monomers):
-    file_writter_nb_fitting.write_monomer_class_cpp(i+1,number_of_sites[i],number_of_atoms[i],excluded_pairs_12[i],excluded_pairs_13[i],excluded_pairs_14[i], charges[i], polarizabilities[i],polarizability_factors[i])
+    file_writter_nb_fitting.write_monomer_class_cpp(i + 1, number_of_sites[i], number_of_atoms[i], excluded_pairs_12[i],
+                                                    excluded_pairs_13[i], excluded_pairs_14[i], charges[i],
+                                                    polarizabilities[i], polarizability_factors[i])
 
 # Write mb-pol water monomer if applicable
 for i in range(number_of_monomers):
     if use_mbpol[i] == 1:
-        mon_index = i+1
-        file_writter_nb_fitting.write_mbpol_monomer(mon_index)
+        file_writter_nb_fitting.write_mbpol_monomer(i + 1)
 
 
 ################################################################################
 ## Write polynomial holders header and cpp #####################################
 ################################################################################
 
-system_name = monomers[0]
-for i in range(1,number_of_monomers):
-    system_name += "_" + monomers[i]
+system_name = symmetry_parser.get_symmetry()
 
 file_writter_nb_fitting.write_fit_polynomial_holder_header(system_name, number_of_monomers, nl_param_all, ri, ro)
 
-file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max)
+file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max)
 
 
 ################################################################################
 ## Write dispersion header and cpp #############################################
 ################################################################################
 if (number_of_monomers<3):
-    file_writter_nb_fitting.write_dispersion_header(monomer_atom_types, virtual_sites_poly, C6, d6)
+    file_writter_nb_fitting.write_dispersion_header(symmetry_parser, virtual_sites_poly, C6, d6)
+    file_writter_nb_fitting.write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
-    file_writter_nb_fitting.write_dispersion_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 
 ################################################################################
 ## Write buckingham header and cpp #############################################
 ################################################################################
-    file_writter_nb_fitting.write_buckingham_header(monomer_atom_types, virtual_sites_poly, A_buck, b_buck)
+    file_writter_nb_fitting.write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
+    file_writter_nb_fitting.write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
-    file_writter_nb_fitting.write_buckingham_cpp(monomer_atom_types, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 ################################################################################
 ## Polynomial header and cpp ###################################################
@@ -238,13 +247,13 @@ file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, num
 ## TTM-nrg fitting code ########################################################
 ################################################################################
 if number_of_monomers == 2:
-    file_writter_nb_fitting.write_fitting_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range)
+    file_writter_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range)
 
 ################################################################################
 ## TTM-nrg evaluation code #####################################################
 ################################################################################
 
-    file_writter_nb_fitting.write_eval_ttm_code(monomer_atom_types, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
+    file_writter_nb_fitting.write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
 
 ################################################################################
 ## Makefile ####################################################################
@@ -268,7 +277,7 @@ file_writter_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_nam
 
 file_writter_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
 
-file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, monomer_atom_types, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
+file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
 
 
 

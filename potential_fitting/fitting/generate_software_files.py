@@ -233,7 +233,9 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     if not ttm_only:
         # Write code that needs to be added in the ONEBODY_NOGRD section of the code
         print("Getting energy calls...")
+
         system_name = "_".join(monomers)
+        system_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
         ids = []
         for i in range(len(mon_id_sorted)):
@@ -311,9 +313,12 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
     if number_of_monomers < 3:
     # Get the atomlist
+
         atom_types = []
         for fragment in monomers:
             atom_types.append(get_atom_types(fragment))
+
+        print("Atom types:", atom_types)
 
         # Get the list with actual types
         atom_types_number = []
@@ -322,13 +327,24 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             atom_types_number.append([])
             atom_types_letter.append([])
             count = 0
+
+            atom_number_dict = {}
+
             for i in range(1,len(fragment),2):
                 if fragment[i-1] in vsites:
                     continue
+                try:
+                    c = atom_number_dict[fragment[i-1]]
+                except KeyError:
+                    atom_number_dict[fragment[i-1]] = count
+                    c = count
+                    count += 1
                 for j in range(fragment[i]):
-                    atom_types_number[-1].append(count)
+                    atom_types_number[-1].append(c)
                     atom_types_letter[-1].append(fragment[i-1])
-                count += 1
+
+        print("Atom Types Number:", atom_types_number)
+        print("Atom Types Letter:", atom_types_letter)
          
         if number_of_monomers == 1:
             my_mon = [list(mon_id_sorted[0]), list(mon_id_sorted[0])]
@@ -344,7 +360,10 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
             my_c6_lr_text = "    }} else if (mon_id == \"{}\") {{\n".format(mon_ids[0])
             my_c6_lr_text += "        for (size_t nv = 0; nv < n_mon; nv++) { \n"
             for j in range(len(atom_types_letter[0])):
-                c6index = max(atom_types_number[0])*atom_types_number[0][j] + atom_types_number[0][j] 
+                # formula for finding index of diagonal c6 constants in the list of c6 constants.
+                # example: for A1B1C1, AA is at index 0, BB is at index 3, CC is at index 5
+                c6index = sum(range(max(atom_types_number[0]) - atom_types_number[0][j] + 2, max(atom_types_number[0]) + 2))
+                print(c6index)
                 my_c6_long_range = C6[c6index]
                 my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
             my_c6_lr_text += "        }\n"
@@ -380,9 +399,12 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         d6_text = []
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                c6index = (max(my_number_types[my_mon[1][0]])+1)*i + j
+                low = min(i,j)
+                high = max(i,j)
+                c6index = sum(range(max(my_number_types[my_mon[1][0]]) + 2 - low, max(my_number_types[my_mon[1][0]]) + 2)) + high - low
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
+                print(i, j, c6index)
                 c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")
                 d6_text.append("        d6.push_back(" + str(d6[c6index]) + ");  " + d6_units + " " + let1 + "--" + let2 + "\n")
 
@@ -423,7 +445,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         shift = 0;
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                c6index = max(my_number_types[my_mon[1][0]])*my_number_types[my_mon[0][0]][i] + my_number_types[my_mon[1][0]][j]
+                c6index = sum(range(max(my_number_types[my_mon[1][0]]) + 2 - i, max(my_number_types[my_mon[1][0]]) + 2)) + j - i
                 let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
                 let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
                 A_text.append("        a.push_back(" + str(A_buck[c6index]) + ");  " + A_units + " " + let1 + "--" + let2 + "\n")

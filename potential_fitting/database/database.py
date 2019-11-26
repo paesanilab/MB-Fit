@@ -418,7 +418,9 @@ class Database():
         next_start_symmetry = 'A'
 
         self.single_execute("SELECT * FROM get_empty_molecule(%s)", (mol_name,))
+
         frag_info = sorted(self.cursor.fetchall(), key = lambda x: x[0])
+
         for frag_name, charge, spin, atomic_symbols, atomic_symmetries, atomic_counts, SMILE, frag_count in frag_info:
 
             for i in range(frag_count):

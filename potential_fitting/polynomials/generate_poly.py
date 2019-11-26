@@ -3,11 +3,11 @@ import itertools, os
 
 # absolute module imports
 from potential_fitting.utils import SettingsReader, files, system, ProgressBar
-from potential_fitting.exceptions import ParsingError, InvalidValueError, InconsistentValueError
+from potential_fitting.exceptions import ParsingError, InvalidInputError, InconsistentValueError
 
 # relative module imports
 from . import filters
-from .molecule_in_parser import MoleculeInParser
+from .molecule_in_parser import MoleculeSymmetryParser, FragmentParser
 from .monomial import Monomial
 from .variable import Variable
 
@@ -86,13 +86,13 @@ class PolynomialGenerator(object):
         fragments, variables, monomial_filters = self.read_input_file(input_path)
 
         # create a molecule parser of all the fragments.
-        molecule_in_parser = MoleculeInParser("_".join(fragments))
+        symmetry_parser = MoleculeSymmetryParser("_".join(fragments))
 
         # Parse the fragment names to name the atoms in the system
 
         # list of names of atoms in the molecule, each name consists of a type (ex: 'A', 'B', etc) concatenated to
         # a letter that indicates the fragment (ex: 'a', 'b', etc).
-        atom_names = []
+        atom_names = [sym + str(ind) + frag for sym, ind, frag in symmetry_parser.get_atoms()]
 
         # holds the index of the first atom in each fragment.
         index_each_fragment = []
@@ -100,12 +100,11 @@ class PolynomialGenerator(object):
         # index of the next atom to parse.
         index = 0
 
-        for fragment_parser in molecule_in_parser.get_fragments():
+        for fragment_parser in symmetry_parser.get_sub_parsers():
             index_each_fragment.append(index)
-            for atom_type_parser in fragment_parser.get_atom_and_virtual_site_types():
-                for atom in atom_type_parser.get_atoms():
-                    atom_names.append("{}{}".format(atom, fragment_parser.get_fragment_id()))
-                    index += 1
+            index += fragment_parser.get_num_atoms()
+
+        print("Atom names", atom_names)
 
         files.init_file(log_path)
 
@@ -132,25 +131,7 @@ class PolynomialGenerator(object):
             system.format_print("Finding permutations...",
                                 italics=True)
 
-            # build the permutations for each fragment
-            fragment_permutations = []
-
-            # loop thru each fragment
-            for frag_index, fragment_parser in enumerate(molecule_in_parser.get_fragments()):
-
-                # get all permutations for the atoms within this fragment
-                permutations = list(self.get_fragment_permutations(fragment_parser.get_atom_and_virtual_site_types()))
-
-                # add to each permutation the index of the first atom in this fragment in the molecule
-                for permutation in permutations:
-                    for index in range(len(permutation)):
-                        permutation[index] += index_each_fragment[frag_index]
-
-                fragment_permutations.append(permutations)
-
-            # construct molecule permutations from the fragment permutations.
-
-            atom_permutations = list(self.get_molecule_permutations(fragments, fragment_permutations))
+            atom_permutations = list(self.get_permutations("_".join(fragments)))
 
             # write permutation count to log file
             log_file.write("<> permutations ({}) <>\n".format(len(atom_permutations)))
@@ -376,6 +357,54 @@ class PolynomialGenerator(object):
                     raise ParsingError(input_path, "Unrecongnized line format: '{}'".format(line))
 
         return fragments, variables, monomial_filters
+
+    def get_permutations(self, molecule_in):
+
+        if "_" in molecule_in or "(" in molecule_in or ")" in molecule_in:
+            fragment_ins = self.split_molecule_in(molecule_in)
+            fragment_permutations_list = [list(self.get_permutations(fragment_in)) for fragment_in in fragment_ins]
+            fragment_atom_index = 0
+            for fragment_permutations in fragment_permutations_list:
+                for permutation in fragment_permutations:
+                    for i in range(len(permutation)):
+                        permutation[i] += fragment_atom_index
+                fragment_atom_index += len(fragment_permutations[0])
+
+            return self.get_molecule_permutations(fragment_ins, fragment_permutations_list)
+        else:
+            parser = FragmentParser(molecule_in, 'a')
+            return self.get_fragment_permutations(parser.get_atom_and_virtual_site_types())
+
+    def split_molecule_in(self, molecule_in):
+        fragments = []
+        cur_fragment = ""
+
+        num_open_parens = 0
+
+        for char in molecule_in:
+
+            if char is '(':
+                if num_open_parens > 0:
+                    cur_fragment += char
+                num_open_parens += 1
+
+            elif char is ')':
+                num_open_parens -= 1
+                if num_open_parens > 0:
+                    cur_fragment += char
+
+            elif char is '_' and num_open_parens == 0:
+                fragments.append(cur_fragment[:])
+                cur_fragment = ""
+
+            else:
+                cur_fragment += char
+
+        if num_open_parens != 0:
+            raise InvalidInputError("{} is not a valid symmetry input. Make sure all parenthesis are closed!".format(molecule_in))
+
+        fragments.append(cur_fragment)
+        return fragments
 
     def get_fragment_permutations(self, atom_type_generator):
         """
@@ -1010,10 +1039,10 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
             None.
         """
         cpp_file.write("""    double energy(0);
-	for(int i = 0; i < {}; ++i)
-	    energy += p[i]*a[i];
+    for(int i = 0; i < {}; ++i)
+        energy += p[i]*a[i];
 
-	return energy;
+    return energy;
 
 }}
 }} // namespace mb_system""".format(total_terms))
@@ -1030,10 +1059,10 @@ double poly_model::eval_direct(const double a[{0}], const double x[{1}], double 
             None.
         """
         cpp_file.write("""    double energy(0);
-	for(int i = 0; i < {}; ++i)
-	    energy += p[i]*a[i];
+    for(int i = 0; i < {}; ++i)
+        energy += p[i]*a[i];
 
-	return energy;
+    return energy;
 
 }}
 }} // namespace mb_system""".format(total_terms))

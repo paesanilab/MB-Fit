@@ -17,12 +17,12 @@ A1a:B1a:B2a:B3a
 
 <> variables (6) <>
 
- 0 :  B1(a) <===>  B2(a) : x-intra-B+B
- 1 :  B1(a) <===>  B3(a) : x-intra-B+B
- 2 :  B2(a) <===>  B3(a) : x-intra-B+B
- 3 :  A1(a) <===>  B1(a) : x-intra-A+B
- 4 :  A1(a) <===>  B2(a) : x-intra-A+B
- 5 :  A1(a) <===>  B3(a) : x-intra-A+B
+ 0 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 1 :  A1(a) <===>  B2(a) : x-intra-A+B-1
+ 2 :  A1(a) <===>  B3(a) : x-intra-A+B-1
+ 3 :  B1(a) <===>  B2(a) : x-intra-B+B-1
+ 4 :  B1(a) <===>  B3(a) : x-intra-B+B-1
+ 5 :  B2(a) <===>  B3(a) : x-intra-B+B-1
 
 <> 1 degree <>
 

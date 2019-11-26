@@ -52,5 +52,6 @@ class Color(Enum):
     BLUE = 34
     NORMAL = 0
     YELLOW = 33
+    PURPLE = 95
 
 

@@ -6,7 +6,7 @@ from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
 
 # local module imports
-from .molecule_in_parser import MoleculeInParser
+from .molecule_in_parser import MoleculeSymmetryParser
 
 def generate_input_poly(settings_file, molecule_in, in_file_path):
     """
@@ -26,11 +26,15 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
     # file will be automatically closed after block by with open as ... syntax
     with open(files.init_file(in_file_path, files.OverwriteMethod.NONE), "w") as poly_in_file:
 
-        molecule_in_parser = MoleculeInParser(molecule_in)
+        symmetry_parser = MoleculeSymmetryParser(molecule_in)
 
         # loop thru each fragment and add an add_molecule line at top of file
-        for fragment_parser in molecule_in_parser.get_fragments():
-            poly_in_file.write("add_molecule['{}']\n".format(fragment_parser.get_fragment_in()))
+        for fragment_symmetry in symmetry_parser.get_fragment_symmetries():
+            if "_" in fragment_symmetry:
+                poly_in_file.write("add_molecule['({})']\n".format(fragment_symmetry))
+            else:
+                poly_in_file.write("add_molecule['{}']\n".format(fragment_symmetry))
+
 
         # newline between fragments and variables
         poly_in_file.write("\n")
@@ -40,9 +44,9 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
 
         variable_count = 0
 
-        for variable in molecule_in_parser.get_variables():
-            if not "intra" in variable[4] or not any([(vsite in variable[0] or vsite in variable[2]) for vsite in virtual_sites]):
-                poly_in_file.write("add_variable['{}', '{}', '{}', '{}', '{}']\n".format(*variable))
+        for variable in symmetry_parser.get_variables():
+            if not "intra" in variable[6] or not any([(vsite in variable[0] or vsite in variable[3]) for vsite in virtual_sites]):
+                poly_in_file.write("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format(*variable))
                 variable_count += 1
 
         # newline between variables and filters
@@ -50,23 +54,23 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
 
         # add filter based on the filtering setting in settings.ini
         polynomial_filtering = settings.get("poly_generation", "accepted_terms",
-                "all" if len(list(molecule_in_parser.get_fragments())) == 1 else "partly-inter")
+                "all" if symmetry_parser.get_num_fragments() == 1 else "partly-inter")
 
         # make sure the user hasn't chosed intermolecular terms only with a monomer
-        if len(list(molecule_in_parser.get_fragments())) == 1 and not polynomial_filtering == "all":
+        if symmetry_parser.get_num_fragments() == 1 and not polynomial_filtering == "all":
             raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms",
-                    len(list(molecule_in_parser.get_fragments())), polynomial_filtering,
+                    symmetry_parser.get_num_fragments(), polynomial_filtering,
                     "when there is only 1 fragment, there are no intermolecular interactions, "
                     + "so you must use 'all' terms")
 
         if polynomial_filtering == "purely-inter":
             # this filter filters out all terms that have any intra-molecular components
-            poly_in_file.write("add_filter['degree', 'x-intra-*+*', '1+', '*']")
+            poly_in_file.write("add_filter['ind-degree', 'x-intra-*+*-*', '1+']")
             system.format_print("Adding filter to filter out terms that use ANY intramolecular variables.",
                     italics=True)
         elif polynomial_filtering == "partly-inter":
             # this filter filters out all terms that have no inter-molecular components
-            poly_in_file.write("add_filter['not', 'degree', 'x-inter-*+*', '1+', '*']")
+            poly_in_file.write("add_filter['sum-degree', 'x-inter-*+*-*', '0']")
             system.format_print("Adding filter to filter out terms that ONLY use intramolecular variables.",
                     italics=True)
 

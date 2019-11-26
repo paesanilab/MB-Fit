@@ -1185,6 +1185,7 @@ def execute_fits(settings_path, ttm = False):
         os.chdir(fit)
         if not os.path.exists("fit.log"):
             print("{} is running.".format(fit))
+            print(os.path.dirname(os.curdir))
             system.call("./run_fit.sh")
             print("{} is completed.".format(fit))
         else:
@@ -1331,8 +1332,8 @@ def update_config_with_ttm(settings_path, config_path):
     fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/best_fit/"
 
     with open(fit_folder_prefix + "ttm-nrg_params.dat",'r') as ttm_file:
-        a_buck = [float(x) for x in ttm_file.readline().strip().split()]
-        b_buck = [float(x) for x in ttm_file.readline().strip().split()]
+        a_buck = [float(a) for a in ttm_file.readline().strip().split()]
+        b_buck = [float(b) for b in ttm_file.readline().strip().split()]
 
     config.set("fitting","A",a_buck)    
     config.set("fitting","d6",b_buck)   

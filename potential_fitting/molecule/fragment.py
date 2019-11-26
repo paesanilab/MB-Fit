@@ -881,9 +881,14 @@ class Fragment(object):
             A list of indices, where indices[i] = index of atom that should be in index i to make this fragment
             order match the SMILE string.
         """
+
+        # get all atoms for this fragment in standard order
         atoms = self.get_standard_order()
 
+        # get all atomic symbols from the SMILE
         atomic_symbols, c, l = self.parse_SMILE(SMILE)
+
+        # make a test fragment in the order specified by the SMILE.
         test_atoms = []
         for index, atomic_symbol in enumerate(atomic_symbols):
             test_atoms.append(Atom(atomic_symbol, atomic_symbol, index, index, index))
@@ -938,7 +943,9 @@ class Fragment(object):
 
             atoms.append(Atom(atom.get_name(), next_symmetry, atom.get_x(), atom.get_y(), atom.get_z()))
 
-        return Fragment(atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), SMILE)
+        frag = Fragment(atoms, self.get_name(), self.get_charge(), self.get_spin_multiplicity(), SMILE)
+
+        return frag
 
     def __eq__(self, other):
         if not self.get_name() == other.get_name():

@@ -3,6 +3,248 @@ import itertools
 
 # absolute module imports
 from potential_fitting.utils import constants
+from potential_fitting.exceptions import InvalidInputError
+
+class FragmentSymmetryParser(object):
+
+    def __init__(self, symmetry):
+        self.set_sub_parsers(symmetry)
+
+    def set_sub_parsers(self, symmetry):
+
+        self.sub_parsers = []
+
+        if "_" in symmetry or "(" in symmetry or ")" in symmetry:
+
+            self.has_sub_fragments = True
+
+            cur_fragment = ""
+
+            num_open_parens = 0
+
+            for char in symmetry:
+
+                if char is '(':
+                    if num_open_parens > 0:
+                        cur_fragment += char
+                    num_open_parens += 1
+
+                elif char is ')':
+                    num_open_parens -= 1
+                    if num_open_parens > 0:
+                        cur_fragment += char
+
+                elif char is '_' and num_open_parens == 0:
+                    self.sub_parsers.append(FragmentSymmetryParser(cur_fragment))
+                    cur_fragment = ""
+
+                else:
+                    cur_fragment += char
+
+            if num_open_parens != 0:
+                raise InvalidInputError(
+                    "{} is not a valid symmetry input. Make sure all parenthesis are closed!".format(symmetry))
+
+            self.sub_parsers.append(FragmentSymmetryParser(cur_fragment))
+
+        else:
+
+            self.has_sub_fragments = False
+
+            cur_atom = ""
+
+            for char in symmetry:
+                if not char.isdigit() and len(cur_atom) != 0 and cur_atom[-1].isdigit():
+                    self.sub_parsers.append(AtomSymmetryParser(cur_atom))
+                    cur_atom = char
+                else:
+                    cur_atom += char
+
+            self.sub_parsers.append(AtomSymmetryParser(cur_atom))
+
+    def get_sub_parsers(self):
+        return self.sub_parsers
+
+    def get_num_atoms(self):
+        return sum([sub_parser.get_num_atoms() for sub_parser in self.get_sub_parsers()])
+
+    def get_num_atoms_and_virtual_sites(self):
+        return sum([sub_parser.get_num_atoms_and_virtual_sites() for sub_parser in self.get_sub_parsers()])
+
+    def get_num_fragments(self):
+        if self.has_sub_fragments:
+            return len(self.get_sub_parsers())
+        else:
+            return 1
+
+    def get_atoms(self):
+
+        index_dict = {}
+
+        for parser_index, parser in enumerate(self.get_sub_parsers()):
+            fragment_id = FragmentSymmetryParser.get_fragment_id(parser_index)
+
+            if not self.has_sub_fragments:
+                fragment_id = ""
+
+            for symmetry_class, atom_index, fragment_index in parser.get_atoms():
+
+                try:
+                    atom_index = index_dict[symmetry_class]
+                    index_dict[symmetry_class] += 1
+                except:
+                    atom_index = 1
+                    index_dict[symmetry_class] = 2
+
+                yield (symmetry_class, atom_index, fragment_id + fragment_index)
+
+    def get_variables(self):
+
+        atoms = sorted(list(self.get_atoms()), key=lambda x: x[0])
+
+        for index1, atom1 in enumerate(atoms):
+            atom1_symmetry_class = atom1[0]
+            atom1_index          = atom1[1]
+            atom1_fragment_index = atom1[2]
+
+            for index2, atom2 in enumerate(atoms[index1 + 1:]):
+                atom2_symmetry_class = atom2[0]
+                atom2_index          = atom2[1]
+                atom2_fragment_index = atom2[2]
+
+                similarity = 0
+                for atom1_frag, atom2_frag in zip(atom1_fragment_index, atom2_fragment_index):
+                    if atom1_frag != atom2_frag:
+                        break
+                    similarity += 1
+
+                variable_type = "x-{}-{}+{}-{}".format("inter" if similarity == 0 else "intra",
+                                                    atom1_symmetry_class, atom2_symmetry_class, similarity)
+
+                yield (atom1_symmetry_class, atom1_index, atom1_fragment_index,
+                      atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type)
+
+    def get_intermolecular_variables(self):
+        yield from ((atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type)
+                    for atom1_symmetry_class, atom1_index, atom1_fragment_index, atom2_symmetry_class, atom2_index, atom2_fragment_index, variable_type
+                    in self.get_variables()
+                    if atom1_fragment_index != atom2_fragment_index)
+
+    def get_pairs(self, vsites=[]):
+        pairs = set()
+        for parser in self.get_sub_parsers():
+            pairs = pairs.union(parser.get_pairs(vsites=vsites))
+
+        pairs = pairs.union(set(self.get_intermolecular_pairs(vsites=vsites)))
+
+        return sorted(list(pairs))
+
+    def get_intermolecular_pairs(self, vsites=[]):
+        pairs = set()
+        for parser1, parser2 in itertools.combinations(self.get_sub_parsers(), 2):
+            atoms1 = list(parser1.get_atoms())
+            atoms2 = list(parser2.get_atoms())
+
+            for atom1_symmetry, atom1_index, atom1_fragment_index in atoms1:
+                for atom2_symmetry, atom2_index, atom2_fragment_index in atoms2:
+                    if atom1_symmetry not in vsites and atom2_symmetry not in vsites:
+                        pairs.add(tuple(sorted((atom1_symmetry, atom2_symmetry))))
+
+        return sorted(list(pairs))
+
+    def get_symmetry(self):
+        if self.has_sub_fragments:
+
+            return "_".join("(" + sub_parser.get_symmetry() + ")" if "_" in sub_parser.get_symmetry() else sub_parser.get_symmetry()
+                            for sub_parser
+                            in self.get_sub_parsers())
+
+        return "".join(sub_parser.get_symmetry() for sub_parser in self.get_sub_parsers())
+
+    @staticmethod
+    def get_fragment_id(parser_index):
+        return chr(ord('a') + parser_index)
+
+class MoleculeSymmetryParser(FragmentSymmetryParser):
+
+    def get_fragment_symmetries(self):
+        if self.has_sub_fragments:
+            return (sub_parser.get_symmetry() for sub_parser in self.get_sub_parsers())
+        return (self.get_symmetry(),)
+
+    def get_atoms(self):
+
+        atoms = super(MoleculeSymmetryParser, self).get_atoms()
+
+        for atom in atoms:
+            if atom[2] is "":
+                yield (atom[0], atom[1], 'a')
+            else:
+                yield atom
+
+class AtomSymmetryParser(FragmentSymmetryParser):
+
+    def __init__(self, symmetry):
+        super(AtomSymmetryParser, self).__init__(symmetry)
+
+        symmetry_class = ""
+        num_atoms = ""
+
+        for char in symmetry:
+            if char.isdigit():
+                num_atoms += char
+            else:
+                symmetry_class += char
+
+        self.symmetry_class = symmetry_class
+        self.num_atoms = int(num_atoms)
+
+    def set_sub_parsers(self, symmetry):
+        pass
+
+    def get_sub_parsers(self):
+        return None
+
+    def get_num_atoms(self):
+
+        if self.symmetry_class in ['X', 'Y', 'Z']:
+            return 0
+
+        return self.num_atoms
+
+    def get_num_atoms_and_virtual_sites(self):
+        return self.num_atoms
+
+    def get_num_fragments(self):
+        return 0
+
+    def get_atoms(self):
+        for atom_index in range(1, self.num_atoms + 1):
+            yield (self.symmetry_class, atom_index, "")
+
+    def get_variables(self):
+        for index1 in range(self.num_atoms):
+            for index2 in range(index1 + 1, self.num_atoms):
+                atom1 = self.symmetry_class + str(index1)
+                atom2 = self.symmetry_class + str(index2)
+                atom1_frag = ""
+                atom2_frag = ""
+                variable_type = "x-intra-{}+{}-0".format(atom1, atom2)
+                yield (atom1, atom2, atom1_frag, atom2_frag, variable_type)
+
+    def get_pairs(self, vsites=[]):
+        pairs = set()
+
+        if len(list(self.get_atoms())) > 0:
+            pairs.add((self.symmetry_class, self.symmetry_class))
+
+        return sorted(list(pairs))
+
+    def get_intermolecular_pairs(self, vsites=[]):
+        return []
+
+    def get_symmetry(self):
+        return self.symmetry_class + str(self.num_atoms)
 
 class MoleculeInParser(object):
 
@@ -10,7 +252,7 @@ class MoleculeInParser(object):
         self.fragment_parsers = []
         frag_id = 'a'
 
-        for fragment_in in molecule_in.split("_"):
+        for fragment_in in self.split_molecule_in(molecule_in):
             self.fragment_parsers.append(FragmentParser(fragment_in, frag_id))
 
             frag_id = chr(ord(frag_id) + 1)
@@ -46,6 +288,37 @@ class MoleculeInParser(object):
 
             yield fragment_parser
 
+    def split_molecule_in(self, molecule_in):
+        fragments = []
+        cur_fragment = ""
+
+        num_open_parens = 0
+
+        for char in molecule_in:
+
+            if char is '(':
+                if num_open_parens > 0:
+                    cur_fragment += char
+                num_open_parens += 1
+
+            elif char is ')':
+                num_open_parens -= 1
+                if num_open_parens > 0:
+                    cur_fragment += char
+
+            elif char is '_' and num_open_parens == 0:
+                fragments.append(cur_fragment[:])
+                cur_fragment = ""
+
+            else:
+                cur_fragment += char
+
+        if num_open_parens != 0:
+            raise InvalidInputError("{} is not a valid symmetry input. Make sure all parenthesis are closed!".format(molecule_in))
+
+        fragments.append(cur_fragment)
+        return fragments
+
 class FragmentParser(object):
 
     def __init__(self, fragment_in, frag_id):
@@ -68,6 +341,8 @@ class FragmentParser(object):
             self.atom_parsers.append(AtomTypeParser(start_index, atom_in))
 
         self.frag_id = frag_id
+
+        self.fragment_in = fragment_in
 
     def get_num_atoms(self):
         return sum(atom_type.get_count() for atom_type in self.get_atom_types())
@@ -132,6 +407,8 @@ class FragmentParser(object):
         # number of atoms of a type
         reading_atom_type = True
 
+        fragment_in = fragment_in.replace("_", "").replace("(", "").replace(")", "")
+
         while(True):
 
             try:
@@ -190,6 +467,9 @@ class FragmentParser(object):
                 print("error", fragment_in)
                 # raise exception, because fragment_in must be all numbers and capital letters.
                 raise Exception
+
+    def get_original_fragment_in(self):
+        return self.fragment_in
 
 class AtomTypeParser(object):
 

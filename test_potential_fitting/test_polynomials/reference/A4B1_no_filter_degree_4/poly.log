@@ -35,16 +35,16 @@ A1a:A2a:A3a:A4a:B1a
 
 <> variables (10) <>
 
- 0 :  A1(a) <===>  A2(a) : x-intra-A+A
- 1 :  A1(a) <===>  A3(a) : x-intra-A+A
- 2 :  A1(a) <===>  A4(a) : x-intra-A+A
- 3 :  A2(a) <===>  A3(a) : x-intra-A+A
- 4 :  A2(a) <===>  A4(a) : x-intra-A+A
- 5 :  A3(a) <===>  A4(a) : x-intra-A+A
- 6 :  A1(a) <===>  B1(a) : x-intra-A+B
- 7 :  A2(a) <===>  B1(a) : x-intra-A+B
- 8 :  A3(a) <===>  B1(a) : x-intra-A+B
- 9 :  A4(a) <===>  B1(a) : x-intra-A+B
+ 0 :  A1(a) <===>  A2(a) : x-intra-A+A-1
+ 1 :  A1(a) <===>  A3(a) : x-intra-A+A-1
+ 2 :  A1(a) <===>  A4(a) : x-intra-A+A-1
+ 3 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 4 :  A2(a) <===>  A3(a) : x-intra-A+A-1
+ 5 :  A2(a) <===>  A4(a) : x-intra-A+A-1
+ 6 :  A2(a) <===>  B1(a) : x-intra-A+B-1
+ 7 :  A3(a) <===>  A4(a) : x-intra-A+A-1
+ 8 :  A3(a) <===>  B1(a) : x-intra-A+B-1
+ 9 :  A4(a) <===>  B1(a) : x-intra-A+B-1
 
 <> 1 degree <>
 

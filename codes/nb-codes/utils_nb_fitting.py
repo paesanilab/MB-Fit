@@ -64,34 +64,33 @@ def read_poly_in(poly_in, vsites, var_intra, var_inter, var_virtual_sites):
     with open(poly_in, "r") as input_file:
         for line in input_file:
             if line.startswith("add_variable"):
-                args = line[line.index('[') + 1:line.index(']')].replace("'", "").replace(" ", "").split(",")
+                atom1_sym, atom1_ind, atom1_frag, atom2_sym, atom2_ind, atom2_frag, category = \
+                    line[line.index('[') + 1:line.index(']')].replace("'", "").replace(" ", "").split(",")
+
+                variables.append((atom1_sym, atom1_ind, atom1_frag, atom2_sym, atom2_ind, atom2_frag, category))
     
-                variables.append(args)
-    
-                pair = "".join(sorted([args[0][0], args[2][0]]))
+                pair = "".join(sorted([atom1_sym, atom2_sym]))
                 
                 # Check if there is a virtual site involved
-                has_vsites = any(x in pair for x in vsites)
+                has_vsites = atom1_sym in vsites or atom2_sym in vsites
     
-                if args[4].startswith("x-intra"):
-                    if (args[1] == args[3]):
+                if category.startswith("x-intra"):
+
                         if has_vsites:
-                            variables[-1].append(var_virtual_sites)
+                            variables[-1] = (*variables[-1], var_virtual_sites)
                         else:
-                            variables[-1].append(var_intra)
+                            variables[-1] = (*variables[-1], var_intra)
                         if pair not in intra_poly_pairs:
                             intra_poly_pairs.append(pair)
-                    else:
-                        # variable is labeled as intra but the two fragment labels are different. UH OH!
-                        raise InconsistentValueError('fragment id of first atom', 'fragment id of second atom', args[1], args[3], 'x-intra variables must have the same fragment index; something is wrong in {}'.format(poly_in))
                 else:
 
                     if has_vsites:
-                        variables[-1].append(var_virtual_sites)
+                        variables[-1] = (*variables[-1], var_virtual_sites)
                     else:
-                        variables[-1].append(var_inter)
+                        variables[-1] = (*variables[-1], var_inter)
                     if pair not in inter_poly_pairs:
                         inter_poly_pairs.append(pair)
+
     return variables, intra_poly_pairs, inter_poly_pairs
 
 def get_non_linear_parameters(variables):
@@ -101,36 +100,37 @@ def get_non_linear_parameters(variables):
     Args:
         variables              - List of lists with the information in the poly.in file
     """
-
     intra_nl_params = []
     inter_nl_params = []
     nl_params_ordered = []
-    for i in range(len(variables)):
+
+    for atom1_sym, atom1_ind, atom1_frag, atom2_sym, atom2_ind, atom2_frag, category, exp_type in variables:
+
         # Obtain pair from variables
-        pair = "".join(sorted([get_atom_types(variables[i][0])[0], get_atom_types(variables[i][2])[0]]))
+        pair = "".join(sorted([atom1_sym, atom2_sym]))
         
         # Check if pair functional form has d0. If so, add it.
-        if "0" in variables[i][-1]:
+        if "0" in exp_type:
             nlp_to_use = ['k','d']
         else:
             nlp_to_use = ['k']
 
         # See if pair is intra or inter
-        if variables[i][4].startswith("x-intra"):
+        if category.startswith("x-intra"):
             # loop over different constants
             for nl_p in nlp_to_use:
-                nl_constant = "{}_intra_{}".format(nl_p, pair)
+                nl_constant = nl_p + "_" + category.replace("-", "_").replace("+", "_")
                 if not nl_constant in intra_nl_params:
                     intra_nl_params.append(nl_constant)
                     nl_params_ordered.append(nl_constant)
         else:
             for nl_p in nlp_to_use:
-                nl_constant = "{}_{}".format(nl_p, pair)
+                nl_constant = nl_p + "_" + category.replace("-", "_").replace("+", "_")
                 if not nl_constant in inter_nl_params:
                     inter_nl_params.append(nl_constant)
                     nl_params_ordered.append(nl_constant)
             
-    return intra_nl_params,inter_nl_params, nl_params_ordered    
+    return intra_nl_params, inter_nl_params, nl_params_ordered
 
 def get_list_of_numeric_pairs(prefix,number_of_monomers):
     """

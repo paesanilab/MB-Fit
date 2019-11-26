@@ -15,16 +15,16 @@ A1a:B1a:B2a:C1a:C2a
 
 <> variables (10) <>
 
- 0 :  B1(a) <===>  B2(a) : x-intra-B+B
- 1 :  C1(a) <===>  C2(a) : x-intra-C+C
- 2 :  A1(a) <===>  B1(a) : x-intra-A+B
- 3 :  A1(a) <===>  B2(a) : x-intra-A+B
- 4 :  A1(a) <===>  C1(a) : x-intra-A+C
- 5 :  A1(a) <===>  C2(a) : x-intra-A+C
- 6 :  B1(a) <===>  C1(a) : x-intra-B+C
- 7 :  B1(a) <===>  C2(a) : x-intra-B+C
- 8 :  B2(a) <===>  C1(a) : x-intra-B+C
- 9 :  B2(a) <===>  C2(a) : x-intra-B+C
+ 0 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 1 :  A1(a) <===>  B2(a) : x-intra-A+B-1
+ 2 :  A1(a) <===>  C1(a) : x-intra-A+C-1
+ 3 :  A1(a) <===>  C2(a) : x-intra-A+C-1
+ 4 :  B1(a) <===>  B2(a) : x-intra-B+B-1
+ 5 :  B1(a) <===>  C1(a) : x-intra-B+C-1
+ 6 :  B1(a) <===>  C2(a) : x-intra-B+C-1
+ 7 :  B2(a) <===>  C1(a) : x-intra-B+C-1
+ 8 :  B2(a) <===>  C2(a) : x-intra-B+C-1
+ 9 :  C1(a) <===>  C2(a) : x-intra-C+C-1
 
 <> 1 degree <>
 

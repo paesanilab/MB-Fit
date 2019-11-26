@@ -2230,6 +2230,9 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
 #include "electrostatics.h"
 #include "coulomb.h"
 #include "dispersion.h"
+#ifdef USE_BUCKINGHAM
+#include "buckingham.h"
+#endif
 #include "constants.h"
 """
 
@@ -2252,6 +2255,9 @@ double E_range = 20.0; // kcal/mol
 static std::vector<tset::nb_system> training_set;
 static std::vector<double> elec_e;
 static std::vector<double> disp_e;
+#ifdef USE_BUCKINGHAM
+static std::vector<double> buck_e;
+#endif
 static std::vector<double> ts_weights;
 
 namespace linear {
@@ -2398,11 +2404,16 @@ int main(int argc, char** argv) {
 
     a = """
         training_set[n].nb_energy -= elec_e[n];
-
+        
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
-
         training_set[n].nb_energy -= disp_e[n];
+        
+        #ifdef USE_BUCKINGHAM
+        mbnrg_buck buck(training_set[n].xyz);
+        buck_e.push_back(buck.get_buckingham());
+        training_set[n].nb_energy -= buck_e[n];
+        #endif
     }
 
     linear::allocate();
@@ -2470,6 +2481,10 @@ int main(int argc, char** argv) {
 
     for (size_t i = 0; i < training_set.size(); ++i)
         training_set[i].nb_energy += elec_e[i] + disp_e[i];
+    #ifdef USE_BUCKINGHAM
+    for (size_t i = 0; i < training_set.size(); ++i)
+        training_set[i].nb_energy += buck_e[i];
+    #endif    
         
 
     std::ofstream correlation_file;
@@ -2479,7 +2494,11 @@ int main(int argc, char** argv) {
 
     for (size_t i = 0; i < training_set.size(); ++i) {
         
-        const double E_model = model.calculate(training_set[i].xyz) + elec_e[i] + disp_e[i];
+        double E_model = model.calculate(training_set[i].xyz) + elec_e[i] + disp_e[i];
+        #ifdef USE_BUCKINGHAM
+        E_model += buck_e[i];
+        #endif
+        
         const double delta = E_model - training_set[i].nb_energy;
         if (std::abs(delta) > err_Linf)
             err_Linf = std::abs(delta);
@@ -2551,7 +2570,8 @@ def write_makefile(number_of_monomers, system_name):
 
     fit_exes = "fit-" + str(number_of_monomers) + "b eval-" + str(number_of_monomers) + "b "
     if number_of_monomers == 2:
-        fit_exes += " fit-" + str(number_of_monomers) + "b-ttm eval-" + str(number_of_monomers) + "b-ttm "
+        fit_exes += "fit-" + str(number_of_monomers) + "b-over-ttm eval-" + str(number_of_monomers) + "b-over-ttm "
+        fit_exes += "fit-" + str(number_of_monomers) + "b-ttm eval-" + str(number_of_monomers) + "b-ttm "
 
     mon_objects = " ".join(mon_files)
     ff = open("Makefile", 'w')
@@ -2583,6 +2603,12 @@ fit-""" + str(number_of_monomers) + """b: fit-""" + str(number_of_monomers) + ""
 
 eval-""" + str(number_of_monomers) + """b: eval-""" + str(number_of_monomers) + """b.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+
+fit-""" + str(number_of_monomers) + """b-over-ttm: fit-""" + str(number_of_monomers) + """b.cpp
+\t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+
+eval-""" + str(number_of_monomers) + """b-over-ttm: eval-""" + str(number_of_monomers) + """b.cpp
+\t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
 """
     ff.write(a)
 
@@ -2726,6 +2752,9 @@ def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system
 #include "electrostatics.h"
 #include "coulomb.h"
 #include "dispersion.h"
+#ifdef USE_BUCKINGHAM
+#include "buckingham.h"
+#endif
 #include "constants.h"
 """
 
@@ -2742,6 +2771,9 @@ static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyh
 static std::vector<tset::nb_system> training_set;
 static std::vector<double> elec_e;
 static std::vector<double> disp_e;
+#ifdef USE_BUCKINGHAM
+static std::vector<double> buck_e;
+#endif
 static std::vector<double> nb_energy;
 
 } // namespace
@@ -2795,10 +2827,19 @@ int main(int argc, char** argv) {
     a = """
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
+        
+        
+        #ifdef USE_BUCKINGHAM
+        mbnrg_buck buck(training_set[n].xyz);
+        buck_e.push_back(buck.get_buckingham());
+        #endif
 
         poly_e.push_back(model.calculate(training_set[n].xyz));
 
         nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);
+        #ifdef USE_BUCKINGHAM
+        nb_energy[n] += buck_e[n];
+        #endif
     }
     
     for (size_t n = 0; n < training_set.size(); n++) {

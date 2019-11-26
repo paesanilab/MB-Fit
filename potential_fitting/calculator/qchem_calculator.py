@@ -73,6 +73,9 @@ class QchemCalculator(Calculator):
 
             in_file.write("GEOM_OPT_MAX_CYCLES 200\n")
 
+            # prevent qchem from reorienting in standard orientation.
+            in_file.write("SYM_IGNORE TRUE")
+
             try:
                 in_file.write("ecp {}\n".format(self.settings.get("config_generator", "ecp")))
             except (ConfigMissingSectionError, ConfigMissingPropertyError):

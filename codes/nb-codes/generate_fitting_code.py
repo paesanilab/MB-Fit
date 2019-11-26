@@ -62,7 +62,6 @@ for i in range(number_of_monomers):
 
 system.format_print("{} fragments have lone pairs.".format(sum(use_lonepairs)),
                     italics=True)
-    
 # Obtain the lists with the excluded pairs
 excluded_pairs_12 = config.getlist("fitting", "excluded_pairs_12", int)
 excluded_pairs_13 = config.getlist("fitting", "excluded_pairs_13", int)
@@ -114,7 +113,7 @@ d_min_intra = d_min
 d_max_intra = d_max
 
 # Obtain inner and outer cutoff from config.ini
-# This must be required 
+# This must be required
 # TODO pass this from config
 ri = 7.0 # polynomials start to decrease (Angstrom)
 ro = 8.0 # polynomials are completely removed
@@ -144,8 +143,10 @@ system.format_print("{} terms in the polynomial.".format(npoly),
                      italics=True)
 
 # Define Energy Range for the fitting
-E_range = config.getfloat("fitting", "energy_range")
+E_range = config.getfloat("fitting", "energy_range", default=20.0)
 
+# Define alpha for the fitting
+alpha = config.getfloat("fitting", "alpha", default=0.0005)
 
 ################################################################################
 ## Prepare pair information ####################################################
@@ -209,18 +210,18 @@ file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, symmetry_pa
 ################################################################################
 ## Write dispersion header and cpp #############################################
 ################################################################################
+if (number_of_monomers<3):
+    file_writter_nb_fitting.write_dispersion_header(symmetry_parser, virtual_sites_poly, C6, d6)
+    file_writter_nb_fitting.write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
-file_writter_nb_fitting.write_dispersion_header(symmetry_parser, virtual_sites_poly, C6, d6)
-
-file_writter_nb_fitting.write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 
 ################################################################################
 ## Write buckingham header and cpp #############################################
 ################################################################################
-file_writter_nb_fitting.write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
+    file_writter_nb_fitting.write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
+    file_writter_nb_fitting.write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
-file_writter_nb_fitting.write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
 
 ################################################################################
 ## Polynomial header and cpp ###################################################
@@ -234,7 +235,7 @@ file_writter_nb_fitting.write_poly_fit_cpp(number_of_monomers, system_name, nvar
 ## Fitting code ################################################################
 ################################################################################
 
-file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra)
+file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha)
 
 ################################################################################
 ## Evaluation code #############################################################
@@ -246,7 +247,7 @@ file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, num
 ## TTM-nrg fitting code ########################################################
 ################################################################################
 if number_of_monomers == 2:
-    file_writter_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max)
+    file_writter_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range)
 
 ################################################################################
 ## TTM-nrg evaluation code #####################################################
@@ -325,7 +326,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #
 ##define dont_be_VERBOSE yes
 #
-#//#define DEBUG 
+#//#define DEBUG
 #
 ##ifdef DEBUG
 ##define PR(x) std::cout << #x << ": " << (x) << std::endl;
@@ -449,7 +450,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #                  << std::endl;
 #        return 0;
 #    }
-#      
+#
 #    long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
 #                std::chrono::system_clock::now().time_since_epoch()).count();
 #
@@ -470,9 +471,9 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        else:
 #            ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
 #
-#            
+#
 #a = """
-#      
+#
 #
 #    model.set_nonlinear_parameters(x0);
 #
@@ -525,7 +526,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    // electrostatics
 #    double tb_ref[training_set.size()];
 #    for (size_t n = 0; n < training_set.size(); n++) {
-#      // Saving reference 2b energies  
+#      // Saving reference 2b energies
 #      tb_ref[n] = training_set[n].energy_twobody ;
 #
 #      x::mon1 m1(training_set[n].xyz);
@@ -543,10 +544,10 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #      system_polfac = new double [system_nsites];
 #      system_pol = new double [system_nsites]; //allocates memory to the pointers
 #      system_is_w = new int[system_nsites];
-#      
+#
 #      std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
 #      std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-#      
+#
 #      int * is_w_a = system_is_w;
 #      int * is_w_b = system_is_w + m1.get_nsites();
 #
@@ -574,11 +575,11 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #      excluded_set_type exclude12;
 #      excluded_set_type exclude13;
 #      excluded_set_type exclude14;
-#      
+#
 #      excluded_set_type exclude12_a;
 #      excluded_set_type exclude13_a;
 #      excluded_set_type exclude14_a;
-#      
+#
 #      excluded_set_type exclude12_b;
 #      excluded_set_type exclude13_b;
 #      excluded_set_type exclude14_b;
@@ -621,19 +622,19 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #
 #      ttm::electrostatics m_electrostatics;
 #
-#      ttm::smear_ttm4x smr; 
+#      ttm::smear_ttm4x smr;
 #      smr.m_aDD_intra_12 = 0.3;
 #      smr.m_aDD_intra_13 = 0.3;
 #      smr.m_aDD_intra_14 = 0.055;
 #
 #      double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-#                                    system_sitecrds, exclude12, exclude13, exclude14, 
+#                                    system_sitecrds, exclude12, exclude13, exclude14,
 #                                    system_is_w, smr, 0);
 #      double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
-#                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+#                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a,
 #                                    is_w_a, smr, 0);
 #      double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
-#                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+#                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b,
 #                                    is_w_b, smr, 0);
 #
 #      // Take out electrostatic energy:
@@ -646,7 +647,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #      ener = disp.get_dispersion();
 #      disp_e.push_back(ener);
 #      training_set[n].energy_twobody -= ener ;
-#      
+#
 #      // And the buckingham
 #      x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
 #      ener = buck.get_buckingham();
@@ -698,7 +699,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #
 #        const double size = gsl_multimin_fminimizer_size(s);
 #        status = gsl_multimin_test_size(size, 1e-4);
-#        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+#        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence
 #
 #        if (status == GSL_SUCCESS)
 #            std::cout << "!!! converged !!!" << std::endl;
@@ -858,13 +859,13 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        std::cerr << " ** Error ** : " << e.what() << std::endl;
 #        return 1;
 #    }
-#    
+#
 #    double xyz[""" + str(3*(nat1 + nat2)) + """];
 #    std::copy(crd.begin(), crd.end(), xyz);
-#    
+#
 #    x::mon1 m1(xyz);
 #    x::mon2 m2(xyz + 3*m1.get_realsites());
-#    
+#
 #    int system_nsites = m1.get_nsites() + m2.get_nsites();
 #    int * system_is_w;
 #    double* system_sitecrds;
@@ -877,13 +878,13 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    system_polfac = new double [system_nsites];
 #    system_pol = new double [system_nsites]; //allocates memory to the pointers
 #    system_is_w = new int[system_nsites];
-#      
+#
 #    std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
 #    std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-#    
+#
 #    int * is_w_a = system_is_w;
 #    int * is_w_b = system_is_w + m1.get_nsites();
-#    
+#
 #    std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
 #              system_sitecrds);
 #    std::copy(m2.get_sitecrds(), m2.get_sitecrds() + 3 * m2.get_nsites(),
@@ -911,7 +912,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    excluded_set_type exclude12_a;
 #    excluded_set_type exclude13_a;
 #    excluded_set_type exclude14_a;
-#      
+#
 #    excluded_set_type exclude12_b;
 #    excluded_set_type exclude13_b;
 #    excluded_set_type exclude14_b;
@@ -954,41 +955,41 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #
 #    ttm::electrostatics m_electrostatics;
 #
-#    ttm::smear_ttm4x smr; 
+#    ttm::smear_ttm4x smr;
 #    smr.m_aDD_intra_12 = 0.3;
 #    smr.m_aDD_intra_13 = 0.3;
 #    smr.m_aDD_intra_14 = 0.055;
 #
 #    double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-#                                  system_sitecrds, exclude12, exclude13, exclude14, 
+#                                  system_sitecrds, exclude12, exclude13, exclude14,
 #                                  system_is_w, smr, 0);
 #    double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
-#                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+#                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a,
 #                                  is_w_a, smr, 0);
 #    double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
-#                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+#                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b,
 #                                  is_w_b, smr, 0);
 #
 #    // Take out electrostatic energy:
 #    elec_e.push_back(ener - ener_a - ener_b);
-#      
+#
 #    // Now need to take out dispersion
 #    x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
 #    ener = disp.get_dispersion();
 #    disp_e.push_back(ener);
-#    
+#
 #    // Now need to take out buckingham
 #    x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
 #    ener = buck.get_buckingham();
 #    buck_e.push_back(ener);
-#    
+#
 #    double Epoly = pot(xyz);
 #    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
 #    std::cout << "E_poly2b = " << Epoly << std::endl;
 #    std::cout << "E_elec2b = " << elec_e[0] << std::endl;
 #    std::cout << "E_disp2b = " << disp_e[0] << std::endl;
 #    std::cout << "E_buck2b = " << buck_e[0] << std::endl;
-#    
+#
 ##ifdef GRADIENTS
 #    const double eps = 1.0e-5;
 #    double grd[""" + str(3*(nat1 + nat2)) + """];
@@ -1024,7 +1025,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    delete[] system_polfac  ;
 #    delete[] system_pol ;
 #    delete[] system_is_w;
-#    
+#
 #    return 0;
 #}
 #"""
@@ -1053,23 +1054,23 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        const double d12[3] = {mon1[0] -  mon2[0],
 #                               mon1[1] -  mon2[1],
 #                               mon1[2] -  mon2[2]};
-#    
+#
 #        const double r12sq = d12[0]*d12[0] + d12[1]*d12[1] + d12[2]*d12[2];
 #        const double r12 = std::sqrt(r12sq);
-#    
+#
 #        if (r12 > m_r2f)
 #            continue;
-#    
+#
 #        double xcrd[""" + str(3*(nat1 + nat2)) + """]; // coordinates of real sites ONLY
-#    
+#
 #        std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
 #        std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-#        
+#
 #        double v[""" + str(nvars) + """];
-#        
+#
 #        double sw = 0.0;
 #        double gsw = 0.0;
-#    
+#
 #"""
 #ff.write(a)
 #
@@ -1113,9 +1114,9 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #ff.write('\n')
 #
 #if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
-#    a = """    
+#    a = """
 #        variable vr[""" + str(nvars) + """];
-#    
+#
 #"""
 #elif use_lonepairs[0] != 0:
 #    a = """
@@ -1125,12 +1126,12 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        double wcross =   9.859272078406150e-02;
 #
 #        monomer m;
-#        
+#
 #        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
 #                 """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-#                        
+#
 #        variable vr[""" + str(nvars) + """];
-#    
+#
 #"""
 #elif use_lonepairs[1] != 0:
 #    a = """
@@ -1140,12 +1141,12 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        double wcross =   9.859272078406150e-02;
 #
 #        monomer m;
-#        
+#
 #        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
 #                 """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-#                        
+#
 #        variable vr[""" + str(nvars) + """];
-#    
+#
 #"""
 #ff.write(a)
 #
@@ -1182,7 +1183,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 #
 #        nv += 1
-#            
+#
 #    else:
 #        # inter-molecular variables
 #        atom1 = variable[0][0]
@@ -1219,11 +1220,11 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 #
 #        nv += 1
-# 
-#a = """     
-#    
+#
+#a = """
+#
 #        sw = f_switch(r12, gsw);
-#        
+#
 #        energies[j] = sw*polynomial::eval(coefficients.data(), v);
 #    }
 #
@@ -1233,10 +1234,10 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    }
 #
 #    return energy;
-#    
+#
 #}
 #
-#double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const double* xyz2, 
+#double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const double* xyz2,
 #                double * grad1, double * grad2, const size_t ndim) const
 #{
 #
@@ -1253,23 +1254,23 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        const double d12[3] = {mon1[0] -  mon2[0],
 #                               mon1[1] -  mon2[1],
 #                               mon1[2] -  mon2[2]};
-#    
+#
 #        const double r12sq = d12[0]*d12[0] + d12[1]*d12[1] + d12[2]*d12[2];
 #        const double r12 = std::sqrt(r12sq);
-#    
+#
 #        if (r12 > m_r2f)
 #            continue;
-#    
+#
 #        double xcrd[""" + str(3*(nat1 + nat2)) + """]; // coordinates of real sites ONLY
-#    
+#
 #        std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
 #        std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-#        
+#
 #        double v[""" + str(nvars) + """];
-#        
+#
 #        double sw = 0.0;
 #        double gsw = 0.0;
-#    
+#
 #"""
 #ff.write(a)
 #
@@ -1313,9 +1314,9 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #ff.write('\n')
 #
 #if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
-#    a = """    
+#    a = """
 #        variable vr[""" + str(nvars) + """];
-#    
+#
 #"""
 #elif use_lonepairs[0] != 0:
 #    a = """
@@ -1325,12 +1326,12 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        double wcross =   9.859272078406150e-02;
 #
 #        monomer m;
-#        
-#        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross, 
+#
+#        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
 #                 """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-#                        
+#
 #        variable vr[""" + str(nvars) + """];
-#    
+#
 #"""
 #elif use_lonepairs[1] != 0:
 #    a = """
@@ -1340,12 +1341,12 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        double wcross =   9.859272078406150e-02;
 #
 #        monomer m;
-#        
-#        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross, 
+#
+#        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
 #                 """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-#                        
+#
 #        variable vr[""" + str(nvars) + """];
-#    
+#
 #"""
 #ff.write(a)
 #
@@ -1382,7 +1383,7 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #        ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 #
 #        nv += 1
-#            
+#
 #    else:
 #        # inter-molecular variables
 #        atom1 = variable[0][0]
@@ -1420,20 +1421,20 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #
 #        nv += 1
 #
-#a = """     
-#    
+#a = """
+#
 #        double g[""" + str(nvars) + """];
 #
 #        // the switch
 #        sw = f_switch(r12, gsw);
-#        
+#
 #        energies[j] = sw*polynomial::eval(coefficients.data(), v, g);
-#        
+#
 #        double xgrd[""" + str(3*(len(atom_list_a) + len(atom_list_b))) + """];
 #        std::fill(xgrd, xgrd + """ + str(3*(len(atom_list_a) + len(atom_list_b))) + """, 0.0);
 #
-#""" 
-#ff.write(a)   
+#"""
+#ff.write(a)
 #
 #nc = 0
 ## loops over each type of atom in the input
@@ -1499,28 +1500,28 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    ff.write('        vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
 #
 #    nv += 1
-#            
+#
 #a = """
 #
 #    // ##DEFINE HERE## the redistribution of the gradients
-#    
+#
 #"""
 #ff.write(a)
 #a = ""
 #if use_lonepairs[0] != 0:
 #    a = """
-#        m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g, 
+#        m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g,
 #                 w12, wcross, """ + types_a[0] + """_1_a_g);
 #    """
 #elif use_lonepairs[1] != 0:
 #    a = """
-#        m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g, 
+#        m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g,
 #                 w12, wcross, """ + types_b[0] + """_1_b_g);
 #"""
-#ff.write(a)    
+#ff.write(a)
 #
 #a = """
-#    
+#
 #        for (int i = 0; i < """ + str(3*nat1) + """; ++i) {
 #            grad1[i + j*""" + str(3*nat1) + """] += sw*xgrd[i];
 #        }

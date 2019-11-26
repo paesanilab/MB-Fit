@@ -805,7 +805,7 @@ class Molecule(object):
 
             SMILE = ""
             for line in string.splitlines()[2:]:
-            	SMILE += line.split()[0]
+            	SMILE += "[" + line.split()[0] + "]"
 
             SMILE_per_fragment = [SMILE]
             

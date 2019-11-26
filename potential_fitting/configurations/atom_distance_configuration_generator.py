@@ -3,6 +3,7 @@ from random import Random
 from potential_fitting.utils import Quaternion, system
 from potential_fitting.utils.distribution_function import ConstantDistributionFunction
 from .configuration_generator_2b import DistanceSamplingConfigurationGenerator
+from .configuration_generator_2b import RanOutOfAttemptsException
 
 class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator):
     """
@@ -107,9 +108,3 @@ class AtomDistanceConfigurationGenerator(DistanceSamplingConfigurationGenerator)
 
         # if we run out of attempts without generating a valid configuration, raise an exception
         raise RanOutOfAttemptsException
-
-class RanOutOfAttemptsException(Exception):
-    """
-    Used to check if move_to_config runs out of attempts
-    """
-    pass

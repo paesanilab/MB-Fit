@@ -263,7 +263,7 @@ class TestAtom(unittest.TestCase):
         self.assertEqual(atom.to_xyz(), "C   -2.52345200000000e+06   3.45300000000000e-04   3.45340000000000e+04")
 
         atom = Atom("Cl", "A", 0.00000000000068, 0.74576456847823583, 34534262462472457756745)
-        self.assertEqual(atom.to_xyz(), "Cl   6.80000000000000e-13   7.45764568478236e-01   3.45342624624725e+22")
+        self.assertEqual(atom.to_xyz(), "Cl   6.80000000000000e-13   7.45764568478240e-01   3.45342624624725e+22")
 
     """
     Tests the to_ghost_xyz() function of the Atom class
@@ -282,6 +282,6 @@ class TestAtom(unittest.TestCase):
         self.assertEqual(atom.to_ghost_xyz(), "@C   -2.52345200000000e+06   3.45300000000000e-04   3.45340000000000e+04")
 
         atom = Atom("Cl", "A", 0.00000000000068, 0.74576456847823583, 34534262462472457756745)
-        self.assertEqual(atom.to_ghost_xyz(), "@Cl   6.80000000000000e-13   7.45764568478236e-01   3.45342624624725e+22")
+        self.assertEqual(atom.to_ghost_xyz(), "@Cl   6.80000000000000e-13   7.45764568478240e-01   3.45342624624725e+22")
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestAtom)

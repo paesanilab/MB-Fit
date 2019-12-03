@@ -245,6 +245,11 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
         my_nb_conditional_nograd += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
 
+        #mbx_order_to_poly_order = {}
+        #for mbx_index, mon_id in enumerate(mon_id_sorted):
+        #    poly_index = mbx_order_to_poly_order[mon_id[0]]
+        #    mbx_order_to_poly_order[mbx_index] = poly_index
+
         ids = []
         for i in range(len(mon_id_sorted)):
             ids.append("mon" + str(mon_id_sorted[i][0] + 1))
@@ -379,14 +384,10 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     
         for i in range(len(my_number_types)):
             for j in range(len(my_number_types[my_mon[i][0]])):
-                my_dispersion_text += "        types{}.push_back({});\n".format(my_mon[i][0] + 1, my_number_types[my_mon[i][0]][j])
+                my_dispersion_text += "        types{}.push_back({});\n".format(i + 1, my_number_types[my_mon[i][0]][j])
             my_dispersion_text += "\n"
 
-        number_of_types_2 = 0
-        if my_mon[0][0] > my_mon[1][0]:
-            number_of_types_2 = max(my_number_types[my_mon[0][0]])
-        else:
-            number_of_types_2 = max(my_number_types[my_mon[1][0]])
+        number_of_types_2 = max(my_number_types[my_mon[1][0]])
 
         my_dispersion_text += "        nt2 = {};\n\n".format(number_of_types_2 + 1)
 
@@ -394,17 +395,25 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     
         c6_units = "// kcal/mol * A^(-6) "
         d6_units = "// A^(-1)"
+
+        c6_order_dict = {} # "A-B" -> 3
+        c6_index = 0
+        for let1 in my_letter_types[0]:
+            for let2 in my_letter_types[1]:
+                l1, l2 = sorted([let1, let2])
+                try:
+                    c6_order_dict[l1 + "-" + l2]
+                except KeyError:
+                    c6_order_dict[l1 + "-" + l2] = c6_index;
+                    c6_index += 1
     
         c6_text = []
         d6_text = []
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                low = min(i,j)
-                high = max(i,j)
-                c6index = sum(range(max(my_number_types[my_mon[1][0]]) + 2 - low, max(my_number_types[my_mon[1][0]]) + 2)) + high - low
-                let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
-                let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
-                print(i, j, c6index)
+                let1, let2 = sorted([my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)],
+                                    my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]])
+                c6index = c6_order_dict[let1 + "-" + let2]
                 c6_text.append("        C6.push_back(" + str(C6[c6index]) + ");  " + c6_units + " " + let1 + "--" + let2 + "\n")
                 d6_text.append("        d6.push_back(" + str(d6[c6index]) + ");  " + d6_units + " " + let1 + "--" + let2 + "\n")
 
@@ -422,7 +431,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
         for i in range(len(my_number_types)):
             for j in range(len(my_number_types[my_mon[i][0]])):
-                my_buckingham_text += "        types{}.push_back({});\n".format(my_mon[i][0] + 1, my_number_types[my_mon[i][0]][j])
+                my_buckingham_text += "        types{}.push_back({});\n".format(i + 1, my_number_types[my_mon[i][0]][j])
             my_buckingham_text += "\n"
 
         number_of_types_2 = 0
@@ -442,12 +451,11 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         A_text = []
         b_text = []
 
-        shift = 0;
         for i in range(max(my_number_types[my_mon[0][0]]) + 1):
             for j in range(max(my_number_types[my_mon[1][0]]) + 1):
-                c6index = sum(range(max(my_number_types[my_mon[1][0]]) + 2 - i, max(my_number_types[my_mon[1][0]]) + 2)) + j - i
-                let1 = my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)]
-                let2 = my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]
+                let1, let2 = sorted([my_letter_types[my_mon[0][0]][my_number_types[my_mon[0][0]].index(i)],
+                                    my_letter_types[my_mon[1][0]][my_number_types[my_mon[1][0]].index(j)]])
+                c6index = c6_order_dict[let1 + "-" + let2]
                 A_text.append("        a.push_back(" + str(A_buck[c6index]) + ");  " + A_units + " " + let1 + "--" + let2 + "\n")
                 b_text.append("        b.push_back(" + str(b_buck[c6index]) + ");  " + b_units + " " + let1 + "--" + let2 + "\n")
 

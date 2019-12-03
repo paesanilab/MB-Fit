@@ -245,14 +245,14 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
         my_nb_conditional_nograd += "        mbnrg_{0}_deg{1}::mbnrg_{0}_deg{1}_{2} pot(".format(system_name,degree,version)
 
-        #mbx_order_to_poly_order = {}
-        #for mbx_index, mon_id in enumerate(mon_id_sorted):
-        #    poly_index = mbx_order_to_poly_order[mon_id[0]]
-        #    mbx_order_to_poly_order[mbx_index] = poly_index
+        mbx_order_to_poly_order = {}
+        for mbx_index, mon_id in enumerate(mon_id_sorted):
+            poly_index = [i[0] for i in mon_id_sorted].index(mbx_index)
+            mbx_order_to_poly_order[mbx_index] = poly_index
 
         ids = []
         for i in range(len(mon_id_sorted)):
-            ids.append("mon" + str(mon_id_sorted[i][0] + 1))
+            ids.append("mon" + str(mbx_order_to_poly_order[i] + 1))
 
         my_nb_conditional_nograd += ", ".join(ids) + ");\n"
         
@@ -262,7 +262,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         else:
             return_key = "return "
         for i in range(len(mon_id_sorted)):
-            ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
+            ids.append("xyz" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
         my_nb_conditional_nograd += "        " + return_key + "pot.eval(" + ", ".join(ids) + ", nm);\n"
 
         # Write code that needs to be added in the ONEBODY_GRD section of the code
@@ -279,7 +279,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
         ids = []
         for i in range(len(mon_id_sorted)):
-            ids.append("mon" + str(mon_id_sorted[i][0] + 1))
+            ids.append("mon" + str(mbx_order_to_poly_order[i] + 1))
 
         my_nb_conditional_grad += ", ".join(ids) + ");\n"
         
@@ -290,8 +290,8 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         else:
             return_key = "energy = "
         for i in range(len(mon_id_sorted)):
-            ids.append("xyz" + str(mon_id_sorted[i][0] + 1) + ".data()")
-            idgs.append("grad" + str(mon_id_sorted[i][0] + 1) + ".data()")
+            ids.append("xyz" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
+            idgs.append("grad" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
         my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
 
         # Write code that needs to be added in the INCLUDE1B section of the code

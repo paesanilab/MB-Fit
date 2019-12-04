@@ -69,12 +69,12 @@ class QchemCalculator(Calculator):
 
             in_file.write("method {}\n".format(model.get_method()))
             in_file.write("basis {}\n".format(model.get_basis()))
-            in_file.write("sym_ignore TRUE\n")
 
             in_file.write("GEOM_OPT_MAX_CYCLES 200\n")
 
             # prevent qchem from reorienting in standard orientation.
-            in_file.write("SYM_IGNORE TRUE")
+            if job == "freq":
+                in_file.write("SYM_IGNORE TRUE\n")
 
             try:
                 in_file.write("ecp {}\n".format(self.settings.get("config_generator", "ecp")))

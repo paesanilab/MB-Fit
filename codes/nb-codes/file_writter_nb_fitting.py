@@ -2821,10 +2821,9 @@ def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system
 
     a = """#include "dispersion.h"
 """
-
     if (number_of_monomers<3): ff.write(a)
 
-    a = """#include "dispersion.h"
+    a = """
 #ifdef USE_BUCKINGHAM
 #include "buckingham.h"
 #endif

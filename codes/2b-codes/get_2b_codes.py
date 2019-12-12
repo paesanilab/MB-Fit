@@ -113,7 +113,7 @@ Abuck = A_constants[len(A_constants) - 1]
 bbuck = d6 # non-linear params same as d6
 
 # Allow user to define Input and output cutoff
-# Save them 
+# Save them
 r2i = 7.0 # polynomials start to decrease
 r2o = 8.0 # polynomials are completely removed
 
@@ -247,7 +247,7 @@ for pair in pairs_intra:
 for pair in pairs_lp:
     for prefix in nlp_touse_lp:
         nlparam_intra.append("{}_{}".format(prefix, pair))
-    
+
 # In[ ]:
 
 nlparam_all = nlparam_inter + nlparam_intra + nlparam_lp
@@ -275,9 +275,9 @@ namespace x   {
       public :
       mon1();
       ~mon1();
-      
+
       mon1(double* crd);
-      double* set_sitecrds(double* xyz);            
+      double* set_sitecrds(double* xyz);
       double* set_charges(double* xyz);
       double* set_polfacs(double* atmpolar);
       double* set_pol();
@@ -297,7 +297,7 @@ namespace x   {
       excluded_set_type::iterator get_end_13();
       excluded_set_type::iterator get_end_14();
 
-   };   
+   };
 }
 #endif
 """
@@ -322,9 +322,9 @@ namespace x   {
       public :
       mon2();
       ~mon2();
-      
+
       mon2(double* crd);
-      double* set_sitecrds(double* xyz);            
+      double* set_sitecrds(double* xyz);
       double* set_charges(double* xyz);
       double* set_polfacs(double* atmpolar);
       double* set_pol();
@@ -344,7 +344,7 @@ namespace x   {
       excluded_set_type::iterator get_end_13();
       excluded_set_type::iterator get_end_14();
 
-   };   
+   };
 }
 #endif
 """
@@ -368,7 +368,7 @@ a = """
 #include "fit-constants.h"
 
 //#define VERBOSE
-#ifdef VERBOSE 
+#ifdef VERBOSE
 #include <iostream>
 #endif
 
@@ -385,12 +385,12 @@ namespace x  {
   }
 
   mon1::mon1( double* crd) {
-    
-    nsites = """ + str(nsites1) + """; 
+
+    nsites = """ + str(nsites1) + """;
     realsites = """ + str(nat1) + """;
     is_w = 0;
     allocate();
-    
+
     sitecrds = set_sitecrds(crd);
     atmpolar = set_pol();
     charge = set_charges(crd);
@@ -419,7 +419,7 @@ a = """
 
     return charge;
   }
-  
+
   double* mon1::set_pol() {
     atmpolar = memory + nsites + nsites*3;
 """
@@ -432,7 +432,7 @@ a = """
 
   double* mon1::set_polfacs(double* atmpol) {
     polfac = memory + nsites + nsites*3 + nsites;
-    
+
 """
 ff.write(a)
 for i in range(len(polfac_a)):
@@ -443,15 +443,15 @@ a = """
 
   double* mon1::set_sitecrds(double* atmcrds) {
     sitecrds = memory + nsites;
-    
+
 // ##DEFINE HERE## ficticious site coordinates
-    return atmcrds;  
+    return atmcrds;
   }
 
   void mon1::allocate() {
     memory = new double [nsites  //charge
       + nsites*3  //site coordinates
-      + nsites  //polarizabilities 
+      + nsites  //polarizabilities
       + nsites];  //polfac
     }
 
@@ -489,7 +489,7 @@ a = """
 #include "fit-constants.h"
 
 //#define VERBOSE
-#ifdef VERBOSE 
+#ifdef VERBOSE
 #include <iostream>
 #endif
 
@@ -506,14 +506,14 @@ namespace x  {
   }
 
   mon2::mon2( double* crd) {
-    
-    nsites = """ + str(nsites2) + """;  
+
+    nsites = """ + str(nsites2) + """;
     realsites = """ + str(nat2) + """;
-    
+
     is_w = 0;
-    
+
     allocate();
-    
+
     sitecrds = set_sitecrds(crd);
     atmpolar = set_pol();
     charge = set_charges(crd);
@@ -542,7 +542,7 @@ a = """
 
     return charge;
   }
-  
+
   double* mon2::set_pol() {
     atmpolar = memory + nsites + nsites*3;
 """
@@ -555,7 +555,7 @@ a = """
 
   double* mon2::set_polfacs(double* atmpol) {
     polfac = memory + nsites + nsites*3 + nsites;
-    
+
 """
 ff.write(a)
 for i in range(len(polfac_b)):
@@ -566,15 +566,15 @@ a = """
 
   double* mon2::set_sitecrds(double* atmcrds) {
     sitecrds = memory + nsites;
-    
+
 // ##DEFINE HERE## ficticious site coordinates
-    return atmcrds;  
+    return atmcrds;
   }
 
   void mon2::allocate() {
     memory = new double [nsites  //charge
       + nsites*3  //site coordinates
-      + nsites  //polarizabilities 
+      + nsites  //polarizabilities
       + nsites];  //polfac
     }
 
@@ -667,7 +667,7 @@ mon""" + str(is_w) + """::mon""" + str(is_w) + """(double* crd) {
 
 double* mon""" + str(is_w) + """::set_sitecrds(double* atmcrds) {
     sitecrds = memory + nsites;
-    // assumes O H H 
+    // assumes O H H
     compute_M_site_crd(atmcrds, atmcrds + 3, atmcrds + 6, sitecrds + 9);
     std::copy(atmcrds, atmcrds + 9, sitecrds);
     return sitecrds;
@@ -709,7 +709,7 @@ double* mon""" + str(is_w) + """::set_polfacs(double* atmpol) {
 
 void mon""" + str(is_w) + """::allocate() {
     memory = new double [nsites // charges
-  + nsites*3              // sitecrds 
+  + nsites*3              // sitecrds
   + nsites                // polarizabilities
   + nsites];              // polfacs
 }
@@ -755,7 +755,7 @@ struct dimer {
     double energy_total;
     double energy_twobody;
     double energy_onebody[2];
-    
+
     // Note: XYZ is for the real sites
 """
 ff.write(a)
@@ -821,7 +821,7 @@ a = """
     double eval(const double* mon1, const double* mon2) const;
     double eval(const double* mon1, const double* mon2, double* g1, double* g2) const;
     void cart_to_vars(const double xyz[""" + str(3*(nat1 + nat2)) + """], double* vars, double& s, double& gs) const;
-    
+
     // For fitting purposes
     size_t get_nvars() {return poly_type::n_vars;}
     size_t get_num_nonlinear_params() {return """ + str(num_nonlinear) + """;}
@@ -833,11 +833,11 @@ a = """
     inline size_t nparams() {
       return poly_type::size;
     }
-    
+
 
     inline void as_cdl(std::ostream&) const;
     void write_cdl(std::ostream&, unsigned, unsigned, const double*) const;
-    
+
 private:
 
 """
@@ -883,7 +883,7 @@ x2b_""" + mon1 + "_" + mon2 + """_v1x::basis(const double xyz[""" + str(3*(nat1 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif 
+#endif
 """
 ff.write(a)
 ff.close()
@@ -919,7 +919,7 @@ namespace {
 
 void error(int kode) {
 
-    std::cerr << " ** Fatal Error in x2b_""" + mon1 + "_" + mon2 + """_v1::load_netcdf() ** :" 
+    std::cerr << " ** Fatal Error in x2b_""" + mon1 + "_" + mon2 + """_v1::load_netcdf() ** :"
               << nc_strerror(kode) << std::endl;
     std::exit(EXIT_FAILURE);
 }
@@ -929,13 +929,13 @@ void error(int kode) {
 struct variable {
     double v_exp0(const double& r0, const double& k,
                  const double * p1, const double * p2 );
-                 
+
     double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
     double v_coul0(const double& r0, const double& k,
                   const double * p1, const double * p2 );
-                  
+
     double v_coul(const double& k,
                   const double * p1, const double * p2 );
 
@@ -1159,12 +1159,12 @@ void monomer::grads(const double* g1, const double* g2,
 //        r12[i] = y1[i] - x1[i];
 //        r13[i] = y2[i] - x1[i];
 //    }
-//                            
+//
 //    double rc[3];
 //    rc[0] = r12[1]*r13[2] - r12[2]*r13[1];
 //    rc[1] = r12[2]*r13[0] - r12[0]*r13[2];
 //    rc[2] = r12[0]*r13[1] - r12[1]*r13[0];
-//    
+//
 //    vs[0] = x1[0] + w12 * r12[0] + w13 * r13[0] + wcross * rc[0];
 //    vs[1] = x1[1] + w12 * r12[1] + w13 * r13[1] + wcross * rc[1];
 //    vs[2] = x1[2] + w12 * r12[2] + w13 * r13[2] + wcross * rc[2];
@@ -1279,8 +1279,8 @@ for nl in nlparam_all:
         else:
             ff.write('\n       || m_' + nl + ' < k_min ')
             ff.write('\n       || m_' + nl + ' > k_max ')
-    
-ff.write('; \n')            
+
+ff.write('; \n')
 a = """
 
 }
@@ -1330,13 +1330,13 @@ for i in range(0,len(types_b),2):
             n = n + 1
 ff.write('\n')
 
-if use_lonepairs[0] == 0 and use_lonepairs[1] == 0: 
+if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
     a = """
     // Not using any lone pair site!
-    
+
     variable vr[""" + str(nvars) + """];
     using x2o::distance;
-    
+
 """
 elif use_lonepairs[0] != 0:
     a = """
@@ -1345,13 +1345,13 @@ elif use_lonepairs[0] != 0:
     double wcross =   9.859272078406150e-02;
 
     monomer m;
-    
+
     m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
              """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-                    
+
     variable vr[""" + str(nvars) + """];
     using x2o::distance;
-    
+
 """
 elif use_lonepairs[1] != 0:
     a = """
@@ -1361,13 +1361,13 @@ elif use_lonepairs[1] != 0:
     double wcross =   9.859272078406150e-02;
 
     monomer m;
-    
+
     m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
              """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-                    
+
     variable vr[""" + str(nvars) + """];
     using x2o::distance;
-    
+
 """
 ff.write(a)
 
@@ -1440,10 +1440,10 @@ for index, variable in enumerate(variables):
         ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 
         nv += 1
-            
+
 a = """
     s = f_switch(distance(""" + types_a[0] + '_' + str(1) + '_a' + ', ' + types_b[0] + '_' + str(1) + '_b' + """), gs);
-    
+
 #define PR(x)
   PR(s);
 """
@@ -1451,7 +1451,7 @@ ff.write(a)
 for i in range(nv):
     ff.write('  PR(v[' + str(i) + ']);\n')
 a = """
-} 
+}
 
 //----------------------------------------------------------------------------//
 
@@ -1532,12 +1532,12 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* mon1, const dou
 
     std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
     std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-    
-    double v[""" + str(nvars) + """]; 
+
+    double v[""" + str(nvars) + """];
     double sw = 0.0;
     double gsw = 0.0;
-    cart_to_vars(xcrd, v, sw, gsw); 
-    
+    cart_to_vars(xcrd, v, sw, gsw);
+
     const double E_poly = mb_system::poly_model::eval(m_poly, v);
 
     return sw*E_poly;
@@ -1590,22 +1590,22 @@ a = """
 
   double get_buckingham();
   double get_buckingham(double * grdx);
-  
+
   double * xyz1;
   double * xyz2;
 
   inline double buck(const double a, const double b,
-                     const double* p1, const double* p2, 
+                     const double* p1, const double* p2,
                      double* g1, double* g2)
   {
-  
+
     const double dx = p1[0] - p2[0];
     const double dy = p1[1] - p2[1];
     const double dz = p1[2] - p2[2];
 
     const double rsq = dx*dx + dy*dy + dz*dz;
     const double r = std::sqrt(rsq);
-    
+
     const double fac = a*exp(-b*r);
     const double grd = b/r*fac;
 
@@ -1624,19 +1624,19 @@ a = """
   inline double buck(const double a, const double b,
                      const double* p1, const double* p2)
   {
-  
+
     const double dx = p1[0] - p2[0];
     const double dy = p1[1] - p2[1];
     const double dz = p1[2] - p2[2];
 
     const double rsq = dx*dx + dy*dy + dz*dz;
     const double r = std::sqrt(rsq);
-    
+
     const double fac = a*exp(-b*r);
 
     return fac;
   }
-  
+
 };
 
 #endif
@@ -1708,7 +1708,7 @@ for i in range(0,len(types_a),2):
         for k in range(0,len(types_b),2):
             nb = 1
             for l in range(int(types_b[k+1])):
-                
+
                 if types_a[i] not in vsites and types_b[k] not in vsites:
                     t = "".join(sorted([types_a[i], types_b[k]]))
 
@@ -1780,7 +1780,7 @@ for i in range(0,len(types_a),2):
         for k in range(0,len(types_b),2):
             nb = 1
             for l in range(int(types_b[k+1])):
-                
+
                 if types_a[i] not in vsites and types_b[k] not in vsites:
 
                     t = "".join(sorted([types_a[i], types_b[k]]))
@@ -1826,7 +1826,7 @@ for i in range(len(complete_real_inter_pairs)):
     ff.write('  const double m_C6_' + complete_real_inter_pairs[i] + ' = ' + C6[i] + ' ; \n')
 for i in range(len(complete_real_inter_pairs)):
     ff.write('  const double m_d6_' + complete_real_inter_pairs[i] + ' = ' + d6[i] + ' ; \n')
-    
+
 a = """
 
   const double m_C8 = 0.0;
@@ -1911,7 +1911,7 @@ a = """
 
     return - (e6 + e8);
   }
-  
+
 };
 
 #endif
@@ -1985,7 +1985,7 @@ for i in range(0,len(types_a),2):
             for l in range(int(types_b[k+1])):
 
                 if types_a[i] not in vsites and types_b[k] not in vsites:
-                
+
                     t = "".join(sorted([types_a[i], types_b[k]]))
                     ff.write('  disp += x6(m_C6_' + t  + ', m_d6_' + t + ', m_C8, m_d8, ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b" + ');\n')
 
@@ -2057,7 +2057,7 @@ for i in range(0,len(types_a),2):
             for l in range(int(types_b[k+1])):
 
                 if types_a[i] not in vsites and types_b[k] not in vsites:
-                
+
                     t = "".join(sorted([types_a[i], types_b[k]]))
 
                     ff.write('  disp += x6(m_C6_' + t  + ', m_d6_' + t + ', m_C8, m_d8, ' + types_a[i] + "_" + str(na) + "_a" + ', ' + types_b[k] + "_" + str(nb) + "_b," + types_a[i] + "_" + str(na) + "_a_g," + types_b[k] + "_" + str(nb) + "_b_g" + ');\n')
@@ -2114,7 +2114,7 @@ a = """
 
 #define dont_be_VERBOSE yes
 
-//#define DEBUG 
+//#define DEBUG
 
 #ifdef DEBUG
 #define PR(x) std::cout << #x << ": " << (x) << std::endl;
@@ -2237,7 +2237,7 @@ int main(int argc, char** argv) {
                   << std::endl;
         return 0;
     }
-      
+
     long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -2258,9 +2258,9 @@ for i in range(len(nlparam_all)):
         else:
             ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
 
-            
+
 a = """
-      
+
 
     model.set_nonlinear_parameters(x0);
 
@@ -2313,7 +2313,7 @@ a = """
     // electrostatics
     double tb_ref[training_set.size()];
     for (size_t n = 0; n < training_set.size(); n++) {
-      // Saving reference 2b energies  
+      // Saving reference 2b energies
       tb_ref[n] = training_set[n].energy_twobody ;
 
       x::mon1 m1(training_set[n].xyz);
@@ -2331,10 +2331,10 @@ a = """
       system_polfac = new double [system_nsites];
       system_pol = new double [system_nsites]; //allocates memory to the pointers
       system_is_w = new int[system_nsites];
-      
+
       std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
       std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-      
+
       int * is_w_a = system_is_w;
       int * is_w_b = system_is_w + m1.get_nsites();
 
@@ -2362,11 +2362,11 @@ a = """
       excluded_set_type exclude12;
       excluded_set_type exclude13;
       excluded_set_type exclude14;
-      
+
       excluded_set_type exclude12_a;
       excluded_set_type exclude13_a;
       excluded_set_type exclude14_a;
-      
+
       excluded_set_type exclude12_b;
       excluded_set_type exclude13_b;
       excluded_set_type exclude14_b;
@@ -2409,19 +2409,19 @@ a = """
 
       ttm::electrostatics m_electrostatics;
 
-      ttm::smear_ttm4x smr; 
+      ttm::smear_ttm4x smr;
       smr.m_aDD_intra_12 = 0.3;
       smr.m_aDD_intra_13 = 0.3;
       smr.m_aDD_intra_14 = 0.055;
 
       double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                    system_sitecrds, exclude12, exclude13, exclude14, 
+                                    system_sitecrds, exclude12, exclude13, exclude14,
                                     system_is_w, smr, 0);
       double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
-                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a,
                                     is_w_a, smr, 0);
       double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
-                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b,
                                     is_w_b, smr, 0);
 
       // Take out electrostatic energy:
@@ -2481,7 +2481,7 @@ a = """
 
         const double size = gsl_multimin_fminimizer_size(s);
         status = gsl_multimin_test_size(size, 1e-4);
-        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence
 
         if (status == GSL_SUCCESS)
             std::cout << "!!! converged !!!" << std::endl;
@@ -2615,7 +2615,7 @@ a = """
 
 #define dont_be_VERBOSE yes
 
-//#define DEBUG 
+//#define DEBUG
 
 #ifdef DEBUG
 #define PR(x) std::cout << #x << ": " << (x) << std::endl;
@@ -2739,7 +2739,7 @@ int main(int argc, char** argv) {
                   << std::endl;
         return 0;
     }
-      
+
     long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -2760,9 +2760,9 @@ for i in range(len(nlparam_all)):
         else:
             ff.write('      x0[' + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
 
-            
+
 a = """
-      
+
 
     model.set_nonlinear_parameters(x0);
 
@@ -2815,7 +2815,7 @@ a = """
     // electrostatics
     double tb_ref[training_set.size()];
     for (size_t n = 0; n < training_set.size(); n++) {
-      // Saving reference 2b energies  
+      // Saving reference 2b energies
       tb_ref[n] = training_set[n].energy_twobody ;
 
       x::mon1 m1(training_set[n].xyz);
@@ -2833,10 +2833,10 @@ a = """
       system_polfac = new double [system_nsites];
       system_pol = new double [system_nsites]; //allocates memory to the pointers
       system_is_w = new int[system_nsites];
-      
+
       std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
       std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-      
+
       int * is_w_a = system_is_w;
       int * is_w_b = system_is_w + m1.get_nsites();
 
@@ -2864,11 +2864,11 @@ a = """
       excluded_set_type exclude12;
       excluded_set_type exclude13;
       excluded_set_type exclude14;
-      
+
       excluded_set_type exclude12_a;
       excluded_set_type exclude13_a;
       excluded_set_type exclude14_a;
-      
+
       excluded_set_type exclude12_b;
       excluded_set_type exclude13_b;
       excluded_set_type exclude14_b;
@@ -2911,19 +2911,19 @@ a = """
 
       ttm::electrostatics m_electrostatics;
 
-      ttm::smear_ttm4x smr; 
+      ttm::smear_ttm4x smr;
       smr.m_aDD_intra_12 = 0.3;
       smr.m_aDD_intra_13 = 0.3;
       smr.m_aDD_intra_14 = 0.055;
 
       double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                    system_sitecrds, exclude12, exclude13, exclude14, 
+                                    system_sitecrds, exclude12, exclude13, exclude14,
                                     system_is_w, smr, 0);
       double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
-                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                    m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a,
                                     is_w_a, smr, 0);
       double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
-                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                    m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b,
                                     is_w_b, smr, 0);
 
       // Take out electrostatic energy:
@@ -2936,7 +2936,7 @@ a = """
       ener = disp.get_dispersion();
       disp_e.push_back(ener);
       training_set[n].energy_twobody -= ener ;
-      
+
       // And the buckingham
       x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
       ener = buck.get_buckingham();
@@ -2988,7 +2988,7 @@ a = """
 
         const double size = gsl_multimin_fminimizer_size(s);
         status = gsl_multimin_test_size(size, 1e-4);
-        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence 
+        //status = gsl_multimin_test_size(size, 1e-3); //changed it to test convergence
 
         if (status == GSL_SUCCESS)
             std::cout << "!!! converged !!!" << std::endl;
@@ -3100,13 +3100,13 @@ FIT_OBJ = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
 kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
 training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
 x2b_""" + mon1 + """_""" + mon2 + """_v1.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
-dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o 
+dispersion.o poly_2b_""" + mon1 + """_""" + mon2 + """.o
 
 FIT_OBJ_BUCK = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
 kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
 training_set.o ttm4.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1x.o \\
 x2b_""" + mon1 + """_""" + mon2 + """_v1.o poly_2b_""" + mon1 + """_""" + mon2 + """_v1.o \\
-dispersion.o buckingham.o poly_2b_""" + mon1 + """_""" + mon2 + """.o 
+dispersion.o buckingham.o poly_2b_""" + mon1 + """_""" + mon2 + """.o
 
 EVAL_OBJ = fit-utils.o coulomb.o electrostatics.o gammq.o io-xyz.o \\
 kvstring.o mon1.o mon2.o ps.o rwlsq.o wlsq.o stuff.o tang-toennies.o \\
@@ -3216,7 +3216,7 @@ with open(directcpp, 'r') as fdirect:
     for line in fdirect.readlines():
         if line.startswith('    p['):
             fpolycpp.write(line)
-    
+
 a = """
 for(int i = 0; i < """ + str(npoly) + """; ++i)
         a[i] = p[i];
@@ -3289,13 +3289,13 @@ int main(int argc, char** argv) {
         std::cerr << " ** Error ** : " << e.what() << std::endl;
         return 1;
     }
-    
+
     double xyz[""" + str(3*(nat1 + nat2)) + """];
     std::copy(crd.begin(), crd.end(), xyz);
-    
+
     x::mon1 m1(xyz);
     x::mon2 m2(xyz + 3*m1.get_realsites());
-    
+
     int system_nsites = m1.get_nsites() + m2.get_nsites();
     int * system_is_w;
     double* system_sitecrds;
@@ -3308,13 +3308,13 @@ int main(int argc, char** argv) {
     system_polfac = new double [system_nsites];
     system_pol = new double [system_nsites]; //allocates memory to the pointers
     system_is_w = new int[system_nsites];
-      
+
     std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
     std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-    
+
     int * is_w_a = system_is_w;
     int * is_w_b = system_is_w + m1.get_nsites();
-    
+
     std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
               system_sitecrds);
     std::copy(m2.get_sitecrds(), m2.get_sitecrds() + 3 * m2.get_nsites(),
@@ -3342,7 +3342,7 @@ int main(int argc, char** argv) {
     excluded_set_type exclude12_a;
     excluded_set_type exclude13_a;
     excluded_set_type exclude14_a;
-      
+
     excluded_set_type exclude12_b;
     excluded_set_type exclude13_b;
     excluded_set_type exclude14_b;
@@ -3385,35 +3385,35 @@ int main(int argc, char** argv) {
 
     ttm::electrostatics m_electrostatics;
 
-    ttm::smear_ttm4x smr; 
+    ttm::smear_ttm4x smr;
     smr.m_aDD_intra_12 = 0.3;
     smr.m_aDD_intra_13 = 0.3;
     smr.m_aDD_intra_14 = 0.055;
 
     double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                  system_sitecrds, exclude12, exclude13, exclude14, 
+                                  system_sitecrds, exclude12, exclude13, exclude14,
                                   system_is_w, smr, 0);
     double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
-                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a,
                                   is_w_a, smr, 0);
     double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
-                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b,
                                   is_w_b, smr, 0);
 
     // Take out electrostatic energy:
     elec_e.push_back(ener - ener_a - ener_b);
-      
+
     // Now need to take out dispersion
     x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
     ener = disp.get_dispersion();
     disp_e.push_back(ener);
-    
+
     double Epoly = pot(xyz);
     std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
     std::cout << "E_poly2b = " << Epoly << std::endl;
     std::cout << "E_elec2b = " << elec_e[0] << std::endl;
     std::cout << "E_disp2b = " << disp_e[0] << std::endl;
-    
+
 #ifdef GRADIENTS
     const double eps = 1.0e-5;
     double grd[""" + str(3*(nat1 + nat2)) + """];
@@ -3449,7 +3449,7 @@ int main(int argc, char** argv) {
     delete[] system_polfac  ;
     delete[] system_pol ;
     delete[] system_is_w;
-    
+
     return 0;
 }
 """
@@ -3519,13 +3519,13 @@ int main(int argc, char** argv) {
         std::cerr << " ** Error ** : " << e.what() << std::endl;
         return 1;
     }
-    
+
     double xyz[""" + str(3*(nat1 + nat2)) + """];
     std::copy(crd.begin(), crd.end(), xyz);
-    
+
     x::mon1 m1(xyz);
     x::mon2 m2(xyz + 3*m1.get_realsites());
-    
+
     int system_nsites = m1.get_nsites() + m2.get_nsites();
     int * system_is_w;
     double* system_sitecrds;
@@ -3538,13 +3538,13 @@ int main(int argc, char** argv) {
     system_polfac = new double [system_nsites];
     system_pol = new double [system_nsites]; //allocates memory to the pointers
     system_is_w = new int[system_nsites];
-      
+
     std::fill(system_is_w, system_is_w + m1.get_nsites(), m1.is_w);
     std::fill(system_is_w + m1.get_nsites(), system_is_w + system_nsites, m2.is_w);
-    
+
     int * is_w_a = system_is_w;
     int * is_w_b = system_is_w + m1.get_nsites();
-    
+
     std::copy(m1.get_sitecrds(), m1.get_sitecrds() + 3 * m1.get_nsites(),
               system_sitecrds);
     std::copy(m2.get_sitecrds(), m2.get_sitecrds() + 3 * m2.get_nsites(),
@@ -3572,7 +3572,7 @@ int main(int argc, char** argv) {
     excluded_set_type exclude12_a;
     excluded_set_type exclude13_a;
     excluded_set_type exclude14_a;
-      
+
     excluded_set_type exclude12_b;
     excluded_set_type exclude13_b;
     excluded_set_type exclude14_b;
@@ -3615,41 +3615,41 @@ int main(int argc, char** argv) {
 
     ttm::electrostatics m_electrostatics;
 
-    ttm::smear_ttm4x smr; 
+    ttm::smear_ttm4x smr;
     smr.m_aDD_intra_12 = 0.3;
     smr.m_aDD_intra_13 = 0.3;
     smr.m_aDD_intra_14 = 0.055;
 
     double ener = m_electrostatics(system_nsites, system_charge, system_polfac, system_pol,
-                                  system_sitecrds, exclude12, exclude13, exclude14, 
+                                  system_sitecrds, exclude12, exclude13, exclude14,
                                   system_is_w, smr, 0);
     double ener_a = m_electrostatics(m1.get_nsites(), m1.get_charges(), m1.get_polfacs(), m1.get_pol(),
-                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a, 
+                                  m1.get_sitecrds(), exclude12_a, exclude13_a, exclude14_a,
                                   is_w_a, smr, 0);
     double ener_b = m_electrostatics(m2.get_nsites(), m2.get_charges(), m2.get_polfacs(), m2.get_pol(),
-                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b, 
+                                  m2.get_sitecrds(), exclude12_b, exclude13_b, exclude14_b,
                                   is_w_b, smr, 0);
 
     // Take out electrostatic energy:
     elec_e.push_back(ener - ener_a - ener_b);
-      
+
     // Now need to take out dispersion
     x2b_disp disp(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
     ener = disp.get_dispersion();
     disp_e.push_back(ener);
-    
+
     // Now need to take out buckingham
     x2b_buck buck(m1.get_sitecrds(), m2.get_sitecrds(), m1.get_realsites(), m2.get_realsites());
     ener = buck.get_buckingham();
     buck_e.push_back(ener);
-    
+
     double Epoly = pot(xyz);
-    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
+    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] + buck_e[0] << std::endl;
     std::cout << "E_poly2b = " << Epoly << std::endl;
     std::cout << "E_elec2b = " << elec_e[0] << std::endl;
     std::cout << "E_disp2b = " << disp_e[0] << std::endl;
     std::cout << "E_buck2b = " << buck_e[0] << std::endl;
-    
+
 #ifdef GRADIENTS
     const double eps = 1.0e-5;
     double grd[""" + str(3*(nat1 + nat2)) + """];
@@ -3685,7 +3685,7 @@ int main(int argc, char** argv) {
     delete[] system_polfac  ;
     delete[] system_pol ;
     delete[] system_is_w;
-    
+
     return 0;
 }
 """
@@ -3693,7 +3693,7 @@ ff.write(a)
 ff.close()
 
 
-# ## X2B.h for eval    
+# ## X2B.h for eval
 
 # In[ ]:
 
@@ -3733,7 +3733,7 @@ ff.write('    double operator()(const double xyz[' + str(3*(nat1 + nat2)) + ']) 
 a = """
     double eval(const double* mon1, const double* mon2) const;
     double eval(const double* mon1, const double* mon2, double* g1, double* g2) const;
-    
+
 private:
 
 """
@@ -3757,13 +3757,13 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif 
+#endif
 """
 ff.write(a)
 ff.close()
 
 
-# ## X2B.cpp for eval    
+# ## X2B.cpp for eval
 
 # In[ ]:
 
@@ -3791,7 +3791,7 @@ namespace {
 
 void error(int kode) {
 
-    std::cerr << " ** Fatal Error in x2b_""" + mon1 + "_" + mon2 + """_v1x::load_netcdf() ** :" 
+    std::cerr << " ** Fatal Error in x2b_""" + mon1 + "_" + mon2 + """_v1x::load_netcdf() ** :"
               << nc_strerror(kode) << std::endl;
     std::exit(EXIT_FAILURE);
 }
@@ -3801,19 +3801,19 @@ void error(int kode) {
 struct variable {
     double v_exp0(const double& r0, const double& k,
                  const double * p1, const double * p2 );
-                 
+
     double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
     double v_coul0(const double& r0, const double& k,
                   const double * p1, const double * p2 );
-                  
+
     double v_coul(const double& k,
                   const double * p1, const double * p2 );
 
     double v_gau0(const double& r0, const double& k,
                  const double * p1, const double * p2 );
-                  
+
     void grads(const double& gg, double * grd1, double * grd2,
                const double * p1, const double * p2);
 
@@ -3936,7 +3936,7 @@ double variable::v_coul0(const double& r0, const double& k,
 
 //----------------------------------------------------------------------------//
 
-void variable::grads(const double& gg, double * grd1, double * grd2, 
+void variable::grads(const double& gg, double * grd1, double * grd2,
                      const double * p1, const double * p2) {
     for (size_t i = 0; i < 3 ; i++) {
         double d = gg*g[i];
@@ -4048,12 +4048,12 @@ void monomer::grads(const double* g1, const double* g2,
 //        r12[i] = y1[i] - x1[i];
 //        r13[i] = y2[i] - x1[i];
 //    }
-//                            
+//
 //    double rc[3];
 //    rc[0] = r12[1]*r13[2] - r12[2]*r13[1];
 //    rc[1] = r12[2]*r13[0] - r12[0]*r13[2];
 //    rc[2] = r12[0]*r13[1] - r12[1]*r13[0];
-//    
+//
 //    vs[0] = x1[0] + w12 * r12[0] + w13 * r13[0] + wcross * rc[0];
 //    vs[1] = x1[1] + w12 * r12[1] + w13 * r13[1] + wcross * rc[1];
 //    vs[2] = x1[2] + w12 * r12[2] + w13 * r13[2] + wcross * rc[2];
@@ -4152,12 +4152,12 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* mon1, const dou
 
     std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
     std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-    
+
     double v[""" + str(nvars) + """];
-    
+
     double sw = 0.0;
     double gsw = 0.0;
-    
+
 """
 ff.write(a)
 
@@ -4201,9 +4201,9 @@ for i in range(0,len(types_b),2):
 ff.write('\n')
 
 if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
-    a = """    
+    a = """
     variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[0] != 0:
     a = """
@@ -4213,12 +4213,12 @@ elif use_lonepairs[0] != 0:
     double wcross =   9.859272078406150e-02;
 
     monomer m;
-    
+
     m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
              """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-                    
+
     variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[1] != 0:
     a = """
@@ -4228,12 +4228,12 @@ elif use_lonepairs[1] != 0:
     double wcross =   9.859272078406150e-02;
 
     monomer m;
-    
+
     m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
              """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-                    
+
     variable vr[""" + str(nvars) + """];
-    
+
 """
 ff.write(a)
 
@@ -4306,17 +4306,17 @@ for index, variable in enumerate(variables):
         ff.write('    v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 
         nv += 1
- 
-a = """     
-    
+
+a = """
+
     sw = f_switch(r12, gsw);
-    
+
     const double E_poly = mb_system::poly_model::eval(m_poly, v);
-    
+
     return sw*E_poly;
 }
 
-double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* mon1, const double* mon2, 
+double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* mon1, const double* mon2,
                 double * grd1, double * grd2) const
 {
 
@@ -4335,12 +4335,12 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* mon1, const dou
 
     std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
     std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-    
+
     double v[""" + str(nvars) + """];
-    
+
     double sw = 0.0;
     double gsw = 0.0;
-    
+
 """
 ff.write(a)
 
@@ -4384,9 +4384,9 @@ for i in range(0,len(types_b),2):
 ff.write('\n')
 
 if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
-    a = """    
+    a = """
     variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[0] != 0:
     a = """
@@ -4396,12 +4396,12 @@ elif use_lonepairs[0] != 0:
     double wcross =   9.859272078406150e-02;
 
     monomer m;
-    
-    m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross, 
+
+    m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
              """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-                    
+
     variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[1] != 0:
     a = """
@@ -4411,12 +4411,12 @@ elif use_lonepairs[1] != 0:
     double wcross =   9.859272078406150e-02;
 
     monomer m;
-    
-    m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross, 
+
+    m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
              """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-                    
+
     variable vr[""" + str(nvars) + """];
-    
+
 """
 ff.write(a)
 
@@ -4490,17 +4490,17 @@ for index, variable in enumerate(variables):
 
         nv += 1
 
-a = """     
-    
+a = """
+
     double g[""" + str(nvars) + """];
-    
+
     const double E_poly = mb_system::poly_model::eval(m_poly, v, g);
-    
+
     double xgrd[""" + str(3*(len(atom_list_a) + len(atom_list_b))) + """];
     std::fill(xgrd, xgrd + """ + str(3*(len(atom_list_a) + len(atom_list_b))) + """, 0.0);
 
-""" 
-ff.write(a)   
+"""
+ff.write(a)
 
 nc = 0
 # loops over each type of atom in the input
@@ -4566,32 +4566,32 @@ for index, variable in enumerate(variables):
     ff.write('    vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
 
     nv += 1
-            
+
 a = """
 
     // ##DEFINE HERE## the redistribution of the gradients
-    
+
 """
 ff.write(a)
 a = ""
 if use_lonepairs[0] != 0:
     a = """
-    m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g, 
+    m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g,
              w12, wcross, """ + types_a[0] + """_1_a_g);
     """
 elif use_lonepairs[1] != 0:
     a = """
-    m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g, 
+    m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g,
              w12, wcross, """ + types_b[0] + """_1_b_g);
 """
-ff.write(a)    
+ff.write(a)
 
 a = """
-    
+
     // the switch
-    
+
     sw = f_switch(r12, gsw);
-    
+
     for (int i = 0; i < """ + str(3*nat1) + """; ++i) {
         grd1[i] += sw*xgrd[i];
     }
@@ -4680,7 +4680,7 @@ ff.write(a)
 a = """
     double eval(const double* xyz1, const double* xyz2, const size_t ndim) const;
     double eval(const double* xyz1, const double* xyz2, double* grad1, double* grad2, const size_t ndim) const;
-    
+
 private:
 
 """
@@ -4704,7 +4704,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif 
+#endif
 """
 ff.write(a)
 ff.close()
@@ -4731,19 +4731,19 @@ namespace {
 struct variable {
     double v_exp0(const double& r0, const double& k,
                  const double * p1, const double * p2 );
-                 
+
     double v_exp(const double& k,
                  const double * p1, const double * p2 );
 
     double v_coul0(const double& r0, const double& k,
                   const double * p1, const double * p2 );
-                  
+
     double v_coul(const double& k,
                   const double * p1, const double * p2 );
 
     double v_gau0(const double& r0, const double& k,
                  const double * p1, const double * p2 );
-                  
+
     void grads(const double& gg, double * grd1, double * grd2,
                const double * p1, const double * p2);
 
@@ -4866,7 +4866,7 @@ double variable::v_coul0(const double& r0, const double& k,
 
 //----------------------------------------------------------------------------//
 
-void variable::grads(const double& gg, double * grd1, double * grd2, 
+void variable::grads(const double& gg, double * grd1, double * grd2,
                      const double * p1, const double * p2) {
     for (size_t i = 0; i < 3 ; i++) {
         double d = gg*g[i];
@@ -4978,12 +4978,12 @@ void monomer::grads(const double* g1, const double* g2,
 //        r12[i] = y1[i] - x1[i];
 //        r13[i] = y2[i] - x1[i];
 //    }
-//                            
+//
 //    double rc[3];
 //    rc[0] = r12[1]*r13[2] - r12[2]*r13[1];
 //    rc[1] = r12[2]*r13[0] - r12[0]*r13[2];
 //    rc[2] = r12[0]*r13[1] - r12[1]*r13[0];
-//    
+//
 //    vs[0] = x1[0] + w12 * r12[0] + w13 * r13[0] + wcross * rc[0];
 //    vs[1] = x1[1] + w12 * r12[1] + w13 * r13[1] + wcross * rc[1];
 //    vs[2] = x1[2] + w12 * r12[2] + w13 * r13[2] + wcross * rc[2];
@@ -5040,23 +5040,23 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const dou
         const double d12[3] = {mon1[0] -  mon2[0],
                                mon1[1] -  mon2[1],
                                mon1[2] -  mon2[2]};
-    
+
         const double r12sq = d12[0]*d12[0] + d12[1]*d12[1] + d12[2]*d12[2];
         const double r12 = std::sqrt(r12sq);
-    
+
         if (r12 > m_r2f)
             continue;
-    
+
         double xcrd[""" + str(3*(nat1 + nat2)) + """]; // coordinates of real sites ONLY
-    
+
         std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
         std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-        
+
         double v[""" + str(nvars) + """];
-        
+
         double sw = 0.0;
         double gsw = 0.0;
-    
+
 """
 ff.write(a)
 
@@ -5100,9 +5100,9 @@ for i in range(0,len(types_b),2):
 ff.write('\n')
 
 if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
-    a = """    
+    a = """
         variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[0] != 0:
     a = """
@@ -5112,12 +5112,12 @@ elif use_lonepairs[0] != 0:
         double wcross =   9.859272078406150e-02;
 
         monomer m;
-        
+
         m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
                  """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-                        
+
         variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[1] != 0:
     a = """
@@ -5127,12 +5127,12 @@ elif use_lonepairs[1] != 0:
         double wcross =   9.859272078406150e-02;
 
         monomer m;
-        
+
         m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
                  """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-                        
+
         variable vr[""" + str(nvars) + """];
-    
+
 """
 ff.write(a)
 
@@ -5169,7 +5169,7 @@ for index, variable in enumerate(variables):
         ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 
         nv += 1
-            
+
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -5206,11 +5206,11 @@ for index, variable in enumerate(variables):
         ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 
         nv += 1
- 
-a = """     
-    
+
+a = """
+
         sw = f_switch(r12, gsw);
-        
+
         energies[j] = sw*polynomial::eval(coefficients.data(), v);
     }
 
@@ -5220,10 +5220,10 @@ a = """
     }
 
     return energy;
-    
+
 }
 
-double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const double* xyz2, 
+double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const double* xyz2,
                 double * grad1, double * grad2, const size_t ndim) const
 {
 
@@ -5240,23 +5240,23 @@ double x2b_""" + mon1 + "_" + mon2 + """_v1x::eval(const double* xyz1, const dou
         const double d12[3] = {mon1[0] -  mon2[0],
                                mon1[1] -  mon2[1],
                                mon1[2] -  mon2[2]};
-    
+
         const double r12sq = d12[0]*d12[0] + d12[1]*d12[1] + d12[2]*d12[2];
         const double r12 = std::sqrt(r12sq);
-    
+
         if (r12 > m_r2f)
             continue;
-    
+
         double xcrd[""" + str(3*(nat1 + nat2)) + """]; // coordinates of real sites ONLY
-    
+
         std::copy(mon1, mon1 + """ + str(3*(nat1)) + """, xcrd);
         std::copy(mon2, mon2 + """ + str(3*(nat2)) + """, xcrd + """ + str(3*(nat1)) + """);
-        
+
         double v[""" + str(nvars) + """];
-        
+
         double sw = 0.0;
         double gsw = 0.0;
-    
+
 """
 ff.write(a)
 
@@ -5300,9 +5300,9 @@ for i in range(0,len(types_b),2):
 ff.write('\n')
 
 if use_lonepairs[0] == 0 and use_lonepairs[1] == 0:
-    a = """    
+    a = """
         variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[0] != 0:
     a = """
@@ -5312,12 +5312,12 @@ elif use_lonepairs[0] != 0:
         double wcross =   9.859272078406150e-02;
 
         monomer m;
-        
-        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross, 
+
+        m.setup(""" + types_a[0] + '_1_a' + """, w12, wcross,
                  """ + types_a[4] + '_1_a' + """, """ + types_a[4] + '_2_a' + """);
-                        
+
         variable vr[""" + str(nvars) + """];
-    
+
 """
 elif use_lonepairs[1] != 0:
     a = """
@@ -5327,12 +5327,12 @@ elif use_lonepairs[1] != 0:
         double wcross =   9.859272078406150e-02;
 
         monomer m;
-        
-        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross, 
+
+        m.setup(""" + types_b[0] + '_1_b' + """, w12, wcross,
                  """ + types_b[4] + '_1_b' + """, """ + types_b[4] + '_2_b' + """);
-                        
+
         variable vr[""" + str(nvars) + """];
-    
+
 """
 ff.write(a)
 
@@ -5369,7 +5369,7 @@ for index, variable in enumerate(variables):
         ff.write('        v[' + str(nv) + ']  = vr[' + str(nv) + '].v_' + var_intra + arguments + ', ' + atom1_name + ', ' + atom2_name + ');\n')
 
         nv += 1
-            
+
     else:
         # inter-molecular variables
         atom1 = variable[0][0]
@@ -5407,20 +5407,20 @@ for index, variable in enumerate(variables):
 
         nv += 1
 
-a = """     
-    
+a = """
+
         double g[""" + str(nvars) + """];
 
         // the switch
         sw = f_switch(r12, gsw);
-        
+
         energies[j] = sw*polynomial::eval(coefficients.data(), v, g);
-        
+
         double xgrd[""" + str(3*(len(atom_list_a) + len(atom_list_b))) + """];
         std::fill(xgrd, xgrd + """ + str(3*(len(atom_list_a) + len(atom_list_b))) + """, 0.0);
 
-""" 
-ff.write(a)   
+"""
+ff.write(a)
 
 nc = 0
 # loops over each type of atom in the input
@@ -5486,28 +5486,28 @@ for index, variable in enumerate(variables):
     ff.write('        vr[' + str(nv) + '].grads(g[' + str(nv) + '], ' + atom1_name + '_g, ' + atom2_name + '_g, ' + atom1_name + ', ' + atom2_name + ');\n')
 
     nv += 1
-            
+
 a = """
 
     // ##DEFINE HERE## the redistribution of the gradients
-    
+
 """
 ff.write(a)
 a = ""
 if use_lonepairs[0] != 0:
     a = """
-        m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g, 
+        m.grads(""" + types_a[4] + '_1_a_g, ' + types_a[4] + """_2_a_g,
                  w12, wcross, """ + types_a[0] + """_1_a_g);
     """
 elif use_lonepairs[1] != 0:
     a = """
-        m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g, 
+        m.grads(""" + types_b[4] + '_1_b_g, ' + types_b[4] + """_2_b_g,
                  w12, wcross, """ + types_b[0] + """_1_b_g);
 """
-ff.write(a)    
+ff.write(a)
 
 a = """
-    
+
         for (int i = 0; i < """ + str(3*nat1) + """; ++i) {
             grad1[i + j*""" + str(3*nat1) + """] += sw*xgrd[i];
         }
@@ -5541,4 +5541,3 @@ a = """
 """
 ff.write(a)
 ff.close()
-

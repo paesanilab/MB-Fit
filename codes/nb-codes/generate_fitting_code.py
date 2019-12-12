@@ -984,11 +984,11 @@ file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_pa
 #    buck_e.push_back(ener);
 #
 #    double Epoly = pot(xyz);
-#    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] << std::endl;
+#    std::cout << "IE_nograd = " << Epoly + elec_e[0] + disp_e[0] + buck_e[0] << std::endl;
 #    std::cout << "E_poly2b = " << Epoly << std::endl;
 #    std::cout << "E_elec2b = " << elec_e[0] << std::endl;
-#    std::cout << "E_disp2b = " << disp_e[0] << std::endl;
 #    std::cout << "E_buck2b = " << buck_e[0] << std::endl;
+#    std::cout << "E_disp2b = " << disp_e[0] << std::endl;
 #
 ##ifdef GRADIENTS
 #    const double eps = 1.0e-5;

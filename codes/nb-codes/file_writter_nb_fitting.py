@@ -966,6 +966,7 @@ def write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
 
 #include <cmath>
 #include <algorithm>
+#include <vector>
 
 struct mbnrg_buck {
   mbnrg_buck();
@@ -1228,6 +1229,7 @@ def write_dispersion_header(symmetry_parser, virtual_sites_poly, c6, d6):
 #include "tang-toennies.h"
 #include <cmath>
 #include <algorithm>
+#include <vector>
 
 
 
@@ -1712,6 +1714,7 @@ def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monome
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
 
 #include <fstream>
 #include <sstream>
@@ -2802,6 +2805,7 @@ def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
 
 #include <fstream>
 #include <sstream>

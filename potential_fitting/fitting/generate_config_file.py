@@ -437,7 +437,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      distance_between=20,
                                      use_published_polarizabilities=True,
                                      method="wb97m-v",
-                                     basis="aug-cc-pvtz"):
+                                     basis="aug-cc-pvtz",
+                                     virtual_sites=["X", "Y", "Z"]):
     """
     Generates the config file needed to perform a fit.
     Args:
@@ -454,6 +455,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                 Default: wb97m-v.
         basis               - Basis to use for charges, polarizabilites, and c6 constants.
                 Default: aug-cc-pvtz.
+        virtual_sites       - List of Symmetry labels that are virtual sites.
+                Default: ["X", "Y", "Z"]
 
     Returns:
         None.
@@ -585,7 +588,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "var_virtual_sites", "coul")
     configwriter.set("fitting", "alpha", str(0.0005))
     configwriter.set("fitting", "energy_range", str(20.0))
-    configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
+    configwriter.set("fitting", "virtual_site_labels", str(virtual_sites).replace("'",""))
 
     config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
 

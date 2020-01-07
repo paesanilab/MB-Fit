@@ -8,7 +8,7 @@ from potential_fitting.exceptions import InvalidValueError, InconsistentValueErr
 # local module imports
 from .molecule_in_parser import MoleculeSymmetryParser
 
-def generate_input_poly(settings_file, molecule_in, in_file_path):
+def generate_input_poly(settings_file, molecule_in, in_file_path, virtual_sites=["X", "Y", "Z"]):
     """
     Generates an input file for the polynomial generator.
 
@@ -16,6 +16,8 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
         settings_file       - Local path to the ".ini" file with all relevant settings.
         molecule_in         - String indicating the symmetry of the molecule, for example 'A1B2_A1B2'
         in_file_path       - Local path to the ".in" file to write the polynomial input file to.
+        virtual_sites       - List of Symmetry labels that are virtual sites.
+                Default: ["X", "Y", "Z"]
     """
 
     settings = SettingsReader(settings_file)
@@ -26,7 +28,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
     # file will be automatically closed after block by with open as ... syntax
     with open(files.init_file(in_file_path, files.OverwriteMethod.NONE), "w") as poly_in_file:
 
-        symmetry_parser = MoleculeSymmetryParser(molecule_in)
+        symmetry_parser = MoleculeSymmetryParser(molecule_in, virtual_sites=virtual_sites)
 
         # loop thru each fragment and add an add_molecule line at top of file
         for fragment_symmetry in symmetry_parser.get_fragment_symmetries():
@@ -40,7 +42,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path):
         poly_in_file.write("\n")
 
         # these letters mark virtual sites instead of atoms
-        virtual_sites = ['X', 'Y', 'Z']
+
 
         variable_count = 0
 

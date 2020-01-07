@@ -20,6 +20,10 @@ Most recent changes at the top
 Version v0.2.3 (Under development, not released.)
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed
 to converge.
+* Virtual site labels can now be specified by the user everwhere they are used.
+Previously, some places allowed user specification, while others always used
+X, Y, and Z. X, Y, and Z are still the default if the user does not specify something
+else.
 
 Version v0.2.2
 * Fixed a bug where Qchem optimizations would crash when using the

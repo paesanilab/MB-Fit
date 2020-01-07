@@ -437,7 +437,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      distance_between=20,
                                      use_published_polarizabilities=True,
                                      method="wb97m-v",
-                                     basis="aug-cc-pvtz"):
+                                     basis="aug-cc-pvtz",
+                                     num_digs=4):
     """
     Generates the config file needed to perform a fit.
     Args:
@@ -454,6 +455,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                 Default: wb97m-v.
         basis               - Basis to use for charges, polarizabilites, and c6 constants.
                 Default: aug-cc-pvtz.
+        num_digs            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
+                Default: 4
 
     Returns:
         None.
@@ -524,9 +527,9 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      method=method,
                                      basis=basis)
 
-        chg_list.append(charges[0])
-        pol_list.append(pols[0])
-        c6_list.append(c6[-1])
+        chg_list.append([round(charge, num_digs) for charge in charges[0]])
+        pol_list.append([round(pol, num_digs) for pol in pols[0]])
+        c6_list.append([round(c, num_digs) for c in c6[-1]])
 
     # If we are doing a dimer, we need the intermolecular c6
     if len(symmetries) == 2:
@@ -535,7 +538,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      method=method,
                                      basis=basis)
 
-        c6_list.append(c6[-1])
+        c6_list.append([round(c, num_digs) for c in c6[-1]])
 
     print("Writing config file...")
 

@@ -52,7 +52,7 @@ class DistributionFunction(object):
         if dep_name is None:
             return self.to_string_only_value(ind_name=ind_name)
 
-        return "{Y} = {F}".format({"Y": dep_name, "F": self.to_string_only_value(ind_name=ind_name)})
+        return "{Y} = {F}".format(**{"Y": dep_name, "F": self.to_string_only_value(ind_name=ind_name)})
 
     def __str__(self):
         return self.to_string()
@@ -106,7 +106,7 @@ class LinearDistributionFunction(DistributionFunction):
             A string explaining the distribution function.
         """
 
-        return "{M} * {X} + {B}".format({"X": ind_name, "M": self.slope, "B": self.intercept})
+        return "{M} * {X} + {B}".format(**{"X": ind_name, "M": self.slope, "B": self.intercept})
 
     @staticmethod
     def get_function_from_2_points(x1, y1, x2, y2):
@@ -179,7 +179,7 @@ class GeometricDistributionFunction(DistributionFunction):
             A string explaining the distribution function.
         """
 
-        return "{C} * {B} ^ {X}".format({"X": ind_name, "C": self.coefficient, "B": self.base})
+        return "{C} * {B} ^ {X}".format(**{"X": ind_name, "C": self.coefficient, "B": self.base})
 
 
 class LogarithmicDistributionFunction(DistributionFunction):
@@ -239,7 +239,7 @@ class LogarithmicDistributionFunction(DistributionFunction):
         """
 
         return "e ^ (log({minV}) + ({X} - {minX}) * (log({maxV}) - log({minV})) / ({maxX} - {minX}))".format(
-            {"X": ind_name, "minV": self.min_val, "maxV": self.max_val, "minX": self.min_x, "maxX": self.max_x})
+            **{"X": ind_name, "minV": self.min_val, "maxV": self.max_val, "minX": self.min_x, "maxX": self.max_x})
 
 
 class ConstantDistributionFunction(DistributionFunction):
@@ -289,7 +289,7 @@ class ConstantDistributionFunction(DistributionFunction):
             A string explaining the distribution function.
         """
 
-        return "{V}".format({"X": ind_name, "V": self.val})
+        return "{V}".format(**{"X": ind_name, "V": self.val})
 
 
 class PiecewiseDistributionFunction(DistributionFunction):
@@ -357,9 +357,9 @@ class PiecewiseDistributionFunction(DistributionFunction):
         str = ""
 
         for function, cutoff in zip(self.functions, self.cutoffs):
-            str += "{X} < {C} : {F} | ".format({"X": ind_name, "C": cutoff, "F": function.to_string_only_value(ind_name=ind_name)})
+            str += "{X} < {C} : {F} | ".format(**{"X": ind_name, "C": cutoff, "F": function.to_string_only_value(ind_name=ind_name)})
 
-        str += "otherwise : {F}".format({"X": ind_name, "C": cutoff, "F": self.functions[-1].to_string_only_value(ind_name=ind_name)})
+        str += "otherwise : {F}".format(**{"X": ind_name, "C": cutoff, "F": self.functions[-1].to_string_only_value(ind_name=ind_name)})
 
         return str
 
@@ -418,4 +418,4 @@ class RandomDistributionFunction(DistributionFunction):
             A string explaining the distribution function.
         """
 
-        return "{V}".format({"X": ind_name, "V": self.to_string_only_value.to_string(ind_name="rand({}, {})".format(self.min, self.max))})
+        return "{V}".format(**{"X": ind_name, "V": self.function.to_string_only_value(ind_name="rand({}, {})".format(self.min, self.max))})

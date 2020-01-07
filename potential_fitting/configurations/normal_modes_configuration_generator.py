@@ -104,9 +104,6 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 ]
             )
 
-            system.format_print("Piecewise distribution is as follows: {}".format(str(self.temp_distribution)),
-                                italics=True)
-
             self.A_distribution = None
 
         # If linear is specifed (but not geometric), generate configs over a linear distribution over temp and A.
@@ -142,6 +139,13 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             self.A_distribution = A_distribution
 
         self.classical = classical
+
+        if self.temp_distribution is not None:
+            system.format_print("Temp Distribution: {} for x in range [0,1].".format(self.temp_distribution.to_string(dep_name="temp (au)")),
+                            italics=True)
+        if self.A_distribution is not None:
+            system.format_print("A Distribution: {} for x in range [0,1].".format(self.A_distribution.to_string(dep_name="A")),
+                            italics=True)
 
     def parse_normal_modes_file(self, normal_modes_path):
         """

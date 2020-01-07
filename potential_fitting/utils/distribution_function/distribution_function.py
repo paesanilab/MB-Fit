@@ -21,6 +21,42 @@ class DistributionFunction(object):
 
         raise NotImplementedError
 
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of only the right side of the equation for this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        raise NotImplementedError
+
+    def to_string(self, ind_name="x", dep_name="y"):
+        """
+        Get a string representation of this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+            dep_name    - Name of dependant variable to use in string representation.
+                    If None, then only the righthand side of the equation will be returned.
+                    Default: "y".
+
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        if dep_name is None:
+            return self.to_string_only_value(ind_name=ind_name)
+
+        return "{Y} = {F}".format({"Y": dep_name, "F": self.to_string_only_value(ind_name=ind_name)})
+
+    def __str__(self):
+        return self.to_string()
+
 
 class LinearDistributionFunction(DistributionFunction):
     """
@@ -58,6 +94,19 @@ class LinearDistributionFunction(DistributionFunction):
         """
 
         return self.intercept + x * self.slope
+
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of only the right side of the equation for this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        return "{M} * {X} + {B}".format({"X": ind_name, "M": self.slope, "B": self.intercept})
 
     @staticmethod
     def get_function_from_2_points(x1, y1, x2, y2):
@@ -118,6 +167,20 @@ class GeometricDistributionFunction(DistributionFunction):
 
         return self.coefficient * self.base ** x
 
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        return "{C} * {B} ^ {X}".format({"X": ind_name, "C": self.coefficient, "B": self.base})
+
 
 class LogarithmicDistributionFunction(DistributionFunction):
     """
@@ -163,6 +226,21 @@ class LogarithmicDistributionFunction(DistributionFunction):
 
         return math.e ** (math.log(self.min_val) + (x - self.min_x) * self.dx)
 
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        return "e ^ (log({minV}) + ({X} - {minX}) * (log({maxV}) - log({minV})) / ({maxX} - {minX}))".format(
+            {"X": ind_name, "minV": self.min_val, "maxV": self.max_val, "minX": self.min_x, "maxX": self.max_x})
+
 
 class ConstantDistributionFunction(DistributionFunction):
     """
@@ -198,6 +276,20 @@ class ConstantDistributionFunction(DistributionFunction):
         """
 
         return self.val
+
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        return "{V}".format({"X": ind_name, "V": self.val})
 
 
 class PiecewiseDistributionFunction(DistributionFunction):
@@ -250,6 +342,27 @@ class PiecewiseDistributionFunction(DistributionFunction):
 
         return self.functions[-1].get_value(x)
 
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        str = ""
+
+        for function, cutoff in zip(self.functions, self.cutoffs):
+            str += "{X} < {C} : {F} | ".format({"X": ind_name, "C": cutoff, "F": function.to_string_only_value(ind_name=ind_name)})
+
+        str += "otherwise : {F}".format({"X": ind_name, "C": cutoff, "F": self.functions[-1].to_string_only_value(ind_name=ind_name)})
+
+        return str
+
 
 class RandomDistributionFunction(DistributionFunction):
     """
@@ -292,3 +405,17 @@ class RandomDistributionFunction(DistributionFunction):
             The value of y at the given x coordinate.
         """
         return self.function.get_value(self.random.uniform(self.min, self.max))
+
+    def to_string_only_value(self, ind_name="x"):
+        """
+        Get a string representation of this distribution function.
+
+        Args:
+            ind_name    - Name of independant variable to use in string representation.
+                    Default: "x".
+
+        Returns:
+            A string explaining the distribution function.
+        """
+
+        return "{V}".format({"X": ind_name, "V": self.to_string_only_value.to_string(ind_name="rand({}, {})".format(self.min, self.max))})

@@ -103,6 +103,10 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
                 0.05, 0.45, 0.75, 0.95
                 ]
             )
+
+            system.format_print("Piecewise distribution is as follows: {}".format(str(self.temp_distribution)),
+                                italics=True)
+
             self.A_distribution = None
 
         # If linear is specifed (but not geometric), generate configs over a linear distribution over temp and A.

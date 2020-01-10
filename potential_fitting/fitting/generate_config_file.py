@@ -363,7 +363,7 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
                     free_polarizability = constants.symbol_to_ccsdt_free_polarizability(atomic_symbols[atom_count])
 
                 # calculate the effective polarizability
-                effective_polarizability = free_polarizability * effective_volume / free_volume
+                effective_polarizability = free_polarizability * (effective_volume / free_volume) ** (4.0/3.0)
 
                 # add the effective polarizability to the corresponding list in the dictionary
                 effective_polarizability_dictionary[atom_type].append(effective_polarizability)

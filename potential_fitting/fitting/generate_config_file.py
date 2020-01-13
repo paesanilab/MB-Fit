@@ -583,8 +583,6 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "var_intra", "exp")
     configwriter.set("fitting", "var_inter", "exp")
     configwriter.set("fitting", "var_virtual_sites", "coul")
-    configwriter.set("fitting", "alpha", str(0.0005))
-    configwriter.set("fitting", "energy_range", str(20.0))
     configwriter.set("fitting", "virtual_site_labels", "[X,Y,Z]")
 
     config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))

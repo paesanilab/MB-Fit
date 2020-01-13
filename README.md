@@ -24,6 +24,8 @@ to converge.
 they were also set in the config.ini by generate_fitting_config_file_new(), which
 could then be overriden by the values passed into prepare_fits(). Now, if not
 passed into prepare_fits() defaults of 20 (DE) and 0.0005 (alpha) are used.
+* Fixed a bug where the ratio (Effective Volume / Free Volume) would not be
+raised to the power of (4/3) when calculating effective polarizabilities.
 
 Version v0.2.2
 * Fixed a bug where Qchem optimizations would crash when using the

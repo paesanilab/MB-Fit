@@ -143,10 +143,10 @@ system.format_print("{} terms in the polynomial.".format(npoly),
                      italics=True)
 
 # Define Energy Range for the fitting
-E_range = config.getfloat("fitting", "energy_range", default=20.0)
+E_range = 20.0
 
 # Define alpha for the fitting
-alpha = config.getfloat("fitting", "alpha", default=0.0005)
+alpha = 0.0005
 
 ################################################################################
 ## Prepare pair information ####################################################

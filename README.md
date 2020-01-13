@@ -20,6 +20,9 @@ Most recent changes at the top
 Version v0.2.3 (Under development, not released.)
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed
 to converge.
+* MBX cpp and h files are now moved to MBX_files directory during generate_mbnrg_fitting_code()
+instead of being left in the current working directory until being copied into the MBX_files
+directory during fitting.generate_software_files().
 * Fixed a bug where make clean would not correctly remove all executables.
 * DE and alpha are now only passed in as arguments to prepare_fits(). Previously,
 they were also set in the config.ini by generate_fitting_config_file_new(), which

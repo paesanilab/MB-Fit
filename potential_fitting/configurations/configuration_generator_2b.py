@@ -65,7 +65,7 @@ class DistanceSamplingConfigurationGenerator(ConfigurationGenerator):
         if not progression:
             self.distance_distribution = RandomDistributionFunction(self.distance_distribution, self.random, 0, 1)
 
-        system.format_print("Distance Distribution: {} for x in range [0,1].".format(self.distance_distribution.to_string(dep_name="dist (ang)")),
+        system.format_print("Distance Distribution: {} for x in range [0,1].".format(self.distance_distribution.to_string(dep_name="dist (A)")),
                             italics=True)
 
     def move_to_config(self, random, molecule1, molecule2, distance):

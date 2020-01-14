@@ -22,7 +22,7 @@ Version v0.2.3 (Under development, not released.)
 to converge.
 * Charges, Polarizabilities, and C6 constants generated in the config.ini file
 by generate_fitting_config_file_new() now round to 4 digits after the decimal
-by default. generate_fitting_config_file_new() has a new argument called num_digs
+by default. generate_fitting_config_file_new() has a new argument called num_digits
 that can be set to override the default value of 4.
 * Added to_string() and to_string_only_value() functions to the DistributionFunction
 class and all subclasses.

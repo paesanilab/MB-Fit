@@ -2642,8 +2642,8 @@ LIBS = -lnetcdf -lgsl -lgslcblas -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/i
 
 AR = /usr/bin/ar
 OBJDIR = .
-LIBDIR = ./
-INCLUDE = -I./
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include
 """
     ff.write(a)
     if (number_of_monomers<3):
@@ -2666,31 +2666,31 @@ libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
 \t$(AR) cru libfit.a $(addprefix $(OBJDIR)/, $(FIT_OBJ))
 
 fit-""" + str(number_of_monomers) + """b: fit-""" + str(number_of_monomers) + """b.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
 
 eval-""" + str(number_of_monomers) + """b: eval-""" + str(number_of_monomers) + """b.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
 
 fit-""" + str(number_of_monomers) + """b-over-ttm: fit-""" + str(number_of_monomers) + """b.cpp
-\t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+\t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
 
 eval-""" + str(number_of_monomers) + """b-over-ttm: eval-""" + str(number_of_monomers) + """b.cpp
-\t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+\t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
 """
     ff.write(a)
 
     if number_of_monomers == 2:
         a = """
 fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
 
 eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) $< $(LIBS) -lfit -o $@
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
 """
         ff.write(a)
     a = """
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) -L$(LIBDIR) -c $< $(LIBS) -o $@
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) -c $< $(LIBS) -o $@
 
 $(OBJDIR)/.sentinel:
 \tmkdir -p $(OBJDIR)

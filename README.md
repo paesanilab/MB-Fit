@@ -20,6 +20,8 @@ Most recent changes at the top
 Version v0.2.3 (Under development, not released.)
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed
 to converge.
+* Fixed a bug where some libraries needed to compile fitcode would have
+the incorrect path in the Makefile on some systems.
 * Virtual site labels can now be specified by the user everwhere they are used.
 Previously, some places allowed user specification, while others always used
 X, Y, and Z. X, Y, and Z are still the default if the user does not specify something

@@ -51,7 +51,7 @@ class RandomSamplingConfigurationGenerator(ConfigurationGenerator):
         else:
             self.distance_distribution = LinearDistributionFunction.get_function_from_2_points(0, 0, 1, radius)
 
-        system.format_print("Distance Distribution: {} for x in range [0,1].".format(self.distance_distribution.to_string(dep_name="dist (ang)")),
+        system.format_print("Distance Distribution: {} for x in range [0,1].".format(self.distance_distribution.to_string(dep_name="dist (A)")),
                             italics=True)
 
 

@@ -27,7 +27,10 @@ config = SettingsReader(config_path)
 ## MONOMER PROPERTIES ##########################################################
 ################################################################################
 
-symmetry_parser = MoleculeSymmetryParser("_".join(settings.get("molecule", "symmetry").split(",")))
+# Define list of variables that are fictitious
+virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
+
+symmetry_parser = MoleculeSymmetryParser("_".join(settings.get("molecule", "symmetry").split(",")), virtual_sites=virtual_sites_poly)
 
 system.format_print("Generating fitcode for molecule with symmetry {}...".format(symmetry_parser.get_symmetry()),
                     bold=True, color=system.Color.YELLOW)
@@ -47,9 +50,6 @@ use_mbpol = [int(i) for i in settings.get("molecule", "use_mbpol").split(",")]
 
 system.format_print("Using mbpol for {} fragments.".format(sum(use_mbpol)),
                     italics=True)
-
-# Define list of variables that are fictitious
-virtual_sites_poly = config.getlist("fitting", "virtual_site_labels")
 
 # Define if lone pairs are used based on monomer names
 # Update number of sites if needed
@@ -143,10 +143,10 @@ system.format_print("{} terms in the polynomial.".format(npoly),
                      italics=True)
 
 # Define Energy Range for the fitting
-E_range = config.getfloat("fitting", "energy_range", default=20.0)
+E_range = 20.0
 
 # Define alpha for the fitting
-alpha = config.getfloat("fitting", "alpha", default=0.0005)
+alpha = 0.0005
 
 ################################################################################
 ## Prepare pair information ####################################################

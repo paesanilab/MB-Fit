@@ -85,7 +85,8 @@ class PolynomialGenerator(object):
         # parse fragments, variables, and filters from the input file
         fragments, variables, monomial_filters = self.read_input_file(input_path)
 
-        # create a molecule parser of all the fragments.
+        # create a molecule parser of all the fragments. No need to specify virtual sites, as get_atoms() doesn't
+        # need virtual sites
         symmetry_parser = MoleculeSymmetryParser("_".join(fragments))
 
         # Parse the fragment names to name the atoms in the system
@@ -93,16 +94,6 @@ class PolynomialGenerator(object):
         # list of names of atoms in the molecule, each name consists of a type (ex: 'A', 'B', etc) concatenated to
         # a letter that indicates the fragment (ex: 'a', 'b', etc).
         atom_names = [sym + str(ind) + frag for sym, ind, frag in symmetry_parser.get_atoms()]
-
-        # holds the index of the first atom in each fragment.
-        index_each_fragment = []
-
-        # index of the next atom to parse.
-        index = 0
-
-        for fragment_parser in symmetry_parser.get_sub_parsers():
-            index_each_fragment.append(index)
-            index += fragment_parser.get_num_atoms()
 
         print("Atom names", atom_names)
 

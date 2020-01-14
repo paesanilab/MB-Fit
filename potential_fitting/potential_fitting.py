@@ -482,7 +482,7 @@ def generate_2b_training_set(settings_path, database_config_path, training_set_p
     database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
         cp, *tags, e_bind_min=-float('inf'), e_bind_max=e_bind_max, e_mon_min=-float('inf'), e_mon_max=e_mon_max)
 
-def generate_poly_input(settings_path, molecule_in, in_file_path):
+def generate_poly_input(settings_path, molecule_in, in_file_path, virtual_sites=["X", "Y", "Z"]):
     """
     Generates an input file for polynomial generation.
 
@@ -490,12 +490,14 @@ def generate_poly_input(settings_path, molecule_in, in_file_path):
         settings_path       - Local path to the file containing all relevent settings information.
         molecule_in         - String idicating symmetry of molecule, ie "A1B2_A1B2" for (CO2)2
         in_file_path        - Local path to the file to write the polynomial input to.
+        virtual_sites       - List of Symmetry labels that are virtual sites.
+                Default: ["X", "Y", "Z"]
 
     Returns:
         None.
     """
 
-    polynomials.generate_input_poly(settings_path, molecule_in, in_file_path)
+    polynomials.generate_input_poly(settings_path, molecule_in, in_file_path, virtual_sites=virtual_sites)
 
 def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, generate_direct_gradients=False,
                          num_gradient_terms_per_line=1):
@@ -573,7 +575,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      use_published_polarizabilities=True,
                                      method="wb97m-v",
                                      basis="aug-cc-pvtz",
-                                     num_digits=4):
+                                     num_digits=4,
+                                     virtual_sites=["X", "Y", "Z"]):
     """
         Generates the config file needed to perform a fit.
 
@@ -594,6 +597,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                     Default: aug-cc-pvtz.
             num_digits            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
                     Default: 4
+            virtual_sites       - List of Symmetry labels that are virtual sites.
+                    Default: ["X", "Y", "Z"]
 
         Returns:
             None.
@@ -604,7 +609,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                              use_published_polarizabilities=use_published_polarizabilities,
                                              method=method,
                                              basis=basis,
-                                             num_digits=num_digits)
+                                             num_digits=num_digits,
+                                             virtual_sites=virtual_sites)
 
 
 def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,

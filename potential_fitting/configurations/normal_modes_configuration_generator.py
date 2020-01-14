@@ -144,7 +144,7 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             system.format_print("Temp Distribution: {} for x in range [0,1].".format(self.temp_distribution.to_string(dep_name="temp (au)")),
                             italics=True)
         if self.A_distribution is not None:
-            system.format_print("A Distribution: {} for x in range [0,1].".format(self.A_distribution.to_string(dep_name="A")),
+            system.format_print("A Distribution: {} for x in range [0,1].".format(self.A_distribution.to_string(dep_name="temp (au)")),
                             italics=True)
 
     def parse_normal_modes_file(self, normal_modes_path):

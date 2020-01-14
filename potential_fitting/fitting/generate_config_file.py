@@ -528,7 +528,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
 
 
         chg_list.append([round(charge, num_digits) for charge in chgs[0]])
-        unrounded_charges.append(chgs)
+        unrounded_charges.append(chgs[0])
         pol_list.append([round(pol, num_digits) for pol in pols[0]])
         c6_list.append([round(c, num_digits) for c in c6[-1]])
 
@@ -572,14 +572,25 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
     configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
 
-    system.format_print("Unrounded charges: {}".format(chg_list),
+    system.format_print("Unrounded charges: {}".format(unrounded_charges),
                         italics=True)
-    system.format_print("Rounded charges: {}".format(unrounded_charges),
+    system.format_print("Rounded charges: {}".format(chg_list),
                         italics=True)
-    system.format_print("Expected charge: {}; Unrounded charge: {}; Rounded charge: {}".format(settings.getsum(charges),
-                                                                                               sum(unrounded_charges),
-                                                                                               sum(chg_list)),
+
+    expected_charge = sum([int(charge) for charge in charges])
+    unrounded_charge = sum([charge for sub_list in unrounded_charges for charge in sub_list])
+    rounded_charge = sum([charge for sub_list in chg_list for charge in sub_list])
+
+    system.format_print("Expected charge: {}; Unrounded charge: {}; Rounded charge: {}".format(expected_charge,
+                                                                                               unrounded_charge,
+                                                                                               rounded_charge),
                         italics=True)
+
+    system.format_print("Difference between expected and unrounded charge: {}.".format(expected_charge - unrounded_charge),
+                        italics=True)
+    system.format_print("Difference between expected and rounded charge: {}.".format(expected_charge - rounded_charge),
+                        italics=True)
+
     configwriter.set("fitting", "charges", str(chg_list))
     configwriter.set("fitting", "polarizabilities", str(pol_list))
     configwriter.set("fitting", "polarizability_factors", str(pol_list))

@@ -19,7 +19,8 @@ def get_atom_types(fragment):
 
     return atom_list
 
-def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_only = False, MBX_HOME = None, version = "v1"):
+def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_only=False, MBX_HOME=None, version="v1",
+                            virtual_sites=["X", "Y", "Z"]):
     # NOTE mon_ids is a list with actual monomer names (h2o, ch4, c2h6...)
     # Read Settings
     settings = SettingsReader(settings_path)
@@ -47,7 +48,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     # Update number of sites if needed
     use_lonepairs = [0]*number_of_monomers
     for i in range(number_of_monomers):
-        if "X" in monomers[i] or "Y" in monomers[i] or "Z" in monomers[i]:
+        if any([virtual_site in monomers[i] for virtual_site in virtual_sites]):
             use_lonepairs[i] = 1
         if use_mbpol[i] != 0:
             number_of_sites[i] += 1

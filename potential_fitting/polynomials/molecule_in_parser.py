@@ -7,8 +7,9 @@ from potential_fitting.exceptions import InvalidInputError
 
 class FragmentSymmetryParser(object):
 
-    def __init__(self, symmetry):
+    def __init__(self, symmetry, virtual_sites=["X", "Y", "Z"]):
         self.set_sub_parsers(symmetry)
+        self.virtual_sites = virtual_sites
 
     def set_sub_parsers(self, symmetry):
 
@@ -184,8 +185,8 @@ class MoleculeSymmetryParser(FragmentSymmetryParser):
 
 class AtomSymmetryParser(FragmentSymmetryParser):
 
-    def __init__(self, symmetry):
-        super(AtomSymmetryParser, self).__init__(symmetry)
+    def __init__(self, symmetry, virtual_sites=["X", "Y", "Z"]):
+        super(AtomSymmetryParser, self).__init__(symmetry, virtual_sites=virtual_sites)
 
         symmetry_class = ""
         num_atoms = ""
@@ -207,7 +208,7 @@ class AtomSymmetryParser(FragmentSymmetryParser):
 
     def get_num_atoms(self):
 
-        if self.symmetry_class in ['X', 'Y', 'Z']:
+        if self.symmetry_class in self.virtual_sites:
             return 0
 
         return self.num_atoms

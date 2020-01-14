@@ -41,9 +41,6 @@ def generate_input_poly(settings_file, molecule_in, in_file_path, virtual_sites=
         # newline between fragments and variables
         poly_in_file.write("\n")
 
-        # these letters mark virtual sites instead of atoms
-
-
         variable_count = 0
 
         for variable in symmetry_parser.get_variables():
@@ -58,7 +55,7 @@ def generate_input_poly(settings_file, molecule_in, in_file_path, virtual_sites=
         polynomial_filtering = settings.get("poly_generation", "accepted_terms",
                 "all" if symmetry_parser.get_num_fragments() == 1 else "partly-inter")
 
-        # make sure the user hasn't chosed intermolecular terms only with a monomer
+        # make sure the user hasn't chosen intermolecular terms only with a monomer
         if symmetry_parser.get_num_fragments() == 1 and not polynomial_filtering == "all":
             raise InconsistentValueError("number of fragments", "[poly_generation].accepted_terms",
                     symmetry_parser.get_num_fragments(), polynomial_filtering,

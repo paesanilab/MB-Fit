@@ -575,6 +575,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      use_published_polarizabilities=True,
                                      method="wb97m-v",
                                      basis="aug-cc-pvtz",
+                                     num_digits=4,
                                      virtual_sites=["X", "Y", "Z"]):
     """
         Generates the config file needed to perform a fit.
@@ -594,6 +595,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                     Default: wb97m-v.
             basis               - Basis to use for charges, polarizabilites, and c6 constants.
                     Default: aug-cc-pvtz.
+            num_digits            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
+                    Default: 4
             virtual_sites       - List of Symmetry labels that are virtual sites.
                     Default: ["X", "Y", "Z"]
 
@@ -606,6 +609,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                              use_published_polarizabilities=use_published_polarizabilities,
                                              method=method,
                                              basis=basis,
+                                             num_digits=num_digits,
                                              virtual_sites=virtual_sites)
 
 

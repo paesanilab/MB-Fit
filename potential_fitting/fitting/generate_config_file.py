@@ -235,8 +235,6 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
             atom_a += 1
         # now construct the c6 constants 2d array by averagining all equivelent c6 constants,
 
-        print("C6 CONSTANTS:", c6_constant_lists)
-
         c6_constants = []
 
         for c6_dictionary in c6_constant_lists:
@@ -438,6 +436,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      use_published_polarizabilities=True,
                                      method="wb97m-v",
                                      basis="aug-cc-pvtz",
+                                     num_digits=4,
                                      virtual_sites=["X", "Y", "Z"]):
     """
     Generates the config file needed to perform a fit.
@@ -455,6 +454,8 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                 Default: wb97m-v.
         basis               - Basis to use for charges, polarizabilites, and c6 constants.
                 Default: aug-cc-pvtz.
+        num_digits            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
+                Default: 4
         virtual_sites       - List of Symmetry labels that are virtual sites.
                 Default: ["X", "Y", "Z"]
 
@@ -507,11 +508,12 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
          parser.get_fragments()])
 
     chg_list = []
+    unrounded_charges = []
     pol_list = []
     c6_list = []
 
     for i in range(len(symmetries)):
-        charges, pols = calculate_chg_pol_for_config(monomer_settings[i],geo_paths[i], fragments[i], distance_between, use_published_polarizabilities,
+        chgs, pols = calculate_chg_pol_for_config(monomer_settings[i],geo_paths[i], fragments[i], distance_between, use_published_polarizabilities,
                                                      method=method,
                                                      basis=basis)
 
@@ -527,9 +529,11 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      method=method,
                                      basis=basis)
 
-        chg_list.append(charges[0])
-        pol_list.append(pols[0])
-        c6_list.append(c6[-1])
+
+        chg_list.append([round(charge, num_digits) for charge in chgs[0]])
+        unrounded_charges.append(chgs[0])
+        pol_list.append([round(pol, num_digits) for pol in pols[0]])
+        c6_list.append([round(c, num_digits) for c in c6[-1]])
 
     # If we are doing a dimer, we need the intermolecular c6
     if len(symmetries) == 2:
@@ -538,7 +542,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      method=method,
                                      basis=basis)
 
-        c6_list.append(c6[-1])
+        c6_list.append([round(c, num_digits) for c in c6[-1]])
 
     print("Writing config file...")
 
@@ -570,6 +574,25 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "excluded_pairs_12", "{}".format(excluded_pairs12))
     configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
     configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
+
+    system.format_print("Unrounded charges: {}".format(unrounded_charges),
+                        italics=True)
+    system.format_print("Rounded charges: {}".format(chg_list),
+                        italics=True)
+
+    expected_charge = sum([int(charge) for charge in charges])
+    unrounded_charge = sum([charge for sub_list in unrounded_charges for charge in sub_list])
+    rounded_charge = sum([charge for sub_list in chg_list for charge in sub_list])
+
+    system.format_print("Expected charge: {}; Unrounded charge: {}; Rounded charge: {}".format(expected_charge,
+                                                                                               unrounded_charge,
+                                                                                               rounded_charge),
+                        italics=True)
+
+    system.format_print("Difference between expected and unrounded charge: {}.".format(expected_charge - unrounded_charge),
+                        italics=True)
+    system.format_print("Difference between expected and rounded charge: {}.".format(expected_charge - rounded_charge),
+                        italics=True)
 
     configwriter.set("fitting", "charges", str(chg_list))
     configwriter.set("fitting", "polarizabilities", str(pol_list))

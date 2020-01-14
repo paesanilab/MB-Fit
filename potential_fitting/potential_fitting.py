@@ -573,7 +573,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                      use_published_polarizabilities=True,
                                      method="wb97m-v",
                                      basis="aug-cc-pvtz",
-                                     num_digs=4):
+                                     num_digits=4):
     """
         Generates the config file needed to perform a fit.
 
@@ -592,7 +592,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                     Default: wb97m-v.
             basis               - Basis to use for charges, polarizabilites, and c6 constants.
                     Default: aug-cc-pvtz.
-            num_digs            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
+            num_digits            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
                     Default: 4
 
         Returns:
@@ -604,7 +604,7 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                                              use_published_polarizabilities=use_published_polarizabilities,
                                              method=method,
                                              basis=basis,
-                                             num_digs=num_digs)
+                                             num_digits=num_digits)
 
 
 def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,

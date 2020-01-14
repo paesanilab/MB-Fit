@@ -308,13 +308,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         holderh = "mbnrg_{}b_{}_deg{}_{}.h".format(number_of_monomers,system_name,degree,version)
         holdercpp = "mbnrg_{}b_{}_deg{}_{}.cpp".format(number_of_monomers,system_name,degree,version)
 
-        # Move them
-        os.system("mv " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + holdercpp + " " + sofdir)
-
-
-
-
-
     # Write the part of the code that needs to be put in dispersion
 
     if number_of_monomers < 3:

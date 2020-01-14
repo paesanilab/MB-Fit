@@ -1,4 +1,6 @@
 import os
+from potential_fitting.utils import files, SettingsReader
+from potential_fitting.polynomials import MoleculeSymmetryParser
 
 def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
 
@@ -21,6 +23,9 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 #    os.system("cp " + poly_path + "/poly-grd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1x.cpp")
 #    os.system("cp " + poly_path + "/poly-nogrd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1.cpp")
 #    os.system("cp " + poly_path + "/poly-model.h " + fit_path + "/poly_2b_" + molecule + "_v1x.h")
+
+    degree = 0
+
     # find the number of variables and number of polynomials from the log file
     with open(poly_path + "/poly.log", "r") as poly_log:
 
@@ -36,6 +41,13 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 
         # loop thru each line
         for line in poly_log:
+
+            # check if this line has a degree
+            if "degree monomials" in line:
+
+                # parse degree from line and update to max of all degrees so far
+                # to find max degree of this polynomial
+                degree = max(degree, int(line.split()[2]))
 
             # check if this line has the number of terms
             if "Total number of terms: " in line:
@@ -119,6 +131,23 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     os.system("mv mbnrg_*_fit.* " + fit_path + "/")
     os.system("mv mon*.cpp mon*.h " + fit_path + "/")
     os.system("mv poly_*_fit.* " + fit_path + "/")
+
+    # move the files for MBX into the directory MBX_files
+    files.init_directory("MBX_files")
+    symmetry_parser = MoleculeSymmetryParser("_".join(SettingsReader(settings_path).get("molecule", "symmetry").split(",")))
+    system_name = symmetry_parser.get_symmetry()
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
+    file_name = "mbnrg_{}b_{}_deg{}_v1.h".format(nmons, system_name, degree)
+    os.system("mv " + file_name + " MBX_files/")
+    file_name = "mbnrg_{}b_{}_deg{}_v1.cpp".format(nmons, system_name, degree)
+    os.system("mv " + file_name + " MBX_files/")
+    file_name = "poly_{}b_{}_deg{}_v1.h".format(nmons, system_name, degree)
+    os.system("mv " + file_name + " MBX_files/")
+    file_name = "poly_{}b_{}_deg{}_grad_v1.cpp".format(nmons, system_name, degree)
+    os.system("mv " + file_name + " MBX_files/")
+    file_name = "poly_{}b_{}_deg{}_nograd_v1.cpp".format(nmons, system_name, degree)
+    os.system("mv " + file_name + " MBX_files/")
 
 #    os.system("mv buckingham.h " + fit_path + "/")
 #    os.system("mv fit-2b-wbuck.cpp " + fit_path + "/")

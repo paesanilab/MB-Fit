@@ -2697,7 +2697,13 @@ $(OBJDIR)/.sentinel:
 \ttouch $@
 
 clean:
-\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-""" + str(number_of_monomers) + """b
+\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
+        + str(number_of_monomers) + """b eval-"""\
+        + str(number_of_monomers) + """b fit-"""\
+        + str(number_of_monomers) + """b-ttm eval-"""\
+        + str(number_of_monomers) + """b-ttm fit-"""\
+        + str(number_of_monomers) + """b-over-ttm eval-"""\
+        + str(number_of_monomers) + """b-over-ttm
 """
     ff.write(a)
     ff.close()

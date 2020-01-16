@@ -1102,7 +1102,9 @@ def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir
     perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
     create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
 
-def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20, alpha = 0.0005, num_fits = 10, ttm = False):
+
+def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=20, alpha=0.0005, num_fits=10, ttm=False,
+                 over_ttm=False):
     """
     Prepares fits to be run by creating directories with executable scripts in them.
 
@@ -1112,8 +1114,9 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        fit_executable_path - Local path to the compiled fit executable.
+        fit_dir_path        - Local path to the directory containing the compiled fitcode.
         training_set_path   - Local path to training set to use for all the fits.
+        fits_path           - Local path to the directory to create the fits in.
         DE                  - Low DE places more weight on low energy training set items. 
                               Large DE places even weight on all training set items. Weights w_n are computed as
                               w_n = (DE / (E_n - E_min + DE))**2
@@ -1121,20 +1124,26 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
                 be smaller. (Less likely for one or more coefficients to blow up.)
         num_fits            - How many new directories with executables to make. Existing ones will not be changed.
         ttm                 - True if these are ttm fits. False otherwise.
+        over_ttm            - Only used if ttm is False, if enabled, will fit polynomials over ttm.
 
     Returns:
         None.
     """
     # Get information
     settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
     workdir = os.getcwd()
-    if ttm:
-        fit_folder_name = "ttm_nrg_fits"
-    else:
-        fit_folder_name = "mb_nrg_fits"
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
+
+    fit_folder_prefix = os.path.join(workdir, fits_path)
     if not os.path.exists(fit_folder_prefix):
         os.mkdir(fit_folder_prefix)
+
+    if ttm:
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b-ttm".format(nb))
+    elif over_ttm:
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b-over-ttm".format(nb))
+    else:
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b".format(nb))
 
     # initialize indexes
     fit_index = 1
@@ -1154,7 +1163,7 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
             # Create bash script that will run the fit
             with open("run_fit.sh",'w') as my_bash:
                 my_bash.write("#!/bin/bash\n")
-                my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(os.path.join(workdir, fit_executable_path),
+                my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(fit_executable_path,
                                                                          training_set_path, DE, alpha))
 
             system.call("chmod", "744", "run_fit.sh")
@@ -1164,7 +1173,7 @@ def prepare_fits(settings_path, fit_executable_path, training_set_path, DE = 20,
 
     os.chdir(workdir)
 
-def execute_fits(settings_path, ttm = False):
+def execute_fits(settings_path, fits_path):
     """
     Looks for fit executables in fit directories in the logs directory and runs the fits.
 
@@ -1172,20 +1181,15 @@ def execute_fits(settings_path, ttm = False):
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        ttm                 - True if you want to run ttm fits, False otherwise.
+        fits_path           - Local path to the directory to create the fits in.
 
     Returns:
         None.
     """
 
     # Get information
-    settings = SettingsReader(settings_path)
     workdir = os.getcwd()
-    if ttm:
-        fit_folder_name = "ttm_nrg_fits"
-    else:
-        fit_folder_name = "mb_nrg_fits"
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
+    fit_folder_prefix = os.path.join(workdir, fits_path)
 
     # A fit folder that does not have a fit.log file inside is considered not run
     # In that case, the run_fit.sh will be executed
@@ -1204,7 +1208,7 @@ def execute_fits(settings_path, ttm = False):
 
     os.chdir(workdir)
     
-def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
+def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
     """
     Looks through all log files in all fit directories in the log path and finds the best fit.
 
@@ -1215,7 +1219,7 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
-        ttm                 - True to look at ttm fits. False otherwise.
+        fits_path           - Local path to the directory to create the fits in.
         fitted_nc_path      - Generate a .nc file with the parameters for the best fit at this location.
 
     Returns:
@@ -1224,11 +1228,7 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     # Get information
     settings = SettingsReader(settings_path)
     workdir = os.getcwd()
-    if ttm:
-        fit_folder_name = "ttm_nrg_fits"
-    else:
-        fit_folder_name = "mb_nrg_fits"
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/"
+    fit_folder_prefix = os.path.join(workdir, fits_path)
 
     # Loop over all the fits, check the output, and store the results.
     os.chdir(fit_folder_prefix)
@@ -1279,7 +1279,7 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
     # If not, just store the best fit in there
     if not os.path.exists("best_fit"):
         print("No previous best fit, so just storing the current best fit.")
-        system.call("cp", "-r", best_fit, "best_fit")
+        system.call("ln", "-s", best_fit, "best_fit")
     else:
         os.chdir("best_fit")
         with open("fit.log",'r') as logfile:
@@ -1316,7 +1316,7 @@ def retrieve_best_fit(settings_path, ttm = False, fitted_nc_path = "mbnrg.nc"):
 
     os.chdir(workdir)
 
-def update_config_with_ttm(settings_path, config_path):
+def update_config_with_ttm(settings_path, fits_path, config_path):
     """
     Updates a fit config.ini file with the A and d constants from the best ttm fit.
 
@@ -1324,23 +1324,22 @@ def update_config_with_ttm(settings_path, config_path):
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
+        fits_path           - Local path to the directory to create the fits in.
         config_path         - Local path to the config file to update.
 
     Returns:
         None.
     """
-    config = SettingsReader(config_path) 
-    settings = SettingsReader(settings_path)
+    config = SettingsReader(config_path)
     workdir = os.getcwd()
-    fit_folder_name = "ttm_nrg_fits"
-    fit_folder_prefix = workdir + "/" + settings.get("files", "log_path") + "/" + fit_folder_name + "/best_fit/"
+    fit_folder_prefix = os.path.join(workdir, fits_path)
 
-    with open(fit_folder_prefix + "ttm-nrg_params.dat",'r') as ttm_file:
+    with open(fit_folder_prefix + "ttm-nrg_params.dat", 'r') as ttm_file:
         a_buck = [float(a) for a in ttm_file.readline().strip().split()]
         b_buck = [float(b) for b in ttm_file.readline().strip().split()]
 
-    config.set("fitting","A",a_buck)    
-    config.set("fitting","d6",b_buck)   
+    config.set("fitting", "A", a_buck)
+    config.set("fitting", "d6", b_buck)
 
     config.write(config_path)
 

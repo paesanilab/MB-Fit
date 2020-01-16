@@ -1334,7 +1334,7 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
     workdir = os.getcwd()
     fit_folder_prefix = os.path.join(workdir, fits_path)
 
-    with open(fit_folder_prefix + "ttm-nrg_params.dat", 'r') as ttm_file:
+    with open(fit_folder_prefix + "/ttm-nrg_params.dat", 'r') as ttm_file:
         a_buck = [float(a) for a in ttm_file.readline().strip().split()]
         b_buck = [float(b) for b in ttm_file.readline().strip().split()]
 

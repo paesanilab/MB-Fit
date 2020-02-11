@@ -2540,6 +2540,13 @@ int main(int argc, char** argv) {
 
     std::ofstream correlation_file;
     correlation_file.open ("correlation.dat");
+    
+    correlation_file << "#" << std:setw(10) << "index"
+                     << std::setw(15)       << "ref_energy" 
+                     << std::setw(15)       << "fit_energy"
+                     << std::setw(15)       << "sq_error"
+                     << "    \\n"; 
+    
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
 

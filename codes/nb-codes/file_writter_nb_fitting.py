@@ -1979,7 +1979,7 @@ int main(int argc, char** argv) {
     std::ofstream correlation_file;
     correlation_file.open ("correlation.dat");
     
-    correlation_file << "#" << std:setw(10) << "index"
+    correlation_file << "#" << std::setw(10) << "index"
                      << std::setw(15)       << "ref_energy" 
                      << std::setw(15)       << "fit_energy"
                      << std::setw(15)       << "sq_error"
@@ -2541,7 +2541,7 @@ int main(int argc, char** argv) {
     std::ofstream correlation_file;
     correlation_file.open ("correlation.dat");
     
-    correlation_file << "#" << std:setw(10) << "index"
+    correlation_file << "#" << std::setw(10) << "index"
                      << std::setw(15)       << "ref_energy" 
                      << std::setw(15)       << "fit_energy"
                      << std::setw(15)       << "sq_error"

@@ -18,6 +18,8 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* correlation.dat files produced by execute_fits() now have a header to tell
+you what is in each column.
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed
 to converge.
 * Charges, Polarizabilities, and C6 constants generated in the config.ini file

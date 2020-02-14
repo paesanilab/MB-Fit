@@ -18,8 +18,8 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
-* Fixed a bug where delete_calculations() would not work when delete_complete_calculations
-was set to True.
+* Fixed a bug where delete_calculations() and delete_all_calculations() would not
+work when delete_complete_calculations was set to True.
 * correlation.dat files produced by execute_fits() now have a header to tell
 you what is in each column.
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed

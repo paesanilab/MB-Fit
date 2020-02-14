@@ -97,7 +97,7 @@ class TrainingSet:
 
         return TrainingSet(low_elements), TrainingSet(high_elements)
 
-    def add_energy(self, energy_name, energies):
+    def add_energies(self, energy_name, energies):
 
         for element, energy in zip(self.get_elements(), energies):
             element.add_energy(energy_name, energy)

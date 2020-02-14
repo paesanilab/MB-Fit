@@ -70,7 +70,7 @@ def delete_calculations(settings_path, database_config_path, configurations_path
 
     with Database(database_config_path) as database:
 
-        database.delete_calculations(molecules, method, basis, cp, *tags, delete_complete_calculations)
+        database.delete_calculations(molecules, method, basis, cp, *tags, delete_complete_calculations=delete_complete_calculations)
 
 
 def delete_all_calculations(settings_path, database_config_path, molecule_name, method, basis, cp, *tags, delete_complete_calculations = False):

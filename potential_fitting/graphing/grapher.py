@@ -3,9 +3,13 @@ from collections import OrderedDict
 import csv
 import math
 
+from potential_fitting.utils import files
+
 class Grapher:
 
     def make_distribution_graph(self, training_sets, training_set_names, energy_name, output_file, num_bins=50, max_percent=0.97):
+
+        plt.clf()
 
         energies_dict = OrderedDict()
 
@@ -88,10 +92,68 @@ class Grapher:
 
         plt.xticks(ticks, labels)
 
+        files.init_file(output_file)
         plt.savefig(output_file)
 
-    def make_correlation_graph(self, training_set, energy_name1, energy_name2, output_file):
-        pass
+    def make_correlation_graph(self, training_set, ref_energy_name, energy_names, output_file):
 
-    def make_error_graph(self, training_set, energy_name1, energy_name2, output_file):
-        pass
+        plt.clf()
+
+        ref_energies = training_set.get_energies(ref_energy_name)
+
+        energies_dict = OrderedDict()
+
+        for energy_name in energy_names:
+            energies_dict[energy_name] = training_set.get_energies(energy_name)
+
+        colors = [(0, 0, 0, 1), (0, 0, 1, 0.7), (0, 1, 0, 0.5), (1, 0, 0, 0.3)]
+
+        for index, energies in enumerate(energies_dict.values()):
+            plt.scatter(ref_energies, energies,
+                        color=colors[index], s=5, alpha=0.5)
+        # Adding a legend
+        plt.legend(energy_names)
+
+        plt.plot(ref_energies, ref_energies, c='orange', alpha=0.5)
+
+
+        #Adding axes titles
+        plt.xlabel("{} energy [Kcal/mol]".format(ref_energy_name))
+        plt.ylabel("energy [Kcal/mol]")
+
+        files.init_file("fit.png")
+
+        files.init_file(output_file)
+        plt.savefig(output_file)
+
+
+    def make_error_graph(self, training_set, ref_energy_name, energy_names, output_file):
+
+        plt.clf()
+
+        ref_energies = training_set.get_energies(ref_energy_name)
+
+        energies_dict = OrderedDict()
+
+        for energy_name in energy_names:
+            energies_dict[energy_name] = training_set.get_energies(energy_name)
+
+        colors = [(0, 0, 0, 1), (0, 0, 1, 0.7), (0, 1, 0, 0.5), (1, 0, 0, 0.3)]
+
+        for index, energies in enumerate(energies_dict.values()):
+            plt.scatter(ref_energies, [energy - ref_energy for energy, ref_energy in zip(energies, ref_energies)],
+                        color=colors[index], s=5, alpha=0.5)
+        # Adding a legend
+        plt.legend(energy_names)
+
+        plt.plot(ref_energies, ref_energies, c='orange', alpha=0.5)
+
+
+        #Adding axes titles
+        plt.xlabel("{} energy [Kcal/mol]".format(ref_energy_name))
+        plt.ylabel("delta energy [Kcal/mol]")
+
+        files.init_file("fit.png")
+
+        files.init_file(output_file)
+        plt.savefig(output_file)

@@ -7,3 +7,4 @@ from .generate_software_files_1b import generate_software_files_1b
 from .generate_software_files import generate_software_files
 from .generate_software_files_2b import generate_software_files_2b
 from . import fit_visualizer
+from .eval import Evaluator

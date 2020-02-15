@@ -26,6 +26,6 @@ class Evaluator:
 
         training_set = TrainingSet.get_training_set_from_xyz_file(path_to_training_set_file, self.settings, energy_names=["weight_energy", "ref_energy"])
 
-        training_set.add_energies("fit_energies", fit_energies)
+        training_set.add_energies("fit_energy", fit_energies)
 
         return training_set

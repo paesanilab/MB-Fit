@@ -146,7 +146,7 @@ class Grapher:
         # Adding a legend
         plt.legend(energy_names)
 
-        plt.plot(ref_energies, ref_energies, c='orange', alpha=0.5)
+        plt.plot(ref_energies, [0 for energy in ref_energies], c='orange', alpha=0.5)
 
 
         #Adding axes titles

@@ -18,6 +18,14 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Added the Grapher class, with some functions for graphing energy distributions of TrainingSets
+as well as making correlation / error graphs for TrainingSets.
+* Added the Evaluator class, whose eval() method can be used to get a TrainingSet from an eval-xb
+script and a training set file.
+* Added the TrainingSet class, which contains a list of TrainingSetElements and functions
+for performing operations on them.
+* Added the TrainingSetElement class, which contains a Molecule and a dictionary of energies
+and functions for performing operations on itself.
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed
 to converge.
 * Charges, Polarizabilities, and C6 constants generated in the config.ini file

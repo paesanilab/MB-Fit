@@ -3,7 +3,7 @@ import math, configparser, itertools
 from collections import OrderedDict
 
 from potential_fitting.utils import constants, SettingsReader, files, system
-from potential_fitting.exceptions import InvalidValueError, InconsistentValueError
+from potential_fitting.exceptions import InvalidValueError, InconsistentValueError, LibraryCallError
 from potential_fitting.molecule import Molecule, Fragment, xyz_to_molecules
 from potential_fitting.polynomials import MoleculeInParser
 
@@ -118,8 +118,11 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
     with open(qchem_out_path, "r") as qchem_out:
         # read lines until we read the line before where c6 constants are specified
         while True:
+            line = qchem_out.readline()
+            if "SCF failed to converge" in line:
+                raise LibraryCallError("Qchem", "c6 calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
             try:
-                qchem_out.readline().index("D2X   (i,j)")
+                line.index("D2X   (i,j)")
                 break
             except ValueError:
                 pass
@@ -322,6 +325,8 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         while True:
             try:
                 line = qchem_out.readline()
+                if "SCF failed to converge" in line:
+                    raise LibraryCallError("Qchem", "charge/polarizability calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
                 if line == "":
                     print("Something went wrong with qchem")
                     exit(1)

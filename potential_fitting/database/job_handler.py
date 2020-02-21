@@ -84,6 +84,9 @@ class JobHandler(object):
             None.
         """
 
+        with Database(database_config_path) as db:
+            pre_num_dispatched = db.count_dispatched_calculations()
+
         system.format_print("Reading jobs from directory {} into database.".format(job_dir),
                             bold=True, color=system.Color.YELLOW)
 
@@ -110,8 +113,20 @@ class JobHandler(object):
         with Database(database_config_path) as db:
             db.set_properties(calculation_results, overwrite=overwrite)
 
-        system.format_print("Completed reading jobs. Read {} in total".format(counter), bold=True,
+        system.format_print("Completed reading jobs. Read {} in total.".format(counter), bold=True,
                             color=system.Color.GREEN)
+
+        with Database(database_config_path) as db:
+            post_num_dispatched = db.count_dispatched_calculations()
+
+        num_new = pre_num_dispatched - post_num_dispatched
+
+        system.format_print("{} of the jobs set energies for the first time.".format(num_new), italics=True)
+        if overwrite:
+            system.format_print("{} of the jobs overwrote energies in the database.".format(counter - num_new), italics=True)
+        else:
+            system.format_print("{} of the jobs's energies were ignored because they were already set in the database.".format(counter - num_new), italics=True)
+
         system.format_print("Moving read job directories...", bold=True, color=system.Color.YELLOW)
 
         for directory in glob(job_dir + "/job_*"):

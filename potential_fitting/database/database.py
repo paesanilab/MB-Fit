@@ -458,6 +458,13 @@ class Database():
 
         return count
 
+    def count_dispatched_calculations(self):
+        self.single_execute("SELECT * FROM count_dispatched_calculations()", ())
+
+        count = self.cursor.fetchone()[0]
+
+        return count
+
     def get_all_calculations(self, client_name, *tags, calculations_to_do=sys.maxsize):
         """
         Gets uncalculaed energies from the database so that the user can calculate them.

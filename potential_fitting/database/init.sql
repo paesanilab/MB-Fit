@@ -2168,6 +2168,26 @@ $$;
 
 alter function get_training_set(varchar, character varying[], varchar, character varying[], integer, integer) owner to ebullvul;
 
+create function count_dispatched_calculations() returns integer
+	security definer
+	SET search_path=public, pg_temp
+	language plpgsql
+as $$
+DECLARE
+    count integer;
+  BEGIN
+
+    SELECT COUNT(*) FROM molecule_properties INNER JOIN tags
+            ON molecule_properties.mol_hash = tags.mol_hash
+            WHERE molecule_properties.status = 'dispatched'
+      into count;
+    RETURN count;
+  END;
+
+$$;
+
+alter function count_dispatched_calculations() owner to ebullvul;
+
 create function set_properties(hash character varying, model character varying, use_cp boolean, indices integer[], result boolean, energy double precision, log_txt character varying, overwrite boolean) returns void
 	security definer
 	SET search_path=public, pg_temp
@@ -2176,13 +2196,12 @@ as $$
 DECLARE
     id INTEGER;
     cur_status VARCHAR;
-    energy_len INTEGER;
   BEGIN
 
-    SELECT status, array_length(energies, 1) FROM molecule_properties WHERE  mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp
-      INTO cur_status, energy_len;
+    SELECT status FROM molecule_properties WHERE  mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp
+      INTO cur_status;
 
-    IF cur_status = 'complete' AND energy_len = 0 THEN
+    IF cur_status = 'complete' THEN
       IF overwrite THEN
         UPDATE molecule_properties SET energies = '{}', status='dispatched' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp;
         cur_status = 'dispatched';

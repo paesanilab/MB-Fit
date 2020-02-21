@@ -18,6 +18,15 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Updated read_jobs() and JobHandler.read_all_jobs() to also have an overwrite argument
+which is passed to Database.set_properties().
+* Added the overwrite keyword argument to Database.set_properties() and changed it to
+have the following behavior: If overwrite is False, then trying to set the energy
+of a calculation which already has an energy will do nothing but give no error. If
+overwrite is True, doing so will replace the existing energy. Previous behavior was
+to give an error message.
+* Exceptions raised from the Database class due to postgres errors no longer print
+the context, as this is of no use to a user who does not know how the database works.
 * correlation.dat files produced by execute_fits() now have a header to tell
 you what is in each column.
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed

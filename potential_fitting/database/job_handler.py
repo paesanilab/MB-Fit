@@ -66,7 +66,7 @@ class JobHandler(object):
                                                                                                                 tags),
             bold=True, color=system.Color.GREEN)
 
-    def read_all_jobs(self, database_config_path, job_dir):
+    def read_all_jobs(self, database_config_path, job_dir, overwrite=False):
         """
         Searches the given directory for completed job directories and enters
         the results into the database.
@@ -99,7 +99,7 @@ class JobHandler(object):
 
             if len(calculation_results) > 1000:
                 with Database(database_config_path) as db:
-                    db.set_properties(calculation_results)
+                    db.set_properties(calculation_results, overwrite=overwrite)
                 calculation_results = []
 
             counter += 1
@@ -108,7 +108,7 @@ class JobHandler(object):
                 system.format_print("Read {} jobs so far.".format(counter), italics=True)
 
         with Database(database_config_path) as db:
-            db.set_properties(calculation_results)
+            db.set_properties(calculation_results, overwrite=overwrite)
 
         system.format_print("Completed reading jobs. Read {} in total".format(counter), bold=True,
                             color=system.Color.GREEN)

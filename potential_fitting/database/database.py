@@ -11,7 +11,6 @@ from potential_fitting.utils import SettingsReader
 # only import psycopg2 if it is installed.
 try:
     import psycopg2
-    from psycopg2 import OperationalError
 except ModuleNotFoundError:
     pass
 
@@ -68,7 +67,7 @@ class Database():
         # connection is used to get the cursor, commit to the database, and close the database
         try:
             self.connection = psycopg2.connect("host='{}' port={} dbname='{}' user='{}' password='{}'".format(host, port, database, username, password))
-        except OperationalError as e:
+        except psycopg2.OperationalError as e:
             raise DatabaseConnectionError(self.name, str(e))
 
         # the cursor is used to execute operations on the database
@@ -218,7 +217,7 @@ class Database():
             sql_script = sql_initilizer.read()
             try:
                 self.single_execute(sql_script)
-            except OperationalError as e:
+            except psycopg2.OperationalError as e:
                 raise DatabaseInitializationError(self.name, str(e))
 
     def annihilate(self, confirm="no way"):
@@ -259,18 +258,12 @@ class Database():
             None.
         """
 
-        try:
-            self.single_execute(
-                "DO $$" +
-                "   BEGIN " +
-                command +
-                "END $$",
-                params)
-        except OperationalError as e:
-            raise DatabaseOperationError(self.name, str(e))
-        except psycopg2.InternalError as e:
-            self.connection.rollback()
-            raise e
+        self.single_execute(
+            "DO $$" +
+            "   BEGIN " +
+            command +
+            "END $$",
+            params)
 
     def single_execute(self, command, params):
         """
@@ -295,11 +288,14 @@ class Database():
             self.cursor.execute(
                 command,
                 params)
-        except OperationalError as e:
-            raise DatabaseOperationError(self.name, str(e))
+        except psycopg2.OperationalError as e:
+            raise DatabaseOperationError(self.name, str(e.diag.message_primary)) from None
         except psycopg2.InternalError as e:
             self.connection.rollback()
-            raise e
+            raise DatabaseOperationError(self.name, str(e.diag.message_primary)) from None
+        except psycopg2.ProgrammingError as e:
+            self.connection.rollback()
+            raise DatabaseOperationError(self.name, str(e.diag.message_primary)) from None
 
     def create_postgres_array(self, *values):
         """
@@ -531,7 +527,7 @@ class Database():
             if calculations_to_do < 1:
                 return
 
-    def set_properties(self, calculation_results):
+    def set_properties(self, calculation_results, overwrite=False):
         """
         Sets newly calculated energies in the database.
         Args:
@@ -569,9 +565,9 @@ class Database():
 
             model_name = method + "/" + basis + "/" + str(cp)
 
-            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s);"
+            command_string += "PERFORM set_properties(%s, %s, %s, %s, %s, %s, %s, %s);"
             params += [molecule.get_SHA1(), model_name, use_cp, self.create_postgres_array(*frag_indices), result,
-                       energy, log_text]
+                       energy, log_text, overwrite]
 
             batch_count += 1
 

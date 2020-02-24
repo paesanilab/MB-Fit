@@ -26,6 +26,10 @@ script and a training set file.
 for performing operations on them.
 * Added the TrainingSetElement class, which contains a Molecule and a dictionary of energies
 and functions for performing operations on itself.
+* Fixed a bug where delete_calculations() and delete_all_calculations() would not
+work when delete_complete_calculations was set to True.
+* correlation.dat files produced by execute_fits() now have a header to tell
+you what is in each column.
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed
 to converge.
 * Charges, Polarizabilities, and C6 constants generated in the config.ini file

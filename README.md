@@ -18,6 +18,15 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Updated read_jobs() and JobHandler.read_all_jobs() to also have an overwrite argument
+which is passed to Database.set_properties().
+* Added the overwrite keyword argument to Database.set_properties() and changed it to
+have the following behavior: If overwrite is False, then trying to set the energy
+of a calculation which already has an energy will do nothing but give no error. If
+overwrite is True, doing so will replace the existing energy. Previous behavior was
+to give an error message.
+* Exceptions raised from the Database class due to postgres errors no longer print
+the context, as this is of no use to a user who does not know how the database works.
 * Fixed a bug that would cause generate_config_file_new() to loop infinitely when
 SCF fails to converge.
 * Fixed a bug where delete_calculations() and delete_all_calculations() would not

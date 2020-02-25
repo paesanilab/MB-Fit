@@ -27,6 +27,10 @@ overwrite is True, doing so will replace the existing energy. Previous behavior 
 to give an error message.
 * Exceptions raised from the Database class due to postgres errors no longer print
 the context, as this is of no use to a user who does not know how the database works.
+* Fixed a bug that would cause generate_config_file_new() to loop infinitely when
+SCF fails to converge.
+* Fixed a bug where delete_calculations() and delete_all_calculations() would not
+work when delete_complete_calculations was set to True.
 * correlation.dat files produced by execute_fits() now have a header to tell
 you what is in each column.
 * Fixed a bug where retrieve_best_fit() would think some converged fits failed

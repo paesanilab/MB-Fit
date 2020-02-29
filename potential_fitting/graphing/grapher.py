@@ -37,7 +37,7 @@ class Grapher:
 
         max_bin = max_percent_energy
 
-        overflow_max_bin = max_percent_energy
+        overflow_max_bin = maximum
 
         # create the bins between min_bin and max_bin
 
@@ -79,9 +79,8 @@ class Grapher:
 
         labels = [str(round(tick, 2)) for tick in ticks]
 
-        ticks.append(max_bin)
 
-        labels.append(str(round(max_bin, 2)) + "+")
+        labels[-1] = (str(round(max_bin, 2)) + "+")
 
         plt.xticks(ticks, labels)
 

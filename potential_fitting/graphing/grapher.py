@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy
 from collections import OrderedDict
 import csv
 import math
@@ -40,7 +41,7 @@ class Grapher:
 
         # create the bins between min_bin and max_bin
 
-        bins = list(range(min_bin, max_bin + bin_width, bin_width))
+        bins = list(numpy.linspace(min_bin, max_bin, num_bins))
 
         # the last bin will hold energies between max_bin - 1 and big_max
 
@@ -74,9 +75,7 @@ class Grapher:
 
         num_ticks = 10
 
-        tick_width = math.ceil(bin_width * num_bins / num_ticks)
-
-        ticks = list(range(min_bin, max_bin + bin_width, tick_width))
+        ticks = list(numpy.linspace(min_bin, max_bin, num_ticks))
 
         labels = [str(tick) for tick in ticks]
 

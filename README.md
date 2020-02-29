@@ -18,6 +18,14 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Added the Grapher class, with some functions for graphing energy distributions of TrainingSets
+as well as making correlation / error graphs for TrainingSets.
+* Added the Evaluator class, whose eval() method can be used to get a TrainingSet from an eval-xb
+script and a training set file.
+* Added the TrainingSet class, which contains a list of TrainingSetElements and functions
+for performing operations on them.
+* Added the TrainingSetElement class, which contains a Molecule and a dictionary of energies
+and functions for performing operations on itself.
 * Updated read_jobs() and JobHandler.read_all_jobs() to also have an overwrite argument
 which is passed to Database.set_properties().
 * Added the overwrite keyword argument to Database.set_properties() and changed it to

@@ -81,7 +81,7 @@ class Grapher:
 
         ticks.append(max_bin)
 
-        labels.append(str(max_bin) + "+")
+        labels.append(str(round(max_bin, 2)) + "+")
 
         plt.xticks(ticks, labels)
 

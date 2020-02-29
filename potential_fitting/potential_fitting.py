@@ -366,7 +366,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
 
     job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
 
-def read_jobs(settings_path, database_config_path, job_dir):
+def read_jobs(settings_path, database_config_path, job_dir, overwrite=False):
     """
     Searches the given directory for completed job directories and enters
     the results into the database.
@@ -387,7 +387,7 @@ def read_jobs(settings_path, database_config_path, job_dir):
 
     job_handler = database.get_job_handler(settings_path)
 
-    job_handler.read_all_jobs(database_config_path, job_dir)
+    job_handler.read_all_jobs(database_config_path, job_dir, overwrite=overwrite)
 
 def generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
         cp, *tags, e_bind_min=-float('inf'), e_bind_max=float('inf'), e_mon_min=-float('inf'), e_mon_max=float('inf'),

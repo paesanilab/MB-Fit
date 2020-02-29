@@ -7,42 +7,36 @@ from potential_fitting.utils import files
 
 class Grapher:
 
-    def make_distribution_graph(self, training_sets, training_set_names, energy_name, output_file, num_bins=50, max_percent=0.97):
+    def make_distribution_graph(self, data_sets, data_set_names, energy_name, output_file, num_bins=50, max_percent=0.97):
 
         plt.clf()
 
         energies_dict = OrderedDict()
 
-        for training_set_name, training_set in zip(training_set_names, training_sets):
-            energies_dict[training_set_name] = sorted(training_set.get_energies(energy_name))
+        for data_set_name, data_set in zip(data_set_names, data_sets):
+            energies_dict[data_set_name] = sorted(data_set.get_energies(energy_name))
 
+        # the smallest energy in any of the data sets is the lower bound of our energy range.
         minimum = min([energies[0] for energies in energies_dict.values()])
+
+        # the largest energy  at the max_percent percentile in any data set will be the energy after which
+        # energies will be placed into an overflow bucket.
+        # any energies > max_percent_energy will be placed into an overflow bin.
         try:
             max_percent_energy = max([energies[math.ceil(len(energies) * max_percent)] for energies in energies_dict.values()])
         except IndexError:
             max_percent_energy = max([energies[-1] for energies in energies_dict.values()])
 
+        # the largest energy in any of the data sets is the upper bound of our energy range.
         maximum = max([energies[-1] for energies in energies_dict.values()])
 
-        try:
-            bin_width = math.ceil((max_percent_energy - minimum) / num_bins)
-        except ZeroDivisionError:
-            bin_width = 1
+        bin_width = (max_percent_energy - minimum) / num_bins
 
-        try:
-            min_bin = math.floor(minimum / bin_width) * bin_width # inclusive
-        except ZeroDivisionError:
-            min_bin = 0
+        min_bin = minimum
 
-        try:
-            max_bin = math.ceil(max_percent_energy / bin_width) * bin_width  # exclusive
-        except ZeroDivisionError:
-            max_bin = 1
+        max_bin = max_percent_energy
 
-        try:
-            overflow_max_bin = math.ceil(maximum / bin_width) * bin_width  # exclusive
-        except ZeroDivisionError:
-            overflow_max_bin = 1
+        overflow_max_bin = max_percent_energy
 
         # create the bins between min_bin and max_bin
 
@@ -95,16 +89,16 @@ class Grapher:
         files.init_file(output_file)
         plt.savefig(output_file)
 
-    def make_correlation_graph(self, training_set, ref_energy_name, energy_names, output_file):
+    def make_correlation_graph(self, data_set, ref_energy_name, energy_names, output_file):
 
         plt.clf()
 
-        ref_energies = training_set.get_energies(ref_energy_name)
+        ref_energies = data_set.get_energies(ref_energy_name)
 
         energies_dict = OrderedDict()
 
         for energy_name in energy_names:
-            energies_dict[energy_name] = training_set.get_energies(energy_name)
+            energies_dict[energy_name] = data_set.get_energies(energy_name)
 
         colors = [(0, 0, 0, 1), (0, 0, 1, 0.7), (0, 1, 0, 0.5), (1, 0, 0, 0.3)]
 
@@ -114,29 +108,34 @@ class Grapher:
         # Adding a legend
         plt.legend(energy_names)
 
-        plt.plot(ref_energies, ref_energies, c='orange', alpha=0.5)
+        min_ref = min(ref_energies)
+        max_ref = max(ref_energies)
+
+        # plot reference line y=x.
+        x = [min_ref, max_ref]
+        y = x
+
+        plt.plot(x, y, c='orange', alpha=0.5)
 
 
         #Adding axes titles
         plt.xlabel("{} energy [Kcal/mol]".format(ref_energy_name))
         plt.ylabel("energy [Kcal/mol]")
 
-        files.init_file("fit.png")
-
         files.init_file(output_file)
         plt.savefig(output_file)
 
 
-    def make_error_graph(self, training_set, ref_energy_name, energy_names, output_file):
+    def make_error_graph(self, data_set, ref_energy_name, energy_names, output_file):
 
         plt.clf()
 
-        ref_energies = training_set.get_energies(ref_energy_name)
+        ref_energies = data_set.get_energies(ref_energy_name)
 
         energies_dict = OrderedDict()
 
         for energy_name in energy_names:
-            energies_dict[energy_name] = training_set.get_energies(energy_name)
+            energies_dict[energy_name] = data_set.get_energies(energy_name)
 
         colors = [(0, 0, 0, 1), (0, 0, 1, 0.7), (0, 1, 0, 0.5), (1, 0, 0, 0.3)]
 
@@ -146,14 +145,18 @@ class Grapher:
         # Adding a legend
         plt.legend(energy_names)
 
-        plt.plot(ref_energies, [0 for energy in ref_energies], c='orange', alpha=0.5)
+        min_ref = min(ref_energies)
+        max_ref = max(ref_energies)
 
+        # plot reference line y=0
+        x = [min_ref, max_ref]
+        y = [0, 0]
+
+        plt.plot(x, y, c='orange', alpha=0.5)
 
         #Adding axes titles
         plt.xlabel("{} energy [Kcal/mol]".format(ref_energy_name))
         plt.ylabel("delta energy [Kcal/mol]")
-
-        files.init_file("fit.png")
 
         files.init_file(output_file)
         plt.savefig(output_file)

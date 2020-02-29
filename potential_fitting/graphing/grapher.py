@@ -77,7 +77,7 @@ class Grapher:
 
         ticks = list(numpy.linspace(min_bin, max_bin, num_ticks))
 
-        labels = [str(tick) for tick in ticks]
+        labels = [str(round(tick, 2)) for tick in ticks]
 
         ticks.append(max_bin)
 

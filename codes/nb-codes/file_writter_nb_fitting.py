@@ -564,7 +564,7 @@ def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
         atom2_coords = get_coords_var_name(atom2_sym, atom2_ind, atom2_frag)
 
         if "0" in type:
-            variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_d, nl_param_k, atom1_coords, atom2_coords)
+            variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_d, nl_param_k, atom1_coords, atom2_coords)
         else:
             variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_k, atom1_coords, atom2_coords)
 

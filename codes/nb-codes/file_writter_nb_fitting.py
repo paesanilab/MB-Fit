@@ -1992,7 +1992,7 @@ int main(int argc, char** argv) {
 
         // Calculate dispersion
         mbnrg_disp disp(training_set[i].xyz);
-        disp.set_nonlinear_parameters(final_l);
+        disp.set_nonlinear_parameters(final_nl);
         disp_e[i] = disp.get_dispersion();
 
         // Calculate non-linear terms of buckingham

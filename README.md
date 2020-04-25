@@ -18,6 +18,8 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Fixed a bug where the training set generator would supply the wrong number of arguments
+to the exponential functions when using d0 nl parameters.
 * Added the Grapher class, with some functions for graphing energy distributions of TrainingSets
 as well as making correlation / error graphs for TrainingSets.
 * Added the Evaluator class, whose eval() method can be used to get a TrainingSet from an eval-xb

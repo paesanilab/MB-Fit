@@ -48,9 +48,9 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
 
     qchem_id_name = "get_config_qchem_{}_{}_{}_{}".format(name1, name2, method, basis)
 
-    qchem_in_path = files.init_file(os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".in"))
-    qchem_out_path = files.init_file(os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".out"))
-    qchem_log_path = files.init_file(os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".log"))
+    qchem_in_path = files.init_file(os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".in"), files.OverwriteMethod.OVERWRITE)
+    qchem_out_path = files.init_file(os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".out"), files.OverwriteMethod.OVERWRITE)
+    qchem_log_path = files.init_file(os.path.join(dimer_settings.get("files", "log_path"), qchem_id_name + ".log"), files.OverwriteMethod.OVERWRITE)
 
     # read geometry into a molecule object
     molecule1 = xyz_to_molecules(geo_list[0], settings=settings_list[0])[0]
@@ -260,9 +260,9 @@ def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_
 
     qchem_id_name = "get_config_qchem_{}_{}_{}".format(name, method, basis)
 
-    qchem_in_path = files.init_file(os.path.join(settings.get("files", "log_path"), qchem_id_name + ".in"))
-    qchem_out_path = files.init_file(os.path.join(settings.get("files", "log_path"), qchem_id_name + ".out"))
-    qchem_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), qchem_id_name + ".log"))
+    qchem_out_path = files.init_file(os.path.join(settings.get("files", "log_path"), qchem_id_name + ".out"), files.OverwriteMethod.OVERWRITE)
+    qchem_in_path = files.init_file(os.path.join(settings.get("files", "log_path"), qchem_id_name + ".in"), files.OverwriteMethod.OVERWRITE)
+    qchem_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), qchem_id_name + ".log"), files.OverwriteMethod.OVERWRITE)
 
     atomic_symbols = []
 

@@ -18,6 +18,8 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Fixed a bug where the link generated in run_fit.sh by prepare_fits() would be the local path to the
+training set file instead of a path to the symbolic link in the same directory.
 * Fixed a bug where the training set generator would supply the wrong number of arguments
 to the exponential functions when using d0 nl parameters.
 * Added the Grapher class, with some functions for graphing energy distributions of TrainingSets

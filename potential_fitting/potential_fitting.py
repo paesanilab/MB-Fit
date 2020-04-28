@@ -1158,13 +1158,16 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
         else:
             os.mkdir(new_fit_folder)
             os.chdir(new_fit_folder)
+
+            training_set_basename = os.path.basename(training_set_path)
+
             # Link the training set to the fit folder
-            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), ".")
+            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
             # Create bash script that will run the fit
             with open("run_fit.sh",'w') as my_bash:
                 my_bash.write("#!/bin/bash\n")
                 my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(fit_executable_path,
-                                                                         training_set_path, DE, alpha))
+                                                                         training_set_basename, DE, alpha))
 
             system.call("chmod", "744", "run_fit.sh")
             fit_index += 1

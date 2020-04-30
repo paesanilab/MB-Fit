@@ -438,13 +438,13 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
 
     return charges, effective_polarizabilities
 
-def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
-                                     distance_between=20,
-                                     use_published_polarizabilities=True,
-                                     method="wb97m-v",
-                                     basis="aug-cc-pvtz",
-                                     num_digits=4,
-                                     virtual_sites=["X", "Y", "Z"]):
+def get_system_properties(settings_file, config_path, geo_paths,
+                          distance_between=20,
+                          use_published_polarizabilities=True,
+                          method="wb97m-v",
+                          basis="aug-cc-pvtz",
+                          num_digits=4,
+                          virtual_sites=["X", "Y", "Z"]):
     """
     Generates the config file needed to perform a fit.
     Args:

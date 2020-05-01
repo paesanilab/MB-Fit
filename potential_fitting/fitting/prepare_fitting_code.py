@@ -1,6 +1,7 @@
 import os
 from potential_fitting.utils import files, SettingsReader
 from potential_fitting.polynomials import MoleculeSymmetryParser
+from .generate_fitting_code import generate_fitting_code
 
 def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
 
@@ -56,15 +57,20 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
                 number_of_terms = str(line[line.index(":") + 2:])
                 break
 
-    # save the old settings file to .tmp so we can restore it later
-    os.system("cp " + config_path + " " + config_path + ".tmp")
+    config_obj = SettingsReader(config_path)
+    config_obj.set("fitting","nvars",number_of_variables)
+    config_obj.set("fitting","npoly",number_of_terms )
+    config_obj.write(config_path)
 
-    # append to the settings file
-    with open(config_path, "a") as config_file:
-        config_file.write("\n")
-        config_file.write("## Define number of variables and terms\n")
-        config_file.write("nvars = " + number_of_variables + "\n")
-        config_file.write("npoly = " + number_of_terms + "\n")
+#    # save the old settings file to .tmp so we can restore it later
+#    os.system("cp " + config_path + " " + config_path + ".tmp")
+#
+#    # append to the settings file
+#    with open(config_path, "a") as config_file:
+#        config_file.write("\n")
+#        config_file.write("## Define number of variables and terms\n")
+#        config_file.write("nvars = " + number_of_variables + "\n")
+#        config_file.write("npoly = " + number_of_terms + "\n")
 
     # update include stements in the poly files to reflect the new names
 
@@ -107,13 +113,14 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     print("Executing python generator script")
 
     # Execute the python script that generates the 1b fit code
-    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path + " " + poly_path)
+    #os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path + " " + poly_path)
+    generate_fitting_code(settings_path, config_path, fit_path + "/poly-direct.cpp", poly_order, in_path, poly_path)
 
-    # restore settings
-    os.system("mv " + config_path + ".tmp " + config_path)
+#    # restore settings
+#    os.system("mv " + config_path + ".tmp " + config_path)
 
     # copy the template files
-    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/template/* " + fit_path)
+    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path)
 
     # move files from cwd into fit directory
     if (nmons<3):
@@ -148,21 +155,3 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     os.system("mv " + file_name + " MBX_files/")
     file_name = "poly_{}b_{}_deg{}_nograd_v1.cpp".format(nmons, system_name, degree)
     os.system("mv " + file_name + " MBX_files/")
-
-#    os.system("mv buckingham.h " + fit_path + "/")
-#    os.system("mv fit-2b-wbuck.cpp " + fit_path + "/")
-#    os.system("mv fit-2b.cpp " + fit_path + "/")
-#    os.system("mv mon1.h " + fit_path + "/")
-#    os.system("mv mon2.h " + fit_path + "/")
-#    os.system("mv poly_2b_" + molecule +".h " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1.cpp " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1x.cpp " + fit_path + "/")
-#    os.system("mv buckingham.cpp " + fit_path + "/")
-#    os.system("mv eval-2b.cpp " + fit_path + "/")
-#    os.system("mv eval-2b-wbuck.cpp " + fit_path + "/")
-#    os.system("mv mon1.cpp " + fit_path + "/")
-#    os.system("mv mon2.cpp " + fit_path + "/")
-#    os.system("mv poly_2b_" + molecule + ".cpp " + fit_path + "/")
-#    os.system("mv training_set.h " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1.h " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1x.h " + fit_path + "/")

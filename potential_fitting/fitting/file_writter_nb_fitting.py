@@ -2247,14 +2247,14 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
     ff.write(a)
 
     a = """#include "dispersion.h"
+#ifdef USE_BUCKINGHAM
+#include "buckingham.h"
+#endif
 """
 
     if (number_of_monomers<3): ff.write(a)
 
-    a = """#ifdef USE_BUCKINGHAM
-#include "buckingham.h"
-#endif
-#include "constants.h"
+    a = """#include "constants.h"
 """
 
     ff.write(a)
@@ -2276,13 +2276,13 @@ double E_range = """ + str(E_range) + """; // kcal/mol
 static std::vector<tset::nb_system> training_set;
 static std::vector<double> elec_e;
 
-#ifdef USE_BUCKINGHAM
-static std::vector<double> buck_e;
-#endif
 """
     ff.write(a)
 
-    a = """static std::vector<double> disp_e;
+    a = """#ifdef USE_BUCKINGHAM
+static std::vector<double> buck_e;
+#endif
+static std::vector<double> disp_e;
 """
     if (number_of_monomers<3): ff.write(a)
 
@@ -2440,16 +2440,17 @@ int main(int argc, char** argv) {
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
         training_set[n].nb_energy -= disp_e[n];
-"""
 
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """
         #ifdef USE_BUCKINGHAM
         mbnrg_buck buck(training_set[n].xyz);
         buck_e.push_back(buck.get_buckingham());
         training_set[n].nb_energy -= buck_e[n];
         #endif
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """
     }
 
     linear::allocate();
@@ -2522,16 +2523,15 @@ int main(int argc, char** argv) {
     if (number_of_monomers<3):
         a = """
         training_set[i].nb_energy += elec_e[i] + disp_e[i];
-"""
-    else:
-        a = """
-        training_set[i].nb_energy += elec_e[i];
-"""
-        a += """
+
         #ifdef USE_BUCKINGHAM
         for (size_t i = 0; i < training_set.size(); ++i)
             training_set[i].nb_energy += buck_e[i];
         #endif
+"""
+    else:
+        a = """
+        training_set[i].nb_energy += elec_e[i];
 """
 
     ff.write(a)
@@ -2557,15 +2557,15 @@ int main(int argc, char** argv) {
     if (number_of_monomers<3):
         a = """
         double E_model = model.calculate(training_set[i].xyz) + elec_e[i] + disp_e[i];"""
-    else:
-        a = """
-        double E_model = model.calculate(training_set[i].xyz) + elec_e[i];"""
-
-    a += """
+        a += """
         #ifdef USE_BUCKINGHAM
         E_model += buck_e[i];
         #endif
 """
+    else:
+        a = """
+        double E_model = model.calculate(training_set[i].xyz) + elec_e[i];"""
+
 
     ff.write(a)
 
@@ -2844,13 +2844,14 @@ def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system
     ff.write(a)
 
     a = """#include "dispersion.h"
-"""
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """
 #ifdef USE_BUCKINGHAM
 #include "buckingham.h"
 #endif
+"""
+    if (number_of_monomers<3): 
+        ff.write(a)
+
+    a = """
 #include "constants.h"
 """
 
@@ -2871,15 +2872,16 @@ static std::vector<double> elec_e;
     ff.write(a)
 
     a = """static std::vector<double> disp_e;
-"""
-
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """static std::vector<double> nb_energy;
-
 #ifdef USE_BUCKINGHAM
 static std::vector<double> buck_e;
 #endif
+"""
+
+    if (number_of_monomers<3): 
+        ff.write(a)
+
+    a = """static std::vector<double> nb_energy;
+
 
 } // namespace
 
@@ -2940,15 +2942,16 @@ int main(int argc, char** argv) {
     a = """
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
-"""
-
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """
         #ifdef USE_BUCKINGHAM
         mbnrg_buck buck(training_set[n].xyz);
         buck_e.push_back(buck.get_buckingham());
         #endif
+"""
+
+    if (number_of_monomers<3): 
+        ff.write(a)
+
+    a = """
         poly_e.push_back(model.calculate(training_set[n].xyz));
 """
 
@@ -2956,7 +2959,10 @@ int main(int argc, char** argv) {
 
     if (number_of_monomers<3):
         a = """
-        nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);"""
+        nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);
+        #ifdef USE_BUCKINGHAM
+        nb_energy[n] += buck_e[n];
+        #endif"""
     else:
         a = """
         nb_energy.push_back(elec_e[n] + poly_e[n]);"""
@@ -2964,9 +2970,6 @@ int main(int argc, char** argv) {
     ff.write(a)
 
     a = """
-        #ifdef USE_BUCKINGHAM
-        nb_energy[n] += buck_e[n];
-        #endif
     }
 
     for (size_t n = 0; n < training_set.size(); n++) {

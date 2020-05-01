@@ -499,7 +499,7 @@ def generate_poly_input(settings_path, molecule_in, in_file_path, virtual_sites=
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path, virtual_sites=virtual_sites)
 
-def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, generate_direct_gradients=False,
+def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, generate_direct_gradients=True,
                          num_gradient_terms_per_line=1):
     """
     Generates polynomial input for maple and some ".cpp" and ".h" polynomial files.

@@ -1,4 +1,4 @@
-import utils_nb_fitting
+from . import utils_nb_fitting 
 import itertools as it
 
 def write_monomer_class_header(mon_index):

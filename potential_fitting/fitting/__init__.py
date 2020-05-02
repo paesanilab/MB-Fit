@@ -1,5 +1,5 @@
-from .get_config_data import generate_fitting_config_file
-from .generate_config_file import generate_fitting_config_file_new
+#from .get_config_data import generate_fitting_config_file
+from .get_system_properties import get_system_properties
 from .prepare_1b_fitting_code import prepare_1b_fitting_code
 from .prepare_2b_fitting_code import prepare_2b_fitting_code
 from .prepare_fitting_code import prepare_fitting_code

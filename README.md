@@ -19,7 +19,7 @@ Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
 * Fitting code generation is now a method in the library, rather than an external call.
-* Function generate_conig_new has been renamed to get_system_properties to be bore explicative.
+* Function generate_conig_new has been renamed to get_system_properties to be more explicative.
 * Examples folder has been restructured with new examples and updated function calls. 
 Example notebooks will be progressively added.
 * Fixed a bug where the link generated in run_fit.sh by prepare_fits() would be the local path to the

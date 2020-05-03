@@ -3,7 +3,11 @@ from potential_fitting.utils import SettingsReader
 from potential_fitting.utils import constants, system
 from potential_fitting.polynomials import MoleculeSymmetryParser
 from . import utils_nb_fitting 
+<<<<<<< HEAD
 from . import file_writter_nb_fitting 
+=======
+from . import file_writer_nb_fitting 
+>>>>>>> d933aea6f19e5982bc54b0439e8f4e366fe5f2a0
 
 
 def generate_fitting_code(settings_path, config_path, directcpp_path, degree, poly_in_path, poly_directory_path):
@@ -177,18 +181,18 @@ def generate_fitting_code(settings_path, config_path, directcpp_path, degree, po
     
     # Write the header files
     for i in range(number_of_monomers):
-        file_writter_nb_fitting.write_monomer_class_header(i + 1)
+        file_writer_nb_fitting.write_monomer_class_header(i + 1)
     
     # Write the cpp files
     for i in range(number_of_monomers):
-        file_writter_nb_fitting.write_monomer_class_cpp(i + 1, number_of_sites[i], number_of_atoms[i], excluded_pairs_12[i],
+        file_writer_nb_fitting.write_monomer_class_cpp(i + 1, number_of_sites[i], number_of_atoms[i], excluded_pairs_12[i],
                                                         excluded_pairs_13[i], excluded_pairs_14[i], charges[i],
                                                         polarizabilities[i], polarizability_factors[i])
     
     # Write mb-pol water monomer if applicable
     for i in range(number_of_monomers):
         if use_mbpol[i] == 1:
-            file_writter_nb_fitting.write_mbpol_monomer(i + 1)
+            file_writer_nb_fitting.write_mbpol_monomer(i + 1)
     
     
     ################################################################################
@@ -197,80 +201,80 @@ def generate_fitting_code(settings_path, config_path, directcpp_path, degree, po
     
     system_name = symmetry_parser.get_symmetry()
     
-    file_writter_nb_fitting.write_fit_polynomial_holder_header(system_name, number_of_monomers, nl_param_all, ri, ro)
+    file_writer_nb_fitting.write_fit_polynomial_holder_header(system_name, number_of_monomers, nl_param_all, ri, ro)
     
-    file_writter_nb_fitting.write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max)
+    file_writer_nb_fitting.write_fit_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max)
     
     
     ################################################################################
     ## Write dispersion header and cpp #############################################
     ################################################################################
     if (number_of_monomers<3):
-        file_writter_nb_fitting.write_dispersion_header(symmetry_parser, virtual_sites_poly, C6, d6)
-        file_writter_nb_fitting.write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
+        file_writer_nb_fitting.write_dispersion_header(symmetry_parser, virtual_sites_poly, C6, d6)
+        file_writer_nb_fitting.write_dispersion_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
     
     
     
     ################################################################################
     ## Write buckingham header and cpp #############################################
     ################################################################################
-        file_writter_nb_fitting.write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
-        file_writter_nb_fitting.write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
+        file_writer_nb_fitting.write_buckingham_header(symmetry_parser, virtual_sites_poly, A_buck, b_buck)
+        file_writer_nb_fitting.write_buckingham_cpp(symmetry_parser, virtual_sites_poly, excluded_pairs_12[0], excluded_pairs_13[0],excluded_pairs_14[0])
     
     
     ################################################################################
     ## Polynomial header and cpp ###################################################
     ################################################################################
     
-    file_writter_nb_fitting.write_poly_fit_header(number_of_monomers, system_name, degree, nvars, npoly)
+    file_writer_nb_fitting.write_poly_fit_header(number_of_monomers, system_name, degree, nvars, npoly)
     
-    file_writter_nb_fitting.write_poly_fit_cpp(number_of_monomers, system_name, nvars, npoly, directcpp)
+    file_writer_nb_fitting.write_poly_fit_cpp(number_of_monomers, system_name, nvars, npoly, directcpp)
     
     ################################################################################
     ## Fitting code ################################################################
     ################################################################################
     
-    file_writter_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha)
+    file_writer_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha)
     
     ################################################################################
     ## Evaluation code #############################################################
     ################################################################################
     
-    file_writter_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name)
+    file_writer_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name)
     
     ################################################################################
     ## TTM-nrg fitting code ########################################################
     ################################################################################
     if number_of_monomers == 2:
-        file_writter_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range)
+        file_writer_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range)
     
     ################################################################################
     ## TTM-nrg evaluation code #####################################################
     ################################################################################
     
-        file_writter_nb_fitting.write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
+        file_writer_nb_fitting.write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
     
     ################################################################################
     ## Makefile ####################################################################
     ################################################################################
     
-    file_writter_nb_fitting.write_makefile(number_of_monomers, system_name)
+    file_writer_nb_fitting.write_makefile(number_of_monomers, system_name)
     
     ################################################################################
     ## Write polynomial header and cpp for MBX #####################################
     ################################################################################
     
-    file_writter_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
+    file_writer_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
     
-    file_writter_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+    file_writer_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
     
-    file_writter_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+    file_writer_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
     
     ################################################################################
     ## Write polynomial holder and cpp for MBX #####################################
     ################################################################################
     
-    file_writter_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
+    file_writer_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
     
-    file_writter_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
+    file_writer_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
 

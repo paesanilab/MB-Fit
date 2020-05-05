@@ -74,7 +74,7 @@ def execute_job():
         input_file.write("basis {{}}\n".format(basis))
 
         for key, value in arguments.items():
-            input_file.write(str(key) + " " + str(value))
+            input_file.write(str(key) + " " + str(value) + "\n")
 
         input_file.write("$end\n")
 

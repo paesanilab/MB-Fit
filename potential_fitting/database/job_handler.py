@@ -190,7 +190,7 @@ class JobHandler(object):
                 "memory":       self.settings.get("psi4", "memory"),
                 "total_charge": molecule.get_charge(frag_indices),
                 "total_spin": molecule.get_spin_multiplicity(frag_indices),
-                "format":       "{}"
+                "format":       "{}",
                 "arguments":    str(arguments)
             }
 

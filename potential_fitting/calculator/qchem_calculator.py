@@ -83,7 +83,7 @@ class QchemCalculator(Calculator):
                 pass
 
             for key, value in arguments.items():
-                in_file.write("{} {}".format(key, value))
+                in_file.write("{} {}\n".format(key, value))
 
             in_file.write("$end\n")
 

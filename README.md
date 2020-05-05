@@ -18,6 +18,8 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* added new 'arguments' parameter to all functions that call psi4 or qchem. 'arguments'
+is a dictionary of extra arguments to be passed on to the QM code.
 * Fixed a bug where the link generated in run_fit.sh by prepare_fits() would be the local path to the
 training set file instead of a path to the symbolic link in the same directory.
 * Fixed a bug where the training set generator would supply the wrong number of arguments

@@ -125,7 +125,7 @@ class Calculator:
     def is_valid_model(self, model):
         raise NotImplementedError
     
-    def calculate_energy(self, molecule, model, fragment_indicies):
+    def calculate_energy(self, molecule, model, fragment_indicies, arguments={}):
         """
         Calculates the energy of a subset of the fragments of a molecule with a provided model.
 
@@ -143,7 +143,7 @@ class Calculator:
 
         raise NotImplementedError
 
-    def optimize_geometry(self, molecule, model):
+    def optimize_geometry(self, molecule, model, arguments={}):
         """
         Optimizes the given input geometry with a provided model.
 
@@ -157,7 +157,7 @@ class Calculator:
 
         raise NotImplementedError
 
-    def find_frequencies(self, molecule, model):
+    def find_frequencies(self, molecule, model, arguments={}):
         """
         Performs a frequency calculation to find the normal modes, frequencies, and reduced masses of the molecule
 

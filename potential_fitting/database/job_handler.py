@@ -23,7 +23,7 @@ class JobHandler(object):
         """
         self.settings = SettingsReader(settings_path)
 
-    def make_all_jobs(self, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+    def make_all_jobs(self, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize, arguments={}):
         """
         Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -55,7 +55,7 @@ class JobHandler(object):
             for molecule, method, basis, cp, use_cp, frag_indices in database.get_all_calculations(client_name, *tags,
                                                                                                    calculations_to_do=num_jobs):
                 model = Model(method, basis, cp)
-                self.write_job(molecule, model, use_cp, frag_indices, job_dir)
+                self.write_job(molecule, model, use_cp, frag_indices, job_dir, arguments=arguments)
                 counter += 1
                 if counter % 100 == 0:
                     system.format_print("Made {} jobs so far.".format(counter), italics=True)
@@ -148,7 +148,7 @@ class JobHandler(object):
 
         system.format_print("Moved completed job directories!", bold=True, color=system.Color.GREEN)
 
-    def write_job(self, molecule, model, use_cp, frag_indices, job_dir):
+    def write_job(self, molecule, model, use_cp, frag_indices, job_dir, arguments={}):
         """
         Makes a Job file for a specific calculation.
 
@@ -189,6 +189,7 @@ class JobHandler(object):
                 "total_charge": molecule.get_charge(frag_indices),
                 "total_spin": molecule.get_spin_multiplicity(frag_indices),
                 "format":       "{}"
+                "arguments":    str(arguments)
             }
 
         hash_string = "\n".join([str(v) for v in template_dictionary.values()])

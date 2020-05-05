@@ -89,7 +89,7 @@ class Psi4Calculator(Calculator):
         except RuntimeError as e:
             raise LibraryCallError("psi4", "geometry", str(e))
 
-    def calculate_energy(self, molecule, model, fragment_indicies):
+    def calculate_energy(self, molecule, model, fragment_indicies, arguments={}):
         """
         Calculates the energy of a subset of the fragments of a molecule with a provided model.
 
@@ -111,6 +111,8 @@ class Psi4Calculator(Calculator):
         # file to write logs from psi4 calculation
         log_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), model.get_cp(), "out")
         
+        psi4.set_options(arguments)
+
         self.initialize_calculation(log_path)
 
         psi4_mol = self.get_psi4_molecule(molecule, model, fragment_indicies)
@@ -132,7 +134,7 @@ class Psi4Calculator(Calculator):
         except RuntimeError as e:
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
 
-    def optimize_geometry(self, molecule, model):
+    def optimize_geometry(self, molecule, model, arguments={}):
         """
         Optimizes the given input geometry with a provided model.
 
@@ -148,6 +150,8 @@ class Psi4Calculator(Calculator):
             print("Beginning geometry optimization of {} with model {}/{}".format(molecule.get_name(), model.get_method(), model.get_basis()))
 
         log_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "log")
+
+        psi4.set_options(arguments)
 
         self.initialize_calculation(log_path)
 
@@ -185,7 +189,7 @@ class Psi4Calculator(Calculator):
 
         return Molecule.read_xyz(xyz_string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment), energy, log_path
 
-    def find_frequencies(self, molecule, model):
+    def find_frequencies(self, molecule, model, arguments={}):
         """
         Performs a frequency calculation to find the normal modes, frequencies, and reduced masses of the molecule
 
@@ -201,6 +205,8 @@ class Psi4Calculator(Calculator):
             print("Beginning normal modes calculation of {} with {}/{}.".format(molecule.get_name(), model.get_method(), model.get_basis()))
 
         log_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "log")
+
+        psi4.set_options(arguments)
 
         self.initialize_calculation(log_path)
 

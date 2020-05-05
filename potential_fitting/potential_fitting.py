@@ -40,7 +40,7 @@ def apply_standard_order(settings_path, geo_path):
     return standard_settings_path, standard_geo_path
 
 
-def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
+def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, arguments={}):
     """
     Optimizes the geometry of the given molecule.
 
@@ -55,9 +55,9 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, arguments=arguments)
 
-def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis):
+def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, arguments={}):
     """
     Generates the normal modes for the given molecule.
 
@@ -72,7 +72,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
         Null dimension of normal modes.
     """
     
-    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis)
+    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, arguments=arguments)
 
     return dim_null
 
@@ -323,7 +323,7 @@ def init_database(settings_path, database_config_path, configurations_path, meth
     database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 
-def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize, arguments={}):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
@@ -343,9 +343,9 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     if calculation_count is None:
         calculation_count = sys.maxsize
 
-    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
+    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count, arguments=arguments)
 
-def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize, arguments={}):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -364,7 +364,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
 
     job_handler = database.get_job_handler(settings_path)
 
-    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
+    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs, arguments=arguments)
 
 def read_jobs(settings_path, database_config_path, job_dir, overwrite=False):
     """

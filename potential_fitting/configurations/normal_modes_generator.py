@@ -12,6 +12,7 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, ba
         settings_path       - Local path to the ".ini" file containing all relevant settings.
         opt_path            - Local path to the ".xyz" file to read the optimized geometry from.
         normal_modes_path   - Local path to the ".dat" file to write the normal modes to.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         The null dimension of the input molecule.

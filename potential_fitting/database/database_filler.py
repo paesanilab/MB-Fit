@@ -25,6 +25,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
                     Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
         calculation_count   - Maximum number of calculations to perform. Default is unlimited.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.

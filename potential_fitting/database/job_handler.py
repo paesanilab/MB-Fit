@@ -34,6 +34,7 @@ class JobHandler(object):
             job_dir             - Local path to the directory to place the job files in.
             tags                - Onlt  make jobs for calculations marked with at least one of these tags.
             num_jobs            - The number of jobs to generate. Unlimted if None.
+            arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             None.
@@ -161,6 +162,7 @@ class JobHandler(object):
             use_cp              - True if counterpoise correction should be used for this calculation.
             frag_indices        - List of indices of fragments to include in the calculation.
             job_dir             - Local path to the directory to place the job file in.
+            arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             None.

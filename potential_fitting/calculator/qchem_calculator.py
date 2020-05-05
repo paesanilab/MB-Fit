@@ -47,6 +47,7 @@ class QchemCalculator(Calculator):
             job             - What job this input file should specify. For example: "sp", "opt", or "freq".
             fragment_indicies - If not None, then only these fragments will be included in the input file.
                 Defualt: None
+            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             None
@@ -97,6 +98,7 @@ class QchemCalculator(Calculator):
             molecule        - The Molecule to perform the calculation on.
             fragment_indicies - List of the indicies of the fragments to include in the calculation.
             model           - The Model to use for the calculation.
+            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (calculated energy, path to the log file)
@@ -157,6 +159,7 @@ class QchemCalculator(Calculator):
         Args:
             molecule        - The Molecule to perform the optimization on.
             model           - The Model to use for the optimization.
+            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (new optimized molecule, nergy of the optimized geometry, path to the log file)
@@ -246,6 +249,7 @@ class QchemCalculator(Calculator):
         Args:
             molecule        - The Molecule to perform the frequency calculation on.
             model           - The Model to use for the claculation.
+            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (normal modes, frequencies, reduced masses, path to log file)

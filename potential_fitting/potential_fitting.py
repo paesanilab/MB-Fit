@@ -50,6 +50,7 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis
         opt_geo_path        - Local path to the file to write the optimized geometry to.
         method              - The method to use for this geometry optimization.
         basis               - The basis to use for this geometry optimization.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -67,6 +68,7 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
         normal_modes_path   - Local path to the file to write the normal modes to.
         method              - The method to use for this normal modes calculation.
         basis               - The basis to use for this normal modes calculation.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         Null dimension of normal modes.
@@ -335,6 +337,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
         client_name         - Name of the client performing these calculations.
         tags                - Only perform calculations marked with at least one of these tags.
         calculation_count   - Maximum number of calculations to perform. Unlimited if None.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -357,6 +360,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
         job_dir             - Local path to the directory to place the job files in.
         tags                - Onlt  make jobs for calculations marked with at least one of these tags.
         num_jobs            - The number of jobs to generate. Unlimted if None.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.

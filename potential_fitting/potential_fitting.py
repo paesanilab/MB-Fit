@@ -714,7 +714,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
 #
 #    os.chdir(original_dir)   
  
-def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
+def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
     """
     Generates the fit code based on the polynomials for a system
 
@@ -725,6 +725,7 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
         poly_path           - Local path to directory where polynomial files are.
         poly_order          - The order of the polynomial in poly_path.
         fit_dir_path        - Local path to directory to generate fit code in.
+        use_direct          - If true, it will use the direct polynomials instead of the mapleoptimized
 
     Returns:
         None.
@@ -735,7 +736,7 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path)
+    fitting.prepare_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
 
 
 #def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):

@@ -3,7 +3,7 @@ from potential_fitting.utils import files, SettingsReader
 from potential_fitting.polynomials import MoleculeSymmetryParser
 from .generate_fitting_code import generate_fitting_code
 
-def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
+def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct):
 
     molecule = ""
     nmons = 0
@@ -20,11 +20,13 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 
     # copy needed files from poly_path to fit_path
     os.system("cp " + in_path + " " + fit_path + "/")
-    os.system("cp " + poly_path + "/poly-direct.cpp " + fit_path + "/")
-#    os.system("cp " + poly_path + "/poly-grd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1x.cpp")
-#    os.system("cp " + poly_path + "/poly-nogrd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1.cpp")
-#    os.system("cp " + poly_path + "/poly-model.h " + fit_path + "/poly_2b_" + molecule + "_v1x.h")
 
+    # Ensure that if use_direct is active, the grad direct file exists
+    directcpp_exists = os.path.isfile(poly_path + "/poly-direct.cpp") and os.path.isfile(poly_path + "/poly-grd-direct.cpp")
+
+    if  use_direct and  not  directcpp_exists :
+        raise FileDoesNotExistError("poly-(grd-)direct.cpp")
+ 
     degree = 0
 
     # find the number of variables and number of polynomials from the log file
@@ -62,59 +64,9 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     config_obj.set("fitting","npoly",number_of_terms )
     config_obj.write(config_path)
 
-#    # save the old settings file to .tmp so we can restore it later
-#    os.system("cp " + config_path + " " + config_path + ".tmp")
-#
-#    # append to the settings file
-#    with open(config_path, "a") as config_file:
-#        config_file.write("\n")
-#        config_file.write("## Define number of variables and terms\n")
-#        config_file.write("nvars = " + number_of_variables + "\n")
-#        config_file.write("npoly = " + number_of_terms + "\n")
-
-    # update include stements in the poly files to reflect the new names
-
-    # can update to NOT DO COPIES at later TIME ****************
-
-    # save all lines in grd poly file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1x.cpp", "r") as grd:
-#        lines = grd.readlines()
-#
-#    # loop thru each line and write it to the file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1x.cpp", "w") as grd:
-#        for line in lines:
-#
-#            # check if this line has the import statement
-#            try:
-#                line.index("poly-model.h")
-#                # update import statement
-#                grd.write(line[:line.index("poly-model.h")] + "poly_2b_" + molecule + "_v1x.h" + line[line.index("poly-model.h") + 12:])
-#            except ValueError:
-#                # write original line if no import statement
-#                grd.write(line)
-#
-#    # save all lines in nogrd poly file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1.cpp", "r") as nogrd:
-#        lines = nogrd.readlines()
-#
-#    # looo thru each line and write it to the file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1.cpp", "w") as nogrd:
-#        for line in lines:
-#
-#            # check if this line has the import statement
-#            try:
-#                line.index("poly-model.h")
-#                # update import statment
-#                nogrd.write(line[:line.index("poly-model.h")] + "poly_2b_" + molecule + "_v1x.h" + line[line.index("poly-model.h") + 12:])
-#            except ValueError:
-#                # write original line of no import statement
-#                nogrd.write(line)
-
     print("Executing python generator script")
 
-    # Execute the python script that generates the 1b fit code
-    #os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path + " " + poly_path)
-    generate_fitting_code(settings_path, config_path, fit_path + "/poly-direct.cpp", poly_order, in_path, poly_path)
+    generate_fitting_code(settings_path, config_path, poly_order, in_path, poly_path, use_direct)
 
 #    # restore settings
 #    os.system("mv " + config_path + ".tmp " + config_path)

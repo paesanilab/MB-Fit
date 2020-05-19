@@ -110,7 +110,7 @@ def generate_fitting_code(settings_path, config_path, degree, poly_in_path, poly
     
     # Obtain inner and outer cutoff from config.ini
     ri = config.get("fitting", "r_in") # polynomials start to decrease (Angstrom)
-    ro = config.get("fitting", "r_out") # polynomials start to decrease (Angstrom)
+    ro = config.get("fitting", "r_out") # polynomials are zero (Angstrom)
     
     # Define kind of variables for intra, inter and lone pairs
     # Options are:
@@ -118,7 +118,7 @@ def generate_fitting_code(settings_path, config_path, degree, poly_in_path, poly
     # exp0 e^-k(d-d0)
     # coul0 [e^-k(d-d0)]/r
     # coul [e^-kd]/r
-    # Recomendation is to use exp for intra and inter and coul for lone pairs
+    # Recommendation is to use exp for intra and inter and coul for lone pairs
     var_intra = config.get("fitting", "var_intra")
     var_virtual_sites = config.get("fitting", "var_virtual_sites")
     var_inter = config.get("fitting", "var_inter")

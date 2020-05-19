@@ -612,108 +612,6 @@ def get_system_properties(settings_file, config_path, geo_paths,
                                   num_digits=num_digits,
                                   virtual_sites=virtual_sites)
 
-
-# MRR 20200430 This function should not be used.
-
-#def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,
-#                                 method="wb97m-v",
-#                                 basis="aug-cc-pvtz"):
-#    """
-#        Generates the config file needed to perform a fit.
-#
-#        Qchem is required for this step to work for 1 and 2 b.
-#
-#        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
-#
-#        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
-#        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
-#
-#        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
-#        Intermolecular c6 constants are read from config_2b_paths.
-#
-#        Args:
-#            settings_path       - Local path to the file containing all relevent settings information.
-#            config_path         - Local path to file to write the config file to.
-#            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
-#            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
-#                    config for each monomer.
-#            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
-#                    config for each combination of monomers.
-#            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-#                    does not converge, try different values of this.
-#            use_published_polarizabilities - use published polarizabilites from
-#                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
-#            method              - Method to use to calculate charges, polarizabilites, and c6 constants.
-#                    Default: wb97m-v
-#            basis              - Basis to use to calculate charges, polarizabilites, and c6 constants.
-#                    Default: aug-cc-pvtz
-#
-#        Returns:
-#            None.
-#        """
-#
-#    fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
-#            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities,
-#            method=method, basis=basis)
-    
-#def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
-#    """
-#    Generates the fit code based on the polynomials and config file for a monomer.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        config_path         - Local path to the monomer config file to read config info from.
-#        poly_in_path        - Local path to the file to read the polynomial input from. Name of file should be in
-#                the format A1B2.in, it is ok to have extra directories prior to file name (thisplace/thatplace/A3.in).
-#        poly_dir_path       - Local path to the directory where the polynomial ".h" and ".cpp" files are files are.
-#        order               - The order of the polynomial to in poly_dir_path.
-#        fit_dir_path        - Local path to the directory to write the fit code in.
-#
-#    Returns:
-#        None.
-#    """
-#
-#    fitting.prepare_1b_fitting_code(config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path)
-#
-#def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_path):
-#    """
-#    Generates the fit TTM fit code for a dimer.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        config_path         - Local path to the dimer config file to read config info from.
-#        molecule_in         - A String of fromat "A1B2". Same as poly_in_path but without ".in".
-#        fit_dir_path        - Local path to the directory to write the ttm fit code in.
-#
-#    Returns:
-#        None.
-#    """
-#
-#    this_file_path = os.path.dirname(os.path.abspath(__file__))
-#
-#    original_dir = os.getcwd()
-#
-#    files.init_directory(fit_dir_path)
-#
-#    os.chdir(fit_dir_path)
-#
-#    codes_path = os.path.join(this_file_path, "..", "codes", "2b-codes")
-#    
-#    # FOR SOME REASON THE SECOND LINE WORKS BUT NOT THE FIRST, WHY? WHO KNOWS.
-#    # system.call("cp", os.path.join(codes_path, "template/*"), ".")
-#    os.system("cp " + os.path.join(codes_path, "template", "*") + " .")
-#
-#    ttm_script_path = os.path.join(codes_path, "get_2b_TTM_codes.py")
-#
-#    if not settings_path.startswith("/"):
-#        settings_path = "{}/{}".format(original_dir, settings_path)
-#    if not config_path.startswith("/"):
-#        config_path = "{}/{}".format(original_dir, config_path)
-#
-#    system.call("python", ttm_script_path, settings_path, config_path, molecule_in)
-#
-#    os.chdir(original_dir)   
- 
 def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
     """
     Generates the fit code based on the polynomials for a system
@@ -736,8 +634,27 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
+    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
 
+def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
+    """
+    Generates the fit code based on the polynomials for a system
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_path         - Local path to the dimer config file.
+        fit_dir_path        - Local path to directory to generate fit code in.
+
+    Returns:
+        None.
+    """
+
+    files.init_directory(fit_dir_path)
+
+    if not os.path.isdir(fit_dir_path):
+        os.mkdir(fit_dir_path)
+
+    fitting.prepare_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path)
 
 #def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
 #    """

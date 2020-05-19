@@ -19,9 +19,8 @@ def get_atom_types(fragment):
 
     return atom_list
 
-def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg = False, mbnrg_fits_path = None, degree = 1, ttm_only=False, MBX_HOME=None, version="v1",
-                            virtual_sites=["X", "Y", "Z"]):
-    # NOTE mon_ids is a list with actual monomer names (h2o, ch4, c2h6...)
+def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version,
+                            virtual_sites):
     # Read Settings
     settings = SettingsReader(settings_path)
     # Read config

@@ -6,9 +6,10 @@ from . import utils_nb_fitting
 from . import file_writer_nb_fitting 
 
 
-def generate_fitting_code(settings_path, config_path, directcpp_path, degree, poly_in_path, poly_directory_path):
+def generate_fitting_code(settings_path, config_path, degree, poly_in_path, poly_directory_path, use_direct):
 
-    directcpp = directcpp_path
+    directcpp = poly_directory_path + "/poly-direct.cpp"
+    directgradcpp = poly_directory_path + "/poly-grd-direct.cpp"
     name = poly_in_path
     poly_directory = poly_directory_path
     
@@ -108,11 +109,8 @@ def generate_fitting_code(settings_path, config_path, directcpp_path, degree, po
     d_max_intra = d_max
     
     # Obtain inner and outer cutoff from config.ini
-    # This must be required
-    # TODO pass this from config
-    ri = 7.0 # polynomials start to decrease (Angstrom)
-    ro = 8.0 # polynomials are completely removed
-    
+    ri = config.get("fitting", "r_in") # polynomials start to decrease (Angstrom)
+    ro = config.get("fitting", "r_out") # polynomials are zero (Angstrom)
     
     # Define kind of variables for intra, inter and lone pairs
     # Options are:
@@ -120,7 +118,7 @@ def generate_fitting_code(settings_path, config_path, directcpp_path, degree, po
     # exp0 e^-k(d-d0)
     # coul0 [e^-k(d-d0)]/r
     # coul [e^-kd]/r
-    # Recomendation is to use exp for intra and inter and coul for lone pairs
+    # Recommendation is to use exp for intra and inter and coul for lone pairs
     var_intra = config.get("fitting", "var_intra")
     var_virtual_sites = config.get("fitting", "var_virtual_sites")
     var_inter = config.get("fitting", "var_inter")
@@ -262,9 +260,14 @@ def generate_fitting_code(settings_path, config_path, directcpp_path, degree, po
     
     file_writer_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
     
-    file_writer_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
-    
-    file_writer_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+    if use_direct:
+        file_writer_nb_fitting.write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+
+        file_writer_nb_fitting.write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+    else:
+        file_writer_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+        
+        file_writer_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
     
     ################################################################################
     ## Write polynomial holder and cpp for MBX #####################################

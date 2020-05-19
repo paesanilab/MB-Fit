@@ -3106,6 +3106,55 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
+def write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file with gradients for MBX
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been performed
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
+    ff = open(fname,'w')
+    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+namespace """ + namespace + """ {
+
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
+            const double a[""" + str(npoly) + """],
+                  double g[""" + str(nvars) + """]) {
+"""
+
+    ff.write(a)
+
+    poly_lines = retrieve_polynomial_lines(["    double p[", "    p[", "    const double t", "    g["],poly_directory + "/poly-grd-direct.cpp")
+
+    ff.write(poly_lines)
+
+    a = """
+    double energy(0);
+    for(int i = 0; i < """ + str(npoly) + """; ++i)
+        energy += p[i]*a[i];
+
+    return energy;
+}
+
+} // namespace """ + namespace + """
+
+"""
+
+    ff.write(a)
+    ff.close()
+
 
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
     """
@@ -3150,6 +3199,55 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
+def write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file without gradients for MBX
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been perfor
+med
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
+    ff = open(fname,'w')
+    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+namespace """ + namespace + """ {
+
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
+            const double a[""" + str(npoly) + """]) {
+"""
+
+    ff.write(a)
+
+    poly_lines = retrieve_polynomial_lines(["    double p[", "    p["],poly_directory + "/poly-direct.cpp")
+
+    ff.write(poly_lines)
+
+    a = """
+    double energy(0);
+    for(int i = 0; i < """ + str(npoly) + """; ++i)
+        energy += p[i]*a[i];
+
+    return energy;
+
+}
+
+} // namespace """ + namespace + """
+
+"""
+
+    ff.write(a)
+    ff.close()
 
 def get_arguments_for_functions(arg_string, number_of_monomers):
     """

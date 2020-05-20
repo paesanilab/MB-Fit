@@ -2650,14 +2650,29 @@ def write_makefile_mbnrg(number_of_monomers, system_name):
     escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
     a = """
+ifndef INTELHOME
+$(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
+INTELHOME=/opt/intel
+endif
+
+ifndef GSLHOME
+$(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
+GSLHOME=""
+endif
+
+ifndef NETCDFHOME
+$(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
+NETCDFHOME=""
+endif
+
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 -I/opt/intel/mkl/include
-LIBS = -lnetcdf -lgsl -lgslcblas -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
+CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
 OBJDIR = .
-LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib
-INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
 """
     ff.write(a)
     if (number_of_monomers<3):
@@ -2735,14 +2750,29 @@ def write_makefile_ttmnrg(number_of_monomers, system_name):
     escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
     a = """
+ifndef INTELHOME
+$(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
+INTELHOME=/opt/intel
+endif
+
+ifndef GSLHOME
+$(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
+GSLHOME=""
+endif
+
+ifndef NETCDFHOME
+$(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
+NETCDFHOME=""
+endif
+
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 -I/opt/intel/mkl/include
-LIBS = -lnetcdf -lgsl -lgslcblas -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
+CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
 OBJDIR = .
-LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib
-INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
 
 FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
 training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\

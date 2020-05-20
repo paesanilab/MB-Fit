@@ -1,11 +1,6 @@
 #from .get_config_data import generate_fitting_config_file
 from .get_system_properties import get_system_properties
-#from .prepare_1b_fitting_code import prepare_1b_fitting_code
-#from .prepare_2b_fitting_code import prepare_2b_fitting_code
-from .prepare_mbnrg_fitting_code import prepare_mbnrg_fitting_code
-from .prepare_ttmnrg_fitting_code import prepare_ttmnrg_fitting_code
-#from .generate_software_files_1b import generate_software_files_1b
+from .prepare_fitting_code import prepare_mbnrg_fitting_code, prepare_ttmnrg_fitting_code
 from .generate_software_files import generate_software_files
-#from .generate_software_files_2b import generate_software_files_2b
 from . import fit_visualizer
 from .eval import Evaluator

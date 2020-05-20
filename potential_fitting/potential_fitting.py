@@ -638,7 +638,7 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
 
 def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
     """
-    Generates the fit code based on the polynomials for a system
+    Generates the TTM fit code based on settings and system configuration
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.

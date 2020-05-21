@@ -439,36 +439,12 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
     return charges, effective_polarizabilities
 
 def get_system_properties(settings_file, config_path, geo_paths,
-                          distance_between=20,
-                          use_published_polarizabilities=True,
-                          method="wb97m-v",
-                          basis="aug-cc-pvtz",
-                          num_digits=4,
-                          virtual_sites=["X", "Y", "Z"]):
-    """
-    Generates the config file needed to perform a fit.
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        config_path         - Local path to file to write the config file to.
-        geo_paths           - List of local paths to the optimized geometries to include in this fit config.
-        distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-                does not converge, try different values of this.
-                Default: False.
-        use_published_polarizabilities - use published polarizabilites from
-                Default: True.
-                DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
-        method              - Method to use for charges, polarizabilities, and c6 constants.
-                Default: wb97m-v.
-        basis               - Basis to use for charges, polarizabilites, and c6 constants.
-                Default: aug-cc-pvtz.
-        num_digits            - Number of digits after the decimal point to include in charges, c6, and polarizabilites.
-                Default: 4
-        virtual_sites       - List of Symmetry labels that are virtual sites.
-                Default: ["X", "Y", "Z"]
-
-    Returns:
-        None.
-    """
+                          distance_between,
+                          use_published_polarizabilities,
+                          method,
+                          basis,
+                          num_digits,
+                          virtual_sites):
 
     # read Settings for the full system
     settings = SettingsReader(settings_file)
@@ -551,14 +527,63 @@ def get_system_properties(settings_file, config_path, geo_paths,
 
         c6_list.append([round(c, num_digits) for c in c6[-1]])
 
-    print("Writing config file...")
+    system.format_print("Unrounded charges: {}".format(unrounded_charges),
+                        italics=True)
+    system.format_print("Rounded charges: {}".format(chg_list),
+                        italics=True)
 
-    # create the config file!
-    configwriter = configparser.ConfigParser()
-    configwriter.add_section("common")
-    configwriter.add_section("fitting")
+    expected_charge = sum([int(charge) for charge in charges])
+    unrounded_charge = sum([charge for sub_list in unrounded_charges for charge in sub_list])
+    rounded_charge = sum([charge for sub_list in chg_list for charge in sub_list])
 
-    configwriter.set("common", "molecule", molecule_in)
+    system.format_print("Expected charge: {}; Unrounded charge: {}; Rounded charge: {}".format(expected_charge,
+
+ unrounded_charge,
+
+ rounded_charge),
+                        italics=True)
+
+    system.format_print("Difference between expected and unrounded charge: {}.".format(expected_charge - unrounded_charge),
+                        italics=True)
+    system.format_print("Difference between expected and rounded charge: {}.".format(expected_charge - rounded_charge),
+                        italics=True)
+
+    return chg_list, pol_list, c6_list[-1]
+
+def write_config_file(settings_file, config_path, charges, 
+                      pols, geo_paths, C6, polfacs, 
+                      d6, A, 
+                      kmin, kmax, dmin, dmax,
+                      r_in, r_out,
+                      energy_range, alpha,
+                      virtual_sites_label,
+                      var_intra, var_inter, var_virtual_sites):
+
+    settings = SettingsReader(settings_file)
+
+    # Obtain the system properties
+    monomer_settings = []
+    names = settings.get("molecule","names").split(",")
+    fragments = settings.get("molecule", "fragments").split(",")
+    charges = settings.get("molecule", "charges").split(",")
+    spins = settings.get("molecule", "spins").split(",")
+    symmetries = settings.get("molecule", "symmetry").split(",")
+    SMILES = settings.get("molecule", "SMILES").split(",")
+
+    # Set up a set of settings for each fragment
+    for name, fragment, charge, spin, symmetry, SMILE in zip(names, fragments, charges, spins, symmetries, SMILES):
+        monomer_setting = SettingsReader(settings_file)
+        monomer_setting.set("molecule", "names", name)
+        monomer_setting.set("molecule", "fragments", fragment)
+        monomer_setting.set("molecule", "charges", charge)
+        monomer_setting.set("molecule", "spins", spin)
+        monomer_setting.set("molecule", "symmetry", symmetry)
+        monomer_setting.set("molecule", "SMILES", SMILE)
+        monomer_settings.append(monomer_setting)
+
+
+    molecule_in = "_".join(symmetries)
+    parser = MoleculeInParser(molecule_in)
 
     fragments = []
 
@@ -568,9 +593,16 @@ def get_system_properties(settings_file, config_path, geo_paths,
             fragments.append(
                 Fragment.read_xyz(frag_string, setting.get("molecule", "names"), setting.getint("molecule", "charges"),
                                   setting.getint("molecule", "spins"), setting.get("molecule", "SMILES"),
-                                  setting.get("molecule", "symmetry")))
+                                  setting.get("molecule", "symmetry")))    
 
     molecule = Molecule(fragments)
+
+    # create the config file!
+    configwriter = configparser.ConfigParser()
+    configwriter.add_section("common")
+    configwriter.add_section("fitting")
+
+    configwriter.set("common", "molecule", molecule_in)
 
     configwriter.set("fitting", "number_of_atoms", str(molecule.get_num_atoms()))
     configwriter.set("fitting", "number_of_electrostatic_sites", str(parser.get_num_atoms_and_virtual_sites()))
@@ -582,46 +614,37 @@ def get_system_properties(settings_file, config_path, geo_paths,
     configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
     configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
 
-    system.format_print("Unrounded charges: {}".format(unrounded_charges),
-                        italics=True)
-    system.format_print("Rounded charges: {}".format(chg_list),
-                        italics=True)
+    configwriter.set("fitting", "charges", str(charges))
+    configwriter.set("fitting", "polarizabilities", str(pols))
+    if polfacs is None:
+        configwriter.set("fitting", "polarizability_factors", str(pols))
+    else:
+        configwriter.set("fitting", "polarizability_factors", str(polfacs))
 
-    expected_charge = sum([int(charge) for charge in charges])
-    unrounded_charge = sum([charge for sub_list in unrounded_charges for charge in sub_list])
-    rounded_charge = sum([charge for sub_list in chg_list for charge in sub_list])
+    configwriter.set("fitting", "k_min", str(kmin))
+    configwriter.set("fitting", "k_max", str(kmax))
+    configwriter.set("fitting", "d_min", str(dmin))
+    configwriter.set("fitting", "d_max", str(dmax))
 
-    system.format_print("Expected charge: {}; Unrounded charge: {}; Rounded charge: {}".format(expected_charge,
-                                                                                               unrounded_charge,
-                                                                                               rounded_charge),
-                        italics=True)
+    configwriter.set("fitting", "r_in", str(r_in))
+    configwriter.set("fitting", "r_out", str(r_out))
 
-    system.format_print("Difference between expected and unrounded charge: {}.".format(expected_charge - unrounded_charge),
-                        italics=True)
-    system.format_print("Difference between expected and rounded charge: {}.".format(expected_charge - rounded_charge),
-                        italics=True)
+    configwriter.set("fitting", "C6", str(C6))
+    if d6 is None:
+        configwriter.set("fitting", "d6", str([0.0]*len(C6)))
+    else:
+        configwriter.set("fitting", "d6", str(d6))
+    if A is None:
+        configwriter.set("fitting", "A", str([0.0]*len(C6)))
+    else:
+        configwriter.set("fitting", "A", str(A))
 
-    configwriter.set("fitting", "charges", str(chg_list))
-    configwriter.set("fitting", "polarizabilities", str(pol_list))
-    configwriter.set("fitting", "polarizability_factors", str(pol_list))
-
-    configwriter.set("fitting", "k_min", str(0.5))
-    configwriter.set("fitting", "k_max", str(6.0))
-    configwriter.set("fitting", "d_min", str(0.5))
-    configwriter.set("fitting", "d_max", str(6.0))
-
-    configwriter.set("fitting", "r_in", str(7.0))
-    configwriter.set("fitting", "r_out", str(8.0))
-
-    configwriter.set("fitting", "C6", str(c6_list[-1]))
-    configwriter.set("fitting", "d6", str([0.0]*len(c6_list[-1])))
-
-    configwriter.set("fitting", "var_intra", "exp")
-    configwriter.set("fitting", "var_inter", "exp")
-    configwriter.set("fitting", "var_virtual_sites", "coul")
-    configwriter.set("fitting", "alpha", str(0.0005))
-    configwriter.set("fitting", "energy_range", str(20.0))
-    configwriter.set("fitting", "virtual_site_labels", str(virtual_sites).replace("'",""))
+    configwriter.set("fitting", "var_intra", var_intra)
+    configwriter.set("fitting", "var_inter", var_inter)
+    configwriter.set("fitting", "var_virtual_sites", var_virtual_sites)
+    configwriter.set("fitting", "alpha", str(alpha))
+    configwriter.set("fitting", "energy_range", str(energy_range))
+    configwriter.set("fitting", "virtual_site_labels", str(virtual_sites_label))
 
     config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
 
@@ -629,3 +652,4 @@ def get_system_properties(settings_file, config_path, geo_paths,
         configwriter.write(config_file)
 
     print("Completed generating config file {}.".format(config_path))
+

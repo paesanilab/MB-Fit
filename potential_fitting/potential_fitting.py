@@ -578,7 +578,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
                           num_digits=4,
                           virtual_sites=["X", "Y", "Z"]):
     """
-        Generates the config file needed to perform a fit.
+        Obtains information such as charges and pols that will be needed for the fitting.
 
         Qchem is required for this step to work.
 
@@ -601,16 +601,99 @@ def get_system_properties(settings_file, config_path, geo_paths,
                     Default: ["X", "Y", "Z"]
 
         Returns:
-            None.
+            charges             - List with the charges of each monomer [[mon1],[mon2],..]
+            pols                - List with the pols of each monomer [[mon1],[mon2],..]
+            C6                  - List with the C6 constants
         """
 
-    fitting.get_system_properties(settings_file, config_path, geo_paths,
+    chg, pol, c6 = fitting.get_system_properties(settings_file, config_path, geo_paths,
                                   distance_between=distance_between,
                                   use_published_polarizabilities=use_published_polarizabilities,
                                   method=method,
                                   basis=basis,
                                   num_digits=num_digits,
                                   virtual_sites=virtual_sites)
+    return chg, pol, c6
+
+def write_config_file(settings_file, config_path, charges,
+                      pols, geo_paths, C6 = [0.0], polfacs = None,
+                      d6 = None, A = None,
+                      kmin = 0.0, kmax = 50.0, dmin = 0.0, dmax = 50.0,
+                      r_in=7.0, r_out=8.0,
+                      energy_range = 20, alpha = 0.0005,
+                      virtual_sites_label = ["X","Y","Z"],
+                      var_intra = "exp", var_inter = "exp", var_virtual_sites = "coul"):
+    """
+        Writes the config file.
+
+        Qchem is required for this step to work.
+
+        Args:
+            settings_path       - Local path to the file containing all relevent settings information.
+            config_path         - Local path to file to write the config file to.
+            charges             - List with the charges of each monomer [[mon1],[mon2],..]
+            pols                - List with the pols of each monomer [[mon1],[mon2],..]
+            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
+            C6                  - List with the C6 constants
+                    Default: [0.0]
+            polfacs             - List with the polarizability factors of each monomer [[mon1],[mon2],..]
+                    Default: None
+            d6                  - List with the d6 constants
+                    Default: None
+            A                   - List with the buckingham A parameters
+                    Default:  None
+            kmin                - Minimum value of k allowed while fitting
+                    Default: 0.0
+            kmax                - Maximum value of k allowed while fitting
+                    Default: 50.0
+            dmin                - Minimum value of d allowed while fitting
+                    Default: 0.0
+            dmax                - Maximum value of d allowed while fitting
+                    Default: 50.0
+            r_in                - Distance at which polynomials start to decay to 0
+                    Default: 7.0
+            r_out               - Distance at which polynomials are 0
+                    Default: 8.0
+            energy_range        - Value of DE in the weight expressions: w = (DE/(E-Emin+DE))^2
+                    Default: 20.0
+            alpha               - Ridge regression parameter
+                    Default: 0.0005
+            virtual_sites_label - List of Symmetry labels that are virtual sites.
+                    Default: ["X", "Y", "Z"]
+            var_intra           - Type of variable used for intramolecular distances.
+                                  exp = exp(-kr)
+                                  exp0 = exp(-k(r-r0))
+                                  coul = exp(-kr)/r
+                                  coul0 = exp(-k(r-r0))/r
+                    Default: exp
+            var_inter           - Type of variable used for intermolecular distances.
+                                  exp = exp(-kr)
+                                  exp0 = exp(-k(r-r0))
+                                  coul = exp(-kr)/r
+                                  coul0 = exp(-k(r-r0))/r
+                    Default: exp
+            var_virtual_sites   - Type of variable used for distances involving polynomial virtual sites.
+                                  exp = exp(-kr)
+                                  exp0 = exp(-k(r-r0))
+                                  coul = exp(-kr)/r
+                                  coul0 = exp(-k(r-r0))/r 
+                    Default: coul
+
+        Returns:
+            None.
+    """
+
+    fitting.write_config_file(settings_file, config_path, charges,
+                              pols, geo_paths, C6, polfacs,
+                              d6, A,
+                              kmin, kmax, dmin, dmax,
+                              r_in, r_out,
+                              energy_range, alpha,
+                              virtual_sites_label,
+                              var_intra, var_inter, var_virtual_sites)
+
+
+
 
 def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
     """

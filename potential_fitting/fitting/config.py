@@ -550,7 +550,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
 
     return chg_list, pol_list, c6_list[-1]
 
-def write_config_file(settings_file, config_path, charges, 
+def write_config_file(settings_file, config_path, chg, 
                       pols, geo_paths, C6, polfacs, 
                       d6, A, 
                       kmin, kmax, dmin, dmax,
@@ -614,7 +614,7 @@ def write_config_file(settings_file, config_path, charges,
     configwriter.set("fitting", "excluded_pairs_13", "{}".format(excluded_pairs13))
     configwriter.set("fitting", "excluded_pairs_14", "{}".format(excluded_pairs14))
 
-    configwriter.set("fitting", "charges", str(charges))
+    configwriter.set("fitting", "charges", str(chg))
     configwriter.set("fitting", "polarizabilities", str(pols))
     if polfacs is None:
         configwriter.set("fitting", "polarizability_factors", str(pols))

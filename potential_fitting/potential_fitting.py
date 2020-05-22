@@ -619,6 +619,7 @@ def write_config_file(settings_file, config_path, charges,
                       pols, geo_paths, C6 = [0.0], polfacs = None,
                       d6 = None, A = None,
                       kmin = 0.0, kmax = 50.0, dmin = 0.0, dmax = 50.0,
+                      kmin_init = 1.0, kmax_init = 4.0, dmin_init = 1.0, dmax_init = 4.0,
                       r_in=7.0, r_out=8.0,
                       energy_range = 20, alpha = 0.0005,
                       virtual_sites_label = ["X","Y","Z"],
@@ -650,6 +651,14 @@ def write_config_file(settings_file, config_path, charges,
                     Default: 0.0
             dmax                - Maximum value of d allowed while fitting
                     Default: 50.0
+            kmin_init           - Minimum value of k allowed in initialization
+                    Default: 1.0
+            kmax_init           - Maximum value of k allowed in initialization
+                    Default: 4.0
+            dmin_init           - Minimum value of d allowed in initialization
+                    Default: 1.0
+            dmax_init           - Maximum value of d allowed in initialization
+                    Default: 4.0
             r_in                - Distance at which polynomials start to decay to 0
                     Default: 7.0
             r_out               - Distance at which polynomials are 0
@@ -687,6 +696,7 @@ def write_config_file(settings_file, config_path, charges,
                               pols, geo_paths, C6, polfacs,
                               d6, A,
                               kmin, kmax, dmin, dmax,
+                              kmin_init, kmax_init, dmin_init, dmax_init,
                               r_in, r_out,
                               energy_range, alpha,
                               virtual_sites_label,

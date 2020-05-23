@@ -6,6 +6,9 @@ from .write_fitting_code import write_mbnrg_fitting_code, write_ttmnrg_fitting_c
 
 def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct):
 
+    if not os.path.isdir(fit_path + "/src"):
+        os.mkdir(fit_path + "/src")
+
     molecule = ""
     nmons = 0
     with open(in_path) as in_poly:
@@ -73,19 +76,19 @@ def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, p
 #    os.system("mv " + config_path + ".tmp " + config_path)
 
     # copy the template files
-    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path)
+    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path + "/src")
 
     # move files from cwd into fit directory
     if (nmons<3):
-        os.system("mv dispersion.* " + fit_path + "/")
-        os.system("mv buckingham.* " + fit_path + "/")
-    os.system("mv eval*b.cpp " + fit_path + "/")
-    os.system("mv fit*b.cpp " + fit_path + "/")
+        os.system("mv dispersion.* " + fit_path + "/src" + "/")
+        os.system("mv buckingham.* " + fit_path + "/src" + "/")
+    os.system("mv eval*b.cpp " + fit_path + "/src" + "/")
+    os.system("mv fit*b.cpp " + fit_path + "/src" + "/")
 
-    os.system("mv Makefile " + fit_path + "/")
-    os.system("mv mbnrg_*_fit.* " + fit_path + "/")
-    os.system("mv mon*.cpp mon*.h " + fit_path + "/")
-    os.system("mv poly_*_fit.* " + fit_path + "/")
+    os.system("mv Makefile " + fit_path + "/src" + "/")
+    os.system("mv mbnrg_*_fit.* " + fit_path + "/src" + "/")
+    os.system("mv mon*.cpp mon*.h " + fit_path + "/src" + "/")
+    os.system("mv poly_*_fit.* " + fit_path + "/src" + "/")
 
     # move the files for MBX into the directory MBX_files
     files.init_directory("MBX_files")
@@ -116,16 +119,16 @@ def prepare_ttmnrg_fitting_code(settings_path, config_path, fit_path):
     write_ttmnrg_fitting_code(settings_path, config_path)
 
     # copy the template files
-    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path)
+    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path + "/src")
 
     # move files from cwd into fit directory
-    os.system("mv dispersion.* " + fit_path + "/")
-    os.system("mv buckingham.* " + fit_path + "/")
-    os.system("mv eval*b.cpp " + fit_path + "/")
-    os.system("mv fit*b.cpp " + fit_path + "/")
+    os.system("mv dispersion.* " + fit_path + "/src" + "/")
+    os.system("mv buckingham.* " + fit_path + "/src" + "/")
+    os.system("mv eval*b.cpp " + fit_path + "/src" + "/")
+    os.system("mv fit*b.cpp " + fit_path + "/src" + "/")
 
-    os.system("mv eval*b-ttm.cpp " + fit_path + "/")
-    os.system("mv fit*b-ttm.cpp " + fit_path + "/")
+    os.system("mv eval*b-ttm.cpp " + fit_path + "/src" + "/")
+    os.system("mv fit*b-ttm.cpp " + fit_path + "/src" + "/")
 
-    os.system("mv Makefile " + fit_path + "/")
-    os.system("mv mon*.cpp mon*.h " + fit_path + "/")
+    os.system("mv Makefile " + fit_path + "/src" + "/")
+    os.system("mv mon*.cpp mon*.h " + fit_path + "/src" + "/")

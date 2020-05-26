@@ -2114,7 +2114,6 @@ def write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers,
 
 #include "fit-utils.h"
 #include "training_set.h"
-#include "mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit.h"
 #include "electrostatics.h"
 #include "coulomb.h"
 #include "dispersion.h"

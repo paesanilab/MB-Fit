@@ -129,7 +129,9 @@ class Evaluator:
             
         return self.energies
 
-    def plot(self, do_ttm = False, split_energy = None, correlation_prefix = "correlation"):
+    def plot(self, do_ttm = False, split_energy = None, 
+             correlation_prefix = "correlation",
+             min_e = 0.0, max_e = 50.0):
 
         if do_ttm:
             colors = ["#FF8000","#EE220C"]
@@ -152,8 +154,8 @@ class Evaluator:
         fig, axs = plt.subplots(1, 1, figsize=(6,6))
         rcParams['font.family'] = 'Helvetica'
         
-        axs.set_xlim([0,50])
-        axs.set_ylim([0,50])
+        axs.set_xlim([min_e,max_e])
+        axs.set_ylim([min_e,max_e])
         axs.xaxis.set_minor_locator(MultipleLocator(5))
         axs.yaxis.set_minor_locator(MultipleLocator(5))
         axs.xaxis.set_major_locator(MultipleLocator(10))
@@ -182,7 +184,7 @@ class Evaluator:
         #axs.text(3, 53, r'a) CH$_4$: TTM-nrg', fontsize=15)
 
         # x = y line
-        xi = np.linspace(0, 100 ,1000, endpoint = True)
+        xi = np.linspace(-2000, 2000 ,10, endpoint = True)
         yi = xi
         axs.plot(xi,yi, '--',color ='k')
 

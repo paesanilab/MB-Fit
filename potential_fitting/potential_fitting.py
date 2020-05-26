@@ -1070,7 +1070,8 @@ def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, m
     fitting.generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version, virtual_sites)
 
 def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, training_set,
-                         split_energy = None,
+                         split_energy = None, 
+                         min_energy_plot = 0.0, max_energy_plot = 50.0,
                          correlation_prefix = "correlation",
                          correlation_directory = "correlation",
                          ttm=False, over_ttm=False, nc_path = "mbnrg.nc"):
@@ -1083,6 +1084,8 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
         fits_path             - Local path to folder containing the fits
         training_set          - Configurations to evaluate. They need the binding energy and n-b energy in this order in the comment line.
         split_energy          - If not None, will split the correlation plot in two sets, low and high, depending on the value of the variable.
+        min_energy_plot       - Lower bound of the energy in the plot
+        max_energy_plot       - Upper bound of the energy in the plot
         correlation_prefix    - Prefix for the correlation files that will be generated.
         correlation_directory - Directory where all the correlation files will be put.
         ttm                   - True if these are ttm fits. False otherwise.
@@ -1123,7 +1126,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
 
     os.system("mv *" +  correlation_file + " " + corr_folder_prefix)
 
-    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix)
+    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix, min_e = min_energy_plot, max_e = max_energy_plot)
 
     os.system("mv *.png *.pdf " + " " + corr_folder_prefix)
 

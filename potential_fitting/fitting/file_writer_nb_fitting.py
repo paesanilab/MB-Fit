@@ -2693,7 +2693,6 @@ def write_makefile_mbnrg(number_of_monomers, system_name):
     fit_exes = "fit-" + str(number_of_monomers) + "b eval-" + str(number_of_monomers) + "b "
     if number_of_monomers == 2:
         fit_exes += "fit-" + str(number_of_monomers) + "b-over-ttm eval-" + str(number_of_monomers) + "b-over-ttm "
-        fit_exes += "fit-" + str(number_of_monomers) + "b-ttm eval-" + str(number_of_monomers) + "b-ttm "
 
     mon_objects = " ".join(mon_files)
     ff = open("Makefile", 'w')
@@ -3127,7 +3126,7 @@ int main(int argc, char** argv) {
                   << std::setw(25) << nb_energy[n]
                   << std::setw(20) << poly_e[n]
 #ifdef USE_BUCKINGHAM
-                  << std::setw(20) << rep_e[n]
+                  << std::setw(20) << buck_e[n]
 #endif
                   << std::setw(20) << disp_e[n]
                   << std::setw(20) << elec_e[n]

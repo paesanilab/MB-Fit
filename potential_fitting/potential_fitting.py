@@ -622,7 +622,7 @@ def write_config_file(settings_file, config_path, charges,
                       kmin_init = 1.0, kmax_init = 4.0, dmin_init = 1.0, dmax_init = 4.0,
                       r_in=7.0, r_out=8.0,
                       energy_range = 20, alpha = 0.0005,
-                      virtual_sites_label = ["X","Y","Z"],
+                      virtual_sites_label = ['X','Y','Z'],
                       var_intra = "exp", var_inter = "exp", var_virtual_sites = "coul"):
     """
         Writes the config file.

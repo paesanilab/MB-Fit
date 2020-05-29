@@ -1,7 +1,0 @@
-'../examples/fluoride-water_trimer/saddle/isomer3_opt.xyz'          | optimized geometry corresponding to normal mode analysis
-'../examples/fluoride-water_trimer/saddle/isomer3_normal_modes.dat' | input normal modes
-21 6                                                                | dim; dimnull
-Q 1024                                                              | 'P' pseudorandom, 'Q' quasirandom; nconfigs
-'../examples/fluoride-water_trimer/saddle/isomer3_linear_Q.xyz'     | output configurations
-.FALSE. .TRUE.                                                      | geometric, linear
-.TRUE.                                                              | verbose output

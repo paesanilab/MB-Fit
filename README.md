@@ -3,14 +3,15 @@
 [![Build Status](https://travis-ci.org/paesanilab/potential_fitting.svg?branch=master)](https://travis-ci.org/paesanilab/potential_fitting)
 
 This repository contains all of our codes to generate MB-nrg potential
-energy functions (1B, 2B, 3B):
+energy functions (1B, 2B). 
 
-1. Training set generator consisting of
-   - Configuration generator
-   - QM MB energy calculator
-2. Potential energy function generator consisting of
-   - Code to generate polynomials functions
-   - Fitting codes
+## Set up
+In order to use MB-fit from anywhere, source the `sourceme.sh` file:
+`source sourceme.sh`
+
+Now you can import the `potential_fitting` library in python and access any of its fucntions.
+
+Please look at the documentation and the examples to see how to run the whole workflow.
 
 
 ## Changelog
@@ -18,6 +19,11 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Cleaned up old files that were not needed
+* Added functionality to add direct polynomials (with and without gradients) to MBX, avoinding the need of MAPLE
+* Added updated examples for CO2 and NH4+
+* Configuration file writting function has been improved
+* MB-nrg and TTM-nrg fitting code generators have been made independant.
 * Fitting code generation is now a method in the library, rather than an external call.
 * Function generate_conig_new has been renamed to get_system_properties to be more explicative.
 * Examples folder has been restructured with new examples and updated function calls. 

@@ -650,7 +650,7 @@ def write_config_file(settings_file, config_path, chg,
     configwriter.set("fitting", "var_virtual_sites", var_virtual_sites)
     configwriter.set("fitting", "alpha", str(alpha))
     configwriter.set("fitting", "energy_range", str(energy_range))
-    configwriter.set("fitting", "virtual_site_labels", str(virtual_sites_label))
+    configwriter.set("fitting", "virtual_site_labels", "{}".format(virtual_sites_label).replace("'","").replace('"',""))
 
     config_path = files.init_file(config_path, files.OverwriteMethod.get_from_settings(settings))
 

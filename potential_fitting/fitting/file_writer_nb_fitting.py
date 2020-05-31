@@ -2626,7 +2626,7 @@ int main(int argc, char** argv) {
     ff.close()
 
 
-def write_makefile(number_of_monomers, system_name):
+def write_makefile_mbnrg(number_of_monomers, system_name):
     """
     Writes the Makefile
 
@@ -2650,14 +2650,29 @@ def write_makefile(number_of_monomers, system_name):
     escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
     a = """
+ifndef INTELHOME
+$(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
+INTELHOME=/opt/intel
+endif
+
+ifndef GSLHOME
+$(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
+GSLHOME=""
+endif
+
+ifndef NETCDFHOME
+$(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
+NETCDFHOME=""
+endif
+
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 -I/opt/intel/mkl/include
-LIBS = -lnetcdf -lgsl -lgslcblas -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
+CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
 OBJDIR = .
-LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib
-INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
 """
     ff.write(a)
     if (number_of_monomers<3):
@@ -2693,15 +2708,6 @@ eval-""" + str(number_of_monomers) + """b-over-ttm: eval-""" + str(number_of_mon
 """
     ff.write(a)
 
-    if number_of_monomers == 2:
-        a = """
-fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
-
-eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
-"""
-        ff.write(a)
     a = """
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) -c $< $(LIBS) -o $@
@@ -2714,10 +2720,87 @@ clean:
 \trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
         + str(number_of_monomers) + """b eval-"""\
         + str(number_of_monomers) + """b fit-"""\
-        + str(number_of_monomers) + """b-ttm eval-"""\
-        + str(number_of_monomers) + """b-ttm fit-"""\
         + str(number_of_monomers) + """b-over-ttm eval-"""\
         + str(number_of_monomers) + """b-over-ttm
+"""
+    ff.write(a)
+    ff.close()
+
+def write_makefile_ttmnrg(number_of_monomers, system_name):
+    """
+    Writes the Makefile
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+    """
+    
+    if (number_of_monomers != 2):
+        raise PotentialFittingError("You are trying to generate a TTM-nrg fitting code for more than 2 monomers. That is not possible.")
+
+    mon_files = []
+    for i in range(number_of_monomers):
+        mon_files.append("mon" + str(i+1) + ".o")
+
+    fit_exes = "fit-" + str(number_of_monomers) + "b-ttm eval-" + str(number_of_monomers) + "b-ttm "
+
+    mon_objects = " ".join(mon_files)
+    ff = open("Makefile", 'w')
+
+    escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
+    a = """
+ifndef INTELHOME
+$(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
+INTELHOME=/opt/intel
+endif
+
+ifndef GSLHOME
+$(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
+GSLHOME=""
+endif
+
+ifndef NETCDFHOME
+$(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
+NETCDFHOME=""
+endif
+
+CXX=icpc
+CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
+
+AR = /usr/bin/ar
+OBJDIR = .
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
+
+FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
+training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\
+electrostatics.o coulomb.o wlsq.o rwlsq.o ps.o """ + mon_objects + """
+
+
+all: libfit.a """ + fit_exes + """
+
+libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
+\t$(AR) cru libfit.a $(addprefix $(OBJDIR)/, $(FIT_OBJ))
+
+fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+
+eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+
+$(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) -c $< $(LIBS) -o $@
+
+$(OBJDIR)/.sentinel:
+\tmkdir -p $(OBJDIR)
+\ttouch $@
+
+clean:
+\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
+        + str(number_of_monomers) + """b-ttm eval-"""\
+        + str(number_of_monomers) + """b-ttm \
 """
     ff.write(a)
     ff.close()

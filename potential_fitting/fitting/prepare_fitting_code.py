@@ -1,9 +1,10 @@
 import os
 from potential_fitting.utils import files, SettingsReader
 from potential_fitting.polynomials import MoleculeSymmetryParser
-from .generate_fitting_code import generate_fitting_code
+from .write_fitting_code import write_mbnrg_fitting_code, write_ttmnrg_fitting_code
 
-def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct):
+
+def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct):
 
     molecule = ""
     nmons = 0
@@ -66,7 +67,7 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 
     print("Executing python generator script")
 
-    generate_fitting_code(settings_path, config_path, poly_order, in_path, poly_path, use_direct)
+    write_mbnrg_fitting_code(settings_path, config_path, poly_order, in_path, poly_path, use_direct)
 
 #    # restore settings
 #    os.system("mv " + config_path + ".tmp " + config_path)
@@ -80,11 +81,6 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
         os.system("mv buckingham.* " + fit_path + "/")
     os.system("mv eval*b.cpp " + fit_path + "/")
     os.system("mv fit*b.cpp " + fit_path + "/")
-
-    # only move ttm files if they were generated (for 2+ b).
-    if len(molecule.split("_")) > 1 and nmons<3:
-        os.system("mv eval*b-ttm.cpp " + fit_path + "/")
-        os.system("mv fit*b-ttm.cpp " + fit_path + "/")
 
     os.system("mv Makefile " + fit_path + "/")
     os.system("mv mbnrg_*_fit.* " + fit_path + "/")
@@ -107,3 +103,29 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     os.system("mv " + file_name + " MBX_files/")
     file_name = "poly_{}b_{}_deg{}_nograd_v1.cpp".format(nmons, system_name, degree)
     os.system("mv " + file_name + " MBX_files/")
+
+def prepare_ttmnrg_fitting_code(settings_path, config_path, fit_path):
+
+    molecule = ""
+    nmons = 0
+
+    config_obj = SettingsReader(config_path)
+
+    print("Executing python generator script")
+
+    write_ttmnrg_fitting_code(settings_path, config_path)
+
+    # copy the template files
+    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path)
+
+    # move files from cwd into fit directory
+    os.system("mv dispersion.* " + fit_path + "/")
+    os.system("mv buckingham.* " + fit_path + "/")
+    os.system("mv eval*b.cpp " + fit_path + "/")
+    os.system("mv fit*b.cpp " + fit_path + "/")
+
+    os.system("mv eval*b-ttm.cpp " + fit_path + "/")
+    os.system("mv fit*b-ttm.cpp " + fit_path + "/")
+
+    os.system("mv Makefile " + fit_path + "/")
+    os.system("mv mon*.cpp mon*.h " + fit_path + "/")

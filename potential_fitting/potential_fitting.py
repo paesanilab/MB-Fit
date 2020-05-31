@@ -612,108 +612,6 @@ def get_system_properties(settings_file, config_path, geo_paths,
                                   num_digits=num_digits,
                                   virtual_sites=virtual_sites)
 
-
-# MRR 20200430 This function should not be used.
-
-#def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,
-#                                 method="wb97m-v",
-#                                 basis="aug-cc-pvtz"):
-#    """
-#        Generates the config file needed to perform a fit.
-#
-#        Qchem is required for this step to work for 1 and 2 b.
-#
-#        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
-#
-#        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
-#        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
-#
-#        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
-#        Intermolecular c6 constants are read from config_2b_paths.
-#
-#        Args:
-#            settings_path       - Local path to the file containing all relevent settings information.
-#            config_path         - Local path to file to write the config file to.
-#            geo_paths           - List of local paths to the optimized geometries to include in this fit config.
-#            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
-#                    config for each monomer.
-#            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
-#                    config for each combination of monomers.
-#            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-#                    does not converge, try different values of this.
-#            use_published_polarizabilities - use published polarizabilites from
-#                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
-#            method              - Method to use to calculate charges, polarizabilites, and c6 constants.
-#                    Default: wb97m-v
-#            basis              - Basis to use to calculate charges, polarizabilites, and c6 constants.
-#                    Default: aug-cc-pvtz
-#
-#        Returns:
-#            None.
-#        """
-#
-#    fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
-#            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities,
-#            method=method, basis=basis)
-    
-#def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
-#    """
-#    Generates the fit code based on the polynomials and config file for a monomer.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        config_path         - Local path to the monomer config file to read config info from.
-#        poly_in_path        - Local path to the file to read the polynomial input from. Name of file should be in
-#                the format A1B2.in, it is ok to have extra directories prior to file name (thisplace/thatplace/A3.in).
-#        poly_dir_path       - Local path to the directory where the polynomial ".h" and ".cpp" files are files are.
-#        order               - The order of the polynomial to in poly_dir_path.
-#        fit_dir_path        - Local path to the directory to write the fit code in.
-#
-#    Returns:
-#        None.
-#    """
-#
-#    fitting.prepare_1b_fitting_code(config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path)
-#
-#def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_path):
-#    """
-#    Generates the fit TTM fit code for a dimer.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        config_path         - Local path to the dimer config file to read config info from.
-#        molecule_in         - A String of fromat "A1B2". Same as poly_in_path but without ".in".
-#        fit_dir_path        - Local path to the directory to write the ttm fit code in.
-#
-#    Returns:
-#        None.
-#    """
-#
-#    this_file_path = os.path.dirname(os.path.abspath(__file__))
-#
-#    original_dir = os.getcwd()
-#
-#    files.init_directory(fit_dir_path)
-#
-#    os.chdir(fit_dir_path)
-#
-#    codes_path = os.path.join(this_file_path, "..", "codes", "2b-codes")
-#    
-#    # FOR SOME REASON THE SECOND LINE WORKS BUT NOT THE FIRST, WHY? WHO KNOWS.
-#    # system.call("cp", os.path.join(codes_path, "template/*"), ".")
-#    os.system("cp " + os.path.join(codes_path, "template", "*") + " .")
-#
-#    ttm_script_path = os.path.join(codes_path, "get_2b_TTM_codes.py")
-#
-#    if not settings_path.startswith("/"):
-#        settings_path = "{}/{}".format(original_dir, settings_path)
-#    if not config_path.startswith("/"):
-#        config_path = "{}/{}".format(original_dir, config_path)
-#
-#    system.call("python", ttm_script_path, settings_path, config_path, molecule_in)
-#
-#    os.chdir(original_dir)   
- 
 def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
     """
     Generates the fit code based on the polynomials for a system
@@ -736,8 +634,27 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
+    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
 
+def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
+    """
+    Generates the TTM fit code based on settings and system configuration
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_path         - Local path to the dimer config file.
+        fit_dir_path        - Local path to directory to generate fit code in.
+
+    Returns:
+        None.
+    """
+
+    files.init_directory(fit_dir_path)
+
+    if not os.path.isdir(fit_dir_path):
+        os.mkdir(fit_dir_path)
+
+    fitting.prepare_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path)
 
 #def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
 #    """
@@ -788,178 +705,6 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     system.format_print("Fit code compilation successful!", bold=True, color=system.Color.GREEN)
 
-#def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
-#
-#    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.YELLOW)
-#
-#    settings = SettingsReader(settings_path)
-#
-#    # init the required files
-#    files.init_directory(fit_dir_path)
-#    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb", "best-fit.log"))
-#    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb" "fit.log"))
-#
-#    # keeps tracks of the number of attempts to generate a fit
-#    attempts = 1
-#
-#    # generate an initial fit
-#    with open(best_fit_log_path, "w") as best_fit_log:
-#        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
-#        os.rename("fit-1b.cdl", "best-fit-1b.cdl")
-#        os.rename("fit-1b-initial.cdl", "best-fit-1b-initial.cdl")
-#        os.rename("correlation.dat", "best-correlation.dat")
-#
-#    with open(best_fit_log_path, "r") as best_fit_log:
-#        best_log_lines = best_fit_log.readlines()
-#
-#    best_rmsd = float(best_log_lines[-6].split()[2])
-#
-#    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
-#
-#    while(attempts < num_fits):
-#
-#        # generate a new fit
-#        with open(fit_log_path, "w") as fit_log:
-#            system.call(fit_code_path, training_set_path, out_file = fit_log)
-#  
-#        with open(fit_log_path, "r") as fit_log:
-#            log_lines = fit_log.readlines()
-#
-#        rmsd = float(log_lines[-6].split()[2])
-#
-#        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
-#
-#        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
-#
-#        # if the new fit is better than the old fit, replace the best log and best cdl files
-#        if rmsd < best_rmsd:
-#            system.format_print("Replaced previous best fit with most recent one.", italics=True)
-#
-#            os.rename(fit_log_path, best_fit_log_path)
-#            os.rename("fit-1b.cdl", "best-fit-1b.cdl")
-#            os.rename("fit-1b-initial.cdl", "best-fit-1b-initial.cdl")
-#            os.rename("correlation.dat", "best-correlation.dat")
-#
-#            best_rmsd = rmsd
-#            
-#        attempts += 1
-#
-#        system.format_print("\n", italics=True)
-#
-#    # remove the most recent fit file
-#    try:
-#        os.remove(fit_log_path)
-#        os.remove("fit-1b.cdl")
-#        os.remove("fit-1b-initial.cdl")
-#        os.remove("correlation.dat")
-#    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
-#    except FileNotFoundError:
-#        pass
-#
-#    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
-#
-#
-#def create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
-#    
-#    system.call("ncgen", "-o", fitted_nc_path, "best-fit-1b.cdl")
-#
-#    os.rename("best-fit-1b.cdl", os.path.join(fit_dir_path, "fit-1b.cdl"))
-#    os.rename("best-fit-1b-initial.cdl", os.path.join(fit_dir_path, "fit-1b-initial.cdl"))
-#    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-#
-#
-#def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
-#    """
-#    Fits a given 1b training set using a given 1b fit code.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
-#                by compile_fit_code.
-#        training_set_path   - Local path to the file to read the training set from.
-#        fit_dir_path        - Local path to the directory to write the ".cdl" and ".dat" files created by this fit.
-#        fitted_nc_path      - Local path to the file to write the final fitted ".nc" to.
-#        num_fits            - Performs this many fits and then gives only the best one.
-#
-#    Returns:
-#        None
-#    """
-#
-#    perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
-#    create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
-#
-#
-#def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
-#
-#    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.GREEN)
-#
-#    settings = SettingsReader(settings_path)
-#
-#    files.init_directory(fit_dir_path)
-#
-#    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "best_fit.log"))
-#    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "fit.log"))
-#
-#    attempts = 1
-#    with open(best_fit_log_path, "w") as best_fit_log:
-#        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
-#        os.rename("individual_terms.dat", "best-individual_terms.dat")
-#        os.rename("ttm-params.txt", "best-ttm-params.txt")
-#        os.rename("correlation.dat", "best-correlation.dat")
-#
-#    with open(best_fit_log_path, "r") as best_fit_log:
-#        best_log_lines = best_fit_log.readlines()
-#
-#    best_rmsd = float(best_log_lines[-4].split()[2])
-#
-#    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
-#
-#    while(attempts < num_fits):
-#
-#        with open(fit_log_path, "w") as fit_log:
-#            system.call(fit_code_path, training_set_path, out_file = fit_log)
-#        
-#        with open(fit_log_path, "r") as fit_log:
-#            log_lines = fit_log.readlines()
-#
-#        rmsd = float(log_lines[-4].split()[2])
-#
-#        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
-#
-#        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
-#
-#        if rmsd < best_rmsd:
-#
-#            system.format_print("Replaced previous best fit with most recent one.")
-#
-#            os.rename(fit_log_path, best_fit_log_path)
-#            os.rename("individual_terms.dat", "best-individual_terms.dat")
-#            os.rename("ttm-params.txt", "best-ttm-params.txt")
-#            os.rename("correlation.dat", "best-correlation.dat")
-#
-#            best_rmsd = rmsd
-#            
-#
-#        attempts += 1
-#
-#        system.format_print("\n", italics=True)
-#
-#    # remove the most recent fit file
-#    try:
-#        os.remove(fit_log_path)
-#        os.remove("individual_terms.dat")
-#        os.remove("ttm-params.txt")
-#        os.remove("correlation.dat")
-#    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
-#    except FileNotFoundError:
-#        pass
-#
-#    os.rename("best-individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
-#    os.rename("best-ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
-#    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-#
-#    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
-
 def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
     
     # read d6 and A constants from ttm output file
@@ -986,124 +731,6 @@ def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
 
         if not found_A:
             config_file.write("A = {}\n".format([[], [], A]))
-
-#def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, config_path, num_fits = 10):
-#    """
-#    Fits a given 2b training set using a given 2b ttm fit code
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
-#                by compile_fit_code.
-#        training_set_path   - Local path to the file to read the training set from.
-#        fit_dir_path        - the directory where the fit log and other files created by the fit go
-#        config_path         - Local path to the ".ini" file to write A6 and d6 constants to.
-#        num_fits            - Performs this many fits and then gives only the best one.
-#
-#    Returns:
-#        None
-#    """
-#
-#    perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
-#    add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path)
-#
-#
-#def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
-#
-#    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.YELLOW)
-#    
-#    settings = SettingsReader(settings_path)
-#
-#    # init the required files
-#    files.init_directory(fit_dir_path)
-#    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb", "best-fit.log"))
-#    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb" "fit.log"))
-#
-#    # keeps tracks of the number of attempts to generate a fit
-#    attempts = 1
-#
-#    # generate an initial fit
-#    with open(best_fit_log_path, "w") as best_fit_log:
-#        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
-#        os.rename("fit-2b.cdl", "best-fit-2b.cdl")
-#        os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
-#        os.rename("correlation.dat", "best-correlation.dat")
-#
-#    with open(best_fit_log_path, "r") as best_fit_log:
-#        best_log_lines = best_fit_log.readlines()
-#
-#    best_rmsd = float(best_log_lines[-6].split()[2])
-#
-#    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
-#
-#    while(attempts < num_fits):
-#
-#        # generate a new fit
-#        with open(fit_log_path, "w") as fit_log:
-#            system.call(fit_code_path, training_set_path, out_file = fit_log)
-#  
-#        with open(fit_log_path, "r") as fit_log:
-#            log_lines = fit_log.readlines()
-#
-#        rmsd = float(log_lines[-6].split()[2])
-#
-#        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
-#
-#        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
-#
-#        # if the new fit is better than the old fit, replace the best log and best cdl files
-#        if rmsd < best_rmsd:
-#            system.format_print("Replaced previous best fit with most recent one.", italics=True)
-#
-#            os.rename(fit_log_path, best_fit_log_path)
-#            os.rename("fit-2b.cdl", "best-fit-2b.cdl")
-#            os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
-#            os.rename("correlation.dat", "best-correlation.dat")
-#
-#            best_rmsd = rmsd
-#            
-#        attempts += 1
-#
-#        system.format_print("\n", italics=True)
-#
-#    # remove the most recent fit file
-#    try:
-#        os.remove(fit_log_path)
-#        os.remove("fit-2b.cdl")
-#        os.remove("fit-2b-initial.cdl")
-#        os.remove("correlation.dat")
-#    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
-#    except FileNotFoundError:
-#        pass
-#
-#    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
-#
-#def create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
-#    
-#    system.call("ncgen", "-o", fitted_nc_path, "best-fit-2b.cdl")
-#
-#    os.rename("best-fit-2b.cdl", os.path.join(fit_dir_path, "fit-2b.cdl"))
-#    os.rename("best-fit-2b-initial.cdl", os.path.join(fit_dir_path, "fit-2b-initial.cdl"))
-#    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-#
-#def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
-#    """
-#    Fits the fit code to a given training set
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        fit_code            - Local path to the code to fit.
-#        training_set        - Local path to the training set to fit the code to.
-#        fit_dir_path        - Local path to the directory where the .cdl and .dat files will end up.
-#        fitted_nc_path      - Local path to file to write final fitted ".nc" file to.
-#        num_fits            - Performs this many fits and then gives only the best one.
-#
-#    Returns:
-#        None
-#    """
-#
-#    perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
-#    create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
 
 
 def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=20, alpha=0.0005, num_fits=10, ttm=False,
@@ -1350,9 +977,27 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
     config.write(config_path)
 
 
+def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, mbnrg_fits_path = None, degree = 1, MBX_HOME=None, version="v1",
+                            virtual_sites=["X", "Y", "Z"]):
+    """
+    Creates the pieces of code that will be needed in MBX to use this potential
 
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_file         - Local path to the config file to update.
+        mon_ids             - List with the monomer ids that will be used in MBX to identify the monomers added
+        do_ttmnrg           - If true, TTM-nrg will also be added. Should be used only when doing a 2b fit.
+        mbnrg_fits_path     - Path to the folder that contains the mb-nrg fits. It is expected to have a "best_fit" folder inside that one.
+        degree              - Order of the polynomial (if any)
+        MBX_HOME            - If defined, the pieces of code will be automatically added to MBX, and the necessary files will also be copied
+        version             - iString with the extension to the polynomial and namespaces that will be added to differentiate between different versions of the same monomer fit.
+        virtual_sites       - List of the caracters that represent virtual sites (not real atoms) used in the polynomials (i.e., lone pairs)
 
+    Returns:
+        None.
+    """
 
+    fitting.generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version, virtual_sites)
 
 
 

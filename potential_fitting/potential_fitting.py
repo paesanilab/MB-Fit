@@ -862,7 +862,10 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
             training_set_basename = os.path.basename(training_set_path)
 
             # Link the training set to the fit folder
-            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
+            if workdir in training_set_path:
+                system.call("ln", "-s", training_set_path, training_set_basename)
+            else:
+                system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
             # Create bash script that will run the fit
             with open("run_fit.sh",'w') as my_bash:
                 my_bash.write("#!/bin/bash\n")

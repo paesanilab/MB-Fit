@@ -18,7 +18,7 @@ class TestFitting(unittest.TestCase):
         poly_path = os.path.join(TestFitting.resources_path, molecule, "poly")
         settings_path = os.path.join(TestFitting.resources_path, molecule, "settings.ini")
         fitting_path = os.path.join(TestFitting.out_path, molecule, "fitting_code")
-        fits_path = os.path.join(TestFitting.out_path, molecule, "fits")
+        fit_path = os.path.join(TestFitting.out_path, molecule, "fits")
 
         files.init_directory(fits_path)
 
@@ -28,15 +28,15 @@ class TestFitting(unittest.TestCase):
 
         training_path = os.path.join(TestFitting.resources_path, molecule, "training_set.xyz")
         fit_nc = "mbnrg.nc"
-        fit_nc_path = os.path.join(TestFitting.out_path, molecule, "fits", "best_fit", fit_nc)
+        fit_nc_path = os.path.join(fit_path, "best_fit", fit_nc)
 
         prepare_fits(settings_path, fitting_path, 
-                     training_path, fits_path, 
+                     training_path, fit_path, 
                      DE=20, alpha=0.0005, num_fits=1, 
                      ttm=False, over_ttm=False)
-        execute_fits(settings_path, fits_path)
-        retrieve_best_fit(settings_path, fits_path, fitted_nc_path = fit_nc)
-
+        execute_fits(settings_path, fit_path)
+        retrieve_best_fit(settings_path, fit_path, fitted_nc_path = fit_nc)
+        
         self.assertTrue(os.path.isfile(fit_nc_path))
 
 

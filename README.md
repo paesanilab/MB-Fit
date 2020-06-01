@@ -18,6 +18,8 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* added new 'arguments' parameter to all functions that call psi4 or qchem. 'arguments'
+is a dictionary of extra arguments to be passed on to the QM code.
 * Fitting code generation is now a method in the library, rather than an external call.
 * Function generate_conig_new has been renamed to get_system_properties to be more explicative.
 * Examples folder has been restructured with new examples and updated function calls. 

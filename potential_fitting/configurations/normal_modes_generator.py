@@ -4,7 +4,7 @@ from potential_fitting.molecule import xyz_to_molecules
 from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.calculator import Model
 
-def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, basis):
+def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, basis, arguments={}):
     """
     Generates the a normal modes input file from an optimized geometry.
 
@@ -12,6 +12,7 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, ba
         settings_path       - Local path to the ".ini" file containing all relevant settings.
         opt_path            - Local path to the ".xyz" file to read the optimized geometry from.
         normal_modes_path   - Local path to the ".dat" file to write the normal modes to.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         The null dimension of the input molecule.
@@ -28,7 +29,7 @@ def generate_normal_modes(settings_path, opt_path, normal_modes_path, method, ba
     molecule = xyz_to_molecules(opt_path, settings)[0]
     
     # calculate the normal modes
-    normal_modes, frequencies, red_masses, log_path = calc.find_frequencies(molecule, model)
+    normal_modes, frequencies, red_masses, log_path = calc.find_frequencies(molecule, model, arguments=arguments)
 
     # calculate dim null
     dim_null = 3 * molecule.get_num_atoms() - len(normal_modes)

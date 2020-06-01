@@ -28,6 +28,7 @@ def execute_job():
     total_charge = "{total_charge}"
     total_spin = "{total_spin}"
     job_hash = "{job_hash}"
+    arguments = {arguments}
 
     try:
         max_threads = int(subprocess.check_output(["grep", "-c", "cores", "/proc/cpuinfo"]))
@@ -59,6 +60,7 @@ def execute_job():
     output_path = job_dir + "/output.ini"
     log_path = job_dir + "/output.log"
 
+    psi4.set_options(arguments)
 
     # psi4 specific stuff!
 

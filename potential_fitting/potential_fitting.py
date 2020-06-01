@@ -40,7 +40,7 @@ def apply_standard_order(settings_path, geo_path):
     return standard_settings_path, standard_geo_path
 
 
-def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
+def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, arguments={}):
     """
     Optimizes the geometry of the given molecule.
 
@@ -50,14 +50,15 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis
         opt_geo_path        - Local path to the file to write the optimized geometry to.
         method              - The method to use for this geometry optimization.
         basis               - The basis to use for this geometry optimization.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, arguments=arguments)
 
-def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis):
+def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, arguments={}):
     """
     Generates the normal modes for the given molecule.
 
@@ -67,12 +68,13 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
         normal_modes_path   - Local path to the file to write the normal modes to.
         method              - The method to use for this normal modes calculation.
         basis               - The basis to use for this normal modes calculation.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         Null dimension of normal modes.
     """
     
-    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis)
+    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, arguments=arguments)
 
     return dim_null
 
@@ -323,7 +325,7 @@ def init_database(settings_path, database_config_path, configurations_path, meth
     database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 
-def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize, arguments={}):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
@@ -335,6 +337,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
         client_name         - Name of the client performing these calculations.
         tags                - Only perform calculations marked with at least one of these tags.
         calculation_count   - Maximum number of calculations to perform. Unlimited if None.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -343,9 +346,9 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     if calculation_count is None:
         calculation_count = sys.maxsize
 
-    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
+    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count, arguments=arguments)
 
-def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize, arguments={}):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -357,6 +360,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
         job_dir             - Local path to the directory to place the job files in.
         tags                - Onlt  make jobs for calculations marked with at least one of these tags.
         num_jobs            - The number of jobs to generate. Unlimted if None.
+        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -364,7 +368,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
 
     job_handler = database.get_job_handler(settings_path)
 
-    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
+    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs, arguments=arguments)
 
 def read_jobs(settings_path, database_config_path, job_dir, overwrite=False):
     """
@@ -862,7 +866,13 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
             training_set_basename = os.path.basename(training_set_path)
 
             # Link the training set to the fit folder
-            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
+            if training_set_path.startswith('/'):
+                # we have an absolute path
+                system.call("ln", "-s", training_set_path, training_set_basename)
+            else:
+                # this is a relative path to working directory
+                system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
+
             # Create bash script that will run the fit
             with open("run_fit.sh",'w') as my_bash:
                 my_bash.write("#!/bin/bash\n")

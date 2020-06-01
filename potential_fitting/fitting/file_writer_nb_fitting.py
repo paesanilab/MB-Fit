@@ -1860,6 +1860,11 @@ int main(int argc, char** argv) {
 
     a = """
 
+    for (size_t i = 0; i < """ + str(num_terms) + """ ; i++) {
+        std::cout << std::setprecision(6) << "x0[" << i << "] = " 
+                  << x0[i] << std::endl;
+    }
+
     argv++;
     argc--;
 

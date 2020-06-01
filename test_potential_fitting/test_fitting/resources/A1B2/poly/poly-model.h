@@ -16,6 +16,9 @@ struct poly_model {
 
     static double eval_direct(const double a[6],
                               const double x[3]);
+    static double eval_direct(const double a[6],
+                              const double x[3], 
+                              double g[3]);
 
 public:
     unsigned report_nvars(){ return n_vars; };

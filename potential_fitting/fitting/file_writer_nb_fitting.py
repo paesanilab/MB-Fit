@@ -3141,7 +3141,7 @@ int main(int argc, char** argv) {
     ff.close()
 
 
-def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
+def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in, version = "v1"):
     """
     Writes the polynomial header for MBX
 
@@ -3189,8 +3189,15 @@ struct """ + struct_name + """ {
 
 """
     ff.write(a)
-    ff.close()
 
+    with open(poly_in, 'r') as polyinp:
+        lines = polyinp.readlines()
+        a = "\n\n//Polynomial input used to generate these files:\n\n"
+        for line in lines:
+            a += "//  " + line
+    ff.write(a)
+    ff.close()
+    
 
 def retrieve_polynomial_lines(keyword_start, poly_file):
     """

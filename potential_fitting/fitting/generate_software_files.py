@@ -26,7 +26,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     settings = SettingsReader(settings_path)
     # Read config
     config = SettingsReader(config_file)
-
+    print("TESTCALL")
     ############################################################################
     ## MONOMER PROPERTIES ######################################################
     ############################################################################

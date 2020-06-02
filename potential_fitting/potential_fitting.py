@@ -779,32 +779,32 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     system.format_print("Fit code compilation successful!", bold=True, color=system.Color.GREEN)
 
-def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
-    
-    # read d6 and A constants from ttm output file
-    with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
-        A = [float(a) for a in ttm_file.readline().split()]
-        d6 = [float(d) for d in ttm_file.readline().split()]
-
-    # write d6 and A to the config.ini file
-    lines = []
-    with open(config_path, "r") as config_file:
-        for line in config_file:
-            lines.append(line)
-
-    found_A = False
-    with open(config_path, "w") as config_file:
-        for line in lines:
-            if line.startswith("A = "):
-                found_A = True
-            if not line.startswith("d6 = "):
-                config_file.write(line)
-
-            else:
-                config_file.write("d6 = {}\n".format([[], [], d6]))
-
-        if not found_A:
-            config_file.write("A = {}\n".format([[], [], A]))
+#def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
+#    
+#    # read d6 and A constants from ttm output file
+#    with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
+#        A = [float(a) for a in ttm_file.readline().split()]
+#        d6 = [float(d) for d in ttm_file.readline().split()]
+#
+#    # write d6 and A to the config.ini file
+#    lines = []
+#    with open(config_path, "r") as config_file:
+#        for line in config_file:
+#            lines.append(line)
+#
+#    found_A = False
+#    with open(config_path, "w") as config_file:
+#        for line in lines:
+#            if line.startswith("A = "):
+#                found_A = True
+#            if not line.startswith("d6 = "):
+#                config_file.write(line)
+#
+#            else:
+#                config_file.write("d6 = {}\n".format([[], [], d6]))
+#
+#        if not found_A:
+#            config_file.write("A = {}\n".format([[], [], A]))
 
 
 def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=20, alpha=0.0005, num_fits=10, ttm=False,
@@ -921,7 +921,7 @@ def execute_fits(settings_path, fits_path):
 
     os.chdir(workdir)
     
-def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
+def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc", fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Looks through all log files in all fit directories in the log path and finds the best fit.
 
@@ -934,6 +934,7 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
         settings_path       - Local path to the file containing all relevent settings information.
         fits_path           - Local path to the directory to create the fits in.
         fitted_nc_path      - Generate a .nc file with the parameters for the best fit at this location.
+        fitted_ttmnrg_params - Rename the output where the TTM-nrg params are to this name
 
     Returns:
         None.
@@ -1023,13 +1024,15 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
     nb = len(settings.get("molecule","names").split(","))
     if os.path.exists("fit-" + str(nb) + "b.cdl"):
         system.call("ncgen", "-o", fitted_nc_path, "fit-" + str(nb) + "b.cdl")
+    elif os.path.exists("ttm-nrg_params.dat") and fitted_ttmnrg_params != "ttm-nrg_params.dat":
+        os.system("mv ttm-nrg_params.dat " + fitted_ttmnrg_params)
 
     # Report best RMSD
     print("Best fit found has a weighted RMSD of {} kcal/mol, a low energy RMSD of {} kcal/mol, and a maximum error in the low energy training set of {} kcal/mol".format(best_results[2], best_results[4], best_results[5]))
 
     os.chdir(workdir)
 
-def update_config_with_ttm(settings_path, fits_path, config_path):
+def update_config_with_ttm(settings_path, fits_path, config_path, fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Updates a fit config.ini file with the A and d constants from the best ttm fit.
 
@@ -1039,6 +1042,8 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
         settings_path       - Local path to the file containing all relevent settings information.
         fits_path           - Local path to the directory to create the fits in.
         config_path         - Local path to the config file to update.
+        fitted_ttmnrg_params - Name of the output where the TTM-nrg params
+
 
     Returns:
         None.
@@ -1047,7 +1052,7 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
     workdir = os.getcwd()
     fit_folder_prefix = os.path.join(workdir, fits_path)
 
-    with open(fit_folder_prefix + "/best_fit/ttm-nrg_params.dat", 'r') as ttm_file:
+    with open(fit_folder_prefix + "/best_fit/" + fitted_ttmnrg_params, 'r') as ttm_file:
         a_buck = [float(a) for a in ttm_file.readline().strip().split()]
         b_buck = [float(b) for b in ttm_file.readline().strip().split()]
 
@@ -1084,7 +1089,8 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
                          min_energy_plot = 0.0, max_energy_plot = 50.0,
                          correlation_prefix = "correlation",
                          correlation_directory = "correlation",
-                         ttm=False, over_ttm=False, nc_path = "mbnrg.nc"):
+                         ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
+                         fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Generates correltation data for the training/test set passed as argument
 
@@ -1101,6 +1107,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
         ttm                   - True if these are ttm fits. False otherwise.
         over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
         nc_path               - Netcdf file with the parameters for the best fit.
+        fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
     """
 
     # Get information
@@ -1118,7 +1125,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
 
     if ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
-        path_to_params = os.path.join(workdir, fits_path, "best_fit/ttm-nrg_params.dat")
+        path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
     elif over_ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
         path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)

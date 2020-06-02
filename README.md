@@ -18,6 +18,24 @@ energy functions (1B, 2B, 3B):
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* added new 'arguments' parameter to all functions that call psi4 or qchem. 'arguments'
+is a dictionary of extra arguments to be passed on to the QM code.
+* Fitting code generation is now a method in the library, rather than an external call.
+* Function generate_conig_new has been renamed to get_system_properties to be more explicative.
+* Examples folder has been restructured with new examples and updated function calls. 
+Example notebooks will be progressively added.
+* Fixed a bug where the link generated in run_fit.sh by prepare_fits() would be the local path to the
+training set file instead of a path to the symbolic link in the same directory.
+* Fixed a bug where the training set generator would supply the wrong number of arguments
+to the exponential functions when using d0 nl parameters.
+* Added the Grapher class, with some functions for graphing energy distributions of TrainingSets
+as well as making correlation / error graphs for TrainingSets.
+* Added the Evaluator class, whose eval() method can be used to get a TrainingSet from an eval-xb
+script and a training set file.
+* Added the TrainingSet class, which contains a list of TrainingSetElements and functions
+for performing operations on them.
+* Added the TrainingSetElement class, which contains a Molecule and a dictionary of energies
+and functions for performing operations on itself.
 * Updated read_jobs() and JobHandler.read_all_jobs() to also have an overwrite argument
 which is passed to Database.set_properties().
 * Added the overwrite keyword argument to Database.set_properties() and changed it to

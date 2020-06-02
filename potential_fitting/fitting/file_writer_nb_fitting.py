@@ -1,4 +1,4 @@
-import utils_nb_fitting
+from . import utils_nb_fitting 
 import itertools as it
 
 def write_monomer_class_header(mon_index):
@@ -564,7 +564,7 @@ def get_variables_string(variables, name_vout, name_vstruct, nspaces = 4):
         atom2_coords = get_coords_var_name(atom2_sym, atom2_ind, atom2_frag)
 
         if "0" in type:
-            variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_d, nl_param_k, atom1_coords, atom2_coords)
+            variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_d, nl_param_k, atom1_coords, atom2_coords)
         else:
             variables_string += spaces + "{}[{}] = {}[{}].v_{}({}, {}, {});\n".format(name_vout, variable_index, name_vstruct, variable_index, type, nl_param_k, atom1_coords, atom2_coords)
 
@@ -1992,7 +1992,7 @@ int main(int argc, char** argv) {
 
         // Calculate dispersion
         mbnrg_disp disp(training_set[i].xyz);
-        disp.set_nonlinear_parameters(final_l);
+        disp.set_nonlinear_parameters(final_nl);
         disp_e[i] = disp.get_dispersion();
 
         // Calculate non-linear terms of buckingham
@@ -2247,14 +2247,14 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
     ff.write(a)
 
     a = """#include "dispersion.h"
+#ifdef USE_BUCKINGHAM
+#include "buckingham.h"
+#endif
 """
 
     if (number_of_monomers<3): ff.write(a)
 
-    a = """#ifdef USE_BUCKINGHAM
-#include "buckingham.h"
-#endif
-#include "constants.h"
+    a = """#include "constants.h"
 """
 
     ff.write(a)
@@ -2276,13 +2276,13 @@ double E_range = """ + str(E_range) + """; // kcal/mol
 static std::vector<tset::nb_system> training_set;
 static std::vector<double> elec_e;
 
-#ifdef USE_BUCKINGHAM
-static std::vector<double> buck_e;
-#endif
 """
     ff.write(a)
 
-    a = """static std::vector<double> disp_e;
+    a = """#ifdef USE_BUCKINGHAM
+static std::vector<double> buck_e;
+#endif
+static std::vector<double> disp_e;
 """
     if (number_of_monomers<3): ff.write(a)
 
@@ -2440,16 +2440,17 @@ int main(int argc, char** argv) {
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
         training_set[n].nb_energy -= disp_e[n];
-"""
 
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """
         #ifdef USE_BUCKINGHAM
         mbnrg_buck buck(training_set[n].xyz);
         buck_e.push_back(buck.get_buckingham());
         training_set[n].nb_energy -= buck_e[n];
         #endif
+"""
+
+    if (number_of_monomers<3): ff.write(a)
+
+    a = """
     }
 
     linear::allocate();
@@ -2522,16 +2523,15 @@ int main(int argc, char** argv) {
     if (number_of_monomers<3):
         a = """
         training_set[i].nb_energy += elec_e[i] + disp_e[i];
-"""
-    else:
-        a = """
-        training_set[i].nb_energy += elec_e[i];
-"""
-        a += """
+
         #ifdef USE_BUCKINGHAM
         for (size_t i = 0; i < training_set.size(); ++i)
             training_set[i].nb_energy += buck_e[i];
         #endif
+"""
+    else:
+        a = """
+        training_set[i].nb_energy += elec_e[i];
 """
 
     ff.write(a)
@@ -2557,15 +2557,15 @@ int main(int argc, char** argv) {
     if (number_of_monomers<3):
         a = """
         double E_model = model.calculate(training_set[i].xyz) + elec_e[i] + disp_e[i];"""
-    else:
-        a = """
-        double E_model = model.calculate(training_set[i].xyz) + elec_e[i];"""
-
-    a += """
+        a += """
         #ifdef USE_BUCKINGHAM
         E_model += buck_e[i];
         #endif
 """
+    else:
+        a = """
+        double E_model = model.calculate(training_set[i].xyz) + elec_e[i];"""
+
 
     ff.write(a)
 
@@ -2626,7 +2626,7 @@ int main(int argc, char** argv) {
     ff.close()
 
 
-def write_makefile(number_of_monomers, system_name):
+def write_makefile_mbnrg(number_of_monomers, system_name):
     """
     Writes the Makefile
 
@@ -2650,14 +2650,29 @@ def write_makefile(number_of_monomers, system_name):
     escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
     a = """
+ifndef INTELHOME
+$(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
+INTELHOME=/opt/intel
+endif
+
+ifndef GSLHOME
+$(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
+GSLHOME=""
+endif
+
+ifndef NETCDFHOME
+$(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
+NETCDFHOME=""
+endif
+
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 -I/opt/intel/mkl/include
-LIBS = -lnetcdf -lgsl -lgslcblas -L/opt/intel/lib/intel64 -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
+CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
 OBJDIR = .
-LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib
-INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
 """
     ff.write(a)
     if (number_of_monomers<3):
@@ -2693,15 +2708,6 @@ eval-""" + str(number_of_monomers) + """b-over-ttm: eval-""" + str(number_of_mon
 """
     ff.write(a)
 
-    if number_of_monomers == 2:
-        a = """
-fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
-
-eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
-\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
-"""
-        ff.write(a)
     a = """
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) -c $< $(LIBS) -o $@
@@ -2714,10 +2720,87 @@ clean:
 \trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
         + str(number_of_monomers) + """b eval-"""\
         + str(number_of_monomers) + """b fit-"""\
-        + str(number_of_monomers) + """b-ttm eval-"""\
-        + str(number_of_monomers) + """b-ttm fit-"""\
         + str(number_of_monomers) + """b-over-ttm eval-"""\
         + str(number_of_monomers) + """b-over-ttm
+"""
+    ff.write(a)
+    ff.close()
+
+def write_makefile_ttmnrg(number_of_monomers, system_name):
+    """
+    Writes the Makefile
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+    """
+    
+    if (number_of_monomers != 2):
+        raise PotentialFittingError("You are trying to generate a TTM-nrg fitting code for more than 2 monomers. That is not possible.")
+
+    mon_files = []
+    for i in range(number_of_monomers):
+        mon_files.append("mon" + str(i+1) + ".o")
+
+    fit_exes = "fit-" + str(number_of_monomers) + "b-ttm eval-" + str(number_of_monomers) + "b-ttm "
+
+    mon_objects = " ".join(mon_files)
+    ff = open("Makefile", 'w')
+
+    escaped_name = system_name.replace("(", "_o_").replace(")", "_c_")
+
+    a = """
+ifndef INTELHOME
+$(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
+INTELHOME=/opt/intel
+endif
+
+ifndef GSLHOME
+$(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
+GSLHOME=""
+endif
+
+ifndef NETCDFHOME
+$(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
+NETCDFHOME=""
+endif
+
+CXX=icpc
+CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
+
+AR = /usr/bin/ar
+OBJDIR = .
+LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
+INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
+
+FIT_OBJ = fit-utils.o training_set.o io-xyz.o tang-toennies.o dispersion.o\\
+training_set.o variable.o vsites.o water_monomer_lp.o gammq.o buckingham.o\\
+electrostatics.o coulomb.o wlsq.o rwlsq.o ps.o """ + mon_objects + """
+
+
+all: libfit.a """ + fit_exes + """
+
+libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
+\t$(AR) cru libfit.a $(addprefix $(OBJDIR)/, $(FIT_OBJ))
+
+fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+
+eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+
+$(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
+\t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) -c $< $(LIBS) -o $@
+
+$(OBJDIR)/.sentinel:
+\tmkdir -p $(OBJDIR)
+\ttouch $@
+
+clean:
+\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
+        + str(number_of_monomers) + """b-ttm eval-"""\
+        + str(number_of_monomers) + """b-ttm \
 """
     ff.write(a)
     ff.close()
@@ -2844,13 +2927,14 @@ def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system
     ff.write(a)
 
     a = """#include "dispersion.h"
-"""
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """
 #ifdef USE_BUCKINGHAM
 #include "buckingham.h"
 #endif
+"""
+    if (number_of_monomers<3): 
+        ff.write(a)
+
+    a = """
 #include "constants.h"
 """
 
@@ -2871,15 +2955,16 @@ static std::vector<double> elec_e;
     ff.write(a)
 
     a = """static std::vector<double> disp_e;
-"""
-
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """static std::vector<double> nb_energy;
-
 #ifdef USE_BUCKINGHAM
 static std::vector<double> buck_e;
 #endif
+"""
+
+    if (number_of_monomers<3): 
+        ff.write(a)
+
+    a = """static std::vector<double> nb_energy;
+
 
 } // namespace
 
@@ -2940,15 +3025,16 @@ int main(int argc, char** argv) {
     a = """
         mbnrg_disp disp(training_set[n].xyz);
         disp_e.push_back(disp.get_dispersion());
-"""
-
-    if (number_of_monomers<3): ff.write(a)
-
-    a = """
         #ifdef USE_BUCKINGHAM
         mbnrg_buck buck(training_set[n].xyz);
         buck_e.push_back(buck.get_buckingham());
         #endif
+"""
+
+    if (number_of_monomers<3): 
+        ff.write(a)
+
+    a = """
         poly_e.push_back(model.calculate(training_set[n].xyz));
 """
 
@@ -2956,7 +3042,10 @@ int main(int argc, char** argv) {
 
     if (number_of_monomers<3):
         a = """
-        nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);"""
+        nb_energy.push_back(elec_e[n] + disp_e[n] + poly_e[n]);
+        #ifdef USE_BUCKINGHAM
+        nb_energy[n] += buck_e[n];
+        #endif"""
     else:
         a = """
         nb_energy.push_back(elec_e[n] + poly_e[n]);"""
@@ -2964,9 +3053,6 @@ int main(int argc, char** argv) {
     ff.write(a)
 
     a = """
-        #ifdef USE_BUCKINGHAM
-        nb_energy[n] += buck_e[n];
-        #endif
     }
 
     for (size_t n = 0; n < training_set.size(); n++) {
@@ -3103,6 +3189,55 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
+def write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file with gradients for MBX
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been performed
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
+    ff = open(fname,'w')
+    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+namespace """ + namespace + """ {
+
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
+            const double a[""" + str(npoly) + """],
+                  double g[""" + str(nvars) + """]) {
+"""
+
+    ff.write(a)
+
+    poly_lines = retrieve_polynomial_lines(["    double p[", "    p[", "    const double t", "    g["],poly_directory + "/poly-grd-direct.cpp")
+
+    ff.write(poly_lines)
+
+    a = """
+    double energy(0);
+    for(int i = 0; i < """ + str(npoly) + """; ++i)
+        energy += p[i]*a[i];
+
+    return energy;
+}
+
+} // namespace """ + namespace + """
+
+"""
+
+    ff.write(a)
+    ff.close()
+
 
 def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
     """
@@ -3147,6 +3282,55 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
+def write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+    """
+    Writes the polynomial C++ file without gradients for MBX
+
+    Args:
+        number_of_monomers     - Number of monomers in the system
+        system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
+        degree                 - The degree of the polynomial
+        nvars                  - Number of variables in the polynomial
+        npoly                  - Number of terms in the polynomial
+        poly_directory         - The directory where the polynomial generation has been perfor
+med
+        version                - Will be appended to the class and files to differentiate multiple versions of the same system
+    """
+
+    system_name = system_name.replace("(", "_o_").replace(")", "_c_")
+    namespace = "mbnrg_" + system_name + "_deg" + str(degree)
+    struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
+    fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
+    ff = open(fname,'w')
+    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+namespace """ + namespace + """ {
+
+double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
+            const double a[""" + str(npoly) + """]) {
+"""
+
+    ff.write(a)
+
+    poly_lines = retrieve_polynomial_lines(["    double p[", "    p["],poly_directory + "/poly-direct.cpp")
+
+    ff.write(poly_lines)
+
+    a = """
+    double energy(0);
+    for(int i = 0; i < """ + str(npoly) + """; ++i)
+        energy += p[i]*a[i];
+
+    return energy;
+
+}
+
+} // namespace """ + namespace + """
+
+"""
+
+    ff.write(a)
+    ff.close()
 
 def get_arguments_for_functions(arg_string, number_of_monomers):
     """

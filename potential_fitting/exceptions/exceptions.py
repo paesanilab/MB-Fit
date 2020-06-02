@@ -18,6 +18,12 @@ class FileExistsError(PotentialFittingError):
     def __init__(self, file):
         super().__init__("File '{}' already exists, but must be overwritten. You may manually move the file or change files.overwrite_method = backup or overwrite in your settings file.".format(file))
 
+class FileDoesNotExistError(PotentialFittingError):
+    """Raised when a file should exists but doesn't"""
+
+    def __init__(self, file):
+        super().__init__("File '{}' doesn't exist. Please make sure you run the appropriate commands to generate this file.".format(file))
+
 """
 --------------------------- Called Process Errors
 """

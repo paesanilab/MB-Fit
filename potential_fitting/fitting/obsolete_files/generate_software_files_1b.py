@@ -207,7 +207,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
     a = '''
     } else if (mon == "''' + mon_name + '''") {
         x1b_''' + molecule_in + '''_deg''' + str(poly_order) + '''::x1b_''' + molecule_in + '''_v1x pot(mon);
-        energies = pot.eval(xyz.data(), grad.data(), nm);
+        energies = pot.eval(xyz.data(), grad.data(), nm, virial);
 
 
 '''

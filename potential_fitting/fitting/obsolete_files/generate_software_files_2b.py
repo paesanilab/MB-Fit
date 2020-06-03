@@ -188,7 +188,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
         a = '''
     } else if (m1 == "''' + mon1 + '''" && m2 == "''' + mon2 + '''") {
         x2b_''' + mol1 + "_" + mol2 + "_deg" + str(poly_order) + '''::x2b_''' + mol1 + "_" + mol2 + '''_v1x pot(m1,m2);
-        energy = pot.eval(xyz2.data(), xyz1.data(), grd2.data(), grd1.data(), nm);
+        energy = pot.eval(xyz2.data(), xyz1.data(), grd2.data(), grd1.data(), nm, virial);
 
 
 '''
@@ -196,7 +196,7 @@ def write_cpp_software_properties(settings, config_file, fit_path, fit_cdl, mon_
         a = '''
     } else if (m1 == "''' + mon1 + '''" && m2 == "''' + mon2 + '''") {
         x2b_''' + mol1 + "_" + mol2 + "_deg" + str(poly_order) + '''::x2b_''' + mol1 + "_" + mol2 + '''_v1x pot(m1,m2);
-        energy = pot.eval(xyz1.data(), xyz2.data(), grd1.data(), grd2.data(), nm);
+        energy = pot.eval(xyz1.data(), xyz2.data(), grd1.data(), grd2.data(), nm, virial);
 
 
 '''

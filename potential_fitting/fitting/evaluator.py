@@ -17,7 +17,7 @@ class Evaluator:
         self.energies = []
         self.rmsd = []
 
-    def calculate_energies(self, parameter_file_path, training_set_file_path, correlation_file_path=None):
+    def calculate_energies(self, parameter_file_path, training_set_file_path, is_training_format = True, correlation_file_path=None):
 
         if correlation_file_path is None:
             correlation_file_path = files.init_file(os.path.join(self.settings.get("files", "log_path"), "eval.dat"))
@@ -33,9 +33,10 @@ class Evaluator:
                 if not line.startswith("#"):
                     fit_energies.append(float(line.split()[1]))
 
-        self.ts_obj = TrainingSet.get_training_set_from_xyz_file(training_set_file_path, self.settings, energy_names=["binding_energy", "ref_energy"])
+        self.ts_obj = TrainingSet.get_training_set_from_xyz_file(training_set_file_path, self.settings, energy_names=["binding_energy", "ref_energy"], is_training_format = is_training_format)
 
         self.ts_obj.add_energies("fit_energy", fit_energies)
+        return fit_energies
 
         
     def write_correlation_file(self, correlation_file = "correlation.dat", split_energy = None):

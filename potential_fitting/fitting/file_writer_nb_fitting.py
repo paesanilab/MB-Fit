@@ -2203,7 +2203,7 @@ int main(int argc, char** argv) {
         ++argv;
         --argc;
 
-        size_t nsys = tset::load_nb_system(*argv, training_set);
+        size_t nsys = tset::load_nb_system(*argv, training_set, false);
         std::cout << "'" << *(argv++) << "' : "
                       << nsys << " configurations" << std::endl;
 

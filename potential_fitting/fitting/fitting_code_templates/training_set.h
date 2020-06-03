@@ -14,7 +14,7 @@ struct nb_system {
     std::vector<double> xyz;
 };
 
-size_t load_nb_system(const char* filename, std::vector<nb_system>& ts);
+size_t load_nb_system(const char* filename, std::vector<nb_system>& ts, bool is_trainig_set = true);
 
 } // namespace tset
 

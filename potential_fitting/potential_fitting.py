@@ -1084,6 +1084,48 @@ def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, m
 
     fitting.generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version, virtual_sites)
 
+def calculate_model_energies(settings_path, fitting_code_dir_path, fits_path, configurations,
+                             ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
+                             fitted_ttmnrg_params = "ttm-nrg_params.dat"):
+    """
+    Returns a list with the energies of each configuration in configurations
+
+    Args:
+        settings_path         - Local path to the file containing all relevent settings information.
+        fitting_code_dir_path - Local path to the directory containing the compiled fitcode.
+        fits_path             - Local path to folder containing the fits
+        configurations        - Configurations to evaluate.
+        ttm                   - True if these are ttm fits. False otherwise.
+        over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
+        nc_path               - Netcdf file with the parameters for the best fit.
+        fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
+    """
+
+    # Get information
+    workdir = os.getcwd()
+    settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
+
+    fit_folder_prefix = os.path.join(workdir, fits_path)
+    if not os.path.exists(fit_folder_prefix):
+        os.mkdir(fit_folder_prefix)
+
+    if ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
+    elif over_ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+    else:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+
+
+    eval_obj = fitting.Evaluator(settings, path_to_eval)
+
+    fit_energies = eval_obj.calculate_energies(path_to_params, configurations, is_training_format = False)
+    return fit_energies
+
 def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, training_set,
                          split_energy = None, 
                          min_energy_plot = 0.0, max_energy_plot = 50.0,

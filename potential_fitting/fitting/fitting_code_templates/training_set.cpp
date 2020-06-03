@@ -11,7 +11,7 @@
 
 namespace tset {
 
-size_t load_nb_system(const char* filename, std::vector<nb_system>& ts)
+size_t load_nb_system(const char* filename, std::vector<nb_system>& ts, bool is_training_set)
 {
     assert(filename);
 
@@ -44,12 +44,15 @@ size_t load_nb_system(const char* filename, std::vector<nb_system>& ts)
         iss >> binding_energy >> std::ws
             >> nb_energy ;
 
-        if (iss.fail()) {
+        if (iss.fail() and is_training_set) {
             std::ostringstream oss;
             oss << "'" << filename << "' : configuration #"
                 << (n_nb_sys + 1) << " : unexpected text '"
                 << iss.str() << "' instead of total/twobody/onebody[2] energies";
             throw std::runtime_error(oss.str());
+        } else {
+            binding_energy = 0.0;
+            nb_energy = 0.0;
         }
 
         ts.push_back(nb_system());

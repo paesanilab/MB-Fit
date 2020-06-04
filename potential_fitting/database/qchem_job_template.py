@@ -54,6 +54,10 @@ def execute_job():
 
         job_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "job_{format}".format(job_hash[:i]))
 
+    if os.path.isdir(job_dir + "_done"):
+        print("Job " + job_dir.split('/')[-1] + " is already done. Skipping.")
+        return
+
     os.mkdir(job_dir)
     input_path = job_dir + "/qchem_input.log"
     qchem_stdout_stderr_log_path = job_dir + "/qchem_log.log"

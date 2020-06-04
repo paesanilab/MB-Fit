@@ -99,6 +99,8 @@ class JobHandler(object):
                 continue
             if not os.path.isdir(directory):
                 continue
+            if not os.path.isfile(directory + "/output.ini"):
+                continue
             calculation_results.append(self.read_job(directory + "/output.ini", directory + "/output.log"))
 
             if len(calculation_results) > 1000:

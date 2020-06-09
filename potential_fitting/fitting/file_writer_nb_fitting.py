@@ -2200,7 +2200,7 @@ int main(int argc, char** argv) {
         nb_energy.push_back(elec_e[n] + disp_e[n] + rep_e[n]);
     }
 
-    std::cerr << "frame[.....#]= totalenergy repulsion dispersion electrostatics" << std::endl;
+    std::cerr << "#frame[.....#]= totalenergy repulsion dispersion electrostatics" << std::endl;
 
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
@@ -3116,9 +3116,9 @@ int main(int argc, char** argv) {
     }
 
 #ifdef USE_BUCKINGHAM
-    std::cerr << "frame[.....#]= totalenergy poly repulsion dispersion electrostatics" << std::endl;
+    std::cerr << "#frame[.....#]= totalenergy poly repulsion dispersion electrostatics" << std::endl;
 #else
-    std::cerr << "frame[.....#]= totalenergy poly dispersion electrostatics" << std::endl;
+    std::cerr << "#frame[.....#]= totalenergy poly dispersion electrostatics" << std::endl;
 #endif
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)

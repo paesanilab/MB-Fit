@@ -753,29 +753,6 @@ def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
 
     fitting.prepare_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path)
 
-#def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
-#    """
-#    Generates the fit code based on the polynomials for a monomer
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        config_path         - Local path to the dimer config file.
-#        poly_in_path        - Local path to the the A3B2.in type file to read polynomial input from.
-#        poly_path           - Local path to directory where polynomial files are.
-#        poly_order          - The order of the polynomial in poly_path.
-#        fit_dir_path        - Local path to directory to generate fit code in.
-#
-#    Returns:
-#        None.
-#    """
-#
-#    files.init_directory(fit_dir_path)
-#
-#    if not os.path.isdir(fit_dir_path):
-#        os.mkdir(fit_dir_path)
-#
-#    fitting.prepare_2b_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path)
- 
 def compile_fit_code(settings_path, fit_dir_path):
     """
     Compiles the fit code in the given directory.
@@ -1102,9 +1079,64 @@ def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, m
 
     fitting.generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version, virtual_sites)
 
+def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, training_set,
+                         split_energy = None,
+                         correlation_prefix = "correlation",
+                         correlation_directory = "correlation",
+                         ttm=False, over_ttm=False, nc_path = "mbnrg.nc"):
+    """
+    Generates correltation data for the training/test set passed as argument
+
+    Args:
+        settings_path         - Local path to the file containing all relevent settings information.
+        fitting_code_dir_path - Local path to the directory containing the compiled fitcode.
+        fits_path             - Local path to folder containing the fits
+        training_set          - Configurations to evaluate. They need the binding energy and n-b energy in this order in the comment line.
+        split_energy          - If not None, will split the correlation plot in two sets, low and high, depending on the value of the variable.
+        correlation_prefix    - Prefix for the correlation files that will be generated.
+        correlation_directory - Directory where all the correlation files will be put.
+        ttm                   - True if these are ttm fits. False otherwise.
+        over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
+        nc_path               - Netcdf file with the parameters for the best fit.
+    """
+
+    # Get information
+    workdir = os.getcwd()
+    settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
+
+    corr_folder_prefix = os.path.join(workdir, correlation_directory)
+    if not os.path.exists(corr_folder_prefix):
+        os.mkdir(corr_folder_prefix)
+
+    fit_folder_prefix = os.path.join(workdir, fits_path)
+    if not os.path.exists(fit_folder_prefix):
+        os.mkdir(fit_folder_prefix)
+
+    if ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit/ttm-nrg_params.dat")
+    elif over_ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+    else:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
 
 
+    eval_obj = fitting.Evaluator(settings, path_to_eval)
 
+    eval_obj.calculate_energies(path_to_params, training_set)
 
+    correlation_file = correlation_prefix + ".dat"
+    energies = eval_obj.write_correlation_file(correlation_file = correlation_file , split_energy = split_energy)
+
+    os.system("mv *" +  correlation_file + " " + corr_folder_prefix)
+
+    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix)
+
+    os.system("mv *.png *.pdf " + " " + corr_folder_prefix)
+
+    return energies
 
 

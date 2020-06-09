@@ -554,6 +554,7 @@ def write_config_file(settings_file, config_path, chg,
                       pols, geo_paths, C6, polfacs, 
                       d6, A, 
                       kmin, kmax, dmin, dmax,
+                      kmin_init, kmax_init, dmin_init, dmax_init,
                       r_in, r_out,
                       energy_range, alpha,
                       virtual_sites_label,
@@ -625,6 +626,11 @@ def write_config_file(settings_file, config_path, chg,
     configwriter.set("fitting", "k_max", str(kmax))
     configwriter.set("fitting", "d_min", str(dmin))
     configwriter.set("fitting", "d_max", str(dmax))
+
+    configwriter.set("fitting", "k_min_init", str(kmin_init))
+    configwriter.set("fitting", "k_max_init", str(kmax_init))
+    configwriter.set("fitting", "d_min_init", str(dmin_init))
+    configwriter.set("fitting", "d_max_init", str(dmax_init))
 
     configwriter.set("fitting", "r_in", str(r_in))
     configwriter.set("fitting", "r_out", str(r_out))

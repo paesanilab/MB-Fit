@@ -1984,6 +1984,16 @@ int main(int argc, char** argv) {
                      << std::setw(15)       << "fit_energy"
                      << std::setw(15)       << "sq_error"
                      << "    \\n"; 
+
+    std::ofstream terms_file;
+    terms_file.open("individual_terms.dat");
+    terms_file << "#" << std::setw(10) << "index"
+                     << std::setw(15)       << "ref_energy" 
+                     << std::setw(15)       << "fit_energy"
+                     << std::setw(15)       << "disp_energy"
+                     << std::setw(15)       << "buck_energy"
+                     << std::setw(15)       << "elec_energy"
+                     << "    \\n";
     
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
@@ -2012,6 +2022,15 @@ int main(int argc, char** argv) {
                          << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
 
+        terms_file <<  std::setw(10) << i+1
+                         << std::setw(15) << std::scientific
+                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setw(15) <<  E_model
+                         << std::setw(15) <<  disp_e[i] 
+                         << std::setw(15) <<  rep_e[i]
+                         << std::setw(15) <<  elec_e[i]
+                         << "    \\n" ;
+
         err_L2 += delta*delta;
         err_wL2 += ts_weights[i]*delta*delta;
 
@@ -2024,6 +2043,7 @@ int main(int argc, char** argv) {
     }
 
     correlation_file.close();
+    terms_file.close();
 
     err_L2 /= training_set.size();
     err_wL2 /= training_set.size();
@@ -2180,12 +2200,18 @@ int main(int argc, char** argv) {
         nb_energy.push_back(elec_e[n] + disp_e[n] + rep_e[n]);
     }
 
+    std::cerr << "frame[.....#]= totalenergy repulsion dispersion electrostatics" << std::endl;
+
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
                   << std::setw(10) << "frame["
                   << std::setw(6) << std::setfill('.') << n
                   << std::setw(3) << "]= " << std::setfill(' ')
-                  << std::setw(25) << nb_energy[n] << std::endl;
+                  << std::setw(20) << nb_energy[n]
+                  << std::setw(20) << rep_e[n]
+                  << std::setw(20) << disp_e[n]
+                  << std::setw(20) << elec_e[n]
+                  << std::endl;
     }
 
     return 0;
@@ -2547,6 +2573,19 @@ int main(int argc, char** argv) {
                      << std::setw(15)       << "sq_error"
                      << "    \\n"; 
     
+    std::ofstream terms_file;
+    terms_file.open("individual_terms.dat");
+    terms_file << "#" << std::setw(10) << "index"
+                     << std::setw(15)       << "ref_energy" 
+                     << std::setw(15)       << "fit_energy"
+                     << std::setw(15)       << "poly_energy"
+                     << std::setw(15)       << "disp_energy"
+#ifdef USE_BUCKINGHAM
+                     << std::setw(15)       << "buck_energy"
+#endif
+                     << std::setw(15)       << "elec_energy"
+                     << "    \\n";
+
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
 
@@ -2579,6 +2618,18 @@ int main(int argc, char** argv) {
                          << std::setprecision(4)  <<  training_set[i].nb_energy
                          << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
+ 
+        terms_file <<  std::setw(10) << i+1
+                         << std::setw(15) << std::scientific
+                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setw(15) <<  E_model
+                         << std::setw(15) << model.calculate(training_set[i].xyz)
+                         << std::setw(15) <<  disp_e[i] 
+#ifdef USE_BUCKINGHAM
+                         << std::setw(15) <<  buck_e[i]
+#endif
+                         << std::setw(15) <<  elec_e[i]
+                         << "    \\n" ;
 
         err_L2 += delta*delta;
         err_wL2 += ts_weights[i]*delta*delta;
@@ -2592,6 +2643,7 @@ int main(int argc, char** argv) {
     }
 
     correlation_file.close();
+    terms_file.close();
 
     err_L2 /= training_set.size();
     err_wL2 /= training_set.size();
@@ -3055,12 +3107,24 @@ int main(int argc, char** argv) {
     a = """
     }
 
+#ifdef USE_BUCKINGHAM
+    std::cerr << "frame[.....#]= totalenergy poly repulsion dispersion electrostatics" << std::endl;
+#else
+    std::cerr << "frame[.....#]= totalenergy poly dispersion electrostatics" << std::endl;
+#endif
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
                   << std::setw(10) << "frame["
                   << std::setw(6) << std::setfill('.') << n
                   << std::setw(3) << "]= " << std::setfill(' ')
-                  << std::setw(25) << nb_energy[n] << std::endl;
+                  << std::setw(25) << nb_energy[n]
+                  << std::setw(20) << poly_e[n]
+#ifdef USE_BUCKINGHAM
+                  << std::setw(20) << rep_e[n]
+#endif
+                  << std::setw(20) << disp_e[n]
+                  << std::setw(20) << elec_e[n]
+                   << std::endl;
     }
 
     return 0;

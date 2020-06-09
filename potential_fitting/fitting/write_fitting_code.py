@@ -100,7 +100,6 @@ def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, p
     ## POLYNOMIAL PROPERTIES #######################################################
     ################################################################################
     
-    #Ask the user for the max value of k and d
     # These are the non-linear parameters of the polynomials
     k_min = config.get("fitting", "k_min")
     k_max = config.get("fitting", "k_max")
@@ -112,11 +111,17 @@ def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, p
     d_min_intra = d_min
     d_max_intra = d_max
 
+    # These are the non-linear parameters for TTM-nrg
+    b_min = config.get("fitting", "b_min")
+    b_max = config.get("fitting", "b_max")
+
     # Define initialization ranges for k,d
     k_min_init = config.get("fitting", "k_min_init") 
     k_max_init = config.get("fitting", "k_max_init")
     d_min_init = config.get("fitting", "d_min_init")
     d_max_init = config.get("fitting", "d_max_init")
+    b_min_init = config.get("fitting", "b_min_init")
+    b_max_init = config.get("fitting", "b_max_init")
 
     # Obtain inner and outer cutoff from config.ini
     ri = config.get("fitting", "r_in") # polynomials start to decrease (Angstrom)
@@ -238,13 +243,13 @@ def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, p
     ## Fitting code ################################################################
     ################################################################################
     
-    file_writer_nb_fitting.write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min_init, k_max_init, d_min_init, d_max_init, k_min_init, k_max_init, d_min_init, d_max_init, E_range, alpha)
+    file_writer_nb_fitting.write_mbnrg_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min_init, k_max_init, d_min_init, d_max_init, k_min_init, k_max_init, d_min_init, d_max_init, E_range, alpha)
     
     ################################################################################
     ## Evaluation code #############################################################
     ################################################################################
     
-    file_writer_nb_fitting.write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name)
+    file_writer_nb_fitting.write_mbnrg_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name)
     
     ################################################################################
     ## Makefile ####################################################################
@@ -273,7 +278,7 @@ def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, p
     
     file_writer_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
     
-    file_writer_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, "v1")
+    file_writer_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, "v1")
 
 
 def write_ttmnrg_fitting_code(settings_path, config_path):
@@ -347,17 +352,13 @@ def write_ttmnrg_fitting_code(settings_path, config_path):
     ## POLYNOMIAL PROPERTIES #######################################################
     ################################################################################
     
-    #Ask the user for the max value of k and d
-    # These are the non-linear parameters of the polynomials
-    k_min = config.get("fitting", "k_min")
-    k_max = config.get("fitting", "k_max")
-    k_min_intra = k_min
-    k_max_intra = k_max
-    
-    # Define initialization ranges for k,d
-    k_min_init = config.get("fitting", "k_min_init")
-    k_max_init = config.get("fitting", "k_max_init")
-    
+    # These are the non-linear parameters for TTM-nrg
+    b_min = config.get("fitting", "b_min")
+    b_max = config.get("fitting", "b_max")
+
+    b_min_init = config.get("fitting", "b_min_init")
+    b_max_init = config.get("fitting", "b_max_init")
+
     # Define Energy Range for the fitting
     E_range = config.get("fitting","energy_range",float)
 
@@ -420,13 +421,13 @@ def write_ttmnrg_fitting_code(settings_path, config_path):
     ## TTM-nrg fitting code ########################################################
     ################################################################################
 
-    file_writer_nb_fitting.write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min_init, k_max_init, E_range)
+    file_writer_nb_fitting.write_ttmnrg_fitting_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, b_min, b_max, b_min_init, b_max_init, E_range)
     
     ################################################################################
     ## TTM-nrg evaluation code #####################################################
     ################################################################################
     
-    file_writer_nb_fitting.write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
+    file_writer_nb_fitting.write_ttmnrg_eval_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name)
     
     ################################################################################
     ## Makefile ####################################################################

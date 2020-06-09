@@ -1985,19 +1985,19 @@ int main(int argc, char** argv) {
     correlation_file.open ("correlation.dat");
     
     correlation_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "sq_error"
+                     << std::setw(15)       << "Reference" 
+                     << std::setw(15)       << "Calculated"
+                     << std::setw(15)       << "Error^2"
                      << "    \\n"; 
 
     std::ofstream terms_file;
     terms_file.open("individual_terms.dat");
     terms_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "disp_energy"
-                     << std::setw(15)       << "buck_energy"
-                     << std::setw(15)       << "elec_energy"
+                     << std::setw(20)       << "Reference" 
+                     << std::setw(20)       << "Calculated"
+                     << std::setw(20)       << "Repulsion (TTM-nrg)"
+                     << std::setw(20)       << "Dispersion"
+                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
                      << "    \\n";
     
     double err_L2(0), err_wL2(0), err_Linf(0);
@@ -2023,17 +2023,17 @@ int main(int argc, char** argv) {
 
         correlation_file <<  std::setw(10) << i+1
                          << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
                          << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
 
         terms_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) <<  disp_e[i] 
-                         << std::setw(15) <<  rep_e[i]
-                         << std::setw(15) <<  elec_e[i]
+                         << std::setw(20) << std::scientific
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
+                         << std::setw(20) <<  E_model
+                         << std::setw(20) <<  rep_e[i] 
+                         << std::setw(20) <<  disp_e[i]
+                         << std::setw(40) <<  elec_e[i]
                          << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -2240,19 +2240,27 @@ int main(int argc, char** argv) {
         nb_energy.push_back(elec_e[n] + disp_e[n] + rep_e[n]);
     }
 
-    std::cerr << "#frame[.....#]= totalenergy repulsion dispersion electrostatics" << std::endl;
+    std::cout << std::setw(9)   << "#frame["
+              << std::setw(6)   << std::setfill('.') << "###"
+              << std::setw(3)   << "]= " << std::setfill(' ')
+              << std::setw(20)  << "Calculated"
+              << std::setw(20)  << "Repulsion (TTM-nrg)"
+              << std::setw(20)  << "Dispersion"
+              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
+              << std::endl;
 
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
-                  << std::setw(10) << "frame["
-                  << std::setw(6) << std::setfill('.') << n
-                  << std::setw(3) << "]= " << std::setfill(' ')
-                  << std::setw(20) << nb_energy[n]
-                  << std::setw(20) << rep_e[n]
-                  << std::setw(20) << disp_e[n]
-                  << std::setw(20) << elec_e[n]
+                  << std::setw(10)   << "frame["
+                  << std::setw(6)    << std::setfill('.') << n
+                  << std::setw(3)    << "]= " << std::setfill(' ')
+                  << std::setw(20)   << nb_energy[n]
+                  << std::setw(20)   << rep_e[n]
+                  << std::setw(20)   << disp_e[n]
+                  << std::setw(40)   << elec_e[n]
                   << std::endl;
     }
+
 
     return 0;
 }
@@ -2608,22 +2616,22 @@ int main(int argc, char** argv) {
     correlation_file.open ("correlation.dat");
     
     correlation_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "sq_error"
+                     << std::setw(15)       << "Reference" 
+                     << std::setw(15)       << "Calculated"
+                     << std::setw(15)       << "Error^2"
                      << "    \\n"; 
     
     std::ofstream terms_file;
     terms_file.open("individual_terms.dat");
-    terms_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "poly_energy"
-                     << std::setw(15)       << "disp_energy"
+    terms_file << std::setw(10) << "#index"
+                     << std::setw(20)       << "Reference" 
+                     << std::setw(20)       << "Calculated"
 #ifdef USE_BUCKINGHAM
-                     << std::setw(15)       << "buck_energy"
+                     << std::setw(20)       << "Repulsion (TTM-nrg)"
 #endif
-                     << std::setw(15)       << "elec_energy"
+                     << std::setw(20)       << "Polynomials"
+                     << std::setw(20)       << "Dispersion"
+                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
                      << "    \\n";
 
     double err_L2(0), err_wL2(0), err_Linf(0);
@@ -2655,20 +2663,20 @@ int main(int argc, char** argv) {
 
         correlation_file <<  std::setw(10) << i+1
                          << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
                          << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
  
         terms_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) << model.calculate(training_set[i].xyz)
-                         << std::setw(15) <<  disp_e[i] 
+                         << std::setw(20) << std::scientific
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
+                         << std::setw(20) <<  E_model
 #ifdef USE_BUCKINGHAM
-                         << std::setw(15) <<  buck_e[i]
+                         << std::setw(20) <<  buck_e[i]
 #endif
-                         << std::setw(15) <<  elec_e[i]
+                         << std::setw(20) << model.calculate(training_set[i].xyz)
+                         << std::setw(20) <<  disp_e[i] 
+                         << std::setw(40) <<  elec_e[i]
                          << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -3154,24 +3162,32 @@ int main(int argc, char** argv) {
     a = """
     }
 
+    std::cout << std::setw(9)   << "#frame["
+              << std::setw(6)   << std::setfill('.') << "###"
+              << std::setw(3)   << "]= " << std::setfill(' ')
+              << std::setw(20)  << "Calculated"
 #ifdef USE_BUCKINGHAM
-    std::cerr << "#frame[.....#]= totalenergy poly repulsion dispersion electrostatics" << std::endl;
-#else
-    std::cerr << "#frame[.....#]= totalenergy poly dispersion electrostatics" << std::endl;
+              << std::setw(20)  << "Repulsion (TTM-nrg)"
 #endif
+              << std::setw(20)  << "Polynomials"
+              << std::setw(20)  << "Dispersion"
+              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
+              << std::endl;
+
+    
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
-                  << std::setw(10) << "frame["
-                  << std::setw(6) << std::setfill('.') << n
-                  << std::setw(3) << "]= " << std::setfill(' ')
-                  << std::setw(25) << nb_energy[n]
-                  << std::setw(20) << poly_e[n]
+                  << std::setw(10)   << "frame["
+                  << std::setw(6)    << std::setfill('.') << n
+                  << std::setw(3)    << "]= " << std::setfill(' ')
+                  << std::setw(20)   << nb_energy[n]
 #ifdef USE_BUCKINGHAM
-                  << std::setw(20) << buck_e[n]
+                  << std::setw(20)   << rep_e[n]
 #endif
-                  << std::setw(20) << disp_e[n]
-                  << std::setw(20) << elec_e[n]
-                   << std::endl;
+                  << std::setw(20)   << poly_e[n]
+                  << std::setw(20)   << disp_e[n]
+                  << std::setw(40)   << elec_e[n]
+                  << std::endl;
     }
 
     return 0;

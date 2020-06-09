@@ -3491,7 +3491,7 @@ struct """ + struct_name + """ {
     typedef """ + poly_name + """ polynomial;
 
     """ + declare_key + """eval(""" + arg_xyz + """, const size_t n);
-    """ + declare_key + """eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n);
+    """ + declare_key + """eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n, std::vector<double> *virial=0);
 
   private:
 """
@@ -3743,7 +3743,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
 //----------------------------------------------------------------------------//
 
-""" + declare_key + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n) {
+""" + declare_key + struct_name + """::eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n, std::vector<double> *virial) {
     std::vector<double> energies(n,0.0);
     std::vector<double> energies_sw(n,0.0);
 
@@ -3940,8 +3940,65 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 """
         count += 3*number_of_atoms[i]
         ff.write(a)
+## EL put virial Here
+        a = """
+        
+        if (virial != 0) {"""
+    
+    ff.write(a)
+
+    pairdict = {  0 : [0,0],
+                  1 : [0,1],
+                  2 : [0,2],
+                  4 : [1,1],
+                  5 : [1,2],
+                  8 : [2,2] }
+
+    for virial_index in [0,1,2,4,5,8]:
 
 
+
+        a = """
+        
+            (*virial)[""" + str(virial_index) + """] = """
+
+        ff.write(a)
+
+
+        parser_list=list(symmetry_parser.get_atoms())
+        mod_parser_list=[]
+        for param in parser_list:
+            if param[0] not in ['X','Y','Z']:
+               
+                mod_parser_list.append(param)
+
+
+        for labelindex in list(range(0,len(mod_parser_list))):
+            pos_name=get_coords_var_name(mod_parser_list[labelindex][0], mod_parser_list[labelindex][1], mod_parser_list[labelindex][2])
+            grad_name=get_coords_var_name(mod_parser_list[labelindex][0], mod_parser_list[labelindex][1], mod_parser_list[labelindex][2], "g")
+             
+            if labelindex==0:
+                a = """-"""+pos_name + """[""" + str(pairdict[virial_index][0]) + """]*""" + grad_name + """[""" + str(pairdict[virial_index][1]) + """]\n"""
+            elif labelindex==len(mod_parser_list)-1:
+                a = """                        -""" + pos_name + """[""" + str(pairdict[virial_index][0]) + """]*""" + grad_name + """[""" + str(pairdict[virial_index][1]) + """];\n"""
+            else:
+                a = """                        -""" + pos_name + """[""" + str(pairdict[virial_index][0]) + """]*""" + grad_name + """[""" + str(pairdict[virial_index][1]) + """]\n"""   
+            ff.write(a)
+    a = """
+            (*virial)[3] = (*virial)[1];
+            (*virial)[6] = (*virial)[2];
+            (*virial)[7] = (*virial)[5];
+"""
+    
+    ff.write(a)
+
+
+    a = """
+
+        }
+"""
+    ff.write(a)
+          
     a = """
 
     }

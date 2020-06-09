@@ -50,7 +50,7 @@ size_t load_nb_system(const char* filename, std::vector<nb_system>& ts, bool is_
                 << (n_nb_sys + 1) << " : unexpected text '"
                 << iss.str() << "' instead of total/twobody/onebody[2] energies";
             throw std::runtime_error(oss.str());
-        } else {
+        } else if (!is_training_set) {
             binding_energy = 0.0;
             nb_energy = 0.0;
         }

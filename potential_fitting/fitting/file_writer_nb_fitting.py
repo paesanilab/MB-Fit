@@ -2242,7 +2242,7 @@ int main(int argc, char** argv) {
         nb_energy.push_back(elec_e[n] + disp_e[n] + rep_e[n]);
     }
 
-    std::cout << std::setw(9)   << "#frame["
+    std::cerr << std::setw(9)   << "#frame["
               << std::setw(6)   << std::setfill('.') << "###"
               << std::setw(3)   << "]= " << std::setfill(' ')
               << std::setw(20)  << "Calculated"
@@ -3164,7 +3164,7 @@ int main(int argc, char** argv) {
     a = """
     }
 
-    std::cout << std::setw(9)   << "#frame["
+    std::cerr << std::setw(9)   << "#frame["
               << std::setw(6)   << std::setfill('.') << "###"
               << std::setw(3)   << "]= " << std::setfill(' ')
               << std::setw(20)  << "Calculated"

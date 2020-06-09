@@ -481,8 +481,6 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
         fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
         fcpp.write(my_nb_conditional_grad)
 
-        # TODO add CMakeLists files
-
     if number_of_monomers == 1:
         fcpp.write("\n\n\n// SECTION SITES\n")
         fcpp.write("src/bblock/sys_tools.cpp\n")

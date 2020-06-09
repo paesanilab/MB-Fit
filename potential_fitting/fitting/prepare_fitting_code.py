@@ -109,6 +109,9 @@ def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, p
 
 def prepare_ttmnrg_fitting_code(settings_path, config_path, fit_path):
 
+    if not os.path.isdir(fit_path + "/src"):
+        os.mkdir(fit_path + "/src")
+
     molecule = ""
     nmons = 0
 

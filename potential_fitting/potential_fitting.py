@@ -793,7 +793,7 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     original_dir = os.getcwd()
 
-    os.chdir(fit_dir_path)
+    os.chdir(fit_dir_path + "/src/")
 
     system.call("make", "clean")
     system.call("make")
@@ -866,11 +866,11 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
         os.mkdir(fit_folder_prefix)
 
     if ttm:
-        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b-ttm".format(nb))
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "bin/fit-{}b-ttm".format(nb))
     elif over_ttm:
-        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b-over-ttm".format(nb))
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "bin/fit-{}b-over-ttm".format(nb))
     else:
-        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b".format(nb))
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "bin/fit-{}b".format(nb))
 
     # initialize indexes
     fit_index = 1

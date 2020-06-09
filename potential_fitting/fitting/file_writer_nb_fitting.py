@@ -2722,7 +2722,8 @@ CXXFLAGS= -g -Wall -std=c++11 -O0 -m64
 LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
-OBJDIR = .
+OBJDIR = ../obj
+BINDIR = ../bin
 LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
 INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
 """
@@ -2748,15 +2749,23 @@ libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
 
 fit-""" + str(number_of_monomers) + """b: fit-""" + str(number_of_monomers) + """b.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+\tmkdir -p $(BINDIR)
+\tmv fit-""" + str(number_of_monomers) + """b $(BINDIR)
 
 eval-""" + str(number_of_monomers) + """b: eval-""" + str(number_of_monomers) + """b.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+\tmkdir -p $(BINDIR)
+\tmv eval-""" + str(number_of_monomers) + """b $(BINDIR)
 
 fit-""" + str(number_of_monomers) + """b-over-ttm: fit-""" + str(number_of_monomers) + """b.cpp
 \t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+\tmkdir -p $(BINDIR)
+\tmv fit-""" + str(number_of_monomers) + """b-over-ttm $(BINDIR)
 
 eval-""" + str(number_of_monomers) + """b-over-ttm: eval-""" + str(number_of_monomers) + """b.cpp
 \t$(CXX) -DUSE_BUCKINGHAM $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+\tmkdir -p $(BINDIR)
+\tmv eval-""" + str(number_of_monomers) + """b-over-ttm $(BINDIR)
 """
     ff.write(a)
 
@@ -2769,11 +2778,7 @@ $(OBJDIR)/.sentinel:
 \ttouch $@
 
 clean:
-\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
-        + str(number_of_monomers) + """b eval-"""\
-        + str(number_of_monomers) + """b fit-"""\
-        + str(number_of_monomers) + """b-over-ttm eval-"""\
-        + str(number_of_monomers) + """b-over-ttm
+\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a $(BINDIR)
 """
     ff.write(a)
     ff.close()
@@ -2822,7 +2827,8 @@ CXXFLAGS= -g -Wall -std=c++11 -O0 -m64
 LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
-OBJDIR = .
+OBJDIR = ../obj
+BINDIR = ../bin
 LIBDIR = -L./ -L$(GSLHOME)/lib -L$(NETCDFHOME)/lib -L$(INTELHOME)lib/intel64 -L$(INTELHOME)/mkl/lib/intel64 
 INCLUDE = -I./ -I$(GSLHOME)/include -I$(NETCDFHOME)/include -I$(INTELHOME)/mkl/include
 
@@ -2838,9 +2844,13 @@ libfit.a: $(addprefix $(OBJDIR)/, $(FIT_OBJ))
 
 fit-""" + str(number_of_monomers) + """b-ttm: fit-""" + str(number_of_monomers) + """b-ttm.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+\tmkdir -p $(BINDIR)
+\tmv fit-""" + str(number_of_monomers) + """b-ttm $(BINDIR)
 
 eval-""" + str(number_of_monomers) + """b-ttm: eval-""" + str(number_of_monomers) + """b-ttm.cpp
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) $< $(LIBS) -lfit -o $@
+\tmkdir -p $(BINDIR)
+\tmv eval-""" + str(number_of_monomers) + """b-ttm $(BINDIR)
 
 $(OBJDIR)/%.o: %.cpp $(OBJDIR)/.sentinel
 \t$(CXX) $(CXXFLAGS) $(INCLUDE) $(LIBDIR) -c $< $(LIBS) -o $@
@@ -2850,9 +2860,7 @@ $(OBJDIR)/.sentinel:
 \ttouch $@
 
 clean:
-\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a fit-"""\
-        + str(number_of_monomers) + """b-ttm eval-"""\
-        + str(number_of_monomers) + """b-ttm \
+\trm -rf $(addprefix $(OBJDIR)/, $(FIT_OBJ)) libfit*.a $(BINDIR)
 """
     ff.write(a)
     ff.close()

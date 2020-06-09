@@ -292,7 +292,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
         for i in range(len(mon_id_sorted)):
             ids.append("xyz" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
             idgs.append("grad" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
-        my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
+        my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm, virial);\n" ## EL added virial
 
         # Write code that needs to be added in the INCLUDE1B section of the code
         #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")

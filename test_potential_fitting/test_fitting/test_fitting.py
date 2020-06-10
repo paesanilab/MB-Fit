@@ -13,12 +13,16 @@ class TestFitting(unittest.TestCase):
     def test_A1B2(self):
 
         molecule = "A1B2"
-        config_path = os.path.join(TestFitting.resources_path, molecule, "config.ini")
+        config_in_path = os.path.join(TestFitting.resources_path, molecule, "config.ini")
+        config_path = os.path.join(TestFitting.out_path, molecule, "config.ini")
         in_path = os.path.join(TestFitting.resources_path, molecule, "poly.in")
         poly_path = os.path.join(TestFitting.resources_path, molecule, "poly")
         settings_path = os.path.join(TestFitting.resources_path, molecule, "settings.ini")
         fitting_path = os.path.join(TestFitting.out_path, molecule, "fitting_code")
         fit_path = os.path.join(TestFitting.out_path, molecule, "fits")
+
+        files.init_directory(os.path.join(TestFitting.out_path, molecule))
+        os.system("cp " + config_in_path + " " + config_path)
 
         files.init_directory(fits_path)
 
@@ -43,11 +47,15 @@ class TestFitting(unittest.TestCase):
     def test_A1B2_A1B2_ttmnrg(self):
         molecule = "A1B2_A1B2"
         settings_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "settings.ini")
-        config_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "config.ini")
+        config_in_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "config.ini")
+        config_path = os.path.join(TestFitting.out_path, molecule + "_TTM", "config.ini")
         ttm_fit_code_path = os.path.join(TestFitting.out_path, molecule + "_TTM", "ttm")
         ttm_fits_path = os.path.join(TestFitting.out_path, molecule + "_TTM", "fit")
         training_set = os.path.join(TestFitting.resources_path, molecule + "_TTM","training_set.xyz")
         ttmparams = os.path.join(ttm_fits_path, "best_fit", "ttm-nrg_params.dat")
+
+        files.init_directory(os.path.join(TestFitting.out_path, molecule + "_TTM"))
+        os.system("cp " + config_in_path + " " + config_path)
 
         files.init_directory(ttm_fits_path)
         
@@ -69,12 +77,16 @@ class TestFitting(unittest.TestCase):
 
     def test_A1B2_A1B2_mbnrg(self):
         molecule = "A1B2_A1B2"
-        config_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "config.ini")
+        config_in_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "config.ini")
+        config_path = os.path.join(TestFitting.out_path, molecule + "_MB", "config.ini")
         in_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "poly.in")
         poly_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "poly")
         settings_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "settings.ini")
         fitting_path = os.path.join(TestFitting.out_path, molecule + "_MB", "fitting_code")
         fits_path = os.path.join(TestFitting.out_path, molecule + "_MB", "fits")
+
+        files.init_directory(os.path.join(TestFitting.out_path, molecule + "_MB"))
+        os.system("cp " + config_in_path + " " + config_path)
 
         files.init_directory(fits_path)
 

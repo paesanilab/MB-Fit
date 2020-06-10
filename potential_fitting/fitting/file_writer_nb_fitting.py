@@ -3184,7 +3184,7 @@ int main(int argc, char** argv) {
                   << std::setw(3)    << "]= " << std::setfill(' ')
                   << std::setw(20)   << nb_energy[n]
 #ifdef USE_BUCKINGHAM
-                  << std::setw(20)   << rep_e[n]
+                  << std::setw(20)   << buck_e[n]
 #endif
                   << std::setw(20)   << poly_e[n]
                   << std::setw(20)   << disp_e[n]

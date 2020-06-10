@@ -128,14 +128,14 @@ class TestQchemCalculator(TestCalculator):
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
-    def test_find_frequencies(self):
+    def test_calculate_frequencies(self):
         
-        self.calculator1.find_frequencies(TestCalculator.CO2, TestCalculator.model1)
+        self.calculator1.calculate_frequencies(TestCalculator.CO2, TestCalculator.model1)
 
-        self.calculator2.find_frequencies(TestCalculator.CN, TestCalculator.model1)
+        self.calculator2.calculate_frequencies(TestCalculator.CN, TestCalculator.model1)
 
-        self.calculator3.find_frequencies(TestCalculator.CO2, TestCalculator.model2)
+        self.calculator3.calculate_frequencies(TestCalculator.CO2, TestCalculator.model2)
 
-        self.calculator4.find_frequencies(TestCalculator.CN, TestCalculator.model2)
+        self.calculator4.calculate_frequencies(TestCalculator.CN, TestCalculator.model2)
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestQchemCalculator)

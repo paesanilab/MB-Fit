@@ -2216,7 +2216,7 @@ int main(int argc, char** argv) {
         std::cerr << s << std::endl;
         return 1;
     } catch (...) {
-        std::cerr << "unknown error while rparsing inputs...";
+        std::cerr << "unknown error while parsing inputs...";
         return 1;
     }
 

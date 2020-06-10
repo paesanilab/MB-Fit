@@ -89,7 +89,7 @@ class Psi4Calculator(Calculator):
         except RuntimeError as e:
             raise LibraryCallError("psi4", "geometry", str(e))
 
-    def calculate_energy(self, molecule, model, fragment_indicies, arguments={}):
+    def calculate_energy(self, molecule, model, fragment_indicies, qm_options={}):
         """
         Calculates the energy of a subset of the fragments of a molecule with a provided model.
 
@@ -100,7 +100,7 @@ class Psi4Calculator(Calculator):
             molecule        - The Molecule to perform the calculation on.
             fragment_indicies - List of the indicies of the fragments to include in the calculation.
             model           - The Model to use for the calculation.
-            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (calculated energy, path to the log file)
@@ -112,7 +112,7 @@ class Psi4Calculator(Calculator):
         # file to write logs from psi4 calculation
         log_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), model.get_cp(), "out")
         
-        psi4.set_options(arguments)
+        psi4.set_options(qm_options)
 
         self.initialize_calculation(log_path)
 
@@ -135,14 +135,14 @@ class Psi4Calculator(Calculator):
         except RuntimeError as e:
             raise LibraryCallError("psi4", "energy", str(e), log_path=log_path)
 
-    def optimize_geometry(self, molecule, model, arguments={}):
+    def optimize_geometry(self, molecule, model, qm_options={}):
         """
         Optimizes the given input geometry with a provided model.
 
         Args:
             molecule        - The Molecule to perform the optimization on.
             model           - The Model to use for the optimization.
-            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (new optimized molecule, nergy of the optimized geometry, path to the log file)
@@ -153,7 +153,7 @@ class Psi4Calculator(Calculator):
 
         log_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "log")
 
-        psi4.set_options(arguments)
+        psi4.set_options(qm_options)
 
         self.initialize_calculation(log_path)
 
@@ -191,14 +191,14 @@ class Psi4Calculator(Calculator):
 
         return Molecule.read_xyz(xyz_string, atoms_per_fragment, name_per_fragment, charge_per_fragment, spin_multiplicity_per_fragment, symmetry_per_fragment, SMILE_per_fragment), energy, log_path
 
-    def find_frequencies(self, molecule, model, arguments={}):
+    def calculate_frequencies(self, molecule, model, qm_options={}):
         """
         Performs a frequency calculation to find the normal modes, frequencies, and reduced masses of the molecule
 
         Args:
             molecule        - The Molecule to perform the frequency calculation on.
             model           - The Model to use for the claculation.
-            arguments       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (normal modes, frequencies, reduced masses, path to log file)
@@ -209,7 +209,7 @@ class Psi4Calculator(Calculator):
 
         log_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "log")
 
-        psi4.set_options(arguments)
+        psi4.set_options(qm_options)
 
         self.initialize_calculation(log_path)
 

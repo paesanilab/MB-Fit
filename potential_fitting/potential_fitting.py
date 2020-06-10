@@ -40,7 +40,7 @@ def apply_standard_order(settings_path, geo_path):
     return standard_settings_path, standard_geo_path
 
 
-def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, arguments={}):
+def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, qm_options={}):
     """
     Optimizes the geometry of the given molecule.
 
@@ -50,15 +50,15 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis
         opt_geo_path        - Local path to the file to write the optimized geometry to.
         method              - The method to use for this geometry optimization.
         basis               - The basis to use for this geometry optimization.
-        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, arguments=arguments)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, qm_options=qm_options)
 
-def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, arguments={}):
+def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, qm_options={}):
     """
     Generates the normal modes for the given molecule.
 
@@ -68,13 +68,13 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
         normal_modes_path   - Local path to the file to write the normal modes to.
         method              - The method to use for this normal modes calculation.
         basis               - The basis to use for this normal modes calculation.
-        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         Null dimension of normal modes.
     """
     
-    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, arguments=arguments)
+    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, qm_options=qm_options)
 
     return dim_null
 
@@ -325,7 +325,7 @@ def init_database(settings_path, database_config_path, configurations_path, meth
     database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 
-def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize, arguments={}):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize, qm_options={}):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
@@ -337,7 +337,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
         client_name         - Name of the client performing these calculations.
         tags                - Only perform calculations marked with at least one of these tags.
         calculation_count   - Maximum number of calculations to perform. Unlimited if None.
-        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -346,9 +346,9 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     if calculation_count is None:
         calculation_count = sys.maxsize
 
-    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count, arguments=arguments)
+    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count, qm_options=qm_options)
 
-def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize, arguments={}):
+def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize, qm_options={}):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -360,7 +360,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
         job_dir             - Local path to the directory to place the job files in.
         tags                - Onlt  make jobs for calculations marked with at least one of these tags.
         num_jobs            - The number of jobs to generate. Unlimted if None.
-        arguments           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -368,7 +368,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
 
     job_handler = database.get_job_handler(settings_path)
 
-    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs, arguments=arguments)
+    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs, qm_options=qm_options)
 
 def read_jobs(settings_path, database_config_path, job_dir, overwrite=False):
     """
@@ -779,32 +779,32 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     system.format_print("Fit code compilation successful!", bold=True, color=system.Color.GREEN)
 
-def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
-    
-    # read d6 and A constants from ttm output file
-    with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
-        A = [float(a) for a in ttm_file.readline().split()]
-        d6 = [float(d) for d in ttm_file.readline().split()]
-
-    # write d6 and A to the config.ini file
-    lines = []
-    with open(config_path, "r") as config_file:
-        for line in config_file:
-            lines.append(line)
-
-    found_A = False
-    with open(config_path, "w") as config_file:
-        for line in lines:
-            if line.startswith("A = "):
-                found_A = True
-            if not line.startswith("d6 = "):
-                config_file.write(line)
-
-            else:
-                config_file.write("d6 = {}\n".format([[], [], d6]))
-
-        if not found_A:
-            config_file.write("A = {}\n".format([[], [], A]))
+#def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
+#    
+#    # read d6 and A constants from ttm output file
+#    with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
+#        A = [float(a) for a in ttm_file.readline().split()]
+#        d6 = [float(d) for d in ttm_file.readline().split()]
+#
+#    # write d6 and A to the config.ini file
+#    lines = []
+#    with open(config_path, "r") as config_file:
+#        for line in config_file:
+#            lines.append(line)
+#
+#    found_A = False
+#    with open(config_path, "w") as config_file:
+#        for line in lines:
+#            if line.startswith("A = "):
+#                found_A = True
+#            if not line.startswith("d6 = "):
+#                config_file.write(line)
+#
+#            else:
+#                config_file.write("d6 = {}\n".format([[], [], d6]))
+#
+#        if not found_A:
+#            config_file.write("A = {}\n".format([[], [], A]))
 
 
 def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=20, alpha=0.0005, num_fits=10, ttm=False,
@@ -921,7 +921,7 @@ def execute_fits(settings_path, fits_path):
 
     os.chdir(workdir)
     
-def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
+def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc", fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Looks through all log files in all fit directories in the log path and finds the best fit.
 
@@ -934,6 +934,7 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
         settings_path       - Local path to the file containing all relevent settings information.
         fits_path           - Local path to the directory to create the fits in.
         fitted_nc_path      - Generate a .nc file with the parameters for the best fit at this location.
+        fitted_ttmnrg_params - Rename the output where the TTM-nrg params are to this name
 
     Returns:
         None.
@@ -1023,13 +1024,15 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
     nb = len(settings.get("molecule","names").split(","))
     if os.path.exists("fit-" + str(nb) + "b.cdl"):
         system.call("ncgen", "-o", fitted_nc_path, "fit-" + str(nb) + "b.cdl")
+    elif os.path.exists("ttm-nrg_params.dat") and fitted_ttmnrg_params != "ttm-nrg_params.dat":
+        os.system("mv ttm-nrg_params.dat " + fitted_ttmnrg_params)
 
     # Report best RMSD
     print("Best fit found has a weighted RMSD of {} kcal/mol, a low energy RMSD of {} kcal/mol, and a maximum error in the low energy training set of {} kcal/mol".format(best_results[2], best_results[4], best_results[5]))
 
     os.chdir(workdir)
 
-def update_config_with_ttm(settings_path, fits_path, config_path):
+def update_config_with_ttm(settings_path, fits_path, config_path, fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Updates a fit config.ini file with the A and d constants from the best ttm fit.
 
@@ -1039,6 +1042,8 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
         settings_path       - Local path to the file containing all relevent settings information.
         fits_path           - Local path to the directory to create the fits in.
         config_path         - Local path to the config file to update.
+        fitted_ttmnrg_params - Name of the output where the TTM-nrg params
+
 
     Returns:
         None.
@@ -1047,7 +1052,7 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
     workdir = os.getcwd()
     fit_folder_prefix = os.path.join(workdir, fits_path)
 
-    with open(fit_folder_prefix + "/best_fit/ttm-nrg_params.dat", 'r') as ttm_file:
+    with open(fit_folder_prefix + "/best_fit/" + fitted_ttmnrg_params, 'r') as ttm_file:
         a_buck = [float(a) for a in ttm_file.readline().strip().split()]
         b_buck = [float(b) for b in ttm_file.readline().strip().split()]
 
@@ -1079,12 +1084,55 @@ def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, m
 
     fitting.generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version, virtual_sites)
 
+def calculate_model_energies(settings_path, fitting_code_dir_path, fits_path, configurations,
+                             ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
+                             fitted_ttmnrg_params = "ttm-nrg_params.dat"):
+    """
+    Returns a list with the energies of each configuration in configurations
+
+    Args:
+        settings_path         - Local path to the file containing all relevent settings information.
+        fitting_code_dir_path - Local path to the directory containing the compiled fitcode.
+        fits_path             - Local path to folder containing the fits
+        configurations        - Configurations to evaluate.
+        ttm                   - True if these are ttm fits. False otherwise.
+        over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
+        nc_path               - Netcdf file with the parameters for the best fit.
+        fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
+    """
+
+    # Get information
+    workdir = os.getcwd()
+    settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
+
+    fit_folder_prefix = os.path.join(workdir, fits_path)
+    if not os.path.exists(fit_folder_prefix):
+        os.mkdir(fit_folder_prefix)
+
+    if ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
+    elif over_ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+    else:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+
+
+    eval_obj = fitting.Evaluator(settings, path_to_eval)
+
+    fit_energies = eval_obj.calculate_energies(path_to_params, configurations, is_training_format = False)
+    return fit_energies
+
 def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, training_set,
                          split_energy = None, 
                          min_energy_plot = 0.0, max_energy_plot = 50.0,
                          correlation_prefix = "correlation",
                          correlation_directory = "correlation",
-                         ttm=False, over_ttm=False, nc_path = "mbnrg.nc"):
+                         ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
+                         fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Generates correltation data for the training/test set passed as argument
 
@@ -1101,6 +1149,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
         ttm                   - True if these are ttm fits. False otherwise.
         over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
         nc_path               - Netcdf file with the parameters for the best fit.
+        fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
     """
 
     # Get information
@@ -1118,7 +1167,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
 
     if ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
-        path_to_params = os.path.join(workdir, fits_path, "best_fit/ttm-nrg_params.dat")
+        path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
     elif over_ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
         path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)

@@ -26,7 +26,7 @@ def execute_job():
     total_charge = "{total_charge}"
     total_spin = "{total_spin}"
     job_hash = "{job_hash}"
-    arguments = {arguments}
+    qm_options = {qm_options}
 
     try:
         max_threads = int(subprocess.check_output(["grep", "-c", "cores", "/proc/cpuinfo"]))
@@ -54,6 +54,10 @@ def execute_job():
 
         job_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "job_{format}".format(job_hash[:i]))
 
+    if os.path.isdir(job_dir + "_done"):
+        print("Job " + job_dir.split('/')[-1] + " is already done. Skipping.")
+        return
+
     os.mkdir(job_dir)
     input_path = job_dir + "/qchem_input.log"
     qchem_stdout_stderr_log_path = job_dir + "/qchem_log.log"
@@ -73,7 +77,7 @@ def execute_job():
         input_file.write("method {{}}\n".format(method))
         input_file.write("basis {{}}\n".format(basis))
 
-        for key, value in arguments.items():
+        for key, value in qm_options.items():
             input_file.write(str(key) + " " + str(value) + "\n")
 
         input_file.write("$end\n")

@@ -22,7 +22,7 @@ class TrainingSet:
         return TrainingSet(elements)
 
     @staticmethod
-    def get_training_set_from_xyz_file(path_to_xyz_file, settings, energy_names):
+    def get_training_set_from_xyz_file(path_to_xyz_file, settings, energy_names, is_training_format = True):
 
         molecules = list(parse_training_set_file(path_to_xyz_file, settings=settings))
 
@@ -48,8 +48,10 @@ class TrainingSet:
 
                 energies = [float(e) for e in energies_line.split()]
 
-                if len(energies) != len(energy_names):
+                if len(energies) != len(energy_names) and is_training_format:
                     raise XYZFormatError("Expected {} enegies in line '{}' but found only {}.".format(len(energy_names), energies_line, len(energies)))
+                else:
+                    energies = [0.0]*len(energy_names)
 
                 for index, energy_name in enumerate(energy_names):
                     energies_dict[energy_name].append(energies[index])

@@ -1860,6 +1860,11 @@ int main(int argc, char** argv) {
 
     a = """
 
+    for (size_t i = 0; i < """ + str(num_terms) + """ ; i++) {
+        std::cout << std::setprecision(6) << "x0[" << i << "] = " 
+                  << x0[i] << std::endl;
+    }
+
     argv++;
     argc--;
 
@@ -2111,6 +2116,7 @@ def write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers,
 #include <iostream>
 #include <stdexcept>
 #include <chrono>
+#include <iterator>
 
 #include "fit-utils.h"
 #include "training_set.h"
@@ -2152,28 +2158,63 @@ int main(int argc, char** argv) {
     try {
         std::ifstream params;
         params.open(*argv);
-"""
 
-    ff.write(a)
-    my_assign_l = ""
-    my_assign_nl = ""
-    for i in range(len(pairs)):
-        my_assign_l += " >> l_params[{}] ".format(i)
-        my_assign_nl += " >> nl_params[{}] ".format(i)
+        // Read the file ensuring that its format is as it is supposed to be
+        size_t lineno = 1;
+        while (!params.eof()) {
+            std::string line;
+            getline(params,line);
 
-    a = """
-        params """ + my_assign_l + """;
-        params """ + my_assign_nl + """;
+            // We reached the end of the file
+            if (line == "") break;
+
+            // Check that only 2 lines exist in the parameter file (A and b)
+            if (lineno == 3) {
+                throw std::string("The TTM-nrg parameter file has more than two lines. This does not seem correct...");
+            }
+            
+            // Retrieve the elements of the line and check proper size
+            std::istringstream iss(line);
+            std::vector<std::string> results(std::istream_iterator<std::string>{iss},
+                                     std::istream_iterator<std::string>());
+            if (nl_params.size() != results.size()) {
+                std::ostringstream ss;
+                ss << "There is an issue with your TTM-nrg parameter file. "
+                   << "The size read for line " << lineno << " is " << results.size()
+                   << " when according to our records should be " << nl_params.size();
+                throw ss.str();
+            }
+
+            // Now convert the strings to float
+            if (lineno == 1) {
+                for (size_t i = 0; i < results.size(); i++) {
+                    l_params[i] = std::stod(results[i]);
+                }
+            } else if (lineno == 2) {
+                for (size_t i = 0; i < results.size(); i++) {
+                    nl_params[i] = std::stod(results[i]);
+                }
+            } else {
+                throw "If you see this message, the world is about to end.";
+            }
+            lineno++;
+        }
 
         ++argv;
         --argc;
 
-        size_t nsys = tset::load_nb_system(*argv, training_set);
+        size_t nsys = tset::load_nb_system(*argv, training_set, false);
         std::cout << "'" << *(argv++) << "' : "
                       << nsys << " configurations" << std::endl;
 
     } catch (const std::exception& e) {
         std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    } catch (std::string s) {
+        std::cerr << s << std::endl;
+        return 1;
+    } catch (...) {
+        std::cerr << "unknown error while parsing inputs...";
         return 1;
     }
 
@@ -3141,7 +3182,7 @@ int main(int argc, char** argv) {
     ff.close()
 
 
-def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, version = "v1"):
+def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in, version = "v1"):
     """
     Writes the polynomial header for MBX
 
@@ -3189,8 +3230,15 @@ struct """ + struct_name + """ {
 
 """
     ff.write(a)
-    ff.close()
 
+    with open(poly_in, 'r') as polyinp:
+        lines = polyinp.readlines()
+        a = "\n\n//Polynomial input used to generate these files:\n\n"
+        for line in lines:
+            a += "//  " + line
+    ff.write(a)
+    ff.close()
+    
 
 def retrieve_polynomial_lines(keyword_start, poly_file):
     """

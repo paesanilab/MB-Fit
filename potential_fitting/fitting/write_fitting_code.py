@@ -256,8 +256,8 @@ def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, p
     ## Write polynomial header and cpp for MBX #####################################
     ################################################################################
     
-    file_writer_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly)
-    
+    file_writer_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in_path)
+
     if use_direct:
         file_writer_nb_fitting.write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
 

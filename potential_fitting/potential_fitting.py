@@ -1116,10 +1116,6 @@ def calculate_model_energies(settings_path, fitting_code_dir_path, fits_path, co
     settings = SettingsReader(settings_path)
     nb = len(settings.get("molecule","names").split(","))
 
-    fit_folder_prefix = os.path.join(workdir, fits_path)
-    if not os.path.exists(fit_folder_prefix):
-        os.mkdir(fit_folder_prefix)
-
     if ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
         path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
@@ -1170,10 +1166,6 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
     corr_folder_prefix = os.path.join(workdir, correlation_directory)
     if not os.path.exists(corr_folder_prefix):
         os.mkdir(corr_folder_prefix)
-
-    fit_folder_prefix = os.path.join(workdir, fits_path)
-    if not os.path.exists(fit_folder_prefix):
-        os.mkdir(fit_folder_prefix)
 
     if ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))

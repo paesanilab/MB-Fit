@@ -4,6 +4,22 @@ from potential_fitting.utils import settings_reader
 from potential_fitting.exceptions import ConfigMissingFileError, ConfigMissingSectionError, ConfigMissingPropertyError
 
 class TestSettingsReader(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestSettingsReader, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
+    # clean up after each test case
+    def tearDown(self):
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
 
     def setUp(self):
         self.settings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "settings.ini")
@@ -18,6 +34,8 @@ class TestSettingsReader(unittest.TestCase):
         self.assertIsNone(settings_reader.SettingsReader().get_file_path())
         self.assertEqual(self.settings_reader.get_file_path(), self.settings_file)
 
+        self.test_passed = True
+
     def test_get(self):
 
         self.assertEqual(self.settings_reader.get("section1", "property1"), "value1")
@@ -31,6 +49,8 @@ class TestSettingsReader(unittest.TestCase):
             self.settings_reader.get("section1", "no_property")
 
         self.assertEqual(self.settings_reader.get("section1", "no_property", "default"), "default")
+
+        self.test_passed = True
 
     def test_getboolean(self):
 
@@ -47,6 +67,8 @@ class TestSettingsReader(unittest.TestCase):
 
         self.assertEqual(self.settings_reader.getboolean("section1", "no_property", False), False)
 
+        self.test_passed = True
+
     def test_getint(self):
 
         self.assertEqual(self.settings_reader.getint("section1", "int"), 28)
@@ -60,6 +82,8 @@ class TestSettingsReader(unittest.TestCase):
             self.settings_reader.getint("section1", "no_property")
 
         self.assertEqual(self.settings_reader.getint("section1", "no_property", 98), 98)
+
+        self.test_passed = True
 
     def test_getfloat(self):
 
@@ -75,6 +99,8 @@ class TestSettingsReader(unittest.TestCase):
 
         self.assertEqual(self.settings_reader.getfloat("section1", "no_property", 98.96), 98.96)
 
+        self.test_passed = True
+
     def test_getlist(self):
         self.assertEqual(self.settings_reader.getlist("section1", "str_list"), [["red", "fish"], ["blue", "fish"]])
         self.assertEqual(self.settings_reader.getlist("section1", "int_list", int), [1, 4, 3, 2])
@@ -89,6 +115,8 @@ class TestSettingsReader(unittest.TestCase):
 
         self.assertEqual(self.settings_reader.getlist("section1", "no_property", str, ["list", "item"]), ["list", "item"])
 
+        self.test_passed = True
+
     def test_set(self):
         self.settings_reader.set("section1", "property1", "different_value!")
         self.assertEqual(self.settings_reader.get("section1", "property1"), "different_value!")
@@ -98,6 +126,8 @@ class TestSettingsReader(unittest.TestCase):
 
         self.settings_reader.set("section2", "property1", "value3")
         self.assertEqual(self.settings_reader.get("section2", "property1"), "value3")
+
+        self.test_passed = True
 
     def test_write(self):
         s_r = settings_reader.SettingsReader()
@@ -115,5 +145,6 @@ class TestSettingsReader(unittest.TestCase):
 
         os.remove(os.path.join(os.path.dirname(os.path.abspath(__file__)), "write.ini"))
 
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSettingsReader)

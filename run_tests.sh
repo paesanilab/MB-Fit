@@ -35,8 +35,16 @@ fi
 echo "Running python tests."
 
 coverage run --source potential_fitting run_tests.py > $log 2> $results
-mv failed_tests_outputs $failed
-mv passed_tests_outputs $passed
+
+if [ -d "failed_tests_outputs" ]; then
+    echo "Some tests have failed. Outputs of these tests will be found in $failed"
+    mv failed_tests_outputs $failed
+fi
+
+if [ -d "passed_tests_outputs" ]; then
+    echo "The outputs of the tests that passed will be in $passed"
+    mv passed_tests_outputs $passed
+fi
 
 coverage report -m > $coverage
 

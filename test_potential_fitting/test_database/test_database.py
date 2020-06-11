@@ -30,6 +30,11 @@ def local_db_installed():
 @unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
 class TestDatabase(unittest.TestCase):
 
+    def __init__(self, *args, **kwargs):
+        super(TestDatabase, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
     @staticmethod
     def get_water_monomer():
         H1 = Atom("H", "A", random.random(), random.random(), random.random())
@@ -146,6 +151,17 @@ class TestDatabase(unittest.TestCase):
         self.database.save()
         self.database.close()
 
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
+
+
 
 
     def test_set_and_get_batch_size(self):
@@ -160,17 +176,23 @@ class TestDatabase(unittest.TestCase):
 
         self.assertEqual(self.database.get_batch_size(), 15)
 
+        self.test_passed = True
+
     def test_create(self):
-        pass
+        self.test_passed = True
 
     def test_execute(self):
 
         with self.assertRaises(psycopg2.InternalError):
             self.database.execute("RAISE EXCEPTION %s;", ("EXECUTE WORKED",))
 
+        self.test_passed = True
+
     def test_create_postgres_array(self):
         self.assertEqual(self.database.create_postgres_array("A", "B", "C", "D"), "{A,B,C,D}")
         self.assertEqual(self.database.create_postgres_array(1, 2, 3, 4), "{1,2,3,4}")
+
+        self.test_passed = True
 
     def test_add_calculation_and_get_all_calculations(self):
 
@@ -256,6 +278,8 @@ class TestDatabase(unittest.TestCase):
         calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 200))
         self.assertEqual(len(calculations), 0)
 
+        self.test_passed = True
+
     def test_delete_calculations(self):
 
         molecules = []
@@ -299,6 +323,8 @@ class TestDatabase(unittest.TestCase):
         with self.assertRaises(psycopg2.InternalError):
             training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
 
+        self.test_passed = True
+
     def test_delete_all_calculations(self):
 
         molecules = []
@@ -341,6 +367,8 @@ class TestDatabase(unittest.TestCase):
         with self.assertRaises(psycopg2.InternalError):
             training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
 
+        self.test_passed = True
+
     def test_set_properties_and_get_1B_training_set(self):
         opt_mol = self.get_water_monomer()
         opt_energy = random.random()
@@ -375,6 +403,8 @@ class TestDatabase(unittest.TestCase):
 
         for molecule, method, basis, cp, use_cp, frag_indices, result, energy, log_text in calculation_results:
             self.assertIn((molecule.get_reorder_copy(["H2O"], ["H1.HO1"]), round(energy - opt_energy, 5)), training_set)
+
+        self.test_passed = True
 
     def test_set_properties_and_get_2B_training_set(self):
 
@@ -495,6 +525,8 @@ class TestDatabase(unittest.TestCase):
                 (molecule, round(binding, 5), round(nb_energy, 5), round(monomer1, 5), round(monomer2, 5)),
                 training_set)
 
+        self.test_passed = True
+
     def test_set_properties_and_get_training_set_1B(self):
 
         # no cp
@@ -548,6 +580,8 @@ class TestDatabase(unittest.TestCase):
             index = molecules.index(molecule)
             binding = energies[index][0] - opt_energy
             self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
+
+        self.test_passed = True
 
     def test_set_properties_and_get_training_set_2B(self):
 
@@ -664,6 +698,8 @@ class TestDatabase(unittest.TestCase):
             binding = monomer1 + monomer2 + nb_energy
 
             self.assertIn((molecule, round(binding, 5), round(nb_energy, 5), [round(monomer1, 5), round(monomer2, 5)]), training_set)
+
+        self.test_passed = True
 
     def test_set_properties_and_get_training_set_3B(self):
 
@@ -806,6 +842,8 @@ class TestDatabase(unittest.TestCase):
             binding = monomer1 + monomer2 + monomer3 + nb_energy
             self.assertIn((molecule, round(binding, 5), round(nb_energy, 5), [round(monomer1, 5), round(monomer2, 5), round(monomer3, 5)]), training_set)
 
+        self.test_passed = True
+
     def test_set_properties_and_get_training_set_nested_symmetry(self):
 
         # no cp
@@ -858,6 +896,8 @@ class TestDatabase(unittest.TestCase):
             index = molecules.index(molecule)
             binding = energies[index][0] - opt_energy
             self.assertIn((molecule, round(binding, 5), round(binding, 5), [round(binding, 5)]), training_set)
+
+        self.test_passed = True
 
     def test_import_calculations(self):
 
@@ -949,6 +989,8 @@ class TestDatabase(unittest.TestCase):
             self.assertIn((molecule, round(binding, 5), round(nb_energy, 5), round(monomer1, 5), round(monomer2, 5)),
                           training_set)
 
+        self.test_passed = True
+
     def test_export_calculations(self):
         # 1B
 
@@ -1000,6 +1042,8 @@ class TestDatabase(unittest.TestCase):
         for molecule, energies in molecule_energies_pairs:
             self.assertIn((molecule.get_reorder_copy(["I", "H2O"], ["I", "H1.HO1"]), [round(energies[0], 5), round(energies[1], 5), round(energies[2], 5), round(energies[3], 5), round(energies[4], 5)]),
                           calculations)
+
+        self.test_passed = True
 
     def test_read_privileges(self):
 
@@ -1128,6 +1172,8 @@ class TestDatabase(unittest.TestCase):
             except psycopg2.InternalError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
+
+        self.test_passed = True
 
     def test_write_privileges(self):
 
@@ -1324,6 +1370,8 @@ class TestDatabase(unittest.TestCase):
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
+        self.test_passed = True
+
     def test_admin_privileges(self):
 
         # First, create the training set owned by test_user1
@@ -1479,5 +1527,7 @@ class TestDatabase(unittest.TestCase):
             except psycopg2.InternalError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
+
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestDatabase)

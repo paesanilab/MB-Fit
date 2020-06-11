@@ -5,10 +5,27 @@ from potential_fitting.utils import system, files
 from potential_fitting import generate_mbnrg_fitting_code, compile_fit_code, prepare_fits, execute_fits, retrieve_best_fit, generate_ttmnrg_fitting_code, update_config_with_ttm
 
 class TestFitting(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestFitting, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
     def setUpClass():
 
         TestFitting.resources_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
         TestFitting.out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+
+    # clean up after each test case
+    def tearDown(self):
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
 
     def test_A1B2(self):
 
@@ -43,6 +60,7 @@ class TestFitting(unittest.TestCase):
         
         self.assertTrue(os.path.isfile(fit_nc_path))
 
+        self.test_passed = True
 
     def test_A1B2_A1B2_ttmnrg(self):
         molecule = "A1B2_A1B2"
@@ -75,6 +93,8 @@ class TestFitting(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(ttmparams))
 
+        self.test_passed = True
+
     def test_A1B2_A1B2_mbnrg(self):
         molecule = "A1B2_A1B2"
         config_in_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "config.ini")
@@ -106,8 +126,7 @@ class TestFitting(unittest.TestCase):
         retrieve_best_fit(settings_path, fits_path, fitted_nc_path = fit_nc)
 
         self.assertTrue(os.path.isfile(fit_nc_path))
+
+        self.test_passed = True
         
-
-
-
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFitting)

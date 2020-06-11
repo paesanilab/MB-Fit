@@ -1,4 +1,4 @@
-import unittest, random
+import unittest, random, os
 
 
 from potential_fitting.utils import Quaternion
@@ -11,6 +11,23 @@ from potential_fitting.exceptions import InconsistentValueError
 Test cases for molecule class
 """
 class TestMolecule(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(TestMolecule, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
+    # clean up after each test case
+    def tearDown(self):
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
 
     def test_constructor(self):
 
@@ -25,6 +42,8 @@ class TestMolecule(unittest.TestCase):
         with self.assertRaises(InconsistentValueError):
             Molecule([Fragment([Atom("H", "A", 0, 0, 0)], "frag1", 0, 1, "H"),
                       Fragment([Atom("H", "A", 0, 0, 0)], "frag2", 0, 1, "H")])
+
+        self.test_passed = True
 
     def test_get_name(self):
         mol = Molecule([Fragment([], "frag1", 0, 1, "")])
@@ -46,6 +65,8 @@ class TestMolecule(unittest.TestCase):
                         Fragment([], "frag1", 0, 1, "")])
 
         self.assertEqual(mol.get_name(), "frag1-frag2-frag1")
+
+        self.test_passed = True
 
     def test_get_symmetry(self):
         mol = Molecule([])
@@ -83,6 +104,8 @@ class TestMolecule(unittest.TestCase):
 
         self.assertEqual(mol.get_symmetry(), "A1B2_C1D1")
 
+        self.test_passed = True
+
     def test_get_fragments(self):
         molecule = Molecule([])
 
@@ -106,6 +129,8 @@ class TestMolecule(unittest.TestCase):
 
         # get_fragments() should return list of len 2 after 2 fragments added to Molecule
         self.assertEqual(len(molecule.get_fragments()), 2)
+
+        self.test_passed = True
 
     def test_get_atoms(self):
         molecule = Molecule([])
@@ -138,6 +163,8 @@ class TestMolecule(unittest.TestCase):
         # get_atoms() should return list of len 4 after 4 atoms added to molecule
         self.assertEqual(len(molecule.get_atoms()), 4)
 
+        self.test_passed = True
+
     def test_get_charge(self):
         molecule = Molecule([])
 
@@ -153,6 +180,8 @@ class TestMolecule(unittest.TestCase):
 
         # get_charge() should return 2 after second fragment added to Molecule
         self.assertEquals(molecule.get_charge(), 2)
+
+        self.test_passed = True
 
     def test_get_spin_multiplicity(self):
         molecule = Molecule([])
@@ -170,6 +199,8 @@ class TestMolecule(unittest.TestCase):
         # get_spin_multiplicity() should return 3 after second fragment added to Molecule
         self.assertEquals(molecule.get_spin_multiplicity(), 3)
 
+        self.test_passed = True
+
     def test_get_num_fragments(self):
         molecule = Molecule([])
         
@@ -186,6 +217,8 @@ class TestMolecule(unittest.TestCase):
         # get_num_fragments() should return 2 after 2 fragment added to molecule
         self.assertEqual(molecule.get_num_fragments(), 2)
 
+        self.test_passed = True
+
     def test_get_num_atoms(self):
         molecule = Molecule([])
         
@@ -201,6 +234,8 @@ class TestMolecule(unittest.TestCase):
 
         # get_num_fragments() should return 3 after 3 atoms added to molecule
         self.assertEqual(molecule.get_num_atoms(), 3)
+
+        self.test_passed = True
 
     def test_translate(self):
 
@@ -227,6 +262,8 @@ class TestMolecule(unittest.TestCase):
             mol.translate(dx, dy, dz)
 
             self.assertEqual(mol, ref_mol)
+
+        self.test_passed = True
 
     def test_rotate(self):
 
@@ -264,6 +301,8 @@ class TestMolecule(unittest.TestCase):
             self.assertAlmostEqual(pre_dist2, post_dist2)
             self.assertAlmostEqual(pre_dist3, post_dist3)
 
+        self.test_passed = True
+
     def test_move_to_center_of_mass(self):
 
         mol = Molecule([Fragment([Atom("O", "A", 2, 0, 0),
@@ -297,6 +336,8 @@ class TestMolecule(unittest.TestCase):
         mol.move_to_center_of_mass()
 
         self.assertEqual(mol, ref_mol)
+
+        self.test_passed = True
 
     def rotate_on_principal_axes(self):
 
@@ -334,6 +375,8 @@ class TestMolecule(unittest.TestCase):
 
         self.assertIn(mol, ref_mols)
 
+        self.test_passed = True
+
     def test_get_excluded_pairs(self):
         mol = Molecule([Fragment([Atom("O", "A", 1.41421356238, 1.41421356238, 0),
                                   Atom("O", "A", -1.41421356238, -1.41421356238, 0)], "OO", 0, 1, "OO")])
@@ -368,6 +411,8 @@ class TestMolecule(unittest.TestCase):
 
         self.assertEqual(mol.get_excluded_pairs(max_exclusion=2), [[[[0, 1], [0, 2]], [[0, 1], [0, 2]]], [[[1, 2]], [[1, 2]]]])
 
+        self.test_passed = True
+
     def test_to_xyz(self):
 
         fragment0 = Fragment([Atom("H", "A", 5, 3, 0.00343), Atom("Cl", "B", 2, 0, -13), Atom("He", "C", 6, 2, 0.343)], "HClHe", -1, 1, "H[Cl][He]")
@@ -387,5 +432,7 @@ class TestMolecule(unittest.TestCase):
         molecule = Molecule([fragment0, fragment1, fragment2])
 
         self.assertEqual(molecule.to_xyz(), fragment0.to_xyz() + fragment1.to_xyz() + fragment2.to_xyz()[:-1])
+
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestMolecule)

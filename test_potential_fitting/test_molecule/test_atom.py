@@ -1,4 +1,4 @@
-import unittest, random, math
+import unittest, random, math,os
 
 from potential_fitting.molecule import Atom
 from potential_fitting.utils import Quaternion
@@ -7,7 +7,24 @@ from potential_fitting.utils import Quaternion
 Test Cases for Atom class
 """
 class TestAtom(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(TestAtom, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
    
+    # clean up after each test case
+    def tearDown(self):
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
+
     """
     Tests the get_name() function of the Atom class
     """ 
@@ -23,6 +40,8 @@ class TestAtom(unittest.TestCase):
         
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_name(), "Ar")
+
+        self.test_passed = True
  
     """
     Tests the get_symmetry_class() function of the Atom class
@@ -40,6 +59,8 @@ class TestAtom(unittest.TestCase):
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_symmetry_class(), "D")
 
+        self.test_passed = True
+
     def test_set_symmetry_class(self):
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_symmetry_class(), "A")
@@ -52,6 +73,8 @@ class TestAtom(unittest.TestCase):
 
         atom.set_symmetry_class("A")
         self.assertEqual(atom.get_symmetry_class(), "A")
+
+        self.test_passed = True
 
     def test_get_atomic_number(self):
         atom = Atom("H", "A", 0, 0, 0)
@@ -66,6 +89,8 @@ class TestAtom(unittest.TestCase):
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_atomic_number(), 18)
 
+        self.test_passed = True
+
     def test_get_mass(self):
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_mass(), 1.008)
@@ -78,6 +103,8 @@ class TestAtom(unittest.TestCase):
 
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_mass(), 39.948)
+
+        self.test_passed = True
 
     def test_get_radius(self):
         atom = Atom("H", "A", 0, 0, 0)
@@ -92,6 +119,8 @@ class TestAtom(unittest.TestCase):
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_radius(), 0.71)
 
+        self.test_passed = True
+
     def test_get_covalent_radius(self):
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_covalent_radius(), 0.37)
@@ -104,6 +133,8 @@ class TestAtom(unittest.TestCase):
 
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_covalent_radius(), 0.97)
+
+        self.test_passed = True
 
     def test_get_vdw_radius(self):
         atom = Atom("H", "A", 0, 0, 0)
@@ -118,6 +149,8 @@ class TestAtom(unittest.TestCase):
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_vdw_radius(), 1.88)
 
+        self.test_passed = True
+
     def test_get_base_priority(self):
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
@@ -131,6 +164,8 @@ class TestAtom(unittest.TestCase):
         atom = Atom("Ar", "D", 0, 0, 0)
         self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
 
+        self.test_passed = True
+
     def test_get_x_y_z(self):
         atom = Atom("H", "A", 0, 0, 0)
 
@@ -143,6 +178,8 @@ class TestAtom(unittest.TestCase):
         self.assertEqual(atom.get_x(), 0.76)
         self.assertEqual(atom.get_y(), 12.43)
         self.assertEqual(atom.get_z(), -436.234)
+
+        self.test_passed = True
 
     def test_set_x_y_z(self):
         atom = Atom("H", "A", 0, 0, 0)
@@ -159,6 +196,8 @@ class TestAtom(unittest.TestCase):
         self.assertEqual(atom.get_y(), 12.43)
         self.assertEqual(atom.get_z(), -436.234)
 
+        self.test_passed = True
+
     def test_set_xyz(self):
         atom = Atom("H", "A", 0, 0, 0)
 
@@ -171,6 +210,8 @@ class TestAtom(unittest.TestCase):
         self.assertEqual(atom.get_x(), 0.76)
         self.assertEqual(atom.get_y(), 12.43)
         self.assertEqual(atom.get_z(), -436.234)
+
+        self.test_passed = True
 
     def test_translate(self):
         atom = Atom("H", "A", 0, 0, 0)
@@ -191,6 +232,8 @@ class TestAtom(unittest.TestCase):
         self.assertEqual(atom.get_y(), 9.43)
         self.assertEqual(atom.get_z(), -434.834)
 
+        self.test_passed = True
+
     def test_rotate(self):
         atom = Atom("H", "A", 0, 0, 0)
 
@@ -206,6 +249,8 @@ class TestAtom(unittest.TestCase):
 
             self.assertAlmostEqual(pre_dist, post_dist)
 
+        self.test_passed = True
+
     def test_distance(self):
 
         for i in range(1000):
@@ -218,6 +263,8 @@ class TestAtom(unittest.TestCase):
                                    math.sqrt((atom1.get_x() - atom2.get_x()) ** 2 +
                                              (atom1.get_y() - atom2.get_y()) ** 2 +
                                              (atom1.get_z() - atom2.get_z()) ** 2))
+
+        self.test_passed = True
 
     def test_is_bonded(self):
 
@@ -245,6 +292,8 @@ class TestAtom(unittest.TestCase):
 
         self.assertFalse(atom1.is_bonded(atom2, bond_sensitivity=0.5))
 
+        self.test_passed = True
+
     """
     Tests the to_xyz() function of the Atom class
     """
@@ -265,6 +314,8 @@ class TestAtom(unittest.TestCase):
         atom = Atom("Cl", "A", 0.00000000000068, 0.74576456847823583, 34534262462472457756745)
         self.assertEqual(atom.to_xyz(), "Cl   6.80000000000000e-13   7.45764568478240e-01   3.45342624624725e+22")
 
+        self.test_passed = True
+
     """
     Tests the to_ghost_xyz() function of the Atom class
     """
@@ -283,5 +334,7 @@ class TestAtom(unittest.TestCase):
 
         atom = Atom("Cl", "A", 0.00000000000068, 0.74576456847823583, 34534262462472457756745)
         self.assertEqual(atom.to_ghost_xyz(), "@Cl   6.80000000000000e-13   7.45764568478240e-01   3.45342624624725e+22")
+
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestAtom)

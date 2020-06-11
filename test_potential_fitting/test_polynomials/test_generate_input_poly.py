@@ -5,6 +5,23 @@ from potential_fitting.polynomials import generate_input_poly
 from potential_fitting.exceptions import InconsistentValueError
 
 class TestGenerateInputPoly(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestGenerateInputPoly, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
+    # clean up after each test case
+    def tearDown(self):
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
+
 
     def setUpClass():
         TestGenerateInputPoly.all_settings = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "all.ini")
@@ -27,6 +44,8 @@ class TestGenerateInputPoly(unittest.TestCase):
 
         self.assertEqual(len(lines), 4)
 
+        self.test_passed = True
+
     def test_A1B2_none(self):
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
 
@@ -40,13 +59,19 @@ class TestGenerateInputPoly(unittest.TestCase):
 
         self.assertEqual(len(lines), 4)
 
+        self.test_passed = True
+
     def test_A1B2_partly_inter(self):
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
 
+        self.test_passed = True
+
     def test_A1B2_purely_inter(self):
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
+
+        self.test_passed = True
 
     def test_A1B2X2_all(self):
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
@@ -61,6 +86,8 @@ class TestGenerateInputPoly(unittest.TestCase):
 
         self.assertEqual(len(lines), 4)
 
+        self.test_passed = True
+
     def test_A1B2X2_none(self):
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
 
@@ -73,13 +100,19 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 1, "a", "B", 2, "a", "x-intra-B+B-1"), lines)
         self.assertEqual(len(lines), 4)
 
+        self.test_passed = True
+
     def test_A1B2X2_partly_inter(self):
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
 
+        self.test_passed = True
+
     def test_A1B2X2_purely_inter(self):
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
+
+        self.test_passed = True
 
     def test_A1B2_C1D2_all(self):
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
@@ -107,6 +140,8 @@ class TestGenerateInputPoly(unittest.TestCase):
 
         self.assertEqual(len(lines), 17)
 
+        self.test_passed = True
+
     def test_A1B2_C1D2_none(self):
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
 
@@ -132,6 +167,8 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_variable['{}', '{}', '{}', '{}', '{}', '{}', '{}']\n".format("B", 2, "a", "D", 2, "b", "x-inter-B+D-0"), lines)
         self.assertIn("add_filter['sum-degree', 'x-inter-*+*-*', '0']", lines)
         self.assertEqual(len(lines), 18)
+
+        self.test_passed = True
 
     def test_A1B2_C1D2_partly_inter(self):
         generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
@@ -160,6 +197,8 @@ class TestGenerateInputPoly(unittest.TestCase):
 
         self.assertEqual(len(lines), 18)
 
+        self.test_passed = True
+
     def test_A1B2_C1D2_purely_inter(self):
         generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
 
@@ -186,6 +225,8 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_filter['ind-degree', 'x-intra-*+*-*', '1+']", lines)
 
         self.assertEqual(len(lines), 18)
+
+        self.test_passed = True
 
     def test_A1B2X2_C1D2_all(self):
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2X2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2_C1D2.in"))
@@ -219,6 +260,8 @@ class TestGenerateInputPoly(unittest.TestCase):
 
         self.assertEqual(len(lines), 23)
 
+        self.test_passed = True
+
     def test_A1B2_A1B2_purely_inter(self):
         generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2_A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_A1B2.in"))
 
@@ -244,4 +287,7 @@ class TestGenerateInputPoly(unittest.TestCase):
         self.assertIn("add_filter['ind-degree', 'x-intra-*+*-*', '1+']", lines)
 
         self.assertEqual(len(lines), 18)
+
+        self.test_passed = True
+
 suite = unittest.TestLoader().loadTestsFromTestCase(TestGenerateInputPoly)

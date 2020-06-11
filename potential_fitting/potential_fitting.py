@@ -622,8 +622,10 @@ def get_system_properties(settings_file, config_path, geo_paths,
 def write_config_file(settings_file, config_path, charges,
                       pols, geo_paths, C6 = [0.0], polfacs = None,
                       d6 = None, A = None,
-                      kmin = 0.0, kmax = 50.0, dmin = 0.0, dmax = 50.0,
+                      kmin = 0.0, kmax = 50.0, dmin = 0.0, dmax = 50.0, 
+                      bmin = 0.0, bmax = 10.0,
                       kmin_init = 1.0, kmax_init = 4.0, dmin_init = 1.0, dmax_init = 4.0,
+                      bmin_init = 1.0, bmax_init = 4.0,
                       r_in=7.0, r_out=8.0,
                       energy_range = 20, alpha = 0.0005,
                       virtual_sites_label = ['X','Y','Z'],
@@ -655,6 +657,10 @@ def write_config_file(settings_file, config_path, charges,
                     Default: 0.0
             dmax                - Maximum value of d allowed while fitting
                     Default: 50.0
+            bmin                - Minimum value of b allowed while fitting
+                    Default: 0.0
+            bmax                - Maximum value of b allowed while fitting
+                    Default: 10.0
             kmin_init           - Minimum value of k allowed in initialization
                     Default: 1.0
             kmax_init           - Maximum value of k allowed in initialization
@@ -662,6 +668,10 @@ def write_config_file(settings_file, config_path, charges,
             dmin_init           - Minimum value of d allowed in initialization
                     Default: 1.0
             dmax_init           - Maximum value of d allowed in initialization
+                    Default: 4.0
+            bmin_init           - Minimum value of b allowed in initialization
+                    Default: 1.0
+            bmax_init           - Maximum value of b allowed in initialization
                     Default: 4.0
             r_in                - Distance at which polynomials start to decay to 0
                     Default: 7.0
@@ -699,9 +709,9 @@ def write_config_file(settings_file, config_path, charges,
     fitting.write_config_file(settings_file, config_path, charges,
                               pols, geo_paths, C6, polfacs,
                               d6, A,
-                              kmin, kmax, dmin, dmax,
+                              kmin, kmax, dmin, dmax, bmin, bmax,
                               kmin_init, kmax_init, dmin_init, dmax_init,
-                              r_in, r_out,
+                              bmin_init, bmax_init, r_in, r_out,
                               energy_range, alpha,
                               virtual_sites_label,
                               var_intra, var_inter, var_virtual_sites)
@@ -1106,10 +1116,6 @@ def calculate_model_energies(settings_path, fitting_code_dir_path, fits_path, co
     settings = SettingsReader(settings_path)
     nb = len(settings.get("molecule","names").split(","))
 
-    fit_folder_prefix = os.path.join(workdir, fits_path)
-    if not os.path.exists(fit_folder_prefix):
-        os.mkdir(fit_folder_prefix)
-
     if ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
         path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
@@ -1160,10 +1166,6 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
     corr_folder_prefix = os.path.join(workdir, correlation_directory)
     if not os.path.exists(corr_folder_prefix):
         os.mkdir(corr_folder_prefix)
-
-    fit_folder_prefix = os.path.join(workdir, fits_path)
-    if not os.path.exists(fit_folder_prefix):
-        os.mkdir(fit_folder_prefix)
 
     if ttm:
         path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))

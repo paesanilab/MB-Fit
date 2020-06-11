@@ -553,9 +553,9 @@ def get_system_properties(settings_file, config_path, geo_paths,
 def write_config_file(settings_file, config_path, chg, 
                       pols, geo_paths, C6, polfacs, 
                       d6, A, 
-                      kmin, kmax, dmin, dmax,
+                      kmin, kmax, dmin, dmax, bmin, bmax,
                       kmin_init, kmax_init, dmin_init, dmax_init,
-                      r_in, r_out,
+                      bmin_init, bmax_init, r_in, r_out,
                       energy_range, alpha,
                       virtual_sites_label,
                       var_intra, var_inter, var_virtual_sites):
@@ -631,6 +631,11 @@ def write_config_file(settings_file, config_path, chg,
     configwriter.set("fitting", "k_max_init", str(kmax_init))
     configwriter.set("fitting", "d_min_init", str(dmin_init))
     configwriter.set("fitting", "d_max_init", str(dmax_init))
+
+    configwriter.set("fitting", "b_min", str(bmin))
+    configwriter.set("fitting", "b_max", str(bmax))
+    configwriter.set("fitting", "b_min_init", str(bmin_init))
+    configwriter.set("fitting", "b_max_init", str(bmax_init))
 
     configwriter.set("fitting", "r_in", str(r_in))
     configwriter.set("fitting", "r_out", str(r_out))

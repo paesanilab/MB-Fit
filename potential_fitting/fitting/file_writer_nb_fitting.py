@@ -1685,7 +1685,7 @@ def get_nbody_electrostatics_string(number_of_monomers, number_of_atoms, number_
     return electrostatics_string
 
 
-def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, k_min, k_max, E_range):
+def write_ttmnrg_fitting_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name, b_min, b_max, b_min_init, b_max_init, E_range):
 
     """
     Writes the fitting code for TTM-nrg"
@@ -1697,8 +1697,10 @@ def write_fitting_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monome
         number_of_atoms        - Number of real atoms in the monomer
         number_of_sites        - Number of sites (electrostatic sites) of the monomer
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
-        k_min                  - Minimum value allowed for k
-        k_max                  - Maximum value allowed for k
+        b_min                  - Minimum value allowed for b
+        b_max                  - Maximum value allowed for b
+        b_min_init             - Minimum value allowed for initializing b
+        b_max_init             - Maximum value allowed for initializing b
         E_range                - Energy range used for computing weights for each point in the fittings
     """
 
@@ -1783,7 +1785,7 @@ void allocate()
 double compute_chisq(const gsl_vector* X, void* unused) {
 
     for (size_t i = 0; i < num_non_linear_params; i++) {
-        if (X->data[i] < 0) return 1e+06;
+        if (X->data[i] < """ + b_min + """ || X->data[i] > """ + b_max + """) return 1e+06;
     }
 
     std::vector<double> nlp(X->data, X->data + num_non_linear_params);
@@ -1856,7 +1858,7 @@ int main(int argc, char** argv) {
     ff.write(a)
 
     for i in range(num_terms):
-        ff.write("    x0[" + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(k_max) - float(k_min)) + ' + ' + k_min + ';\n')
+        ff.write("    x0[" + str(i) + '] = ((double) rand() / (RAND_MAX)) * ' + str(float(b_max_init) - float(b_min_init)) + ' + ' + b_min_init + ';\n')
 
     a = """
 
@@ -1985,19 +1987,19 @@ int main(int argc, char** argv) {
     correlation_file.open ("correlation.dat");
     
     correlation_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "sq_error"
+                     << std::setw(15)       << "Reference" 
+                     << std::setw(15)       << "Calculated"
+                     << std::setw(15)       << "Error^2"
                      << "    \\n"; 
 
     std::ofstream terms_file;
     terms_file.open("individual_terms.dat");
     terms_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "disp_energy"
-                     << std::setw(15)       << "buck_energy"
-                     << std::setw(15)       << "elec_energy"
+                     << std::setw(20)       << "Reference" 
+                     << std::setw(20)       << "Calculated"
+                     << std::setw(20)       << "Repulsion (TTM-nrg)"
+                     << std::setw(20)       << "Dispersion"
+                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
                      << "    \\n";
     
     double err_L2(0), err_wL2(0), err_Linf(0);
@@ -2023,17 +2025,17 @@ int main(int argc, char** argv) {
 
         correlation_file <<  std::setw(10) << i+1
                          << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
                          << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
 
         terms_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) <<  disp_e[i] 
-                         << std::setw(15) <<  rep_e[i]
-                         << std::setw(15) <<  elec_e[i]
+                         << std::setw(20) << std::scientific
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
+                         << std::setw(20) <<  E_model
+                         << std::setw(20) <<  rep_e[i] 
+                         << std::setw(20) <<  disp_e[i]
+                         << std::setw(40) <<  elec_e[i]
                          << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -2085,7 +2087,7 @@ int main(int argc, char** argv) {
     ff.write(a)
     ff.close()
 
-def write_eval_ttm_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
+def write_ttmnrg_eval_code(symmetry_parser, virtual_sites_poly, number_of_monomers, number_of_atoms, number_of_sites, system_name):
     """
     Writes the eval code for TTM-nrg"
 
@@ -2240,19 +2242,27 @@ int main(int argc, char** argv) {
         nb_energy.push_back(elec_e[n] + disp_e[n] + rep_e[n]);
     }
 
-    std::cerr << "#frame[.....#]= totalenergy repulsion dispersion electrostatics" << std::endl;
+    std::cerr << std::setw(9)   << "#frame["
+              << std::setw(6)   << std::setfill('.') << "###"
+              << std::setw(3)   << "]= " << std::setfill(' ')
+              << std::setw(20)  << "Calculated"
+              << std::setw(20)  << "Repulsion (TTM-nrg)"
+              << std::setw(20)  << "Dispersion"
+              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
+              << std::endl;
 
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
-                  << std::setw(10) << "frame["
-                  << std::setw(6) << std::setfill('.') << n
-                  << std::setw(3) << "]= " << std::setfill(' ')
-                  << std::setw(20) << nb_energy[n]
-                  << std::setw(20) << rep_e[n]
-                  << std::setw(20) << disp_e[n]
-                  << std::setw(20) << elec_e[n]
+                  << std::setw(10)   << "frame["
+                  << std::setw(6)    << std::setfill('.') << n
+                  << std::setw(3)    << "]= " << std::setfill(' ')
+                  << std::setw(20)   << nb_energy[n]
+                  << std::setw(20)   << rep_e[n]
+                  << std::setw(20)   << disp_e[n]
+                  << std::setw(40)   << elec_e[n]
                   << std::endl;
     }
+
 
     return 0;
 }
@@ -2262,7 +2272,7 @@ int main(int argc, char** argv) {
     ff.close()
 
 
-def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra, E_range, alpha):
+def write_mbnrg_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, system_name, nl_param_all, k_min_init, k_max_init, d_min_init, d_max_init, k_min_intra_init, k_max_intra_init, d_min_intra_init, d_max_intra_init, E_range, alpha):
     """
     Writes the fitting code for MB-nrg"
 
@@ -2272,14 +2282,14 @@ def write_fitting_code(number_of_monomers, number_of_atoms, number_of_sites, sys
         number_of_sites        - Number of sites (electrostatic sites) of the monomer
         system_name            - The name of the system in symmetry language. Expects n fragments separated by an underscore "_" such as A1B2_C2D4
         nl_param_all           - All the non linear parameters
-        k_min                  - Minimum value allowed for k
-        k_max                  - Maximum value allowed for k
-        d_min                  - Minimum value allowed for d
-        d_max                  - Maximum value allowed for d
-        k_min_intra            - Minimum value allowed for k_intra
-        k_max_intra            - Maximum value allowed for k_intra
-        d_min_intra            - Minimum value allowed for d_intra
-        d_max_intra            - Maximum value allowed for d_intra
+        k_min_init             - Minimum value allowed for initializing k
+        k_max_init             - Maximum value allowed for initializing k
+        d_min_init             - Minimum value allowed for initializing d
+        d_max_init             - Maximum value allowed for initializing d
+        k_min_intra_init       - Minimum value allowed for initializing k_intra
+        k_max_intra_init       - Maximum value allowed for initializing k_intra
+        d_min_intra_init       - Minimum value allowed for initializing d_intra
+        d_max_intra_init       - Maximum value allowed for initializing d_intra
         E_range                - Energy range used for computing weights for each point in the fittings
         alpha                  - Parameter used for regularization during the fittings
     """
@@ -2435,7 +2445,7 @@ int main(int argc, char** argv) {
 
     ff.write(a)
 
-    nl_params_string = get_nl_params_initialization_string(nl_param_all, k_min, k_max, d_min, d_max, k_min_intra, k_max_intra, d_min_intra, d_max_intra)
+    nl_params_string = get_nl_params_initialization_string(nl_param_all, k_min_init, k_max_init, d_min_init, d_max_init, k_min_intra_init, k_max_intra_init, d_min_intra_init, d_max_intra_init)
 
     ff.write(nl_params_string)
 
@@ -2608,22 +2618,22 @@ int main(int argc, char** argv) {
     correlation_file.open ("correlation.dat");
     
     correlation_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "sq_error"
+                     << std::setw(15)       << "Reference" 
+                     << std::setw(15)       << "Calculated"
+                     << std::setw(15)       << "Error^2"
                      << "    \\n"; 
     
     std::ofstream terms_file;
     terms_file.open("individual_terms.dat");
-    terms_file << "#" << std::setw(10) << "index"
-                     << std::setw(15)       << "ref_energy" 
-                     << std::setw(15)       << "fit_energy"
-                     << std::setw(15)       << "poly_energy"
-                     << std::setw(15)       << "disp_energy"
+    terms_file << std::setw(10) << "#index"
+                     << std::setw(20)       << "Reference" 
+                     << std::setw(20)       << "Calculated"
 #ifdef USE_BUCKINGHAM
-                     << std::setw(15)       << "buck_energy"
+                     << std::setw(20)       << "Repulsion (TTM-nrg)"
 #endif
-                     << std::setw(15)       << "elec_energy"
+                     << std::setw(20)       << "Polynomials"
+                     << std::setw(20)       << "Dispersion"
+                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
                      << "    \\n";
 
     double err_L2(0), err_wL2(0), err_Linf(0);
@@ -2655,20 +2665,20 @@ int main(int argc, char** argv) {
 
         correlation_file <<  std::setw(10) << i+1
                          << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
                          << std::setw(15) <<  E_model
                          << std::setw(15) <<  delta*delta  << "    \\n" ;
  
         terms_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
-                         << std::setprecision(4)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) << model.calculate(training_set[i].xyz)
-                         << std::setw(15) <<  disp_e[i] 
+                         << std::setw(20) << std::scientific
+                         << std::setprecision(8)  <<  training_set[i].nb_energy
+                         << std::setw(20) <<  E_model
 #ifdef USE_BUCKINGHAM
-                         << std::setw(15) <<  buck_e[i]
+                         << std::setw(20) <<  buck_e[i]
 #endif
-                         << std::setw(15) <<  elec_e[i]
+                         << std::setw(20) << model.calculate(training_set[i].xyz)
+                         << std::setw(20) <<  disp_e[i] 
+                         << std::setw(40) <<  elec_e[i]
                          << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -2989,7 +2999,7 @@ for(int i = 0; i < """ + str(npoly) + """; ++i)
     ff.close()
 
 
-def write_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name):
+def write_mbnrg_eval_code(number_of_monomers, number_of_atoms, number_of_sites, system_name):
     """
     Writes the header file for the polynomial structure
 
@@ -3154,24 +3164,32 @@ int main(int argc, char** argv) {
     a = """
     }
 
+    std::cerr << std::setw(9)   << "#frame["
+              << std::setw(6)   << std::setfill('.') << "###"
+              << std::setw(3)   << "]= " << std::setfill(' ')
+              << std::setw(20)  << "Calculated"
 #ifdef USE_BUCKINGHAM
-    std::cerr << "#frame[.....#]= totalenergy poly repulsion dispersion electrostatics" << std::endl;
-#else
-    std::cerr << "#frame[.....#]= totalenergy poly dispersion electrostatics" << std::endl;
+              << std::setw(20)  << "Repulsion (TTM-nrg)"
 #endif
+              << std::setw(20)  << "Polynomials"
+              << std::setw(20)  << "Dispersion"
+              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
+              << std::endl;
+
+    
     for (size_t n = 0; n < training_set.size(); n++) {
         std::cout << std::scientific << std::setprecision(8)
-                  << std::setw(10) << "frame["
-                  << std::setw(6) << std::setfill('.') << n
-                  << std::setw(3) << "]= " << std::setfill(' ')
-                  << std::setw(25) << nb_energy[n]
-                  << std::setw(20) << poly_e[n]
+                  << std::setw(10)   << "frame["
+                  << std::setw(6)    << std::setfill('.') << n
+                  << std::setw(3)    << "]= " << std::setfill(' ')
+                  << std::setw(20)   << nb_energy[n]
 #ifdef USE_BUCKINGHAM
-                  << std::setw(20) << buck_e[n]
+                  << std::setw(20)   << buck_e[n]
 #endif
-                  << std::setw(20) << disp_e[n]
-                  << std::setw(20) << elec_e[n]
-                   << std::endl;
+                  << std::setw(20)   << poly_e[n]
+                  << std::setw(20)   << disp_e[n]
+                  << std::setw(40)   << elec_e[n]
+                  << std::endl;
     }
 
     return 0;
@@ -3567,7 +3585,7 @@ struct """ + struct_name + """ {
     ff.close()
 
 
-def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, ri, ro, k_min_intra, k_max_intra, k_min, k_max, d_min_intra, d_max_intra, d_min, d_max, version = "v1"):
+def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, version = "v1"):
     """
     Writes the polynomial holder header file
 
@@ -3582,16 +3600,6 @@ def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_mono
         variables              - List of lists with the information in the poly.in file
         number_of_variables    - Number of variables
         degree                 - The degree of the polynomial
-        ri                     - Inner cutoff (not used if 1b)
-        ro                     - Outer cutoff (not used in 2b)
-        k_min_intra            - Minimum value allowed for k_intra
-        k_max_intra            - Maximum value allowed for k_intra
-        k_min                  - Minimum value allowed for k
-        k_max                  - Maximum value allowed for k
-        d_min_intra            - Minimum value allowed for d_intra
-        d_max_intra            - Maximum value allowed for d_intra
-        d_min                  - Minimum value allowed for d
-        d_max                  - Maximum value allowed for d
         version                - Will be appended to the class and files to differentiate multiple versions of the same system
     """
 

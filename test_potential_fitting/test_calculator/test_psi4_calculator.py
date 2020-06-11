@@ -132,16 +132,16 @@ class TestPsi4Calculator(TestCalculator):
         self.assertFalse(self.calculator3.is_valid_model(Model("", "STO-3G", False)))
         self.assertFalse(self.calculator4.is_valid_model(Model("badmethod", "STO-3G", True)))
 
-    def test_find_frequencies(self):
+    def test_calculate_frequencies(self):
 
         # compare freqs, normal modes, and reduced masses.
         
-        self.calculator1.find_frequencies(TestCalculator.CO2, TestCalculator.model1)
+        self.calculator1.calculate_frequencies(TestCalculator.CO2, TestCalculator.model1)
 
-        self.calculator2.find_frequencies(TestCalculator.CN, TestCalculator.model1)
+        self.calculator2.calculate_frequencies(TestCalculator.CN, TestCalculator.model1)
 
-        self.calculator3.find_frequencies(TestCalculator.CO2, TestCalculator.model2)
+        self.calculator3.calculate_frequencies(TestCalculator.CO2, TestCalculator.model2)
 
-        self.calculator4.find_frequencies(TestCalculator.CN, TestCalculator.model2)
+        self.calculator4.calculate_frequencies(TestCalculator.CN, TestCalculator.model2)
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestPsi4Calculator)

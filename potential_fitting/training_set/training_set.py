@@ -50,7 +50,7 @@ class TrainingSet:
 
                 if len(energies) != len(energy_names) and is_training_format:
                     raise XYZFormatError("Expected {} enegies in line '{}' but found only {}.".format(len(energy_names), energies_line, len(energies)))
-                else:
+                elif len(energies) != len(energy_names):
                     energies = [0.0]*len(energy_names)
 
                 for index, energy_name in enumerate(energy_names):

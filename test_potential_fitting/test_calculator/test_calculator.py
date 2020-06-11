@@ -76,19 +76,19 @@ class TestCalculator(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
 
-    def test_find_frequencies(self):
+    def test_calculate_frequencies(self):
         
         with self.assertRaises(NotImplementedError):
-            self.calculator1.find_frequencies(TestCalculator.CO2, TestCalculator.model1)
+            self.calculator1.calculate_frequencies(TestCalculator.CO2, TestCalculator.model1)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator2.find_frequencies(TestCalculator.CN, TestCalculator.model1)
+            self.calculator2.calculate_frequencies(TestCalculator.CN, TestCalculator.model1)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator3.find_frequencies(TestCalculator.CO2, TestCalculator.model2)
+            self.calculator3.calculate_frequencies(TestCalculator.CO2, TestCalculator.model2)
 
         with self.assertRaises(NotImplementedError):
-            self.calculator4.find_frequencies(TestCalculator.CN, TestCalculator.model2)
+            self.calculator4.calculate_frequencies(TestCalculator.CN, TestCalculator.model2)
 
     def test_is_valid_model(self):
 

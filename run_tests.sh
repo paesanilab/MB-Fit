@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export MBFIT_HOME=$PWD
+
 if [ $# -eq 0 ]
 then
     time=$(date '+%Y-%m-%d-%H-%M-%S')

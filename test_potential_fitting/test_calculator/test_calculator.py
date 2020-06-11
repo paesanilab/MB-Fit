@@ -7,6 +7,11 @@ from potential_fitting.calculator import Calculator, Model
 
 class TestCalculator(unittest.TestCase):
 
+    def __init__(self, *args, **kwargs):
+        super(TestCalculator, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
     # set up before the first test case
     def setUpClass():
 
@@ -15,7 +20,6 @@ class TestCalculator(unittest.TestCase):
 
         TestCalculator.model1 = Model("HF", "STO-3G", True)
         TestCalculator.model2 = Model("wb97", "cc-pvdz", False)
-        pass
 
     # clean up after the last test case
     def tearDownClass():
@@ -30,10 +34,18 @@ class TestCalculator(unittest.TestCase):
 
     # clean up after each test case
     def tearDown(self):
-        pass
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
 
     def test_set_logging(self):
-        pass
+        self.test_passed = True
 
     def test_is_installed(self):
         with self.assertRaises(NotImplementedError):
@@ -47,6 +59,8 @@ class TestCalculator(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             self.calculator2.is_installed()
+
+        self.test_passed = True
 
     def test_calculate_energy(self):
 
@@ -62,6 +76,8 @@ class TestCalculator(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.calculator4.calculate_energy(TestCalculator.CN, TestCalculator.model2, [0])
 
+        self.test_passed = True
+
     def test_optimize_geometry(self):
         
         with self.assertRaises(NotImplementedError):
@@ -75,6 +91,8 @@ class TestCalculator(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             self.calculator4.optimize_geometry(TestCalculator.CN, TestCalculator.model2)
+
+        self.test_passed = True
 
     def test_calculate_frequencies(self):
         
@@ -90,6 +108,8 @@ class TestCalculator(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.calculator4.calculate_frequencies(TestCalculator.CN, TestCalculator.model2)
 
+        self.test_passed = True
+
     def test_is_valid_model(self):
 
         with self.assertRaises(NotImplementedError):
@@ -104,6 +124,8 @@ class TestCalculator(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.calculator4.is_valid_model(Model("abcd", "efgh", False))
 
+        self.test_passed = True
+
     def test_check_neg_freqs(self):
         
         self.assertEquals(self.calculator1.check_neg_freqs([]), 0)
@@ -111,5 +133,6 @@ class TestCalculator(unittest.TestCase):
         self.assertEquals(self.calculator1.check_neg_freqs([0, 0, -1, 1]), 1)
         self.assertEquals(self.calculator1.check_neg_freqs([-1, -2, -3, -0.4, -234234]), 5)
         self.assertEquals(self.calculator1.check_neg_freqs([-2, -2, 2, 2, 4, 1234567890, 0.1234567890, -0.0000001]), 3)
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestCalculator)

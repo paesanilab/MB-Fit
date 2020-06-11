@@ -11,12 +11,14 @@ then
     log="test_results/${time}_test.log"
     coverage="test_results/${time}_coverage.log"
     failed="test_results/${time}_failed_tests_outputs"
-elif [ $# -eq 4 ]
+    passed="test_results/${time}_passed_tests_outputs"
+elif [ $# -eq 5 ]
 then
     results=$1
     log=$2
     coverage=$3
     failed=$4
+    passed=$5
 else
     echo "wrong number of arguments."
     echo "Usage: ./coverage.sh <test_results> <test_log> <coverage_log> Mfailed_test_outputs>"
@@ -34,6 +36,7 @@ echo "Running python tests."
 
 coverage run --source potential_fitting run_tests.py > $log 2> $results
 mv failed_tests_outputs $failed
+mv passed_tests_outputs $passed
 
 coverage report -m > $coverage
 

@@ -20,6 +20,7 @@ class TestPsi4Calculator(TestCalculator):
 
     # set up before each test case
     def setUp(self):
+        # Set up
         self.calculator1 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
         self.calculator2 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), True)
         self.calculator3 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CO2monomer.ini"), True)
@@ -37,6 +38,8 @@ class TestPsi4Calculator(TestCalculator):
             self.assertFalse(self.calculator2.is_installed())
             self.assertFalse(self.calculator3.is_installed())
             self.assertFalse(self.calculator4.is_installed())
+
+        self.test_passed = True
 
     def test_calculate_energy(self):
         energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
@@ -62,6 +65,8 @@ class TestPsi4Calculator(TestCalculator):
         ref_energy, ref_log_path = -92.7149022432185, "reference/36c6e9c4_2019-02-12_17-25-30.184407.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
+
+        self.test_passed = True
 
     def test_optimize_geometry(self):
 
@@ -125,12 +130,16 @@ class TestPsi4Calculator(TestCalculator):
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
+        self.test_passed = True
+
     def test_is_valid_model(self):
 
         self.assertTrue(self.calculator1.is_valid_model(Model("HF", "STO-3G", False)))
         self.assertTrue(self.calculator2.is_valid_model(Model("wb97m-v", "STO-3G", True)))
         self.assertFalse(self.calculator3.is_valid_model(Model("", "STO-3G", False)))
         self.assertFalse(self.calculator4.is_valid_model(Model("badmethod", "STO-3G", True)))
+
+        self.test_passed = True
 
     def test_calculate_frequencies(self):
 
@@ -143,5 +152,7 @@ class TestPsi4Calculator(TestCalculator):
         self.calculator3.calculate_frequencies(TestCalculator.CO2, TestCalculator.model2)
 
         self.calculator4.calculate_frequencies(TestCalculator.CN, TestCalculator.model2)
+
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestPsi4Calculator)

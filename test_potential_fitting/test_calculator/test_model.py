@@ -1,8 +1,13 @@
-import unittest
+import unittest, os
 
 from potential_fitting.calculator import Model
 
 class TestModel(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(TestModel, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
 
     # set up before each test case
     def setUp(self):
@@ -13,7 +18,15 @@ class TestModel(unittest.TestCase):
 
     # clean up after each test case
     def tearDown(self):
-        pass
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
     
     def test_get_method(self):
 
@@ -21,17 +34,23 @@ class TestModel(unittest.TestCase):
         self.assertEqual(self.wb97mv_ccpvdz_False.get_method(), "wb97m-v")
         self.assertEqual(self.magic_wand.get_method(), "Magic")
 
+        self.test_passed = True
+
     def test_get_basis(self):
         
         self.assertEqual(self.HF_STO3G_True.get_basis(), "STO-3G")
         self.assertEqual(self.wb97mv_ccpvdz_False.get_basis(), "cc-pvdz")
         self.assertEqual(self.magic_wand.get_basis(), "Wand")
 
+        self.test_passed = True
+
     def test_get_cp(self):
         
         self.assertEqual(self.HF_STO3G_True.get_cp(), True)
         self.assertEqual(self.wb97mv_ccpvdz_False.get_cp(), False)
         self.assertEqual(self.magic_wand.get_cp(), True)
+
+        self.test_passed = True
 
     def test_eq(self):
 
@@ -44,6 +63,8 @@ class TestModel(unittest.TestCase):
         model3 = Model("wb97", "m-vcc-pvdz", False)
         self.assertFalse(model3 == self.wb97mv_ccpvdz_False)
 
+        self.test_passed = True
+
     def test_ne(self):
 
         model1 = Model("HF", "STO-3G", True)
@@ -54,5 +75,7 @@ class TestModel(unittest.TestCase):
 
         model3 = Model("wb97", "m-vcc-pvdz", False)
         self.assertTrue(model3 != self.wb97mv_ccpvdz_False)
+
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestModel)

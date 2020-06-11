@@ -8,6 +8,26 @@ from potential_fitting.molecule import parse_training_set_file
 
 class TestCalculatorUtils(unittest.TestCase):
 
+    def __init__(self, *args, **kwargs):
+        super(TestCalculatorUtils, self).__init__(*args, **kwargs)
+        self.test_passed = False
+        self.test_name = self.id()
+
+    def setUp(self):
+        pass
+
+    # clean up after each test case
+    def tearDown(self):
+        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        mbfithome = os.environ.get('MBFIT_HOME')
+        if os.path.isdir(local_output):
+            if self.test_passed:
+                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
+            else:
+                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
+                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
+
     def setUpClass():
 
         TestCalculatorUtils.psi4_settings_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "psi4.ini")
@@ -26,16 +46,22 @@ class TestCalculatorUtils(unittest.TestCase):
 
         self.assertIsInstance(calc, Psi4Calculator)
 
+        self.test_passed = True
+
     def test_get_calculator_qchem(self):
 
         calc = get_calculator(TestCalculatorUtils.qchem_settings_path)
 
         self.assertIsInstance(calc, QchemCalculator)
 
+        self.test_passed = True
+
     def test_get_calculator_bad_code(self):
 
         with self.assertRaises(NoSuchLibraryError):
             get_calculator(TestCalculatorUtils.bad_code_settings_path)
+
+        self.test_passed = True
 
     def test_fill_energies(self):
         fill_energies(TestCalculatorUtils.CO2_settings_path,
@@ -72,6 +98,8 @@ class TestCalculatorUtils(unittest.TestCase):
             self.assertIn(molecule, reference)
         for molecule in reference:
             self.assertIn(molecule, output)
+
+        self.test_passed = True
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestCalculatorUtils)

@@ -1,6 +1,6 @@
 import unittest, random, os
 
-
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.utils import Quaternion
 from potential_fitting.molecule import Atom
 from potential_fitting.molecule import Fragment
@@ -10,24 +10,7 @@ from potential_fitting.exceptions import InconsistentValueError
 """
 Test cases for molecule class
 """
-class TestMolecule(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        super(TestMolecule, self).__init__(*args, **kwargs)
-        self.test_passed = False
-        self.test_name = self.id()
-
-    # clean up after each test case
-    def tearDown(self):
-        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
-        mbfithome = os.environ.get('MBFIT_HOME')
-        if os.path.isdir(local_output):
-            if self.test_passed:
-                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
-            else:
-                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
+class TestMolecule(TestCaseWithId):
 
     def test_constructor(self):
 

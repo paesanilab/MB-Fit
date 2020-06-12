@@ -1,29 +1,13 @@
 import unittest, random, math,os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.molecule import Atom
 from potential_fitting.utils import Quaternion
 
 """
 Test Cases for Atom class
 """
-class TestAtom(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        super(TestAtom, self).__init__(*args, **kwargs)
-        self.test_passed = False
-        self.test_name = self.id()
-   
-    # clean up after each test case
-    def tearDown(self):
-        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
-        mbfithome = os.environ.get('MBFIT_HOME')
-        if os.path.isdir(local_output):
-            if self.test_passed:
-                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
-            else:
-                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
+class TestAtom(TestCaseWithId):
 
     """
     Tests the get_name() function of the Atom class

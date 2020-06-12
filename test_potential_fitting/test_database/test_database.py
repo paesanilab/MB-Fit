@@ -1,6 +1,6 @@
-
 import unittest, os, random
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.database import Database
 from potential_fitting.exceptions import InvalidValueError, DatabaseConnectionError
 from potential_fitting.molecule import Atom, Fragment, Molecule
@@ -28,13 +28,7 @@ def local_db_installed():
         return False
 
 @unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
-class TestDatabase(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        super(TestDatabase, self).__init__(*args, **kwargs)
-        self.test_passed = False
-        self.test_name = self.id()
-
+class TestDatabase(TestCaseWithId):
     @staticmethod
     def get_water_monomer():
         H1 = Atom("H", "A", random.random(), random.random(), random.random())
@@ -150,19 +144,6 @@ class TestDatabase(unittest.TestCase):
         self.database.annihilate(confirm="confirm")
         self.database.save()
         self.database.close()
-
-        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
-        mbfithome = os.environ.get('MBFIT_HOME')
-        if os.path.isdir(local_output):
-            if self.test_passed:
-                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
-            else:
-                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
-
-
-
 
     def test_set_and_get_batch_size(self):
         self.database.set_batch_size(8)

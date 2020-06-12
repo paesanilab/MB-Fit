@@ -1,6 +1,7 @@
 import unittest, os
 from glob import glob
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting import database
 from potential_fitting.exceptions import DatabaseConnectionError, CommandExecutionError
 from potential_fitting.utils import system, SettingsReader
@@ -45,12 +46,7 @@ def local_db_installed():
         return False
 
 @unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
-class TestJobReaderAndWriter(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        super(TestJobReaderAndWriter, self).__init__(*args, **kwargs)
-        self.test_passed = False
-        self.test_name = self.id()
+class TestJobReaderAndWriter(TestCaseWithId):
 
     def setUpClass():
         TestJobReaderAndWriter.config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user1.ini")
@@ -79,16 +75,6 @@ class TestJobReaderAndWriter(unittest.TestCase):
         db.close()
 
         system.call("rm", self.job_dir, "-r", "-f")
-
-        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
-        mbfithome = os.environ.get('MBFIT_HOME')
-        if os.path.isdir(local_output):
-            if self.test_passed:
-                os.system("mkdir -p " + os.path.join(mbfithome, "passed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "passed_tests_outputs", self.test_name))
-            else:
-                os.system("mkdir -p " + os.path.join(mbfithome, "failed_tests_outputs"))
-                os.system("mv " + local_output + " " + os.path.join(mbfithome, "failed_tests_outputs", self.test_name))
 
     @unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
     def test_job_writer_and_reader_qchem(self):

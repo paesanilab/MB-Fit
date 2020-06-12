@@ -20,8 +20,8 @@ then
     failed=$4
     passed=$5
 else
-    echo "wrong number of arguments."
-    echo "Usage: ./coverage.sh <test_results> <test_log> <coverage_log> <failed_test_outputs>"
+    echo "Wrong number of arguments."
+    echo "Usage: $0 <test_results> <test_log> <coverage_log> <failed_test_outputs> <passed_test_outputs>"
     exit 1
 fi
 

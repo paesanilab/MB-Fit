@@ -24,6 +24,7 @@ class TestFiles(TestCaseWithId):
         TestFiles.deepfile = os.path.join(TestFiles.deepdir, "file.txt")
 
     def test_init_directory(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertEqual(files.init_directory(TestFiles.dir), TestFiles.dir)
         self.assertTrue(os.path.isdir(TestFiles.dir))
@@ -43,6 +44,7 @@ class TestFiles(TestCaseWithId):
         self.test_passed = True
 
     def test_init_file(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(files.init_file(TestFiles.file), TestFiles.file)
         self.assertFalse(os.path.isfile(TestFiles.file))
 

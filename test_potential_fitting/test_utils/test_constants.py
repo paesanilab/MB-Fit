@@ -7,6 +7,7 @@ from potential_fitting.exceptions import InvalidValueError
 class TestConstants(TestCaseWithId):
 
     def test_symbol_to_number(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_number("H"), 1)
         self.assertEqual(constants.symbol_to_number("He"), 2)
         self.assertEqual(constants.symbol_to_number("O"), 8)
@@ -26,6 +27,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_number_to_symbol(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.number_to_symbol(1), "H")
         self.assertEqual(constants.number_to_symbol(2), "He")
         self.assertEqual(constants.number_to_symbol(8), "O")
@@ -42,6 +44,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_symbol_to_mass(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_mass("H"), 1.008)
         self.assertEqual(constants.symbol_to_mass("He"), 4.0026)
         self.assertEqual(constants.symbol_to_mass("O"), 15.999)
@@ -52,6 +55,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_symbol_to_radius(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_radius("H"), 0.53)
         self.assertEqual(constants.symbol_to_radius("He"), 0.31)
         self.assertEqual(constants.symbol_to_radius("O"), 0.48)
@@ -62,6 +66,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_symbol_to_covalent_radius(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_covalent_radius("H"), 0.37)
         self.assertEqual(constants.symbol_to_covalent_radius("He"), 0.32)
         self.assertEqual(constants.symbol_to_covalent_radius("O"), 0.73)
@@ -72,6 +77,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_symbol_to_vdw_radius(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_vdw_radius("H"), 1.20)
         self.assertEqual(constants.symbol_to_vdw_radius("He"), 1.40)
         self.assertEqual(constants.symbol_to_vdw_radius("O"), 1.52)
@@ -85,6 +91,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_symbol_to_free_polarizability(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_free_polarizability("H"), constants.bohr_to_ang**3 * 4.50711)
         self.assertEqual(constants.symbol_to_free_polarizability("He"), constants.bohr_to_ang**3 * 1.38375)
         self.assertEqual(constants.symbol_to_free_polarizability("O"), constants.bohr_to_ang**3 * 5.3)
@@ -95,6 +102,7 @@ class TestConstants(TestCaseWithId):
         self.test_passed = True
 
     def test_symbol_to_ccsdt_free_polarizability(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(constants.symbol_to_ccsdt_free_polarizability("H"), 0.66582)
         self.assertEqual(constants.symbol_to_ccsdt_free_polarizability("B"), 3.64084)
         self.assertEqual(constants.symbol_to_ccsdt_free_polarizability("C"), 1.84613)

@@ -11,6 +11,7 @@ class TestSettingsReader(TestCaseWithId):
         self.settings_reader = settings_reader.SettingsReader(self.settings_file)
 
     def test_constructor_and_get_file_path(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         with self.assertRaises(ConfigMissingFileError):
             settings_reader.SettingsReader(
@@ -22,6 +23,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_get(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertEqual(self.settings_reader.get("section1", "property1"), "value1")
 
@@ -38,6 +40,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_getboolean(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertEqual(self.settings_reader.getboolean("section1", "boolean1"), True)
         self.assertEqual(self.settings_reader.getboolean("section1", "boolean2"), False)
@@ -55,6 +58,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_getint(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertEqual(self.settings_reader.getint("section1", "int"), 28)
 
@@ -71,6 +75,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_getfloat(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertEqual(self.settings_reader.getfloat("section1", "float"), 6.626)
 
@@ -87,6 +92,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_getlist(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(self.settings_reader.getlist("section1", "str_list"), [["red", "fish"], ["blue", "fish"]])
         self.assertEqual(self.settings_reader.getlist("section1", "int_list", int), [1, 4, 3, 2])
 
@@ -103,6 +109,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_set(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.settings_reader.set("section1", "property1", "different_value!")
         self.assertEqual(self.settings_reader.get("section1", "property1"), "different_value!")
 
@@ -115,6 +122,7 @@ class TestSettingsReader(TestCaseWithId):
         self.test_passed = True
 
     def test_write(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         s_r = settings_reader.SettingsReader()
         s_r.set("section1", "property1", "value1")
         s_r.set("section2", "property2", "value2")

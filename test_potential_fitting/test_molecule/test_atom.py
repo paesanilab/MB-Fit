@@ -13,6 +13,7 @@ class TestAtom(TestCaseWithId):
     Tests the get_name() function of the Atom class
     """ 
     def test_get_name(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_name(), "H")
         
@@ -31,6 +32,7 @@ class TestAtom(TestCaseWithId):
     Tests the get_symmetry_class() function of the Atom class
     """ 
     def test_get_symmetry_class(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_symmetry_class(), "A")
         
@@ -46,6 +48,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_set_symmetry_class(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_symmetry_class(), "A")
 
@@ -61,6 +64,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_atomic_number(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_atomic_number(), 1)
 
@@ -76,6 +80,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_mass(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_mass(), 1.008)
 
@@ -91,6 +96,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_radius(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_radius(), 0.53)
 
@@ -106,6 +112,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_covalent_radius(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_covalent_radius(), 0.37)
 
@@ -121,6 +128,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_vdw_radius(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_vdw_radius(), 1.2)
 
@@ -136,6 +144,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_base_priority(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.get_base_priority(), atom.get_atomic_number())
 
@@ -151,6 +160,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_get_x_y_z(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
 
         self.assertEqual(atom.get_x(), 0)
@@ -166,6 +176,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_set_x_y_z(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
 
         self.assertEqual(atom.get_x(), 0)
@@ -183,6 +194,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_set_xyz(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
 
         self.assertEqual(atom.get_x(), 0)
@@ -198,6 +210,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_translate(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
 
         self.assertEqual(atom.get_x(), 0)
@@ -219,6 +232,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_rotate(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
 
         for i in range(1000):
@@ -236,6 +250,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_distance(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         for i in range(1000):
 
@@ -251,6 +266,7 @@ class TestAtom(TestCaseWithId):
         self.test_passed = True
 
     def test_is_bonded(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         atom1 = Atom("H", "A", 0, 0, 0)
 
@@ -283,6 +299,7 @@ class TestAtom(TestCaseWithId):
     """
 
     def test_to_xyz(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.to_xyz(), "H    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00")
 
@@ -304,6 +321,7 @@ class TestAtom(TestCaseWithId):
     Tests the to_ghost_xyz() function of the Atom class
     """
     def test_to_ghost_xyz(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         atom = Atom("H", "A", 0, 0, 0)
         self.assertEqual(atom.to_ghost_xyz(), "@H    0.00000000000000e+00   0.00000000000000e+00   0.00000000000000e+00")
 

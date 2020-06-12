@@ -12,6 +12,7 @@ class TestFitting(TestCaseWithId):
         TestFitting.out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 
     def test_A1B2(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         molecule = "A1B2"
         config_in_path = os.path.join(TestFitting.resources_path, molecule, "config.ini")
@@ -47,6 +48,7 @@ class TestFitting(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_A1B2_ttmnrg(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = "A1B2_A1B2"
         settings_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "settings.ini")
         config_in_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "config.ini")
@@ -80,6 +82,7 @@ class TestFitting(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_A1B2_mbnrg(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = "A1B2_A1B2"
         config_in_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "config.ini")
         config_path = os.path.join(TestFitting.out_path, molecule + "_MB", "config.ini")

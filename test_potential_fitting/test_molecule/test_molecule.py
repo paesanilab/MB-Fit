@@ -13,6 +13,7 @@ Test cases for molecule class
 class TestMolecule(TestCaseWithId):
 
     def test_constructor(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         with self.assertRaises(InconsistentValueError):
             Molecule([Fragment([Atom("H", "A", 0, 0, 0)], "frag1", 0, 1, "H"),
@@ -29,6 +30,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_name(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         mol = Molecule([Fragment([], "frag1", 0, 1, "")])
 
         self.assertEqual(mol.get_name(), "frag1")
@@ -52,6 +54,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_symmetry(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         mol = Molecule([])
 
         self.assertEqual(mol.get_symmetry(), "")
@@ -90,6 +93,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_fragments(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = Molecule([])
 
         # get_fragments() should return list of len 0 before any fragments added to Molecule
@@ -116,6 +120,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_atoms(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = Molecule([])
 
         # get_atoms() should return list of len 0 before any atoms added to Molecule
@@ -149,6 +154,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_charge(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = Molecule([])
 
         # get_charge() should return 0 before any fragments added to Molecule
@@ -167,6 +173,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_spin_multiplicity(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = Molecule([])
 
         # get_spin_multiplicity() should return 1 before any fragments added to Molecule
@@ -185,6 +192,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_num_fragments(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = Molecule([])
         
         # get_num_fragments() should return 0 before any fragments added to molecule
@@ -203,6 +211,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_num_atoms(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = Molecule([])
         
         # get_num_atoms() should return 0 before any atoms added to molecule
@@ -221,6 +230,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_translate(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         for i in range(100):
             x1, y1, z1 = random.random() * 100, random.random() * 100, random.random() * 100
@@ -249,6 +259,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_rotate(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         for i in range(100):
 
@@ -287,6 +298,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_move_to_center_of_mass(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         mol = Molecule([Fragment([Atom("O", "A", 2, 0, 0),
                                   Atom("H", "B", 3, 0, 0)], "OH-", -1, 1, "OH"),
@@ -323,6 +335,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def rotate_on_principal_axes(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         ref_mols = [Molecule([Fragment([Atom("O", "A", 0, 0, -2),
                                       Atom("O", "A", 0, 0, 2)], "OO", 0, 1, "OO")]),
@@ -361,6 +374,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_get_excluded_pairs(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         mol = Molecule([Fragment([Atom("O", "A", 1.41421356238, 1.41421356238, 0),
                                   Atom("O", "A", -1.41421356238, -1.41421356238, 0)], "OO", 0, 1, "OO")])
 
@@ -397,6 +411,7 @@ class TestMolecule(TestCaseWithId):
         self.test_passed = True
 
     def test_to_xyz(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         fragment0 = Fragment([Atom("H", "A", 5, 3, 0.00343), Atom("Cl", "B", 2, 0, -13), Atom("He", "C", 6, 2, 0.343)], "HClHe", -1, 1, "H[Cl][He]")
 

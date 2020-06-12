@@ -1,5 +1,4 @@
 import unittest
-#from . import test_potential_fitting
 from .test_potential_fitting import *
 
 def execute_tests():

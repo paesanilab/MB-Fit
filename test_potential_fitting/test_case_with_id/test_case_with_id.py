@@ -6,10 +6,11 @@ class TestCaseWithId(unittest.TestCase):
         super(TestCaseWithId, self).__init__(*args, **kwargs)
         self.test_passed = False
         self.test_name = self.id()
+        self.test_folder = ""
 
     # clean up after each test case
     def tearDown(self):
-        local_output = os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+        local_output = os.path.join(self.test_folder,"output")
         mbfithome = os.environ.get('MBFIT_HOME')
         if os.path.isdir(local_output):
             if self.test_passed:

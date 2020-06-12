@@ -76,8 +76,11 @@ class TestJobReaderAndWriter(TestCaseWithId):
 
         system.call("rm", self.job_dir, "-r", "-f")
 
+        super().tearDown()
+
     @unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
     def test_job_writer_and_reader_qchem(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         database.initialize_database(TestJobReaderAndWriter.mon_settings_path,
                                      TestJobReaderAndWriter.config_path,
                                      TestJobReaderAndWriter.water_opt_path,
@@ -127,6 +130,7 @@ class TestJobReaderAndWriter(TestCaseWithId):
 
     @unittest.skipUnless(hasPsi4(), "Psi4 is not installed and cannot be tested.")
     def test_job_writer_and_reader_psi4(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         database.initialize_database(TestJobReaderAndWriter.mon_settings_path,
                                      TestJobReaderAndWriter.config_path,
                                      TestJobReaderAndWriter.water_opt_path,

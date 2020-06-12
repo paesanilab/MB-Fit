@@ -18,6 +18,7 @@ class TestMoleculeParser(TestCaseWithId):
 
 
     def test_xyz_to_molecules_monomer(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.monomer_path, settings=TestMoleculeParser.monomer_settings)
 
         self.assertEqual(len(molecules), 2)
@@ -43,6 +44,7 @@ class TestMoleculeParser(TestCaseWithId):
         self.test_passed = True
 
     def test_xyz_to_molecules_dimer(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.dimer_path, settings=TestMoleculeParser.dimer_settings)
 
         self.assertEqual(len(molecules), 2)
@@ -78,6 +80,7 @@ class TestMoleculeParser(TestCaseWithId):
         self.test_passed = True
 
     def test_xyz_to_molecules_trimer(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.trimer_path, settings=TestMoleculeParser.trimer_settings)
 
         self.assertEqual(len(molecules), 1)
@@ -107,6 +110,7 @@ class TestMoleculeParser(TestCaseWithId):
         self.test_passed = True
 
     def test_no_settings(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.monomer_path)
 
         self.assertEqual(len(molecules), 2)
@@ -131,6 +135,7 @@ class TestMoleculeParser(TestCaseWithId):
         self.test_passed = True
 
     def test_confirm_identical_results(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecules1 = molecule_parser.xyz_to_molecules(TestMoleculeParser.monomer_path, settings=TestMoleculeParser.monomer_settings)
         molecules2 = list(molecule_parser.parse_training_set_file(TestMoleculeParser.monomer_path, settings=TestMoleculeParser.monomer_settings))
 

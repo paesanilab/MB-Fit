@@ -28,6 +28,7 @@ class TestQchemCalculator(TestCalculator):
         self.calculator4 = QchemCalculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), True)
 
     def test_is_installed(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         try:
             system.call("which", "qchem")
             self.assertTrue(self.calculator1.is_installed())
@@ -43,6 +44,7 @@ class TestQchemCalculator(TestCalculator):
         self.test_passed = True
 
     def test_calculate_energy(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # include log files from reference calculations
         
@@ -73,6 +75,7 @@ class TestQchemCalculator(TestCalculator):
         self.test_passed = True
 
     def test_optimize_geometry(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         
         geometry, energy, log_path = self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
 
@@ -135,6 +138,7 @@ class TestQchemCalculator(TestCalculator):
         self.test_passed = True
 
     def test_calculate_frequencies(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         
         self.calculator1.calculate_frequencies(TestCalculator.CO2, TestCalculator.model1)
 

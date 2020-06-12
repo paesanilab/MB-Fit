@@ -12,6 +12,7 @@ class TestSystem(TestCaseWithId):
         TestSystem.out_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "out_file.txt")
 
     def test_call(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         files.init_file(TestSystem.in_file)
         files.init_file(TestSystem.out_file)

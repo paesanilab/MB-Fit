@@ -7,6 +7,7 @@ from potential_fitting.exceptions import FilterBadSyntaxError
 class TestFilters(TestCaseWithId):
 
     def test_parse_no_arguments(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Test for when you give parse_filter() no arguments
 
@@ -16,6 +17,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_degree_wrong_num_args(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Tests for when you give 'degree' the wrong number of arguments.
 
@@ -31,6 +33,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_ind_degree_wrong_num_args(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Tests for when you give 'ind-degre' the wrong number of arguments.
 
@@ -44,6 +47,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_sum_degree_wrong_num_args(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Tests for when you give 'sum-degree' the wrong number of arguments.
 
@@ -57,6 +61,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_num_fragments_wrong_num_args(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Tests for when you give 'num-fragments' the wrong number of arguments.
 
@@ -70,6 +75,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_unrecognized_filter_name(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Test for unrecognized filter name
 
@@ -79,6 +85,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_dangling_conjunction(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Tests for dangling conjunction
 
@@ -90,6 +97,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_dangling_not(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Tests for danging not
         with self.assertRaises(FilterBadSyntaxError):
@@ -98,6 +106,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_bad_syntax_in_parens(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Test for when bad syntax appears within parenthesis
 
@@ -113,6 +122,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_bad_syntax_in_not(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Test for when bad syntax appears within a not
 
@@ -128,6 +138,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_bad_syntax_after_conjunction(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # Test for when bad syntax appears after a conjunction
 
@@ -139,6 +150,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         variables = [Variable('A', 1, 'a', 'B', 1, 'a', 'x-intra-A+B-1'),
                      Variable('A', 1, 'b', 'B', 2, 'b', 'x-intra-A+B-1'),
                      Variable('B', 1, 'c', 'B', 2, 'd', 'x-intra-B+B-0')]
@@ -148,6 +160,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_individual_degree_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.parse_filter('ind-degree', "*", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -167,6 +180,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_sum_degree_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.parse_filter("sum-degree", "*", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -185,6 +199,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_degree_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.parse_filter("degree", "*", "2+", "3")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -203,6 +218,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_num_fragments_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.parse_filter("num-fragments", "*", "1-/3+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'b', 'A', 3, 'b', 'x-intra-A+A-1'),
@@ -223,6 +239,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_not_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.IndividualDegreeFilter("*", "2+")
         not_filter = filters.parse_filter("not", "ind-degree", "*", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
@@ -246,6 +263,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_and_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter1 = filters.IndividualDegreeFilter("*", "2+")
         filter2 = filters.NumFragmentsFilter("x-intra-A+B-*", "1-")
         and_filter = filters.parse_filter("ind-degree", "*", "2+", "and", "num-fragments", "x-intra-A+B-*", "1-")
@@ -261,6 +279,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_or_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter1 = filters.IndividualDegreeFilter("*", "2+")
         filter2 = filters.NumFragmentsFilter("x-intra-A+B-*", "1-")
         or_filter = filters.parse_filter("ind-degree", "*", "2+", "or", "num-fragments", "x-intra-A+B-*", "1-")
@@ -276,6 +295,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_individual_degree_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.IndividualDegreeFilter("*", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -334,6 +354,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_sum_degree_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.SumDegreeFilter("*", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -371,6 +392,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_degree_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.DegreeFilter("*", "2+", "3")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -413,6 +435,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_num_fragments_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.NumFragmentsFilter("*", "1-/3+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'b', 'A', 3, 'b', 'x-intra-A+A-1'),
@@ -452,6 +475,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_not_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.IndividualDegreeFilter("*", "2+")
         not_filter = filters.NotFilter(filter)
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
@@ -475,6 +499,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_and_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter1 = filters.IndividualDegreeFilter("*", "2+")
         filter2 = filters.NumFragmentsFilter("x-intra-A+B-*", "1-")
         and_filter = filters.AndFilter(filter1, filter2)
@@ -490,6 +515,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_or_filter(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter1 = filters.IndividualDegreeFilter("*", "2+")
         filter2 = filters.NumFragmentsFilter("x-intra-A+B-*", "1-")
         or_filter = filters.OrFilter(filter1, filter2)
@@ -505,6 +531,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_parse_parens(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.parse_filter("(", "sum-degree", "x-intra-*+*-*", "2+", ")")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'a', 'x-intra-A+A-1'),
@@ -526,6 +553,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_individual_degree_filter_with_levels(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.IndividualDegreeFilter("x-intra-A+A-1", "1+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
@@ -609,6 +637,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_sum_degree_filter_with_levels(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.SumDegreeFilter("x-intra-A+A-1", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
@@ -696,6 +725,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_num_fragments_filter_with_levels(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.NumFragmentsFilter("x-intra-A+A-1", "2+")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),
@@ -787,6 +817,7 @@ class TestFilters(TestCaseWithId):
         self.test_passed = True
 
     def test_degree_filter_with_levels(self):
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         filter = filters.DegreeFilter("x-intra-A+A-1", "2+", "2")
         variables = [Variable('A', 1, 'a', 'A', 2, 'a', 'x-intra-A+A-1'),
                      Variable('A', 1, 'a', 'A', 3, 'b', 'x-intra-A+A-0'),

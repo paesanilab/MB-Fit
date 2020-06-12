@@ -21,7 +21,7 @@ then
     passed=$5
 else
     echo "wrong number of arguments."
-    echo "Usage: ./coverage.sh <test_results> <test_log> <coverage_log> Mfailed_test_outputs>"
+    echo "Usage: ./coverage.sh <test_results> <test_log> <coverage_log> <failed_test_outputs>"
     exit 1
 fi
 

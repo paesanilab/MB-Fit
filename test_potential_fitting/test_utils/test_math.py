@@ -4,9 +4,11 @@ from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.utils import math
 
 class TestMath(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestMath, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def test_test_difference_under_threshold(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertTrue(math.test_difference_under_threshold(1, 2, 1.1))
         self.assertFalse(math.test_difference_under_threshold(1, 2, 1))
 

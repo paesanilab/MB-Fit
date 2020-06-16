@@ -47,6 +47,9 @@ def local_db_installed():
 
 @unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
 class TestJobReaderAndWriter(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestJobReaderAndWriter, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestJobReaderAndWriter.config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user1.ini")
@@ -80,7 +83,6 @@ class TestJobReaderAndWriter(TestCaseWithId):
 
     @unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
     def test_job_writer_and_reader_qchem(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         database.initialize_database(TestJobReaderAndWriter.mon_settings_path,
                                      TestJobReaderAndWriter.config_path,
                                      TestJobReaderAndWriter.water_opt_path,
@@ -130,7 +132,6 @@ class TestJobReaderAndWriter(TestCaseWithId):
 
     @unittest.skipUnless(hasPsi4(), "Psi4 is not installed and cannot be tested.")
     def test_job_writer_and_reader_psi4(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         database.initialize_database(TestJobReaderAndWriter.mon_settings_path,
                                      TestJobReaderAndWriter.config_path,
                                      TestJobReaderAndWriter.water_opt_path,

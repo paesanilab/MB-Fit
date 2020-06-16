@@ -4,9 +4,11 @@ from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.utils import quaternion
 
 class TestQuaternion(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestQuaternion, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def test_add(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -31,7 +33,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_sub(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -56,7 +57,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_mul(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -81,7 +81,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_abs(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -95,7 +94,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_neg(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -115,7 +113,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_pos(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -135,7 +132,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_eq(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertTrue(quaternion.Quaternion(1, 2, 3, 4) == quaternion.Quaternion(1, 2, 3, 4))
         self.assertFalse(quaternion.Quaternion(2, 2, 3, 4) == quaternion.Quaternion(1, 2, 3, 4))
         self.assertFalse(quaternion.Quaternion(1, 3, 3, 4) == quaternion.Quaternion(1, 2, 3, 4))
@@ -146,7 +142,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_ne(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertFalse(quaternion.Quaternion(1, 2, 3, 4) != quaternion.Quaternion(1, 2, 3, 4))
         self.assertTrue(quaternion.Quaternion(2, 2, 3, 4) != quaternion.Quaternion(1, 2, 3, 4))
         self.assertTrue(quaternion.Quaternion(1, 3, 3, 4) != quaternion.Quaternion(1, 2, 3, 4))
@@ -157,7 +152,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_normalize(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -177,7 +171,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_conjugate(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         for i in range(100):
             r1 = random.random()
             i1 = random.random()
@@ -197,7 +190,6 @@ class TestQuaternion(TestCaseWithId):
         self.test_passed = True
 
     def test_rotate(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertEqual(quaternion.Quaternion(0, 0, 1, 0).rotate(-1, 1, 1), (1, 1, -1))
         self.assertEqual(quaternion.Quaternion(0, 1, 0, 0).rotate(-1, 1, 1), (-1, -1, -1))

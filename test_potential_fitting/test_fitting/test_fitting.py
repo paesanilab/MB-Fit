@@ -6,13 +6,16 @@ from potential_fitting.utils import system, files
 from potential_fitting import generate_mbnrg_fitting_code, compile_fit_code, prepare_fits, execute_fits, retrieve_best_fit, generate_ttmnrg_fitting_code, update_config_with_ttm
 
 class TestFitting(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestFitting, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
+
     def setUpClass():
 
         TestFitting.resources_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
         TestFitting.out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 
     def test_A1B2(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         molecule = "A1B2"
         config_in_path = os.path.join(TestFitting.resources_path, molecule, "config.ini")
@@ -48,7 +51,6 @@ class TestFitting(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_A1B2_ttmnrg(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = "A1B2_A1B2"
         settings_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "settings.ini")
         config_in_path = os.path.join(TestFitting.resources_path, molecule + "_TTM", "config.ini")
@@ -82,7 +84,6 @@ class TestFitting(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_A1B2_mbnrg(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         molecule = "A1B2_A1B2"
         config_in_path = os.path.join(TestFitting.resources_path, molecule + "_MB", "config.ini")
         config_path = os.path.join(TestFitting.out_path, molecule + "_MB", "config.ini")

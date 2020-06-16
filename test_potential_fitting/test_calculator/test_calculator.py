@@ -6,6 +6,10 @@ from potential_fitting.molecule import Molecule
 from potential_fitting.calculator import Calculator, Model
 
 class TestCalculator(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestCalculator, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
+
     # set up before the first test case
     def setUpClass():
 
@@ -23,11 +27,9 @@ class TestCalculator(TestCaseWithId):
         self.calculator4 = Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), False)
 
     def test_set_logging(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.test_passed = True
 
     def test_is_installed(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         with self.assertRaises(NotImplementedError):
             self.calculator1.is_installed()
 
@@ -43,7 +45,6 @@ class TestCalculator(TestCaseWithId):
         self.test_passed = True
 
     def test_calculate_energy(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         with self.assertRaises(NotImplementedError):
             self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
@@ -60,7 +61,6 @@ class TestCalculator(TestCaseWithId):
         self.test_passed = True
 
     def test_optimize_geometry(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         
         with self.assertRaises(NotImplementedError):
             self.calculator1.optimize_geometry(TestCalculator.CO2, TestCalculator.model1)
@@ -77,7 +77,6 @@ class TestCalculator(TestCaseWithId):
         self.test_passed = True
 
     def test_calculate_frequencies(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         
         with self.assertRaises(NotImplementedError):
             self.calculator1.calculate_frequencies(TestCalculator.CO2, TestCalculator.model1)
@@ -94,7 +93,6 @@ class TestCalculator(TestCaseWithId):
         self.test_passed = True
 
     def test_is_valid_model(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         with self.assertRaises(NotImplementedError):
             self.calculator1.is_valid_model(Model("HF", "STO-3G", False))
@@ -111,7 +109,6 @@ class TestCalculator(TestCaseWithId):
         self.test_passed = True
 
     def test_check_neg_freqs(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         
         self.assertEquals(self.calculator1.check_neg_freqs([]), 0)
         self.assertEquals(self.calculator1.check_neg_freqs([0, 1, 2, 3, 4]), 0)

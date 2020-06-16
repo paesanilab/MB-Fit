@@ -12,9 +12,11 @@ from potential_fitting.exceptions import InvalidValueError, InconsistentValueErr
 Test cases for Fragment class
 """
 class TestFragment(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestFragment, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def test_bad_SMILE(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # tests for when a fragment is given a bad SMILE string
 
@@ -31,7 +33,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_inconsistent_atoms_and_SMILE(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # tests for when atoms in the list don't match the atoms in the SMILE
 
@@ -51,7 +52,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_non_positive_spin(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # test for when a fragment is given a spin multiplicity < 1
 
@@ -64,7 +64,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_same_symmetry_different_type(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # test for when a fragment is given 2 atoms with the same symmetry but different atom type.
 
@@ -80,7 +79,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_name(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "HCl", 0, 1, "")
         self.assertEqual(fragment.get_name(), "HCl")
 
@@ -90,7 +88,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_set_name(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "HCl", 0, 1, "")
         self.assertEqual(fragment.get_name(), "HCl")
 
@@ -109,7 +106,6 @@ class TestFragment(TestCaseWithId):
     Tests get_atoms() functions of the Fragment class
     """
     def test_get_atoms(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "HCl", 0, 1, "")
 
         # get_atom() should return list of length 0 before any atoms added to fragment
@@ -135,7 +131,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_symmetry(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "", 0, 1, "")
 
         # get_symmetry() should return an empty string for a fragment with no atoms
@@ -171,7 +166,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_standard_symmetry(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "", 0, 1, "")
 
         # get_standard_symmetry() should return an empty string for a fragment with no atoms
@@ -214,7 +208,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_SMILE(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         fragment = Fragment([], "", 0, 1, "")
 
@@ -260,7 +253,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_standard_SMILE(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         fragment = Fragment([], "", 0, 1, "")
 
@@ -301,7 +293,6 @@ class TestFragment(TestCaseWithId):
     Tests the get_charge() function of the Fragment class
     """
     def test_get_charge(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "Name", 0, 2, "")
         
         self.assertEqual(fragment.get_charge(), 0)        
@@ -321,7 +312,6 @@ class TestFragment(TestCaseWithId):
     Tests the get_spin_multiplicity() function of the Fragment class
     """
     def test_get_spin_multiplicity(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "Name", 0, 2, "")
         
         self.assertEqual(fragment.get_spin_multiplicity(), 2)        
@@ -341,7 +331,6 @@ class TestFragment(TestCaseWithId):
     Tests the get_num_atoms() function of the Fragment class
     """
     def test_get_num_atoms(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "HAlHe", 3, 2, "")
 
         # get_num_atoms() should return 0 before any Atoms added to Fragment
@@ -365,7 +354,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_translate(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         for i in range(1000):
             start_x1 = random.random() * 100
@@ -392,7 +380,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_rotate(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([Atom("H", "A", 0, 0, 0),
                             Atom("Al", "B", 0, 0, 0)], "HAlHe", 3, 2, "H[Al]")
 
@@ -414,7 +401,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_connectivity_matrix(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         fragment = Fragment([], "", 0, 1, "")
         self.assertEqual(fragment.get_connectivity_matrix(), [])
@@ -448,7 +434,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_standard_connectivity_matrix(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         fragment = Fragment([], "", 0, 1, "")
         self.assertEqual(fragment.get_standard_connectivity_matrix(), [])
@@ -482,7 +467,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_excluded_pairs(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         fragment = Fragment([], "", 0, 1, "")
         self.assertEqual(fragment.get_excluded_pairs(), [[],
@@ -534,7 +518,6 @@ class TestFragment(TestCaseWithId):
     Test the to_xyz() function of the Fragment class
     """
     def test_to_xyz(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
 
         # to_xyz() should return empty string when no atoms are added to fragment
@@ -564,7 +547,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_to_standard_xyz(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
 
         # to_xyz() should return empty string when no atoms are added to fragment
@@ -597,7 +579,6 @@ class TestFragment(TestCaseWithId):
     Test the to_xyz() function of the Fragment class
     """
     def test_to_ghost_xyz(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
 
         # to_ghost_xyz() should return empty string when no atoms are added to fragment
@@ -627,7 +608,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_to_ghost_standard_xyz(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
 
         # to_standard_ghost_xyz() should return empty string when no atoms are added to fragment
@@ -657,7 +637,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_read_xyz(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         atom0 = Atom("H", "A", 0, 0, 0)
 
@@ -683,7 +662,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_read_xyz_bad_line_format(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # too few arguments on atom line
 
@@ -698,7 +676,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_read_xyz_bad_symmetry(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # more atoms in symmetry than string
 
@@ -717,7 +694,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_standard_order(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
         self.assertEqual(fragment.get_standard_order(), [])
 
@@ -739,7 +715,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_confirm_standard_order(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
         self.assertTrue(fragment.confirm_standard_order())
 
@@ -775,7 +750,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_confirm_symmetry_class(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fragment = Fragment([], "fragment", -2, 2, "")
         self.assertTrue(fragment.confirm_symmetry_class()[0])
         self.assertEqual(fragment.confirm_symmetry_class()[1], "")
@@ -817,7 +791,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_standard_copy(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         atom_std1 = Atom("O", "A", 1, 1, 1)
         atom_std2 = Atom("C", "B", 2, 2, 2)
@@ -846,7 +819,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_get_reorder_copy(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         atom_std1 = Atom("O", "A", 1, 1, 1)
         atom_std2 = Atom("C", "B", 2, 2, 2)
@@ -875,7 +847,6 @@ class TestFragment(TestCaseWithId):
         self.test_passed = True
 
     def test_eq_and_ne(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         atom0 = Atom("O", "A", 1, 1, 1)
 

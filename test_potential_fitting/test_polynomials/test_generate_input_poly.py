@@ -6,6 +6,9 @@ from potential_fitting.polynomials import generate_input_poly
 from potential_fitting.exceptions import InconsistentValueError
 
 class TestGenerateInputPoly(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestGenerateInputPoly, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestGenerateInputPoly.all_settings = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "all.ini")
@@ -16,7 +19,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         TestGenerateInputPoly.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
 
     def test_A1B2_all(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"), "r") as in_file:
@@ -32,7 +34,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_none(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"), "r") as in_file:
@@ -48,21 +49,18 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_partly_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
 
         self.test_passed = True
 
     def test_A1B2_purely_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2.in"))
 
         self.test_passed = True
 
     def test_A1B2X2_all(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"), "r") as in_file:
@@ -78,7 +76,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2X2_none(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"), "r") as in_file:
@@ -93,21 +90,18 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2X2_partly_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
 
         self.test_passed = True
 
     def test_A1B2X2_purely_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         with self.assertRaises(InconsistentValueError):
             generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2X2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2.in"))
 
         self.test_passed = True
 
     def test_A1B2_C1D2_all(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"), "r") as in_file:
@@ -136,7 +130,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_C1D2_none(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.none_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"), "r") as in_file:
@@ -165,7 +158,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_C1D2_partly_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.partly_inter_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"), "r") as in_file:
@@ -195,7 +187,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_C1D2_purely_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2_C1D2.in"), "r") as in_file:
@@ -225,7 +216,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2X2_C1D2_all(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.all_settings, "A1B2X2_C1D2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2_C1D2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2X2_C1D2.in"), "r") as in_file:
@@ -260,7 +250,6 @@ class TestGenerateInputPoly(TestCaseWithId):
         self.test_passed = True
 
     def test_A1B2_A1B2_purely_inter(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         generate_input_poly(TestGenerateInputPoly.purely_inter_settings, "A1B2_A1B2", os.path.join(TestGenerateInputPoly.output_dir, "A1B2_A1B2.in"))
 
         with open(os.path.join(TestGenerateInputPoly.output_dir, "A1B2_A1B2.in"), "r") as in_file:

@@ -8,6 +8,10 @@ from potential_fitting.molecule import parse_training_set_file
 
 
 class TestCalculatorUtils(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestCalculatorUtils, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
+
     def setUpClass():
 
         TestCalculatorUtils.psi4_settings_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "psi4.ini")
@@ -22,7 +26,6 @@ class TestCalculatorUtils(TestCaseWithId):
         TestCalculatorUtils.training_set_reference = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reference", "training_set.xyz")
 
     def test_get_calculator_psi4(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         calc = get_calculator(TestCalculatorUtils.psi4_settings_path)
 
         self.assertIsInstance(calc, Psi4Calculator)
@@ -30,7 +33,6 @@ class TestCalculatorUtils(TestCaseWithId):
         self.test_passed = True
 
     def test_get_calculator_qchem(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         calc = get_calculator(TestCalculatorUtils.qchem_settings_path)
 
@@ -39,7 +41,6 @@ class TestCalculatorUtils(TestCaseWithId):
         self.test_passed = True
 
     def test_get_calculator_bad_code(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         with self.assertRaises(NoSuchLibraryError):
             get_calculator(TestCalculatorUtils.bad_code_settings_path)
@@ -47,7 +48,6 @@ class TestCalculatorUtils(TestCaseWithId):
         self.test_passed = True
 
     def test_fill_energies(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         fill_energies(TestCalculatorUtils.CO2_settings_path,
                       TestCalculatorUtils.configs_path,
                       [TestCalculatorUtils.CO2_settings_path],

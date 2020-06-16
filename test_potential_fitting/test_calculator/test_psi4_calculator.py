@@ -17,6 +17,9 @@ def hasPsi4():
 
 @unittest.skipUnless(hasPsi4(), "Psi4 is not installed and cannot be tested.")
 class TestPsi4Calculator(TestCalculator):
+    def __init__(self, *args, **kwargs):
+        super(TestPsi4Calculator, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     # set up before each test case
     def setUp(self):
@@ -27,7 +30,6 @@ class TestPsi4Calculator(TestCalculator):
         self.calculator4 = Psi4Calculator(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "CN-monomer.ini"), True)
 
     def test_is_installed(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         try:
             import psi4
             self.assertTrue(self.calculator1.is_installed())
@@ -43,7 +45,6 @@ class TestPsi4Calculator(TestCalculator):
         self.test_passed = True
 
     def test_calculate_energy(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         energy, log_path = self.calculator1.calculate_energy(TestCalculator.CO2, TestCalculator.model1, [0])
 
         ref_energy, ref_log_path = -184.825948265526, "reference/869cbba7_2019-02-12_17-02-55.820866.out"
@@ -71,7 +72,6 @@ class TestPsi4Calculator(TestCalculator):
         self.test_passed = True
 
     def test_optimize_geometry(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # compare energy and geomtery in standard orientation
         
@@ -136,7 +136,6 @@ class TestPsi4Calculator(TestCalculator):
         self.test_passed = True
 
     def test_is_valid_model(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.assertTrue(self.calculator1.is_valid_model(Model("HF", "STO-3G", False)))
         self.assertTrue(self.calculator2.is_valid_model(Model("wb97m-v", "STO-3G", True)))
@@ -146,7 +145,6 @@ class TestPsi4Calculator(TestCalculator):
         self.test_passed = True
 
     def test_calculate_frequencies(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # compare freqs, normal modes, and reduced masses.
         

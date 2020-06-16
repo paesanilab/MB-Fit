@@ -5,6 +5,9 @@ from potential_fitting.utils import system, files
 from potential_fitting.exceptions import CommandExecutionError, CommandNotFoundError
 
 class TestSystem(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestSystem, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestSystem.bad_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "bad_file.txt")
@@ -12,7 +15,6 @@ class TestSystem(TestCaseWithId):
         TestSystem.out_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "out_file.txt")
 
     def test_call(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         files.init_file(TestSystem.in_file)
         files.init_file(TestSystem.out_file)

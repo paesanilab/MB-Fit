@@ -29,6 +29,10 @@ def local_db_installed():
 
 @unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
 class TestDatabase(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestDatabase, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
+
     @staticmethod
     def get_water_monomer():
         H1 = Atom("H", "A", random.random(), random.random(), random.random())
@@ -148,7 +152,6 @@ class TestDatabase(TestCaseWithId):
         super().tearDown()
 
     def test_set_and_get_batch_size(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.database.set_batch_size(8)
         self.assertEqual(self.database.get_batch_size(), 8)
@@ -164,12 +167,10 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_create(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         self.test_passed = True
 
     def test_execute(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         with self.assertRaises(psycopg2.InternalError):
             self.database.execute("RAISE EXCEPTION %s;", ("EXECUTE WORKED",))
@@ -177,14 +178,12 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_create_postgres_array(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         self.assertEqual(self.database.create_postgres_array("A", "B", "C", "D"), "{A,B,C,D}")
         self.assertEqual(self.database.create_postgres_array(1, 2, 3, 4), "{1,2,3,4}")
 
         self.test_passed = True
 
     def test_add_calculation_and_get_all_calculations(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         calculations = list(self.database.get_all_calculations("testclient", "database_test", calculations_to_do = 0))
         self.assertEqual(len(calculations), 0)
@@ -271,7 +270,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_delete_calculations(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         molecules = []
         for i in range(100):
@@ -317,7 +315,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_delete_all_calculations(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         molecules = []
         for i in range(100):
@@ -362,7 +359,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_set_properties_and_get_1B_training_set(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         opt_mol = self.get_water_monomer()
         opt_energy = random.random()
         molecules = []
@@ -400,7 +396,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_set_properties_and_get_2B_training_set(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # water_water dimer
 
@@ -522,7 +517,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_set_properties_and_get_training_set_1B(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # no cp
 
@@ -579,7 +573,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_set_properties_and_get_training_set_2B(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # no cp
 
@@ -698,7 +691,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_set_properties_and_get_training_set_3B(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # no cp
 
@@ -842,7 +834,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_set_properties_and_get_training_set_nested_symmetry(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # no cp
 
@@ -898,7 +889,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_import_calculations(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # 1B
 
@@ -991,7 +981,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_export_calculations(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
         # 1B
 
         molecule_energies_pairs = []
@@ -1046,7 +1035,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_read_privileges(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # First, create the training set owned by test_user1
 
@@ -1177,7 +1165,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_write_privileges(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # First, create the training set owned by test_user1
 
@@ -1375,7 +1362,6 @@ class TestDatabase(TestCaseWithId):
         self.test_passed = True
 
     def test_admin_privileges(self):
-        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
         # First, create the training set owned by test_user1
 

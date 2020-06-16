@@ -1,10 +1,14 @@
 import unittest
 import os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.molecule import molecule_parser, Atom, Fragment, Molecule
 from potential_fitting.utils import SettingsReader
 
-class TestMoleculeParser(unittest.TestCase):
+class TestMoleculeParser(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestMoleculeParser, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestMoleculeParser.monomer_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "water_monomer.xyz")
@@ -39,6 +43,8 @@ class TestMoleculeParser(unittest.TestCase):
                                           Atom("H", "B", 8, 9, 10)
                                           ], "water", 0, 1, "O(H)H")]), molecules)
 
+        self.test_passed = True
+
     def test_xyz_to_molecules_dimer(self):
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.dimer_path, settings=TestMoleculeParser.dimer_settings)
 
@@ -72,6 +78,8 @@ class TestMoleculeParser(unittest.TestCase):
                                           ], "NO2-", -1, 1, "N(O)O")
                                 ]), molecules)
 
+        self.test_passed = True
+
     def test_xyz_to_molecules_trimer(self):
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.trimer_path, settings=TestMoleculeParser.trimer_settings)
 
@@ -99,6 +107,8 @@ class TestMoleculeParser(unittest.TestCase):
                                           ], "water", 0, 1, "O(H)H")
                                 ]), molecules)
 
+        self.test_passed = True
+
     def test_no_settings(self):
         molecules = molecule_parser.xyz_to_molecules(TestMoleculeParser.monomer_path)
 
@@ -121,6 +131,8 @@ class TestMoleculeParser(unittest.TestCase):
                                                     Atom("H", "C", 8, 9, 10)
                                                     ])
 
+        self.test_passed = True
+
     def test_confirm_identical_results(self):
         molecules1 = molecule_parser.xyz_to_molecules(TestMoleculeParser.monomer_path, settings=TestMoleculeParser.monomer_settings)
         molecules2 = list(molecule_parser.parse_training_set_file(TestMoleculeParser.monomer_path, settings=TestMoleculeParser.monomer_settings))
@@ -141,6 +153,8 @@ class TestMoleculeParser(unittest.TestCase):
         molecules2 = list(molecule_parser.parse_training_set_file(TestMoleculeParser.trimer_path))
 
         self.assertEqual(molecules1, molecules2)
+
+        self.test_passed = True
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestMoleculeParser)

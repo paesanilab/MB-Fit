@@ -1,9 +1,13 @@
 import unittest
 import os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.polynomials import PolynomialGenerator
 
-class TestGeneratePoly(unittest.TestCase):
+class TestGeneratePoly(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestGeneratePoly, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestGeneratePoly.resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
@@ -30,6 +34,8 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+        self.test_passed = True
+
     def test_A1B3_degree4_no_filter(self):
 
         input_path = os.path.join(TestGeneratePoly.resources_dir, "A1B3_no_filter.in")
@@ -46,6 +52,9 @@ class TestGeneratePoly(unittest.TestCase):
 
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
+
+        self.test_passed = True
+
 
     def test_A2B1_A2B1_degree2_partly_inter(self):
 
@@ -64,6 +73,8 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+        self.test_passed = True
+
     def test_A2B5_C1D2_degree2_partly_inter(self):
 
         input_path = os.path.join(TestGeneratePoly.resources_dir, "A2B5_C1D2_partly_inter.in")
@@ -80,6 +91,8 @@ class TestGeneratePoly(unittest.TestCase):
 
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
+
+        self.test_passed = True
 
     def test_A1B2X2_A1B2X2_degree4_no_filters(self):
 
@@ -98,6 +111,8 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+        self.test_passed = True
+
     def test_A1_B1C2_B1C2_degree2_partly_inter(self):
 
         input_path = os.path.join(TestGeneratePoly.resources_dir, "A1_B1C2_B1C2_partly_inter.in")
@@ -115,6 +130,7 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+        self.test_passed = True
 
     def test_A1B2X2_A1B2X2_A1B2X2_degree2_purely_inter(self):
 
@@ -133,6 +149,8 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+        self.test_passed = True
+
     def test_A1B2C2_degree4_custom_filters(self):
 
         input_path = os.path.join(TestGeneratePoly.resources_dir, "A1B2C2_custom_filters.in")
@@ -149,6 +167,8 @@ class TestGeneratePoly(unittest.TestCase):
 
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
+
+        self.test_passed = True
 
     def test_A1B2X2_A1B2X2_degree4_mbpol_filters(self):
 
@@ -167,6 +187,8 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
+        self.test_passed = True
+
     def test_A1B2_A1B2_A1B2_degree4_mbpol_filters(self):
 
         input_path = os.path.join(TestGeneratePoly.resources_dir, "A1B2_A1B2_A1B2_mbpol_filters.in")
@@ -184,6 +206,6 @@ class TestGeneratePoly(unittest.TestCase):
         with open(out_log_path, "r") as out_log, open(ref_log_path, "r") as ref_log:
             self.assertEqual(out_log.readlines(), ref_log.readlines())
 
-
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestGeneratePoly)

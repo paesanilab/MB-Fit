@@ -1,6 +1,7 @@
 import unittest
 import os, random
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.molecule import Atom
 from potential_fitting.molecule import Fragment
 from potential_fitting.molecule import parse_training_set_file
@@ -10,7 +11,10 @@ from potential_fitting.exceptions import InvalidValueError, InconsistentValueErr
 """
 Test cases for Fragment class
 """
-class TestFragment(unittest.TestCase):
+class TestFragment(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestFragment, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def test_bad_SMILE(self):
 
@@ -25,6 +29,8 @@ class TestFragment(unittest.TestCase):
         # SMILE string that indicates an atom is bonded to itself
         with self.assertRaises(InvalidValueError):
             Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 1, "O11(H)H")
+
+        self.test_passed = True
 
     def test_inconsistent_atoms_and_SMILE(self):
 
@@ -43,6 +49,8 @@ class TestFragment(unittest.TestCase):
         with self.assertRaises(InconsistentValueError):
             Fragment([Atom("O", "A", 0, 0, 0), Atom("O", "A", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, 1, "O(H)H")
 
+        self.test_passed = True
+
     def test_non_positive_spin(self):
 
         # test for when a fragment is given a spin multiplicity < 1
@@ -52,6 +60,8 @@ class TestFragment(unittest.TestCase):
 
         with self.assertRaises(InvalidValueError):
             Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("H", "B", 2, 2, 2)], "frag", 0, -1, "O(H)H")
+
+        self.test_passed = True
 
     def test_same_symmetry_different_type(self):
 
@@ -66,12 +76,16 @@ class TestFragment(unittest.TestCase):
         with self.assertRaises(InconsistentValueError):
             Fragment([Atom("O", "A", 0, 0, 0), Atom("H", "B", 1, 1, 1), Atom("C", "B", 2, 2, 2)], "frag", 0, 1, "O(H)H")
 
+        self.test_passed = True
+
     def test_get_name(self):
         fragment = Fragment([], "HCl", 0, 1, "")
         self.assertEqual(fragment.get_name(), "HCl")
 
         fragment = Fragment([], "somename!", 0, 1, "")
         self.assertEqual(fragment.get_name(), "somename!")
+
+        self.test_passed = True
 
     def test_set_name(self):
         fragment = Fragment([], "HCl", 0, 1, "")
@@ -85,6 +99,8 @@ class TestFragment(unittest.TestCase):
 
         fragment.set_name("HCl")
         self.assertEqual(fragment.get_name(), "HCl")
+
+        self.test_passed = True
 
     """
     Tests get_atoms() functions of the Fragment class
@@ -111,6 +127,8 @@ class TestFragment(unittest.TestCase):
 
         # get_atom() should return list of length 2 after 2 atoms added to fragment
         self.assertEqual(len(fragment.get_atoms()), 2)
+
+        self.test_passed = True
 
     def test_get_symmetry(self):
         fragment = Fragment([], "", 0, 1, "")
@@ -144,6 +162,8 @@ class TestFragment(unittest.TestCase):
 
         # get_symmetry() should return "A2B2"
         self.assertEqual(fragment.get_symmetry(), "A2B2")
+
+        self.test_passed = True
 
     def test_get_standard_symmetry(self):
         fragment = Fragment([], "", 0, 1, "")
@@ -184,6 +204,8 @@ class TestFragment(unittest.TestCase):
 
         # get_standard_symmetry() should return "B3A2"
         self.assertEqual(fragment.get_standard_symmetry(), "B3A2")
+
+        self.test_passed = True
 
     def test_get_SMILE(self):
 
@@ -228,6 +250,8 @@ class TestFragment(unittest.TestCase):
         fragment2 = list(parse_training_set_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.xyz"), SettingsReader(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "bdc2.ini"))))[0].get_fragments()[0]
         self.assertEqual(fragment2.get_SMILE(), "[C]%1%2[H].[C]%1%3[H].[C]%3%4[C]%5[H].[C]%5%6[H].[C]%2%6[C]%7[O].[O]%7.[C]%4%8[O].[O]%8")
 
+        self.test_passed = True
+
     def test_get_standard_SMILE(self):
 
         fragment = Fragment([], "", 0, 1, "")
@@ -262,6 +286,8 @@ class TestFragment(unittest.TestCase):
         # get_standard_SMILE() should return "[O]%1[O]%2.[H]%1.[H]%2"
         self.assertEqual(fragment.get_standard_SMILE(), "[O]%1[O][H].[H]%1")
 
+        self.test_passed = True
+
 
     """
     Tests the get_charge() function of the Fragment class
@@ -279,6 +305,8 @@ class TestFragment(unittest.TestCase):
         
         self.assertEqual(fragment.get_charge(), 12)        
 
+        self.test_passed = True
+
 
     """
     Tests the get_spin_multiplicity() function of the Fragment class
@@ -295,6 +323,8 @@ class TestFragment(unittest.TestCase):
         fragment = Fragment([], "Name", 12, 5, "")
         
         self.assertEqual(fragment.get_spin_multiplicity(), 5)        
+
+        self.test_passed = True
 
 
     """
@@ -321,6 +351,8 @@ class TestFragment(unittest.TestCase):
         # get_num_atoms() should return 3 after third atom added to Fragment
         self.assertEqual(fragment.get_num_atoms(), 3)
 
+        self.test_passed = True
+
     def test_translate(self):
 
         for i in range(1000):
@@ -345,6 +377,8 @@ class TestFragment(unittest.TestCase):
 
             self.assertEqual(fragment, fragment_ref)
 
+        self.test_passed = True
+
     def test_rotate(self):
         fragment = Fragment([Atom("H", "A", 0, 0, 0),
                             Atom("Al", "B", 0, 0, 0)], "HAlHe", 3, 2, "H[Al]")
@@ -363,6 +397,8 @@ class TestFragment(unittest.TestCase):
 
             self.assertAlmostEqual(pre_dist0, post_dist0)
             self.assertAlmostEqual(pre_dist1, post_dist1)
+
+        self.test_passed = True
 
     def test_get_connectivity_matrix(self):
 
@@ -395,6 +431,8 @@ class TestFragment(unittest.TestCase):
                                                               [False, True, False, True],
                                                               [True, False, True, False]])
 
+        self.test_passed = True
+
     def test_get_standard_connectivity_matrix(self):
 
         fragment = Fragment([], "", 0, 1, "")
@@ -425,6 +463,8 @@ class TestFragment(unittest.TestCase):
                                                                        [True, False, True, False],
                                                                        [False, True, False, False],
                                                                        [True, False, False, False]])
+
+        self.test_passed = True
 
     def test_get_excluded_pairs(self):
 
@@ -472,6 +512,8 @@ class TestFragment(unittest.TestCase):
         self.assertIn([1, 3], excluded13)
         self.assertIn([0, 1], excluded14)
 
+        self.test_passed = True
+
     """
     Test the to_xyz() function of the Fragment class
     """
@@ -502,6 +544,8 @@ class TestFragment(unittest.TestCase):
         # to_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_xyz(), atom0.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom2.to_xyz() + "\n")
 
+        self.test_passed = True
+
     def test_to_standard_xyz(self):
         fragment = Fragment([], "fragment", -2, 2, "")
 
@@ -528,6 +572,8 @@ class TestFragment(unittest.TestCase):
 
         # to_standard_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_standard_xyz(), atom2.to_xyz() + "\n" + atom1.to_xyz() + "\n" + atom0.to_xyz() + "\n")
+
+        self.test_passed = True
 
     """
     Test the to_xyz() function of the Fragment class
@@ -559,6 +605,8 @@ class TestFragment(unittest.TestCase):
         # to_ghost_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_ghost_xyz(), atom0.to_ghost_xyz() + "\n" + atom1.to_ghost_xyz() + "\n" + atom2.to_ghost_xyz() + "\n")
 
+        self.test_passed = True
+
     def test_to_ghost_standard_xyz(self):
         fragment = Fragment([], "fragment", -2, 2, "")
 
@@ -586,6 +634,8 @@ class TestFragment(unittest.TestCase):
         # to_standard_ghost_xyz() should return string of 3 atoms after only 3rd atom added
         self.assertEqual(fragment.to_standard_ghost_xyz(), atom2.to_ghost_xyz() + "\n" + atom1.to_ghost_xyz() + "\n" + atom0.to_ghost_xyz() + "\n")
 
+        self.test_passed = True
+
     def test_read_xyz(self):
 
         atom0 = Atom("H", "A", 0, 0, 0)
@@ -609,6 +659,8 @@ class TestFragment(unittest.TestCase):
 
         self.assertEqual(fragment, fragment_ref)
 
+        self.test_passed = True
+
     def test_read_xyz_bad_line_format(self):
 
         # too few arguments on atom line
@@ -620,6 +672,8 @@ class TestFragment(unittest.TestCase):
 
         with self.assertRaises(XYZFormatError):
             Fragment.read_xyz("H 0 0 0 0", "fragment", -2, 2, "H", "A1")
+
+        self.test_passed = True
 
     def test_read_xyz_bad_symmetry(self):
 
@@ -636,6 +690,8 @@ class TestFragment(unittest.TestCase):
             Fragment.read_xyz("H 0 0 0\nH 0 0 0", "fragment", -2, 2, "H", "A1")
         with self.assertRaises(InconsistentValueError):
             Fragment.read_xyz("H 0 0 0\n O 0 0 0\n O 0 0 0", "fragment", -2, 2, "H", "A1B1")
+
+        self.test_passed = True
 
     def test_get_standard_order(self):
         fragment = Fragment([], "fragment", -2, 2, "")
@@ -655,6 +711,8 @@ class TestFragment(unittest.TestCase):
 
         fragment = Fragment([atom0, atom1, atom2], "fragment", -2, 2, "H[Cl][Xe]")
         self.assertEqual(fragment.get_standard_order(), [atom2, atom1, atom0])
+
+        self.test_passed = True
 
     def test_confirm_standard_order(self):
         fragment = Fragment([], "fragment", -2, 2, "")
@@ -688,6 +746,8 @@ class TestFragment(unittest.TestCase):
 
         fragment = Fragment([atom2, atom1, atom0], "fragment", -2, 2, "[Xe][Cl]H")
         self.assertTrue(fragment.confirm_standard_order())
+
+        self.test_passed = True
 
     def test_confirm_symmetry_class(self):
         fragment = Fragment([], "fragment", -2, 2, "")
@@ -728,6 +788,8 @@ class TestFragment(unittest.TestCase):
         self.assertEqual(fragment.confirm_symmetry_class()[1], "A1B2")
         self.assertEqual(fragment.confirm_symmetry_class()[2], "A1B1C1")
 
+        self.test_passed = True
+
     def test_get_standard_copy(self):
 
         atom_std1 = Atom("O", "A", 1, 1, 1)
@@ -753,6 +815,8 @@ class TestFragment(unittest.TestCase):
         frag = Fragment([atom0, atom1, atom2], "fragment", 0, 1, "C1.HO1")
 
         self.assertEqual(frag.get_standard_copy(), standard_frag)
+
+        self.test_passed = True
 
     def test_get_reorder_copy(self):
 
@@ -780,6 +844,8 @@ class TestFragment(unittest.TestCase):
 
         self.assertEqual(standard_frag.get_reorder_copy("HOC"), frag)
 
+        self.test_passed = True
+
     def test_eq_and_ne(self):
 
         atom0 = Atom("O", "A", 1, 1, 1)
@@ -806,6 +872,8 @@ class TestFragment(unittest.TestCase):
         frag4 = Fragment([atom0, atom1, atom3], "fragment", 0, 1, "O(H)H")
 
         self.assertNotEqual(frag0, frag4)
+
+        self.test_passed = True
 
 
 

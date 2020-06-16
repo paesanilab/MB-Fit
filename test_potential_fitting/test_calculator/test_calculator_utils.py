@@ -1,12 +1,16 @@
 import unittest, os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.calculator import get_calculator, Psi4Calculator, QchemCalculator, fill_energies
 from potential_fitting.exceptions import NoSuchLibraryError
 
 from potential_fitting.molecule import parse_training_set_file
 
 
-class TestCalculatorUtils(unittest.TestCase):
+class TestCalculatorUtils(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestCalculatorUtils, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
 
@@ -26,16 +30,22 @@ class TestCalculatorUtils(unittest.TestCase):
 
         self.assertIsInstance(calc, Psi4Calculator)
 
+        self.test_passed = True
+
     def test_get_calculator_qchem(self):
 
         calc = get_calculator(TestCalculatorUtils.qchem_settings_path)
 
         self.assertIsInstance(calc, QchemCalculator)
 
+        self.test_passed = True
+
     def test_get_calculator_bad_code(self):
 
         with self.assertRaises(NoSuchLibraryError):
             get_calculator(TestCalculatorUtils.bad_code_settings_path)
+
+        self.test_passed = True
 
     def test_fill_energies(self):
         fill_energies(TestCalculatorUtils.CO2_settings_path,
@@ -72,6 +82,8 @@ class TestCalculatorUtils(unittest.TestCase):
             self.assertIn(molecule, reference)
         for molecule in reference:
             self.assertIn(molecule, output)
+
+        self.test_passed = True
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestCalculatorUtils)

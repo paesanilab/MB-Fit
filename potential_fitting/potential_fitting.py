@@ -565,10 +565,12 @@ def execute_maple(settings_path, poly_dir_path):
     system.format_print("Maple executed successfully!", italics=True)
     system.format_print("Converting c polynomial files to cpp polynomial files", italics=True)
 
+    clean_maple_exe = os.path.join(this_file_path, "scripts", "clean-maple-c.pl")
+
     with open("poly-grd.c", "r") as in_file, open("poly-grd.cpp", "w") as out_file:
-        system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
+        system.call(clean_maple_exe, in_file = in_file, out_file = out_file)
     with open("poly-nogrd.c", "r") as in_file, open("poly-nogrd.cpp", "w") as out_file:
-        system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
+        system.call(clean_maple_exe, in_file = in_file, out_file = out_file)
 
     system.format_print("cpp files generated successfully!", bold=True, color=system.Color.GREEN)
 

@@ -1,6 +1,7 @@
 import unittest, os
 from glob import glob
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting import database
 from potential_fitting.exceptions import DatabaseConnectionError, CommandExecutionError
 from potential_fitting.utils import system, SettingsReader
@@ -45,7 +46,10 @@ def local_db_installed():
         return False
 
 @unittest.skipUnless(psycopg2_installed() and local_db_installed(),"psycopg2 or a local test database is not installed, so database cannot be tested.")
-class TestJobReaderAndWriter(unittest.TestCase):
+class TestJobReaderAndWriter(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestJobReaderAndWriter, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestJobReaderAndWriter.config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_user1.ini")
@@ -74,6 +78,8 @@ class TestJobReaderAndWriter(unittest.TestCase):
         db.close()
 
         system.call("rm", self.job_dir, "-r", "-f")
+
+        super().tearDown()
 
     @unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
     def test_job_writer_and_reader_qchem(self):
@@ -122,6 +128,8 @@ class TestJobReaderAndWriter(unittest.TestCase):
         for molecule in config_molecules:
             self.assertIn(molecule, train_molecules)
 
+        self.test_passed = True
+
     @unittest.skipUnless(hasPsi4(), "Psi4 is not installed and cannot be tested.")
     def test_job_writer_and_reader_psi4(self):
         database.initialize_database(TestJobReaderAndWriter.mon_settings_path,
@@ -168,6 +176,8 @@ class TestJobReaderAndWriter(unittest.TestCase):
             self.assertIn(molecule, config_molecules)
         for molecule in config_molecules:
             self.assertIn(molecule, train_molecules)
+
+        self.test_passed = True
 
 
 

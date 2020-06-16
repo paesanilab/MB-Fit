@@ -1,9 +1,13 @@
 import unittest, os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.utils import system, files
 from potential_fitting.exceptions import CommandExecutionError, CommandNotFoundError
 
-class TestSystem(unittest.TestCase):
+class TestSystem(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestSystem, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestSystem.bad_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "bad_file.txt")
@@ -36,5 +40,6 @@ class TestSystem(unittest.TestCase):
         with open(TestSystem.out_file, "r") as out_file:
             self.assertEqual(out_file.read(), "cat!\n")
 
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSystem)

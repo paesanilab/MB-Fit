@@ -1,7 +1,0 @@
-'optimized.xyz'      | optimized geometry corresponding to normal mode analysis
-'normal_modes.dat'   | input normal modes
-15 6                 | dim; dimnull
-Q 4096               | 'P' pseudorandom, 'Q' quasirandom; nconfigs
-'TS.xyz'           | output one-body configurations
-.false. .true.       | geometric, linear
-.false.              | verbose output

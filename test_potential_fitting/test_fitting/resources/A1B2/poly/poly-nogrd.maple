@@ -1,0 +1,27 @@
+    p[1] := x01+x02:
+    p[2] := x03:
+    p[3] := x02*x03+x01*x03:
+    p[4] := x02*x02+x01*x01:
+    p[5] := x01*x02:
+    p[6] := x03*x03:
+
+
+energy := 0;
+for k from 1 by 1 to 6 do
+    energy := energy + a[k]*p[k]:
+od:
+
+args := [x01, x02, x03]:
+
+energy := convert(energy, 'horner', args):
+
+energy_proc := codegen[makeproc](energy, parameters = args):
+codegen[cost](energy_proc);
+
+xxx := codegen[optimize](energy_proc):
+codegen[cost](xxx);
+
+xxx := codegen[packargs](xxx, args, x):
+xxx := codegen[optimize](xxx):
+
+codegen[C](xxx, optimized, filename="poly-nogrd.c"):

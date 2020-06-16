@@ -40,7 +40,7 @@ def apply_standard_order(settings_path, geo_path):
     return standard_settings_path, standard_geo_path
 
 
-def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis):
+def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, qm_options={}):
     """
     Optimizes the geometry of the given molecule.
 
@@ -50,14 +50,15 @@ def optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis
         opt_geo_path        - Local path to the file to write the optimized geometry to.
         method              - The method to use for this geometry optimization.
         basis               - The basis to use for this geometry optimization.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
     """
 
-    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis)
+    configurations.optimize_geometry(settings_path, unopt_geo_path, opt_geo_path, method, basis, qm_options=qm_options)
 
-def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis):
+def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, qm_options={}):
     """
     Generates the normal modes for the given molecule.
 
@@ -67,12 +68,13 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
         normal_modes_path   - Local path to the file to write the normal modes to.
         method              - The method to use for this normal modes calculation.
         basis               - The basis to use for this normal modes calculation.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         Null dimension of normal modes.
     """
     
-    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis)
+    dim_null = configurations.generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method, basis, qm_options=qm_options)
 
     return dim_null
 
@@ -323,7 +325,7 @@ def init_database(settings_path, database_config_path, configurations_path, meth
     database.initialize_database(settings_path, database_config_path, configurations_path, method, basis, cp, *tags, optimized = optimized)
 
 
-def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count = sys.maxsize, qm_options={}):
     """
     Goes through all the uncalculated energies in a database and calculates them. Will take a while. May be interrupted
     and restarted.
@@ -335,6 +337,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
         client_name         - Name of the client performing these calculations.
         tags                - Only perform calculations marked with at least one of these tags.
         calculation_count   - Maximum number of calculations to perform. Unlimited if None.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -343,9 +346,9 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
     if calculation_count is None:
         calculation_count = sys.maxsize
 
-    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count)
+    database.fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=calculation_count, qm_options=qm_options)
 
-def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize):
+def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, num_jobs=sys.maxsize, qm_options={}):
     """
     Makes a Job file for each energy that still needs to be calculated in this Database.
 
@@ -357,6 +360,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
         job_dir             - Local path to the directory to place the job files in.
         tags                - Onlt  make jobs for calculations marked with at least one of these tags.
         num_jobs            - The number of jobs to generate. Unlimted if None.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -364,7 +368,7 @@ def make_jobs(settings_path, database_config_path, client_name, job_dir, *tags, 
 
     job_handler = database.get_job_handler(settings_path)
 
-    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs)
+    job_handler.make_all_jobs(database_config_path, client_name, job_dir, *tags, num_jobs=num_jobs, qm_options=qm_options)
 
 def read_jobs(settings_path, database_config_path, job_dir, overwrite=False):
     """
@@ -418,69 +422,69 @@ def generate_training_set(settings_path, database_config_path, training_set_path
             cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max,
             deprecated_fitcode=deprecated_fitcode)
 
-def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
-    """
-    Generates a 1b training set from the energies inside a database.
-
-    ***deprecated, please use generate_training_set instead***
-
-    Specific method, basis, and cp may be specified to only use energies calculated
-    with a specific model.
-
-    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        database_config_path - .ini file containing host, port, database, username, and password.
-                    Make sure only you have access to this file or your password will be compromised!
-        training_set_path   - Local path to the file to write the training set to.
-        molecule_name       - The name of the moelcule to generate a training set for.
-        method              - Only use energies calcualted by this method.
-        basis               - Only use energies calculated in this basis.
-        cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
-                effect on 1b energies.
-        tags                - Only use energies marked with one or more of these tags.
-        e_min               - Minimum (inclusive) energy of any config to include in this training set.
-        e_max               - Maximum (exclusive) energy of any config to include in this training set.
-
-    Returns:
-        None.
-    """
-
-    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=e_min, e_bind_max=e_max, e_mon_min=e_min, e_mon_max=e_max)
-
-
-def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags,
-            e_bind_max = float('inf'), e_mon_max = float('inf')):
-    """
-    Generates a 2b training set from the energies inside a database.
-
-    ***deprecated, please use generate_training_set instead***
-
-    Specific method, basis, and cp may be specified to only use energies calculated
-    with a specific model.
-
-    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        database_config_path - .ini file containing host, port, database, username, and password.
-                    Make sure only you have access to this file or your password will be compromised!
-        training_set_path   - Local path to the file to write the training set to.
-        molecule_name       - The name of the dimer.
-        method              - Only use energies calculated by this method.
-        basis               - Only use energies calculated in this basis.
-        cp                  - Only use energies calculated with this cp.
-        tags                - Only use energies marked with one or more of these tags.
-        e_bind_max          - Maximum binding energy allowed
-        e_mon_max           - Maximum monomer deformation energy allowed
-
-    Returns:
-        None.
-    """
-    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-        cp, *tags, e_bind_min=-float('inf'), e_bind_max=e_bind_max, e_mon_min=-float('inf'), e_mon_max=e_mon_max)
+#def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
+#    """
+#    Generates a 1b training set from the energies inside a database.
+#
+#    ***deprecated, please use generate_training_set instead***
+#
+#    Specific method, basis, and cp may be specified to only use energies calculated
+#    with a specific model.
+#
+#    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
+#
+#    Args:
+#        settings_path       - Local path to the file containing all relevent settings information.
+#        database_config_path - .ini file containing host, port, database, username, and password.
+#                    Make sure only you have access to this file or your password will be compromised!
+#        training_set_path   - Local path to the file to write the training set to.
+#        molecule_name       - The name of the moelcule to generate a training set for.
+#        method              - Only use energies calcualted by this method.
+#        basis               - Only use energies calculated in this basis.
+#        cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
+#                effect on 1b energies.
+#        tags                - Only use energies marked with one or more of these tags.
+#        e_min               - Minimum (inclusive) energy of any config to include in this training set.
+#        e_max               - Maximum (exclusive) energy of any config to include in this training set.
+#
+#    Returns:
+#        None.
+#    """
+#
+#    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+#        cp, *tags, e_bind_min=e_min, e_bind_max=e_max, e_mon_min=e_min, e_mon_max=e_max)
+#
+#
+#def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags,
+#            e_bind_max = float('inf'), e_mon_max = float('inf')):
+#    """
+#    Generates a 2b training set from the energies inside a database.
+#
+#    ***deprecated, please use generate_training_set instead***
+#
+#    Specific method, basis, and cp may be specified to only use energies calculated
+#    with a specific model.
+#
+#    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
+#
+#    Args:
+#        settings_path       - Local path to the file containing all relevent settings information.
+#        database_config_path - .ini file containing host, port, database, username, and password.
+#                    Make sure only you have access to this file or your password will be compromised!
+#        training_set_path   - Local path to the file to write the training set to.
+#        molecule_name       - The name of the dimer.
+#        method              - Only use energies calculated by this method.
+#        basis               - Only use energies calculated in this basis.
+#        cp                  - Only use energies calculated with this cp.
+#        tags                - Only use energies marked with one or more of these tags.
+#        e_bind_max          - Maximum binding energy allowed
+#        e_mon_max           - Maximum monomer deformation energy allowed
+#
+#    Returns:
+#        None.
+#    """
+#    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
+#        cp, *tags, e_bind_min=-float('inf'), e_bind_max=e_bind_max, e_mon_min=-float('inf'), e_mon_max=e_mon_max)
 
 def generate_poly_input(settings_path, molecule_in, in_file_path, virtual_sites=["X", "Y", "Z"]):
     """
@@ -499,7 +503,7 @@ def generate_poly_input(settings_path, molecule_in, in_file_path, virtual_sites=
 
     polynomials.generate_input_poly(settings_path, molecule_in, in_file_path, virtual_sites=virtual_sites)
 
-def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, generate_direct_gradients=False,
+def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, generate_direct_gradients=True,
                          num_gradient_terms_per_line=1):
     """
     Generates polynomial input for maple and some ".cpp" and ".h" polynomial files.
@@ -561,24 +565,26 @@ def execute_maple(settings_path, poly_dir_path):
     system.format_print("Maple executed successfully!", italics=True)
     system.format_print("Converting c polynomial files to cpp polynomial files", italics=True)
 
+    clean_maple_exe = os.path.join(this_file_path, "scripts", "clean-maple-c.pl")
+
     with open("poly-grd.c", "r") as in_file, open("poly-grd.cpp", "w") as out_file:
-        system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
+        system.call(clean_maple_exe, in_file = in_file, out_file = out_file)
     with open("poly-nogrd.c", "r") as in_file, open("poly-nogrd.cpp", "w") as out_file:
-        system.call("clean-maple-c.pl", in_file = in_file, out_file = out_file)
+        system.call(clean_maple_exe, in_file = in_file, out_file = out_file)
 
     system.format_print("cpp files generated successfully!", bold=True, color=system.Color.GREEN)
 
     os.chdir(original_dir)
 
-def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
-                                     distance_between=20,
-                                     use_published_polarizabilities=True,
-                                     method="wb97m-v",
-                                     basis="aug-cc-pvtz",
-                                     num_digits=4,
-                                     virtual_sites=["X", "Y", "Z"]):
+def get_system_properties(settings_file, config_path, geo_paths,
+                          distance_between=20,
+                          use_published_polarizabilities=True,
+                          method="wb97m-v",
+                          basis="aug-cc-pvtz",
+                          num_digits=4,
+                          virtual_sites=["X", "Y", "Z"]):
     """
-        Generates the config file needed to perform a fit.
+        Obtains information such as charges and pols that will be needed for the fitting.
 
         Qchem is required for this step to work.
 
@@ -601,118 +607,121 @@ def generate_fitting_config_file_new(settings_file, config_path, geo_paths,
                     Default: ["X", "Y", "Z"]
 
         Returns:
-            None.
+            charges             - List with the charges of each monomer [[mon1],[mon2],..]
+            pols                - List with the pols of each monomer [[mon1],[mon2],..]
+            C6                  - List with the C6 constants
         """
 
-    fitting.generate_fitting_config_file_new(settings_file, config_path, geo_paths,
-                                             distance_between=distance_between,
-                                             use_published_polarizabilities=use_published_polarizabilities,
-                                             method=method,
-                                             basis=basis,
-                                             num_digits=num_digits,
-                                             virtual_sites=virtual_sites)
+    chg, pol, c6 = fitting.get_system_properties(settings_file, config_path, geo_paths,
+                                  distance_between=distance_between,
+                                  use_published_polarizabilities=use_published_polarizabilities,
+                                  method=method,
+                                  basis=basis,
+                                  num_digits=num_digits,
+                                  virtual_sites=virtual_sites)
+    return chg, pol, c6
 
-
-def generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths = [], config_2b_paths = [], distance_between = 20, use_published_polarizabilities = True,
-                                 method="wb97m-v",
-                                 basis="aug-cc-pvtz"):
+def write_config_file(settings_file, config_path, charges,
+                      pols, geo_paths, C6 = [0.0], polfacs = None,
+                      d6 = None, A = None,
+                      kmin = 0.0, kmax = 50.0, dmin = 0.0, dmax = 50.0, 
+                      bmin = 0.0, bmax = 10.0,
+                      kmin_init = 1.0, kmax_init = 4.0, dmin_init = 1.0, dmax_init = 4.0,
+                      bmin_init = 1.0, bmax_init = 4.0,
+                      r_in=7.0, r_out=8.0,
+                      energy_range = 20, alpha = 0.0005,
+                      virtual_sites_label = ['X','Y','Z'],
+                      var_intra = "exp", var_inter = "exp", var_virtual_sites = "coul"):
     """
-        Generates the config file needed to perform a fit.
+        Writes the config file.
 
-        Qchem is required for this step to work for 1 and 2 b.
-
-        For 1B, a qchem calcualtion is performed and charges, polarizabilities, and c6 constants are read from the output.
-
-        For 2B, a chem calculation is performed and intermolecular c6 cosntants are read from it.
-        Charges, polarizabilities, and intramolecular c6 are read from the config_1b_paths.
-
-        For 3B and above, charges, polarizabilities, and intramolecular c6 constants are read from the config_1b_paths.
-        Intermolecular c6 constants are read from config_2b_paths.
+        Qchem is required for this step to work.
 
         Args:
             settings_path       - Local path to the file containing all relevent settings information.
             config_path         - Local path to file to write the config file to.
+            charges             - List with the charges of each monomer [[mon1],[mon2],..]
+            pols                - List with the pols of each monomer [[mon1],[mon2],..]
             geo_paths           - List of local paths to the optimized geometries to include in this fit config.
-            config_1b_paths     - List of local paths to 1b config files. Only used for 2B and above. Should be one
-                    config for each monomer.
-            config_2b_paths     - List of local paths to 2b config files. Only used for 3B and above. Should be one
-                    config for each combination of monomers.
-            distance_between    - The Distance between each geometry in the qchem calculation. If the qchem calculation
-                    does not converge, try different values of this.
-            use_published_polarizabilities - use published polarizabilites from
-                    DOI: 10.1080/00268976.2018.1535143 rather than the ones Marc gave me to use.
-            method              - Method to use to calculate charges, polarizabilites, and c6 constants.
-                    Default: wb97m-v
-            basis              - Basis to use to calculate charges, polarizabilites, and c6 constants.
-                    Default: aug-cc-pvtz
+            C6                  - List with the C6 constants
+                    Default: [0.0]
+            polfacs             - List with the polarizability factors of each monomer [[mon1],[mon2],..]
+                    Default: None
+            d6                  - List with the d6 constants
+                    Default: None
+            A                   - List with the buckingham A parameters
+                    Default:  None
+            kmin                - Minimum value of k allowed while fitting
+                    Default: 0.0
+            kmax                - Maximum value of k allowed while fitting
+                    Default: 50.0
+            dmin                - Minimum value of d allowed while fitting
+                    Default: 0.0
+            dmax                - Maximum value of d allowed while fitting
+                    Default: 50.0
+            bmin                - Minimum value of b allowed while fitting
+                    Default: 0.0
+            bmax                - Maximum value of b allowed while fitting
+                    Default: 10.0
+            kmin_init           - Minimum value of k allowed in initialization
+                    Default: 1.0
+            kmax_init           - Maximum value of k allowed in initialization
+                    Default: 4.0
+            dmin_init           - Minimum value of d allowed in initialization
+                    Default: 1.0
+            dmax_init           - Maximum value of d allowed in initialization
+                    Default: 4.0
+            bmin_init           - Minimum value of b allowed in initialization
+                    Default: 1.0
+            bmax_init           - Maximum value of b allowed in initialization
+                    Default: 4.0
+            r_in                - Distance at which polynomials start to decay to 0
+                    Default: 7.0
+            r_out               - Distance at which polynomials are 0
+                    Default: 8.0
+            energy_range        - Value of DE in the weight expressions: w = (DE/(E-Emin+DE))^2
+                    Default: 20.0
+            alpha               - Ridge regression parameter
+                    Default: 0.0005
+            virtual_sites_label - List of Symmetry labels that are virtual sites.
+                    Default: ["X", "Y", "Z"]
+            var_intra           - Type of variable used for intramolecular distances.
+                                  exp = exp(-kr)
+                                  exp0 = exp(-k(r-r0))
+                                  coul = exp(-kr)/r
+                                  coul0 = exp(-k(r-r0))/r
+                    Default: exp
+            var_inter           - Type of variable used for intermolecular distances.
+                                  exp = exp(-kr)
+                                  exp0 = exp(-k(r-r0))
+                                  coul = exp(-kr)/r
+                                  coul0 = exp(-k(r-r0))/r
+                    Default: exp
+            var_virtual_sites   - Type of variable used for distances involving polynomial virtual sites.
+                                  exp = exp(-kr)
+                                  exp0 = exp(-k(r-r0))
+                                  coul = exp(-kr)/r
+                                  coul0 = exp(-k(r-r0))/r 
+                    Default: coul
 
         Returns:
             None.
-        """
-
-    fitting.generate_fitting_config_file(settings_file, config_path, geo_paths, config_1b_paths=config_1b_paths,
-            config_2b_paths=config_2b_paths, distance_between=distance_between, use_published_polarizabilities=use_published_polarizabilities,
-            method=method, basis=basis)
-    
-def generate_1b_fit_code(settings_path, config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path):
-    """
-    Generates the fit code based on the polynomials and config file for a monomer.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        config_path         - Local path to the monomer config file to read config info from.
-        poly_in_path        - Local path to the file to read the polynomial input from. Name of file should be in
-                the format A1B2.in, it is ok to have extra directories prior to file name (thisplace/thatplace/A3.in).
-        poly_dir_path       - Local path to the directory where the polynomial ".h" and ".cpp" files are files are.
-        order               - The order of the polynomial to in poly_dir_path.
-        fit_dir_path        - Local path to the directory to write the fit code in.
-
-    Returns:
-        None.
     """
 
-    fitting.prepare_1b_fitting_code(config_path, molecule_in, poly_in_path, poly_dir_path, order, fit_dir_path)
+    fitting.write_config_file(settings_file, config_path, charges,
+                              pols, geo_paths, C6, polfacs,
+                              d6, A,
+                              kmin, kmax, dmin, dmax, bmin, bmax,
+                              kmin_init, kmax_init, dmin_init, dmax_init,
+                              bmin_init, bmax_init, r_in, r_out,
+                              energy_range, alpha,
+                              virtual_sites_label,
+                              var_intra, var_inter, var_virtual_sites)
 
-def generate_2b_ttm_fit_code(settings_path, config_path, molecule_in, fit_dir_path):
-    """
-    Generates the fit TTM fit code for a dimer.
 
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        config_path         - Local path to the dimer config file to read config info from.
-        molecule_in         - A String of fromat "A1B2". Same as poly_in_path but without ".in".
-        fit_dir_path        - Local path to the directory to write the ttm fit code in.
 
-    Returns:
-        None.
-    """
 
-    this_file_path = os.path.dirname(os.path.abspath(__file__))
-
-    original_dir = os.getcwd()
-
-    files.init_directory(fit_dir_path)
-
-    os.chdir(fit_dir_path)
-
-    codes_path = os.path.join(this_file_path, "..", "codes", "2b-codes")
-    
-    # FOR SOME REASON THE SECOND LINE WORKS BUT NOT THE FIRST, WHY? WHO KNOWS.
-    # system.call("cp", os.path.join(codes_path, "template/*"), ".")
-    os.system("cp " + os.path.join(codes_path, "template", "*") + " .")
-
-    ttm_script_path = os.path.join(codes_path, "get_2b_TTM_codes.py")
-
-    if not settings_path.startswith("/"):
-        settings_path = "{}/{}".format(original_dir, settings_path)
-    if not config_path.startswith("/"):
-        config_path = "{}/{}".format(original_dir, config_path)
-
-    system.call("python", ttm_script_path, settings_path, config_path, molecule_in)
-
-    os.chdir(original_dir)   
- 
-def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
+def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
     """
     Generates the fit code based on the polynomials for a system
 
@@ -723,6 +732,7 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
         poly_path           - Local path to directory where polynomial files are.
         poly_order          - The order of the polynomial in poly_path.
         fit_dir_path        - Local path to directory to generate fit code in.
+        use_direct          - If true, it will use the direct polynomials instead of the mapleoptimized
 
     Returns:
         None.
@@ -733,19 +743,15 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path)
+    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
 
-
-def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path):
+def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
     """
-    Generates the fit code based on the polynomials for a monomer
+    Generates the TTM fit code based on settings and system configuration
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.
         config_path         - Local path to the dimer config file.
-        poly_in_path        - Local path to the the A3B2.in type file to read polynomial input from.
-        poly_path           - Local path to directory where polynomial files are.
-        poly_order          - The order of the polynomial in poly_path.
         fit_dir_path        - Local path to directory to generate fit code in.
 
     Returns:
@@ -757,8 +763,8 @@ def generate_2b_fit_code(settings_path, config_path, poly_in_path, poly_path, po
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_2b_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path)
- 
+    fitting.prepare_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path)
+
 def compile_fit_code(settings_path, fit_dir_path):
     """
     Compiles the fit code in the given directory.
@@ -776,7 +782,7 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     original_dir = os.getcwd()
 
-    os.chdir(fit_dir_path)
+    os.chdir(fit_dir_path + "/src/")
 
     system.call("make", "clean")
     system.call("make")
@@ -785,322 +791,32 @@ def compile_fit_code(settings_path, fit_dir_path):
 
     system.format_print("Fit code compilation successful!", bold=True, color=system.Color.GREEN)
 
-def perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
-
-    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.YELLOW)
-
-    settings = SettingsReader(settings_path)
-
-    # init the required files
-    files.init_directory(fit_dir_path)
-    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb", "best-fit.log"))
-    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb" "fit.log"))
-
-    # keeps tracks of the number of attempts to generate a fit
-    attempts = 1
-
-    # generate an initial fit
-    with open(best_fit_log_path, "w") as best_fit_log:
-        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
-        os.rename("fit-1b.cdl", "best-fit-1b.cdl")
-        os.rename("fit-1b-initial.cdl", "best-fit-1b-initial.cdl")
-        os.rename("correlation.dat", "best-correlation.dat")
-
-    with open(best_fit_log_path, "r") as best_fit_log:
-        best_log_lines = best_fit_log.readlines()
-
-    best_rmsd = float(best_log_lines[-6].split()[2])
-
-    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
-
-    while(attempts < num_fits):
-
-        # generate a new fit
-        with open(fit_log_path, "w") as fit_log:
-            system.call(fit_code_path, training_set_path, out_file = fit_log)
-  
-        with open(fit_log_path, "r") as fit_log:
-            log_lines = fit_log.readlines()
-
-        rmsd = float(log_lines[-6].split()[2])
-
-        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
-
-        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
-
-        # if the new fit is better than the old fit, replace the best log and best cdl files
-        if rmsd < best_rmsd:
-            system.format_print("Replaced previous best fit with most recent one.", italics=True)
-
-            os.rename(fit_log_path, best_fit_log_path)
-            os.rename("fit-1b.cdl", "best-fit-1b.cdl")
-            os.rename("fit-1b-initial.cdl", "best-fit-1b-initial.cdl")
-            os.rename("correlation.dat", "best-correlation.dat")
-
-            best_rmsd = rmsd
-            
-        attempts += 1
-
-        system.format_print("\n", italics=True)
-
-    # remove the most recent fit file
-    try:
-        os.remove(fit_log_path)
-        os.remove("fit-1b.cdl")
-        os.remove("fit-1b-initial.cdl")
-        os.remove("correlation.dat")
-    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
-    except FileNotFoundError:
-        pass
-
-    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
-
-
-def create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
-    
-    system.call("ncgen", "-o", fitted_nc_path, "best-fit-1b.cdl")
-
-    os.rename("best-fit-1b.cdl", os.path.join(fit_dir_path, "fit-1b.cdl"))
-    os.rename("best-fit-1b-initial.cdl", os.path.join(fit_dir_path, "fit-1b-initial.cdl"))
-    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-
-
-def fit_1b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
-    """
-    Fits a given 1b training set using a given 1b fit code.
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
-                by compile_fit_code.
-        training_set_path   - Local path to the file to read the training set from.
-        fit_dir_path        - Local path to the directory to write the ".cdl" and ".dat" files created by this fit.
-        fitted_nc_path      - Local path to the file to write the final fitted ".nc" to.
-        num_fits            - Performs this many fits and then gives only the best one.
-
-    Returns:
-        None
-    """
-
-    perform_1b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
-    create_1b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
-
-
-def perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
-
-    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.GREEN)
-
-    settings = SettingsReader(settings_path)
-
-    files.init_directory(fit_dir_path)
-
-    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "best_fit.log"))
-    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "ttm", "fit.log"))
-
-    attempts = 1
-    with open(best_fit_log_path, "w") as best_fit_log:
-        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
-        os.rename("individual_terms.dat", "best-individual_terms.dat")
-        os.rename("ttm-params.txt", "best-ttm-params.txt")
-        os.rename("correlation.dat", "best-correlation.dat")
-
-    with open(best_fit_log_path, "r") as best_fit_log:
-        best_log_lines = best_fit_log.readlines()
-
-    best_rmsd = float(best_log_lines[-4].split()[2])
-
-    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
-
-    while(attempts < num_fits):
-
-        with open(fit_log_path, "w") as fit_log:
-            system.call(fit_code_path, training_set_path, out_file = fit_log)
-        
-        with open(fit_log_path, "r") as fit_log:
-            log_lines = fit_log.readlines()
-
-        rmsd = float(log_lines[-4].split()[2])
-
-        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
-
-        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
-
-        if rmsd < best_rmsd:
-
-            system.format_print("Replaced previous best fit with most recent one.")
-
-            os.rename(fit_log_path, best_fit_log_path)
-            os.rename("individual_terms.dat", "best-individual_terms.dat")
-            os.rename("ttm-params.txt", "best-ttm-params.txt")
-            os.rename("correlation.dat", "best-correlation.dat")
-
-            best_rmsd = rmsd
-            
-
-        attempts += 1
-
-        system.format_print("\n", italics=True)
-
-    # remove the most recent fit file
-    try:
-        os.remove(fit_log_path)
-        os.remove("individual_terms.dat")
-        os.remove("ttm-params.txt")
-        os.remove("correlation.dat")
-    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
-    except FileNotFoundError:
-        pass
-
-    os.rename("best-individual_terms.dat", os.path.join(fit_dir_path, "individual_terms.dat"))
-    os.rename("best-ttm-params.txt", os.path.join(fit_dir_path, "ttm-params.txt"))
-    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-
-    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
-
-def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
-    
-    # read d6 and A constants from ttm output file
-    with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
-        A = [float(a) for a in ttm_file.readline().split()]
-        d6 = [float(d) for d in ttm_file.readline().split()]
-
-    # write d6 and A to the config.ini file
-    lines = []
-    with open(config_path, "r") as config_file:
-        for line in config_file:
-            lines.append(line)
-
-    found_A = False
-    with open(config_path, "w") as config_file:
-        for line in lines:
-            if line.startswith("A = "):
-                found_A = True
-            if not line.startswith("d6 = "):
-                config_file.write(line)
-
-            else:
-                config_file.write("d6 = {}\n".format([[], [], d6]))
-
-        if not found_A:
-            config_file.write("A = {}\n".format([[], [], A]))
-
-def fit_2b_ttm_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, config_path, num_fits = 10):
-    """
-    Fits a given 2b training set using a given 2b ttm fit code
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        fit_code_path       - Local path to the fit code with which to fit the training set. Generated in fit_dir_path
-                by compile_fit_code.
-        training_set_path   - Local path to the file to read the training set from.
-        fit_dir_path        - the directory where the fit log and other files created by the fit go
-        config_path         - Local path to the ".ini" file to write A6 and d6 constants to.
-        num_fits            - Performs this many fits and then gives only the best one.
-
-    Returns:
-        None
-    """
-
-    perform_2b_ttm_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
-    add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path)
-
-
-def perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = 10):
-
-    system.format_print("Performing {} fits from which the best will be chosen...".format(num_fits), bold=True, color=system.Color.YELLOW)
-    
-    settings = SettingsReader(settings_path)
-
-    # init the required files
-    files.init_directory(fit_dir_path)
-    best_fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb", "best-fit.log"))
-    fit_log_path = files.init_file(os.path.join(settings.get("files", "log_path"), "mb" "fit.log"))
-
-    # keeps tracks of the number of attempts to generate a fit
-    attempts = 1
-
-    # generate an initial fit
-    with open(best_fit_log_path, "w") as best_fit_log:
-        system.call(fit_code_path, training_set_path, out_file = best_fit_log)
-        os.rename("fit-2b.cdl", "best-fit-2b.cdl")
-        os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
-        os.rename("correlation.dat", "best-correlation.dat")
-
-    with open(best_fit_log_path, "r") as best_fit_log:
-        best_log_lines = best_fit_log.readlines()
-
-    best_rmsd = float(best_log_lines[-6].split()[2])
-
-    system.format_print("Completed first fit with rmsd {}.\n".format(best_rmsd), italics=True)
-
-    while(attempts < num_fits):
-
-        # generate a new fit
-        with open(fit_log_path, "w") as fit_log:
-            system.call(fit_code_path, training_set_path, out_file = fit_log)
-  
-        with open(fit_log_path, "r") as fit_log:
-            log_lines = fit_log.readlines()
-
-        rmsd = float(log_lines[-6].split()[2])
-
-        system.format_print("Completed fit number {} with rmsd {}.".format(attempts, rmsd), italics=True)
-
-        system.format_print("Current best fit has rmsd {}.".format(best_rmsd), italics=True)
-
-        # if the new fit is better than the old fit, replace the best log and best cdl files
-        if rmsd < best_rmsd:
-            system.format_print("Replaced previous best fit with most recent one.", italics=True)
-
-            os.rename(fit_log_path, best_fit_log_path)
-            os.rename("fit-2b.cdl", "best-fit-2b.cdl")
-            os.rename("fit-2b-initial.cdl", "best-fit-2b-initial.cdl")
-            os.rename("correlation.dat", "best-correlation.dat")
-
-            best_rmsd = rmsd
-            
-        attempts += 1
-
-        system.format_print("\n", italics=True)
-
-    # remove the most recent fit file
-    try:
-        os.remove(fit_log_path)
-        os.remove("fit-2b.cdl")
-        os.remove("fit-2b-initial.cdl")
-        os.remove("correlation.dat")
-    # in the case that there is no most recent fit file because the last fit was the best fit, do nothing
-    except FileNotFoundError:
-        pass
-
-    system.format_print("Completed {} fits.".format(num_fits), bold=True, color=system.Color.GREEN)
-
-def create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path):
-    
-    system.call("ncgen", "-o", fitted_nc_path, "best-fit-2b.cdl")
-
-    os.rename("best-fit-2b.cdl", os.path.join(fit_dir_path, "fit-2b.cdl"))
-    os.rename("best-fit-2b-initial.cdl", os.path.join(fit_dir_path, "fit-2b-initial.cdl"))
-    os.rename("best-correlation.dat", os.path.join(fit_dir_path, "correlation.dat"))
-
-def fit_2b_training_set(settings_path, fit_code_path, training_set_path, fit_dir_path, fitted_nc_path, num_fits = 10):
-    """
-    Fits the fit code to a given training set
-
-    Args:
-        settings_path       - Local path to the file containing all relevent settings information.
-        fit_code            - Local path to the code to fit.
-        training_set        - Local path to the training set to fit the code to.
-        fit_dir_path        - Local path to the directory where the .cdl and .dat files will end up.
-        fitted_nc_path      - Local path to file to write final fitted ".nc" file to.
-        num_fits            - Performs this many fits and then gives only the best one.
-
-    Returns:
-        None
-    """
-
-    perform_2b_fits(settings_path, fit_code_path, training_set_path, fit_dir_path, num_fits = num_fits)
-    create_2b_nc_file(settings_path, fit_dir_path, fitted_nc_path)
+#def add_A_and_b_to_config_file(settings_path, fit_dir_path, config_path):
+#    
+#    # read d6 and A constants from ttm output file
+#    with open(os.path.join(fit_dir_path, "ttm-params.txt"), "r") as ttm_file:
+#        A = [float(a) for a in ttm_file.readline().split()]
+#        d6 = [float(d) for d in ttm_file.readline().split()]
+#
+#    # write d6 and A to the config.ini file
+#    lines = []
+#    with open(config_path, "r") as config_file:
+#        for line in config_file:
+#            lines.append(line)
+#
+#    found_A = False
+#    with open(config_path, "w") as config_file:
+#        for line in lines:
+#            if line.startswith("A = "):
+#                found_A = True
+#            if not line.startswith("d6 = "):
+#                config_file.write(line)
+#
+#            else:
+#                config_file.write("d6 = {}\n".format([[], [], d6]))
+#
+#        if not found_A:
+#            config_file.write("A = {}\n".format([[], [], A]))
 
 
 def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=20, alpha=0.0005, num_fits=10, ttm=False,
@@ -1139,11 +855,11 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
         os.mkdir(fit_folder_prefix)
 
     if ttm:
-        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b-ttm".format(nb))
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "bin/fit-{}b-ttm".format(nb))
     elif over_ttm:
-        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b-over-ttm".format(nb))
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "bin/fit-{}b-over-ttm".format(nb))
     else:
-        fit_executable_path = os.path.join(workdir, fit_dir_path, "fit-{}b".format(nb))
+        fit_executable_path = os.path.join(workdir, fit_dir_path, "bin/fit-{}b".format(nb))
 
     # initialize indexes
     fit_index = 1
@@ -1162,7 +878,13 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
             training_set_basename = os.path.basename(training_set_path)
 
             # Link the training set to the fit folder
-            system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
+            if training_set_path.startswith('/'):
+                # we have an absolute path
+                system.call("ln", "-s", training_set_path, training_set_basename)
+            else:
+                # this is a relative path to working directory
+                system.call("ln", "-s", "{}/{}".format(workdir, training_set_path), training_set_basename)
+
             # Create bash script that will run the fit
             with open("run_fit.sh",'w') as my_bash:
                 my_bash.write("#!/bin/bash\n")
@@ -1211,7 +933,7 @@ def execute_fits(settings_path, fits_path):
 
     os.chdir(workdir)
     
-def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
+def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc", fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Looks through all log files in all fit directories in the log path and finds the best fit.
 
@@ -1224,6 +946,7 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
         settings_path       - Local path to the file containing all relevent settings information.
         fits_path           - Local path to the directory to create the fits in.
         fitted_nc_path      - Generate a .nc file with the parameters for the best fit at this location.
+        fitted_ttmnrg_params - Rename the output where the TTM-nrg params are to this name
 
     Returns:
         None.
@@ -1313,13 +1036,15 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc"):
     nb = len(settings.get("molecule","names").split(","))
     if os.path.exists("fit-" + str(nb) + "b.cdl"):
         system.call("ncgen", "-o", fitted_nc_path, "fit-" + str(nb) + "b.cdl")
+    elif os.path.exists("ttm-nrg_params.dat") and fitted_ttmnrg_params != "ttm-nrg_params.dat":
+        os.system("mv ttm-nrg_params.dat " + fitted_ttmnrg_params)
 
     # Report best RMSD
     print("Best fit found has a weighted RMSD of {} kcal/mol, a low energy RMSD of {} kcal/mol, and a maximum error in the low energy training set of {} kcal/mol".format(best_results[2], best_results[4], best_results[5]))
 
     os.chdir(workdir)
 
-def update_config_with_ttm(settings_path, fits_path, config_path):
+def update_config_with_ttm(settings_path, fits_path, config_path, fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
     Updates a fit config.ini file with the A and d constants from the best ttm fit.
 
@@ -1329,6 +1054,8 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
         settings_path       - Local path to the file containing all relevent settings information.
         fits_path           - Local path to the directory to create the fits in.
         config_path         - Local path to the config file to update.
+        fitted_ttmnrg_params - Name of the output where the TTM-nrg params
+
 
     Returns:
         None.
@@ -1337,7 +1064,7 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
     workdir = os.getcwd()
     fit_folder_prefix = os.path.join(workdir, fits_path)
 
-    with open(fit_folder_prefix + "/best_fit/ttm-nrg_params.dat", 'r') as ttm_file:
+    with open(fit_folder_prefix + "/best_fit/" + fitted_ttmnrg_params, 'r') as ttm_file:
         a_buck = [float(a) for a in ttm_file.readline().strip().split()]
         b_buck = [float(b) for b in ttm_file.readline().strip().split()]
 
@@ -1347,13 +1074,125 @@ def update_config_with_ttm(settings_path, fits_path, config_path):
     config.write(config_path)
 
 
+def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, mbnrg_fits_path = None, degree = 1, MBX_HOME=None, version="v1",
+                            virtual_sites=["X", "Y", "Z"]):
+    """
+    Creates the pieces of code that will be needed in MBX to use this potential
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        config_file         - Local path to the config file to update.
+        mon_ids             - List with the monomer ids that will be used in MBX to identify the monomers added
+        do_ttmnrg           - If true, TTM-nrg will also be added. Should be used only when doing a 2b fit.
+        mbnrg_fits_path     - Path to the folder that contains the mb-nrg fits. It is expected to have a "best_fit" folder inside that one.
+        degree              - Order of the polynomial (if any)
+        MBX_HOME            - If defined, the pieces of code will be automatically added to MBX, and the necessary files will also be copied
+        version             - iString with the extension to the polynomial and namespaces that will be added to differentiate between different versions of the same monomer fit.
+        virtual_sites       - List of the caracters that represent virtual sites (not real atoms) used in the polynomials (i.e., lone pairs)
+
+    Returns:
+        None.
+    """
+
+    fitting.generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version, virtual_sites)
+
+def calculate_model_energies(settings_path, fitting_code_dir_path, fits_path, configurations,
+                             ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
+                             fitted_ttmnrg_params = "ttm-nrg_params.dat"):
+    """
+    Returns a list with the energies of each configuration in configurations
+
+    Args:
+        settings_path         - Local path to the file containing all relevent settings information.
+        fitting_code_dir_path - Local path to the directory containing the compiled fitcode.
+        fits_path             - Local path to folder containing the fits
+        configurations        - Configurations to evaluate.
+        ttm                   - True if these are ttm fits. False otherwise.
+        over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
+        nc_path               - Netcdf file with the parameters for the best fit.
+        fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
+    """
+
+    # Get information
+    workdir = os.getcwd()
+    settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
+
+    if ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
+    elif over_ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+    else:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
 
 
+    eval_obj = fitting.Evaluator(settings, path_to_eval)
+
+    fit_energies = eval_obj.calculate_energies(path_to_params, configurations, is_training_format = False)
+    return fit_energies
+
+def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, training_set,
+                         split_energy = None, 
+                         min_energy_plot = 0.0, max_energy_plot = 50.0,
+                         correlation_prefix = "correlation",
+                         correlation_directory = "correlation",
+                         ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
+                         fitted_ttmnrg_params = "ttm-nrg_params.dat"):
+    """
+    Generates correltation data for the training/test set passed as argument
+
+    Args:
+        settings_path         - Local path to the file containing all relevent settings information.
+        fitting_code_dir_path - Local path to the directory containing the compiled fitcode.
+        fits_path             - Local path to folder containing the fits
+        training_set          - Configurations to evaluate. They need the binding energy and n-b energy in this order in the comment line.
+        split_energy          - If not None, will split the correlation plot in two sets, low and high, depending on the value of the variable.
+        min_energy_plot       - Lower bound of the energy in the plot
+        max_energy_plot       - Upper bound of the energy in the plot
+        correlation_prefix    - Prefix for the correlation files that will be generated.
+        correlation_directory - Directory where all the correlation files will be put.
+        ttm                   - True if these are ttm fits. False otherwise.
+        over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
+        nc_path               - Netcdf file with the parameters for the best fit.
+        fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
+    """
+
+    # Get information
+    workdir = os.getcwd()
+    settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
+
+    corr_folder_prefix = os.path.join(workdir, correlation_directory)
+    if not os.path.exists(corr_folder_prefix):
+        os.mkdir(corr_folder_prefix)
+
+    if ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit",fitted_ttmnrg_params)
+    elif over_ttm:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b-over-ttm".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
+    else:
+        path_to_eval = os.path.join(workdir, fitting_code_dir_path, "bin/eval-{}b".format(nb))
+        path_to_params = os.path.join(workdir, fits_path, "best_fit", nc_path)
 
 
+    eval_obj = fitting.Evaluator(settings, path_to_eval)
 
+    eval_obj.calculate_energies(path_to_params, training_set)
 
+    correlation_file = correlation_prefix + ".dat"
+    energies = eval_obj.write_correlation_file(correlation_file = correlation_file , split_energy = split_energy)
 
+    os.system("mv *" +  correlation_file + " " + corr_folder_prefix)
 
+    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix, min_e = min_energy_plot, max_e = max_energy_plot)
+
+    os.system("mv *.png *.pdf " + " " + corr_folder_prefix)
+
+    return energies
 
 

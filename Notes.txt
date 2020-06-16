@@ -1,0 +1,2 @@
+Make sure that the user understands that using the job maker and reader requires them to run the maker, run the jobs, and read, in this order, no matter what happens in between, even if one function fails.
+This should be added to the docs

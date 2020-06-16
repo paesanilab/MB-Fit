@@ -19,6 +19,9 @@ def hasQchem():
 # this skips this entire test class if qchem is not isntalled.
 @unittest.skipUnless(hasQchem(), "Qchem is not installed and cannot be tested.")
 class TestQchemCalculator(TestCalculator):
+    def __init__(self, *args, **kwargs):
+        super(TestQchemCalculator, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     # set up before each test case
     def setUp(self):
@@ -39,6 +42,8 @@ class TestQchemCalculator(TestCalculator):
             self.assertFalse(self.calculator2.is_installed())
             self.assertFalse(self.calculator3.is_installed())
             self.assertFalse(self.calculator4.is_installed())
+
+        self.test_passed = True
 
     def test_calculate_energy(self):
 
@@ -67,6 +72,8 @@ class TestQchemCalculator(TestCalculator):
         ref_energy, ref_log_path = -92.7130711210, "reference/36c6e9c4_2019-02-12_17-18-21.567344.out"
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Energy calculation failed. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
+
+        self.test_passed = True
 
     def test_optimize_geometry(self):
         
@@ -128,14 +135,18 @@ class TestQchemCalculator(TestCalculator):
 
         self.assertTrue(math.test_difference_under_threshold(energy, ref_energy, 1e-5), "Geometry optimization returned incorrect energy. Reference: {}, calculated: {}. Compare log files reference: {} and calculated: {}.".format(ref_energy, energy, ref_log_path, log_path))
 
-    def test_find_frequencies(self):
+        self.test_passed = True
+
+    def test_calculate_frequencies(self):
         
-        self.calculator1.find_frequencies(TestCalculator.CO2, TestCalculator.model1)
+        self.calculator1.calculate_frequencies(TestCalculator.CO2, TestCalculator.model1)
 
-        self.calculator2.find_frequencies(TestCalculator.CN, TestCalculator.model1)
+        self.calculator2.calculate_frequencies(TestCalculator.CN, TestCalculator.model1)
 
-        self.calculator3.find_frequencies(TestCalculator.CO2, TestCalculator.model2)
+        self.calculator3.calculate_frequencies(TestCalculator.CO2, TestCalculator.model2)
 
-        self.calculator4.find_frequencies(TestCalculator.CN, TestCalculator.model2)
+        self.calculator4.calculate_frequencies(TestCalculator.CN, TestCalculator.model2)
+
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestQchemCalculator)

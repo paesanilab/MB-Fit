@@ -35,7 +35,7 @@ class QchemCalculator(Calculator):
         except CommandExecutionError:
             return False
 
-    def create_input_file(self, file_path, molecule, model, job, fragment_indicies = None):
+    def create_input_file(self, file_path, molecule, model, job, fragment_indicies = None, qm_options={}):
         """
         Creates an input file for a Qchem calculation in the given file path.
 
@@ -47,6 +47,7 @@ class QchemCalculator(Calculator):
             job             - What job this input file should specify. For example: "sp", "opt", or "freq".
             fragment_indicies - If not None, then only these fragments will be included in the input file.
                 Defualt: None
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             None
@@ -81,9 +82,12 @@ class QchemCalculator(Calculator):
             except (ConfigMissingSectionError, ConfigMissingPropertyError):
                 pass
 
+            for key, value in qm_options.items():
+                in_file.write("{} {}\n".format(key, value))
+
             in_file.write("$end\n")
 
-    def calculate_energy(self, molecule, model, fragment_indicies):
+    def calculate_energy(self, molecule, model, fragment_indicies, qm_options={}):
         """
         Calculates the energy of a subset of the fragments of a molecule with a provided model.
 
@@ -94,6 +98,7 @@ class QchemCalculator(Calculator):
             molecule        - The Molecule to perform the calculation on.
             fragment_indicies - List of the indicies of the fragments to include in the calculation.
             model           - The Model to use for the calculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (calculated energy, path to the log file)
@@ -105,7 +110,7 @@ class QchemCalculator(Calculator):
         # file to write qchem input in
         qchem_in_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), model.get_cp(), "in")
         
-        self.create_input_file(qchem_in_path, molecule, model, "sp", fragment_indicies)
+        self.create_input_file(qchem_in_path, molecule, model, "sp", fragment_indicies, qm_options=qm_options)
 
         # file to write qchem output in
         qchem_out_path = files.get_energy_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), model.get_cp(), "out")
@@ -147,13 +152,14 @@ class QchemCalculator(Calculator):
         # if no line with "Total energy in the final basis set = " is found, raise an exception
         raise LibraryCallError("qchem", "energy calculation", "output file is of incorrect format", log_path=qchem_out_path)
 
-    def optimize_geometry(self, molecule, model):
+    def optimize_geometry(self, molecule, model, qm_options={}):
         """
         Optimizes the given input geometry with a provided model.
 
         Args:
             molecule        - The Molecule to perform the optimization on.
             model           - The Model to use for the optimization.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (new optimized molecule, nergy of the optimized geometry, path to the log file)
@@ -165,7 +171,7 @@ class QchemCalculator(Calculator):
 
         qchem_in_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "in")
 
-        self.create_input_file(qchem_in_path, molecule, model, "opt")
+        self.create_input_file(qchem_in_path, molecule, model, "opt", qm_options=qm_options)
 
         qchem_out_path = files.get_optimization_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "out")
 
@@ -236,13 +242,14 @@ class QchemCalculator(Calculator):
         # if we didn't find a geometry to parse, raise an exception.
         raise LibraryCallError("qchem", "optimze", "output file is of incorrect format", log_path=qchem_out_path)
 
-    def find_frequencies(self, molecule, model):
+    def calculate_frequencies(self, molecule, model, qm_options={}):
         """
         Performs a frequency calculation to find the normal modes, frequencies, and reduced masses of the molecule
 
         Args:
             molecule        - The Molecule to perform the frequency calculation on.
             model           - The Model to use for the claculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (normal modes, frequencies, reduced masses, path to log file)
@@ -253,7 +260,7 @@ class QchemCalculator(Calculator):
 
         qchem_in_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "in")
 
-        self.create_input_file(qchem_in_path, molecule, model, "freq")
+        self.create_input_file(qchem_in_path, molecule, model, "freq", qm_options=qm_options)
 
         qchem_out_path = files.get_frequencies_log_path(self.settings.get("files", "log_path"), molecule, model.get_method(), model.get_basis(), "out")
 

@@ -1,8 +1,13 @@
 import os
 from potential_fitting.utils import files, SettingsReader
 from potential_fitting.polynomials import MoleculeSymmetryParser
+from .write_fitting_code import write_mbnrg_fitting_code, write_ttmnrg_fitting_code
 
-def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path):
+
+def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct):
+
+    if not os.path.isdir(fit_path + "/src"):
+        os.mkdir(fit_path + "/src")
 
     molecule = ""
     nmons = 0
@@ -19,11 +24,13 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
 
     # copy needed files from poly_path to fit_path
     os.system("cp " + in_path + " " + fit_path + "/")
-    os.system("cp " + poly_path + "/poly-direct.cpp " + fit_path + "/")
-#    os.system("cp " + poly_path + "/poly-grd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1x.cpp")
-#    os.system("cp " + poly_path + "/poly-nogrd.cpp " + fit_path + "/poly_2b_" + molecule + "_v1.cpp")
-#    os.system("cp " + poly_path + "/poly-model.h " + fit_path + "/poly_2b_" + molecule + "_v1x.h")
 
+    # Ensure that if use_direct is active, the grad direct file exists
+    directcpp_exists = os.path.isfile(poly_path + "/poly-direct.cpp") and os.path.isfile(poly_path + "/poly-grd-direct.cpp")
+
+    if  use_direct and  not  directcpp_exists :
+        raise FileDoesNotExistError("poly-(grd-)direct.cpp")
+ 
     degree = 0
 
     # find the number of variables and number of polynomials from the log file
@@ -56,81 +63,32 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
                 number_of_terms = str(line[line.index(":") + 2:])
                 break
 
-    # save the old settings file to .tmp so we can restore it later
-    os.system("cp " + config_path + " " + config_path + ".tmp")
-
-    # append to the settings file
-    with open(config_path, "a") as config_file:
-        config_file.write("\n")
-        config_file.write("## Define number of variables and terms\n")
-        config_file.write("nvars = " + number_of_variables + "\n")
-        config_file.write("npoly = " + number_of_terms + "\n")
-
-    # update include stements in the poly files to reflect the new names
-
-    # can update to NOT DO COPIES at later TIME ****************
-
-    # save all lines in grd poly file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1x.cpp", "r") as grd:
-#        lines = grd.readlines()
-#
-#    # loop thru each line and write it to the file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1x.cpp", "w") as grd:
-#        for line in lines:
-#
-#            # check if this line has the import statement
-#            try:
-#                line.index("poly-model.h")
-#                # update import statement
-#                grd.write(line[:line.index("poly-model.h")] + "poly_2b_" + molecule + "_v1x.h" + line[line.index("poly-model.h") + 12:])
-#            except ValueError:
-#                # write original line if no import statement
-#                grd.write(line)
-#
-#    # save all lines in nogrd poly file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1.cpp", "r") as nogrd:
-#        lines = nogrd.readlines()
-#
-#    # looo thru each line and write it to the file
-#    with open(fit_path + "/poly_2b_" + molecule + "_v1.cpp", "w") as nogrd:
-#        for line in lines:
-#
-#            # check if this line has the import statement
-#            try:
-#                line.index("poly-model.h")
-#                # update import statment
-#                nogrd.write(line[:line.index("poly-model.h")] + "poly_2b_" + molecule + "_v1x.h" + line[line.index("poly-model.h") + 12:])
-#            except ValueError:
-#                # write original line of no import statement
-#                nogrd.write(line)
+    config_obj = SettingsReader(config_path)
+    config_obj.set("fitting","nvars",number_of_variables)
+    config_obj.set("fitting","npoly",number_of_terms )
+    config_obj.write(config_path)
 
     print("Executing python generator script")
 
-    # Execute the python script that generates the 1b fit code
-    os.system("python3 " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/generate_fitting_code.py " + settings_path + " " + config_path + " " + fit_path + "/poly-direct.cpp " + str(poly_order) + " " + in_path + " " + poly_path)
+    write_mbnrg_fitting_code(settings_path, config_path, poly_order, in_path, poly_path, use_direct)
 
-    # restore settings
-    os.system("mv " + config_path + ".tmp " + config_path)
+#    # restore settings
+#    os.system("mv " + config_path + ".tmp " + config_path)
 
     # copy the template files
-    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/../../codes/nb-codes/template/* " + fit_path)
+    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path + "/src")
 
     # move files from cwd into fit directory
     if (nmons<3):
-        os.system("mv dispersion.* " + fit_path + "/")
-        os.system("mv buckingham.* " + fit_path + "/")
-    os.system("mv eval*b.cpp " + fit_path + "/")
-    os.system("mv fit*b.cpp " + fit_path + "/")
+        os.system("mv dispersion.* " + fit_path + "/src" + "/")
+        os.system("mv buckingham.* " + fit_path + "/src" + "/")
+    os.system("mv eval*b.cpp " + fit_path + "/src" + "/")
+    os.system("mv fit*b.cpp " + fit_path + "/src" + "/")
 
-    # only move ttm files if they were generated (for 2+ b).
-    if len(molecule.split("_")) > 1 and nmons<3:
-        os.system("mv eval*b-ttm.cpp " + fit_path + "/")
-        os.system("mv fit*b-ttm.cpp " + fit_path + "/")
-
-    os.system("mv Makefile " + fit_path + "/")
-    os.system("mv mbnrg_*_fit.* " + fit_path + "/")
-    os.system("mv mon*.cpp mon*.h " + fit_path + "/")
-    os.system("mv poly_*_fit.* " + fit_path + "/")
+    os.system("mv Makefile " + fit_path + "/src" + "/")
+    os.system("mv mbnrg_*_fit.* " + fit_path + "/src" + "/")
+    os.system("mv mon*.cpp mon*.h " + fit_path + "/src" + "/")
+    os.system("mv poly_*_fit.* " + fit_path + "/src" + "/")
 
     # move the files for MBX into the directory MBX_files
     files.init_directory("MBX_files")
@@ -149,20 +107,31 @@ def prepare_fitting_code(settings_path, config_path, in_path, poly_path, poly_or
     file_name = "poly_{}b_{}_deg{}_nograd_v1.cpp".format(nmons, system_name, degree)
     os.system("mv " + file_name + " MBX_files/")
 
-#    os.system("mv buckingham.h " + fit_path + "/")
-#    os.system("mv fit-2b-wbuck.cpp " + fit_path + "/")
-#    os.system("mv fit-2b.cpp " + fit_path + "/")
-#    os.system("mv mon1.h " + fit_path + "/")
-#    os.system("mv mon2.h " + fit_path + "/")
-#    os.system("mv poly_2b_" + molecule +".h " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1.cpp " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1x.cpp " + fit_path + "/")
-#    os.system("mv buckingham.cpp " + fit_path + "/")
-#    os.system("mv eval-2b.cpp " + fit_path + "/")
-#    os.system("mv eval-2b-wbuck.cpp " + fit_path + "/")
-#    os.system("mv mon1.cpp " + fit_path + "/")
-#    os.system("mv mon2.cpp " + fit_path + "/")
-#    os.system("mv poly_2b_" + molecule + ".cpp " + fit_path + "/")
-#    os.system("mv training_set.h " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1.h " + fit_path + "/")
-#    os.system("mv x2b_" + molecule + "_v1x.h " + fit_path + "/")
+def prepare_ttmnrg_fitting_code(settings_path, config_path, fit_path):
+
+    if not os.path.isdir(fit_path + "/src"):
+        os.mkdir(fit_path + "/src")
+
+    molecule = ""
+    nmons = 0
+
+    config_obj = SettingsReader(config_path)
+
+    print("Executing python generator script")
+
+    write_ttmnrg_fitting_code(settings_path, config_path)
+
+    # copy the template files
+    os.system("cp " + os.path.dirname(os.path.abspath(__file__)) + "/fitting_code_templates/* " + fit_path + "/src")
+
+    # move files from cwd into fit directory
+    os.system("mv dispersion.* " + fit_path + "/src" + "/")
+    os.system("mv buckingham.* " + fit_path + "/src" + "/")
+    os.system("mv eval*b.cpp " + fit_path + "/src" + "/")
+    os.system("mv fit*b.cpp " + fit_path + "/src" + "/")
+
+    os.system("mv eval*b-ttm.cpp " + fit_path + "/src" + "/")
+    os.system("mv fit*b-ttm.cpp " + fit_path + "/src" + "/")
+
+    os.system("mv Makefile " + fit_path + "/src" + "/")
+    os.system("mv mon*.cpp mon*.h " + fit_path + "/src" + "/")

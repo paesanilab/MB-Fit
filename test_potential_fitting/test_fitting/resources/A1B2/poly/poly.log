@@ -1,0 +1,30 @@
+<> fragments(1) <>
+
+A1B2
+
+<> atoms (3) <>
+
+A1a:B1a:B2a
+
+<> permutations (2) <>
+
+0:1:2
+0:2:1
+
+<> variables (3) <>
+
+ 0 :  A1(a) <===>  B1(a) : x-intra-A+B-1
+ 1 :  A1(a) <===>  B2(a) : x-intra-A+B-1
+ 2 :  B1(a) <===>  B2(a) : x-intra-B+B-1
+
+<> 1 degree <>
+
+2 possible 1 degree monomials
+2 <<== accepted 1 degree terms
+
+<> 2 degree <>
+
+4 possible 2 degree monomials
+4 <<== accepted 2 degree terms
+
+ Total number of terms: 6

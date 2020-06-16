@@ -19,9 +19,8 @@ def get_atom_types(fragment):
 
     return atom_list
 
-def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_only=False, MBX_HOME=None, version="v1",
-                            virtual_sites=["X", "Y", "Z"]):
-    # NOTE mon_ids is a list with actual monomer names (h2o, ch4, c2h6...)
+def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnrg_fits_path, degree, MBX_HOME, version,
+                            virtual_sites):
     # Read Settings
     settings = SettingsReader(settings_path)
     # Read config
@@ -100,10 +99,10 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
     # Obtain polynomial coefficients and non_linear parameters
     
-    if not ttm_only: 
+    if mbnrg_fits_path is not None: 
         print("Getting polynomial fitted parameters...")
         # Define a couple things
-        mbnrg_best_fit = workdir + "/" + settings.get("files", "log_path") + "/mb_nrg_fits/best_fit"
+        mbnrg_best_fit = mbnrg_fits_path + "/best_fit"
         cdl_file = "fit-" + str(number_of_monomers) + "b.cdl"
 
         # Obtain polynomial coefficients and non_linear parameters
@@ -162,7 +161,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     ## Monomer Properties ##### Only if one-body ###############################
     ############################################################################
     i = 100
-    if number_of_monomers == 1:
+    if number_of_monomers == 1 and mbnrg_fits_path is not None:
         print("Getting monomer properties...")
     # Write code that needs to be added in the SITES section of the code
         my_monomer_sites_text = ""
@@ -231,7 +230,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
 
         my_monomer_excluded_text += "        }\n"
 
-    if not ttm_only:
+    if mbnrg_fits_path is not None:
         # Write code that needs to be added in the ONEBODY_NOGRD section of the code
         print("Getting energy calls...")
 
@@ -293,7 +292,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         for i in range(len(mon_id_sorted)):
             ids.append("xyz" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
             idgs.append("grad" + str(mbx_order_to_poly_order[i] + 1) + ".data()")
-        my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm);\n"
+        my_nb_conditional_grad += "        " + return_key + " pot.eval(" + ", ".join(ids) + ", " + ", ".join(idgs) + ", nm, virial);\n" ## EL added virial
 
         # Write code that needs to be added in the INCLUDE1B section of the code
         #cppout.write("=====>> SECTION INCLUDE1B <<=====\n")
@@ -366,7 +365,6 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
                 my_c6_long_range = C6[c6index]
                 my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
             my_c6_lr_text += "        }\n"
-
 
         if my_mon[0][0] == my_mon[1][0]:
             my_mon[1][0] += 1
@@ -466,7 +464,7 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
     fcpp = open(sofdir + "/MBX_cpp_code.txt", 'w')
 
     
-    if not ttm_only:
+    if mbnrg_fits_path is not None:
         fcpp.write("// SECTION CONSTRUCTOR\n")
         fcpp.write("// " + holdercpp + "\n")
         fcpp.write(my_constructor_text)
@@ -483,40 +481,38 @@ def generate_software_files(settings_path, config_file, mon_ids, degree, ttm_onl
         fcpp.write("src/potential/{0}b/energy{0}b.cpp\n".format(number_of_monomers))
         fcpp.write(my_nb_conditional_grad)
 
-        # TODO add CMakeLists files
-
     if number_of_monomers == 1:
         fcpp.write("\n\n\n// SECTION SITES\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/bblock/sys_tools.cpp\n")
         fcpp.write(my_monomer_sites_text)
 
         fcpp.write("\n\n\n// SECTION CHARGES\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/bblock/sys_tools.cpp\n")
         fcpp.write(my_monomer_charges_text)
 
         fcpp.write("\n\n\n// SECTION POLFACS\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/bblock/sys_tools.cpp\n")
         fcpp.write(my_monomer_polfacs_text)
 
         fcpp.write("\n\n\n// SECTION POLS\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/bblock/sys_tools.cpp\n")
         fcpp.write(my_monomer_pols_text)
 
         fcpp.write("\n\n\n// SECTION EXCLUDED\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/bblock/sys_tools.cpp\n")
         fcpp.write(my_monomer_excluded_text)
 
         fcpp.write("\n\n\n SECTION C6_LONG_RANGE\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/bblock/sys_tools.cpp\n")
         fcpp.write(my_c6_lr_text)
 
-    if number_of_monomers < 3:
+    if do_ttmnrg:
         fcpp.write("\n\n\n SECTION DISPERSION\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/potential/dispersion/disptools.cpp\n")
         fcpp.write(my_dispersion_text)
 
         fcpp.write("\n\n\n SECTION BUCKINGHAM\n")
-        fcpp.write("src/bblock/sys_tools.h\n")
+        fcpp.write("src/potential/buckingham/bucktools.cpp\n")
         fcpp.write(my_buckingham_text)
 
     fcpp.close()

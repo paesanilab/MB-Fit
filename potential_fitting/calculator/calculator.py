@@ -125,7 +125,7 @@ class Calculator:
     def is_valid_model(self, model):
         raise NotImplementedError
     
-    def calculate_energy(self, molecule, model, fragment_indicies):
+    def calculate_energy(self, molecule, model, fragment_indicies, qm_options={}):
         """
         Calculates the energy of a subset of the fragments of a molecule with a provided model.
 
@@ -136,6 +136,7 @@ class Calculator:
             molecule        - The Molecule to perform the calculation on.
             fragment_indicies - List of the indicies of the fragments to include in the calculation.
             model           - The Model to use for the calculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (calculated energy, path to the log file)
@@ -143,13 +144,14 @@ class Calculator:
 
         raise NotImplementedError
 
-    def optimize_geometry(self, molecule, model):
+    def optimize_geometry(self, molecule, model, qm_options={}):
         """
         Optimizes the given input geometry with a provided model.
 
         Args:
             molecule        - The Molecule to perform the optimization on.
             model           - The Model to use for the optimization.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (new optimized molecule, energy of the optimized geometry, path to the log file)
@@ -157,13 +159,14 @@ class Calculator:
 
         raise NotImplementedError
 
-    def find_frequencies(self, molecule, model):
+    def calculate_frequencies(self, molecule, model, qm_options={}):
         """
         Performs a frequency calculation to find the normal modes, frequencies, and reduced masses of the molecule
 
         Args:
             molecule        - The Molecule to perform the frequency calculation on.
             model           - The Model to use for the claculation.
+            qm_options       - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
         Returns:
             (normal modes, frequencies, reduced masses, path to log file)

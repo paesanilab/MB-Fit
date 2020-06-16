@@ -11,7 +11,7 @@ from potential_fitting.utils import SettingsReader, files, system
 from .database import Database
 
 
-def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=sys.maxsize):
+def fill_database(settings_path, database_config_path, client_name, *tags, calculation_count=sys.maxsize, qm_options={}):
     """
     Loops over uncalculated energies in a database and calculates them.
 
@@ -25,6 +25,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
                     Make sure only you have access to this file or your password will be compromised!
         client_name         - Name of the client performing these calculations.
         calculation_count   - Maximum number of calculations to perform. Default is unlimited.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -54,7 +55,7 @@ def fill_database(settings_path, database_config_path, client_name, *tags, calcu
                 model = Model(method, basis, use_cp)
 
                 # calculate the missing energy
-                energy, log_path = calc.calculate_energy(molecule, model, frag_indices)
+                energy, log_path = calc.calculate_energy(molecule, model, frag_indices, qm_options=qm_options)
                 with open(log_path, "r") as log_file:
                     log_text = log_file.read()
                 calculation_results.append((molecule, method, basis, cp, use_cp, frag_indices, True, energy, log_text))

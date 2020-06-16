@@ -1,9 +1,13 @@
 import unittest, os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.utils import files
 from potential_fitting.exceptions import FileExistsError, InvalidValueError
 
-class TestFiles(unittest.TestCase):
+class TestFiles(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestFiles, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def setUpClass():
         TestFiles.dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "dir")
@@ -38,6 +42,8 @@ class TestFiles(unittest.TestCase):
 
         os.removedirs(TestFiles.dirdir)
         os.removedirs(TestFiles.dir2dir)
+
+        self.test_passed = True
 
     def test_init_file(self):
         self.assertEqual(files.init_file(TestFiles.file), TestFiles.file)
@@ -125,6 +131,6 @@ class TestFiles(unittest.TestCase):
         os.remove(TestFiles.file_backup2)
         os.removedirs(TestFiles.deepdir)
 
-
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestFiles)

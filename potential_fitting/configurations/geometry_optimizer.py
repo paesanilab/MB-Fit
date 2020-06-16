@@ -4,7 +4,7 @@ from potential_fitting.calculator import Model
 from potential_fitting.utils import SettingsReader, files, system
 from potential_fitting.molecule import xyz_to_molecules
 
-def optimize_geometry(settings_path, unopt_path, opt_path, method, basis):
+def optimize_geometry(settings_path, unopt_path, opt_path, method, basis, qm_options={}):
     """
     Optimizes a given geometry.
 
@@ -12,6 +12,7 @@ def optimize_geometry(settings_path, unopt_path, opt_path, method, basis):
         settings_path       - Local path to the ".ini" file with all relevent settings.
         unopt_path          - Local path to the ".xyz" file to read the unoptimized geometry from.
         opt_path            - Local path to the ".xyz" file to write the optimized geometry to.
+        qm_options           - Dictionary of extra arguments to be passed to the QM code doing the calculation.
 
     Returns:
         None.
@@ -28,7 +29,7 @@ def optimize_geometry(settings_path, unopt_path, opt_path, method, basis):
     unopt_molecule = xyz_to_molecules(unopt_path, settings)[0]
 
     # optimize the geometry
-    opt_molecule, energy, log_file = calc.optimize_geometry(unopt_molecule, model)
+    opt_molecule, energy, log_file = calc.optimize_geometry(unopt_molecule, model, qm_options=qm_options)
 
     opt_path = files.init_file(opt_path, files.OverwriteMethod.get_from_settings(settings))
 

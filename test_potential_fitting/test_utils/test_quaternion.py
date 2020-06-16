@@ -1,8 +1,12 @@
-import unittest, random, math
+import unittest, random, math, os
 
+from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.utils import quaternion
 
-class TestQuaternion(unittest.TestCase):
+class TestQuaternion(TestCaseWithId):
+    def __init__(self, *args, **kwargs):
+        super(TestQuaternion, self).__init__(*args, **kwargs)
+        self.test_folder = os.path.dirname(os.path.abspath(__file__))
 
     def test_add(self):
         for i in range(100):
@@ -26,6 +30,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertEqual(q3.get_j(), j1 + j2)
             self.assertEqual(q3.get_k(), k1 + k2)
 
+        self.test_passed = True
+
     def test_sub(self):
         for i in range(100):
             r1 = random.random()
@@ -47,6 +53,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertEqual(q3.get_i(), i1 - i2)
             self.assertEqual(q3.get_j(), j1 - j2)
             self.assertEqual(q3.get_k(), k1 - k2)
+
+        self.test_passed = True
 
     def test_mul(self):
         for i in range(100):
@@ -70,6 +78,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertEqual(q3.get_j(), r1 * j2 - i1 * k2 + j1 * r2 + k1 * i2)
             self.assertEqual(q3.get_k(), r1 * k2 + i1 * j2 - j1 * i2 + k1 * r2)
 
+        self.test_passed = True
+
     def test_abs(self):
         for i in range(100):
             r1 = random.random()
@@ -80,6 +90,8 @@ class TestQuaternion(unittest.TestCase):
             q1 = quaternion.Quaternion(r1, i1, j1, k1)
 
             self.assertEqual(abs(q1), math.sqrt(r1 ** 2 + i1 ** 2 + j1 ** 2 + k1 ** 2))
+
+        self.test_passed = True
 
     def test_neg(self):
         for i in range(100):
@@ -98,6 +110,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertEqual(q1.get_k(), -q2.get_k())
             self.assertEqual(abs(q1), abs(q2))
 
+        self.test_passed = True
+
     def test_pos(self):
         for i in range(100):
             r1 = random.random()
@@ -115,6 +129,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertEqual(q1.get_k(), q2.get_k())
             self.assertEqual(abs(q1), abs(q2))
 
+        self.test_passed = True
+
     def test_eq(self):
         self.assertTrue(quaternion.Quaternion(1, 2, 3, 4) == quaternion.Quaternion(1, 2, 3, 4))
         self.assertFalse(quaternion.Quaternion(2, 2, 3, 4) == quaternion.Quaternion(1, 2, 3, 4))
@@ -123,6 +139,8 @@ class TestQuaternion(unittest.TestCase):
         self.assertFalse(quaternion.Quaternion(1, 2, 3, 5) == quaternion.Quaternion(1, 2, 3, 4))
         self.assertFalse(quaternion.Quaternion(3, 4, 1, 2) == quaternion.Quaternion(1, 2, 3, 4))
 
+        self.test_passed = True
+
     def test_ne(self):
         self.assertFalse(quaternion.Quaternion(1, 2, 3, 4) != quaternion.Quaternion(1, 2, 3, 4))
         self.assertTrue(quaternion.Quaternion(2, 2, 3, 4) != quaternion.Quaternion(1, 2, 3, 4))
@@ -130,6 +148,8 @@ class TestQuaternion(unittest.TestCase):
         self.assertTrue(quaternion.Quaternion(1, 2, 4, 4) != quaternion.Quaternion(1, 2, 3, 4))
         self.assertTrue(quaternion.Quaternion(1, 2, 3, 5) != quaternion.Quaternion(1, 2, 3, 4))
         self.assertTrue(quaternion.Quaternion(3, 4, 1, 2) != quaternion.Quaternion(1, 2, 3, 4))
+
+        self.test_passed = True
 
     def test_normalize(self):
         for i in range(100):
@@ -148,6 +168,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertAlmostEqual(q2.j, q1.j / abs(q1))
             self.assertAlmostEqual(q2.k, q1.k / abs(q1))
 
+        self.test_passed = True
+
     def test_conjugate(self):
         for i in range(100):
             r1 = random.random()
@@ -165,6 +187,8 @@ class TestQuaternion(unittest.TestCase):
             self.assertEqual(q1.k, -q2.k)
             self.assertEqual(abs(q1), abs(q2))
 
+        self.test_passed = True
+
     def test_rotate(self):
 
         self.assertEqual(quaternion.Quaternion(0, 0, 1, 0).rotate(-1, 1, 1), (1, 1, -1))
@@ -176,5 +200,6 @@ class TestQuaternion(unittest.TestCase):
         self.assertAlmostEqual(y2, 1)
         self.assertAlmostEqual(z2, 1)
 
+        self.test_passed = True
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestQuaternion)

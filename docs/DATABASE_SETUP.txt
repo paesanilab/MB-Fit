@@ -1,0 +1,65 @@
+# setting up a postgreSQL server
+choose the appropriate installation gude from:
+https://wiki.postgresql.org/wiki/Detailed_installation_guides
+
+once you have installed postgres, you may launch the server using:
+```
+postgres -D /usr/local/pgsql/data
+```
+For troubleshooting and more information, check:
+https://www.postgresql.org/docs/9.1/server-start.html
+
+Next, create a database on the server with the following command:
+```
+createdb <name of database>
+```
+For troubleshooting and more information, check:
+https://www.postgresql.org/docs/10/tutorial-createdb.html
+
+Then, connect to the database (still from the host machine) using
+```
+psql mydb
+```
+For troubleshooting and more information, check:
+https://www.postgresql.org/docs/10/tutorial-accessdb.html
+
+Next, we will add users with passwords so that the database can be accessed
+securely and remotely.
+From inside the database console opened by ```psql mydb``` run
+```
+CREATE USER <username> WITH ENCRYPTED PASSWORD '<new password>'
+```
+For more details, see:
+https://www.postgresql.org/docs/8.0/sql-createuser.html
+
+How you handle users is up to you, you may create one user for each member of
+your team, or you may make a single username and password to share.
+
+Now, you should be able to log into the database remotely from a client machine.
+To do so run the following on the client:
+Note that you will need to have the postgresql client installed, which you can get from here:
+https://www.postgresql.org/download/
+```
+psql -h <host name or IP> -p <host port> -d <database name> -u <username>
+```
+You will be prompted for your password.
+
+Then, run database_setup.py in order to initialize the tables and routines needed to run the MB-Fit server. database_setup.py is located in the home MB-Fit directory.
+database_setup.py takes a database config file as its argument.
+The format of the database config file should be as follows:
+```
+[database]
+host = <host name or IP>
+port = <host port of connection>
+database = <name of the database>
+username = <your username>
+password = <your password>
+```
+
+Before putting your password in any file, make sure to use
+```
+chmod 700 <name of file>
+```
+to make sure only you can access the file.
+
+Also, of course, use a unique password.

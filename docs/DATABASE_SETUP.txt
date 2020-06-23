@@ -1,11 +1,25 @@
 # setting up a postgreSQL server
 choose the appropriate installation gude from:
 https://wiki.postgresql.org/wiki/Detailed_installation_guides
+or install via anaconda with
+```
+conda install postgresql
+```
+
+The installation process will usually automatically initialize a database in
+```/usr/local/pgsql/data``` but if it does not, you should initialize a database
+manually with
+```
+initdb <path to where data will be stored>
+```
 
 once you have installed postgres, you may launch the server using:
 ```
-postgres -D /usr/local/pgsql/data
+postgres -D <path to where data is stored>
 ```
+Note: unless you chose a different directory, the <path to where data is stored> is
+generally ```/usr/local/pgsql/data```.
+
 For troubleshooting and more information, check:
 https://www.postgresql.org/docs/9.1/server-start.html
 
@@ -35,14 +49,47 @@ https://www.postgresql.org/docs/8.0/sql-createuser.html
 How you handle users is up to you, you may create one user for each member of
 your team, or you may make a single username and password to share.
 
-Now, you should be able to log into the database remotely from a client machine.
-To do so run the following on the client:
-Note that you will need to have the postgresql client installed, which you can get from here:
-https://www.postgresql.org/download/
+Now, we must change the configuration settings to ask for a password upon connection:
+inside <path to where data is stored> edit 'pg_hba.conf'. Change all entries in
+the 'METHOD' column from 'trust' to 'md5'.
+
+Now, you should be able to log in LOCALLY using your username and password. Try it:
 ```
-psql -h <host name or IP> -p <host port> -d <database name> -u <username>
+psql -d <database name> -U <username>
 ```
 You will be prompted for your password.
+
+Now, we need to enable remote connections.
+To do so, edit 'postgresql.conf' inside <path to where data is stored>. Change the line:
+```
+#listen_addresses = 'localhost'
+```
+to:
+```
+listen_addresses = '*'
+```
+
+Then, open 'pg_hba.conf' again and add the lines:
+```
+host    all             all              0.0.0.0/0                       md5
+host    all             all              ::/0                            md5
+```
+to the end of the file.
+
+Now, you should be able to log into the database remotely from a client machine.
+To do so run the following on the client:
+```
+psql -h <host name or IP> -p <host port> -d <database name> -U <username>
+```
+You will be prompted for your password.
+
+Note that you will need to have the postgresql client installed, which you can get from here:
+https://www.postgresql.org/download/
+or install via anaconda with
+```
+conda install postgresql
+```
+Though the anaconda method will install both the client and the server.
 
 Then, run database_setup.py in order to initialize the tables and routines needed to run the MB-Fit server. database_setup.py is located in the home MB-Fit directory.
 database_setup.py takes a database config file as its argument.
@@ -63,3 +110,9 @@ chmod 700 <name of file>
 to make sure only you can access the file.
 
 Also, of course, use a unique password.
+
+If you want to change your password, use:
+```
+ALTER USER <username> WITH ENCRYPTED PASSWORD '<new password>'
+```
+from inside the database console.

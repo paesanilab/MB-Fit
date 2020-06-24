@@ -32,14 +32,14 @@ https://www.postgresql.org/docs/10/tutorial-createdb.html
 
 Then, connect to the database (still from the host machine) using
 ```
-psql mydb
+psql <name of database>
 ```
 For troubleshooting and more information, check:
 https://www.postgresql.org/docs/10/tutorial-accessdb.html
 
 Next, we will add users with passwords so that the database can be accessed
 securely and remotely.
-From inside the database console opened by ```psql mydb``` run
+From inside the database console opened by ```psql <name of database>``` run
 ```
 CREATE USER <username> WITH ENCRYPTED PASSWORD '<new password>'
 ```

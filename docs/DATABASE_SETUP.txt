@@ -20,7 +20,21 @@ postgres -D <path to where data is stored>
 Note: unless you chose a different directory, the <path to where data is stored> is
 generally ```/usr/local/pgsql/data```.
 
-For troubleshooting and more information, check:
+If you see an error that looks like this:
+"could not bind IPv6 adress "::1": Address already in use"
+you might need to change the port number for the database to operate on.
+If you need to change the port number for this or any other reason, edit
+<path to where data is stored>/postgresql.conf and change the line
+```
+#port = 5432
+```
+to
+```
+port = <desired port>
+```
+If you leave this line commented out, it will use the default port 5432.
+
+For further troubleshooting and more information, check:
 https://www.postgresql.org/docs/9.1/server-start.html
 
 Next, create a database on the server with the following command:

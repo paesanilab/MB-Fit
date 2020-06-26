@@ -33,6 +33,8 @@ to
 port = <desired port>
 ```
 If you leave this line commented out, it will use the default port 5432.
+If you do not use the default port, you will have to add ```-p <desired port>```
+to most console commands below.
 
 For further troubleshooting and more information, check:
 https://www.postgresql.org/docs/9.1/server-start.html
@@ -55,7 +57,7 @@ Next, we will add users with passwords so that the database can be accessed
 securely and remotely.
 From inside the database console opened by ```psql <name of database>``` run
 ```
-CREATE USER <username> WITH ENCRYPTED PASSWORD '<new password>'
+CREATE USER <username> WITH ENCRYPTED PASSWORD '<new password>';
 ```
 For more details, see:
 https://www.postgresql.org/docs/8.0/sql-createuser.html
@@ -67,9 +69,15 @@ Now, we must change the configuration settings to ask for a password upon connec
 inside <path to where data is stored> edit 'pg_hba.conf'. Change all entries in
 the 'METHOD' column from 'trust' to 'md5'.
 
+Now, restart the database, by stopping the process launched by 
+```
+postgres -D <path to where data is stored>
+```
+and then running that command again.
+
 Now, you should be able to log in LOCALLY using your username and password. Try it:
 ```
-psql -d <database name> -U <username>
+psql <database name> -U <username>
 ```
 You will be prompted for your password.
 
@@ -89,6 +97,21 @@ host    all             all              0.0.0.0/0                       md5
 host    all             all              ::/0                            md5
 ```
 to the end of the file.
+
+Now, we need to open the port that postgres runs on to accept incoming connections.
+In order to do this, you will need sudo access on your machine.
+Run:
+```
+firewall-cmd --zone=public --add-port=<port number>/tcp
+```
+If you did not change the port number, it is the default: 5432
+Now, to automatically open the port when your machine reboots, optionally run:
+```
+firewall-cmd --zone=public --add-port=<port number>/tcp --permanent
+```
+Alternatively, you can manually run the first command when your system reboots or add it to a startup script.
+
+Restart the server again.
 
 Now, you should be able to log into the database remotely from a client machine.
 To do so run the following on the client:
@@ -127,6 +150,6 @@ Also, of course, use a unique password.
 
 If you want to change your password, use:
 ```
-ALTER USER <username> WITH ENCRYPTED PASSWORD '<new password>'
+ALTER USER <username> WITH ENCRYPTED PASSWORD '<new password>';
 ```
 from inside the database console.

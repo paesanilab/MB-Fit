@@ -5,6 +5,8 @@ numpy
 # conda install numpy
 pandas
 # conda install pandas
+matplotlib
+# conda install matplotlib
 
 # only required to use psi4 for calculations.
 psi4

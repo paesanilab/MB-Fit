@@ -123,12 +123,12 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
         elif distribution == 'geometric':
 
             if temperature == None:
-                temperature = [self.frequencies[0] / constants.kelvin_to_au, 2*self.frequencies[-1] / constants.kelvin_to_au]
+                temperature = [self.frequencies[0] / constants.kelvin_to_au, self.frequencies[0] * (self.frequencies[0] / (2*self.frequencies[-1])) ** -1 / constants.kelvin_to_au]
 
             system.format_print("Will generate configurations over a geometric temp distribution from {} K to {} K.".format(temperature[0], temperature[1]),
                                 italics=True)
             self.temp_distribution = GeometricDistributionFunction(temperature[0]*constants.kelvin_to_au,
-                                                                  temperature[1] / temperature[0] * constants.kelvin_to_au)
+                                                                  temperature[1] / temperature[0])
 
         elif distribution == 'custom':
             system.format_print("Will generate configurations over a user-specified distribution.",

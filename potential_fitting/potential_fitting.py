@@ -79,8 +79,8 @@ def generate_normal_modes(settings_path, opt_geo_path, normal_modes_path, method
     return dim_null
 
 def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_modes_path, configurations_path,
-        number_of_configs=100, seed=None, linear=False, geometric=False, temperature=None, classical=True,
-        temp_distribution=None, A_distribution=None):
+        number_of_configs=100, seed=None, classical=True, distribution='piecewise',
+        temperature=None, distribution_function=None):
     """
     Generates normal mode configurations for a given molecule from a set of normal modes.
 
@@ -95,38 +95,43 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
         number_of_configs   - Number of configurations to generate
         seed                - The same seed with the same molecule and normal modes will always generate the same
                 configurations.
-        linear              - If True, then use a linear distribution over temp and A.
-                    Default: False
-        geometric           - If True, then use a geometric distribution over temp and A.
-                    Default: False
-        temperature         - Temperature at which normal mode sampling is done. If specified, configurations
-                will use clasical normal mode distribution at the specified temperature instead of either geometric
-                or linear progression.
         classical           - If True, use a classical distribution over temp and A, otherwise, use a quantum
                 distribution. QM distributions generate a wider distribution over energy.
                 Default: True
-        temp_distribution   - Implementation of DistributionFunction. If specified, then the temperature
-                distribution specified by the linear, geometric, or temperature arguments will be ignored and this
-                distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
-                will have temperature = temp_distribution.get_value(0) and the last config will have temperature =
-                temp_distribution.get_value(1).
-        A_distribution      - Implementation of DistributionFunction. If specified, then the A
-                distribution specified by the linear, geometric, or temperature arguments will be ignored and this
-                distribution will be used instead. Should be implemented over the domain [0,1]. So the first config
-                will have A = A_distribution.get_value(0) and the last config will have A =
-                A_distribution.get_value(1).
+        distribution        - One of the following choices: 'piecewise', 'constant', 'linear', 'geometric', 'custom'
+                'piecewise' uses a piecewise distribution in the following style:
+                    #info here
+                'constant' uses a set temperature for all configurations.
+                    Specify the temperature by setting the temperature argument to a single value.
+                'linear' uses a linear distribution from a minimum to a maximum temperature.
+                    Specify the min and max temperature by setting the temperature argument to a 2-tuple: (min, max).
+                    If temperature is unspecified, then the minimum is 0, and the maximum is the highest normal mode frequency.
+                'geometric' uses a geometric distribution from a minimum to a maximum temperature.
+                    Specify the min and max temperature by setting the temperature argument to a 2-tuple: (min, max).
+                    If temperature is unspecified, then the minimum is 0, and the maximum is the highest normal mode frequency.
+                'custom' uses a user-specified DistributionFunction to generate the temperatures used during configuration generation.
+        temperature         - Should be set to different values based on what distribution is beting used.
+                If 'piecewise' or 'custom' distribution, then temperature is ignored.
+                If 'constant' distribution, then temperature should be a single value.
+                If 'linear' or 'geometric' distribution, then temperature should be a 2-tuple: (min, max)
+                All temperatures should be specified in KELVIN.
+        distribution_function - Implementation of DistributionFunction. Only used if distribution='custom'.
+                distribution_function.get_vale(x) should be implemented over the domain [0,1]. So the first config
+                will have temperature = distribution_function.get_value(0) and the last config will have temperature =
+                distribution_function.get_value(1), with configurations in between passing linearly increasing values to 
+                distribution_function.get_value(x).
+                The distribution_function should return temperatures in atomic units (NOT KELVIN).
+                See package utils.distribution_function for abstract DistributionFunction class and example implementaitons.
 
     Returns:
         None.
     """
 
     config_generator = configurations.NormalModesConfigurationGenerator(settings_path, normal_modes_path,
-                                                                        linear=linear,
-                                                                        geometric=geometric,
-                                                                        temperature=temperature,
                                                                         classical=classical,
-                                                                        temp_distribution=temp_distribution,
-                                                                        A_distribution=A_distribution)
+                                                                        distribution=distribution,
+                                                                        temperature=temperature,
+                                                                        distribution_function=distribution_function)
 
     configurations.ConfigurationGenerator.generate_configs_from_file_to_file([opt_geo_path],
                                                                              configurations_path,

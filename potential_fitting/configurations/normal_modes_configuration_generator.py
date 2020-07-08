@@ -27,7 +27,11 @@ class NormalModesConfigurationGenerator(ConfigurationGenerator):
             classical           - If True, use a classical distribution to generate the configurations, otherwise quantum.
             distribution        - One of the following choices: 'piecewise', 'constant', 'linear', 'geometric', 'custom'
                     'piecewise' uses a piecewise distribution in the following style:
-                        #info here
+                        5% at highest frequency / 100 au
+                        40% at highest frequency / 20 au
+                        30% at highest frequency / 10 au
+                        20% at highest frequency / 5 au
+                        5% at highest frequency / 2 au
                     'constant' uses a set temperature for all configurations.
                         Specify the temperature by setting the temperature argument to a single value.
                     'linear' uses a linear distribution from a minimum to a maximum temperature.

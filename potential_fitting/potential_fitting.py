@@ -100,11 +100,11 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
                 Default: True
         distribution        - One of the following choices: 'piecewise', 'constant', 'linear', 'geometric', 'custom'
                 'piecewise' uses a piecewise distribution in the following style:
-                    5% at highest frequency / 100 au
-                    40% at highest frequency / 20 au
-                    30% at highest frequency / 10 au
-                    20% at highest frequency / 5 au
-                    5% at highest frequency / 2 au
+                    5% at highest frequency / 100
+                    40% at highest frequency / 20
+                    30% at highest frequency / 10
+                    20% at highest frequency / 5
+                    5% at highest frequency / 2
                 'constant' uses a set temperature for all configurations.
                     Specify the temperature by setting the temperature argument to a single value.
                 'linear' uses a linear distribution from a minimum to a maximum temperature.
@@ -114,7 +114,7 @@ def generate_normal_mode_configurations(settings_path, opt_geo_path, normal_mode
                     Specify the min and max temperature by setting the temperature argument to a 2-tuple: (min, max).
                     If temperature is unspecified, then the minimum is 0, and the maximum is the highest normal mode frequency.
                 'custom' uses a user-specified DistributionFunction to generate the temperatures used during configuration generation.
-        temperature         - Should be set to different values based on what distribution is beting used.
+        temperature         - Should be set to different values based on what distribution is being used.
                 If 'piecewise' or 'custom' distribution, then temperature is ignored.
                 If 'constant' distribution, then temperature should be a single value.
                 If 'linear' or 'geometric' distribution, then temperature should be a 2-tuple: (min, max)

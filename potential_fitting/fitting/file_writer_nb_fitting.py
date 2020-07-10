@@ -2024,10 +2024,10 @@ int main(int argc, char** argv) {
             err_Linf = std::abs(delta);
 
         correlation_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
+                         << std::setw(20) << std::scientific
                          << std::setprecision(8)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) <<  delta*delta  << "    \\n" ;
+                         << std::setw(20) <<  E_model
+                         << std::setw(20) <<  delta*delta  << "    \\n" ;
 
         terms_file <<  std::setw(10) << i+1
                          << std::setw(20) << std::scientific

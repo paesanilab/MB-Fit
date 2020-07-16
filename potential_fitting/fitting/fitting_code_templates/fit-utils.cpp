@@ -32,8 +32,12 @@ void setup_weights(const std::vector<tset::nb_system>& ts,
         weights_sq_sum += weights[n]*weights[n];
     }
 
-    weights_sum /= ts.size();
-    weights_sq_sum = weights_sq_sum / ts.size() / ts.size();
+    effective_size = (weights_sum * weights_sum) / weights_sq_sum;
+
+// AWG: original code by Volodymyr Babin below, normalizing weights
+//
+//    weights_sum /= ts.size();
+//    double weights_sq_sum(0);
 //    for (size_t n = 0; n < ts.size(); ++n) {
 //        const double ww = weights[n]/weights_sum;
 //        weights[n] = ww;
@@ -42,8 +46,9 @@ void setup_weights(const std::vector<tset::nb_system>& ts,
 //
 //    weights_sq_sum /= ts.size();
 //    weights_sq_sum /= ts.size();
+//
+//    effective_size = 1.0/weights_sq_sum;
 
-    effective_size = 1.0/weights_sq_sum;
 }
 
 } // namespace tset

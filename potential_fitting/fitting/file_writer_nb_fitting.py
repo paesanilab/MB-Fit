@@ -534,6 +534,7 @@ def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = 
             crd_shift += 3
         else:
             string_pointers_vs += "{}{}double {}[3];\n".format(spaces, "", get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
+            string_pointers_vs += "{}{}std::fill({},{} + 3, 0.0);\n".format(spaces,"",get_coords_var_name(symmetry_class, atom_index, fragment_index, extension),get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
             string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)
 
@@ -3733,7 +3734,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
         if use_lonepairs[i] != 0:
             a = """
         monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
@@ -3882,7 +3883,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
         if use_lonepairs[i] != 0:
             a = """
         monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
@@ -3944,7 +3945,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        m""" + str(i+1) + """.grads(""" + list(fragments[i].get_atoms())[3][0] + "_1_g" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_g" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[0][0] + "_1_g" + char_code + """);
+        m""" + str(i+1) + """.grads(coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + "_g, coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """_g, w12, wcross, coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """_g);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)

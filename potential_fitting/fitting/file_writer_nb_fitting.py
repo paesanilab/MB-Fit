@@ -2004,6 +2004,7 @@ int main(int argc, char** argv) {
     
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
+    double weight_sum(0);
 
     for (size_t i = 0; i < training_set.size(); ++i) {
 
@@ -2024,10 +2025,10 @@ int main(int argc, char** argv) {
             err_Linf = std::abs(delta);
 
         correlation_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
+                         << std::setw(20) << std::scientific
                          << std::setprecision(8)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) <<  delta*delta  << "    \\n" ;
+                         << std::setw(20) <<  E_model
+                         << std::setw(20) <<  delta*delta  << "    \\n" ;
 
         terms_file <<  std::setw(10) << i+1
                          << std::setw(20) << std::scientific
@@ -2040,6 +2041,7 @@ int main(int argc, char** argv) {
 
         err_L2 += delta*delta;
         err_wL2 += ts_weights[i]*delta*delta;
+        weight_sum += ts_weights[i];
 
         if (training_set[i].binding_energy - E_min < E_range) {
             nlo += 1.0;
@@ -2053,7 +2055,7 @@ int main(int argc, char** argv) {
     terms_file.close();
 
     err_L2 /= training_set.size();
-    err_wL2 /= training_set.size();
+    err_wL2 /= weight_sum;
 
     err_L2_lo /= nlo;
 
@@ -2638,6 +2640,7 @@ int main(int argc, char** argv) {
 
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
+    double weight_sum(0);
 
     for (size_t i = 0; i < training_set.size(); ++i) {
 """
@@ -2683,6 +2686,7 @@ int main(int argc, char** argv) {
 
         err_L2 += delta*delta;
         err_wL2 += ts_weights[i]*delta*delta;
+        weight_sum += ts_weights[i];
 
         if (training_set[i].binding_energy - E_min < E_range) {
             nlo += 1.0;
@@ -2696,7 +2700,7 @@ int main(int argc, char** argv) {
     terms_file.close();
 
     err_L2 /= training_set.size();
-    err_wL2 /= training_set.size();
+    err_wL2 /= weight_sum;
 
     err_L2_lo /= nlo;
 

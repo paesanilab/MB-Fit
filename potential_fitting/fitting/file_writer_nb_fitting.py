@@ -4019,7 +4019,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
         a = """
         
-            (*virial)[""" + str(virial_index) + """] = """
+            (*virial)[""" + str(virial_index) + """] += """
 
         ff.write(a)
 

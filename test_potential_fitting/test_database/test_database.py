@@ -2,7 +2,7 @@ import unittest, os, random
 
 from test_potential_fitting.test_case_with_id import TestCaseWithId
 from potential_fitting.database import Database
-from potential_fitting.exceptions import InvalidValueError, DatabaseConnectionError
+from potential_fitting.exceptions import InvalidValueError, DatabaseConnectionError, DatabaseOperationError
 from potential_fitting.molecule import Atom, Fragment, Molecule
 
 # only import psycopg2 if it is installed.
@@ -172,7 +172,7 @@ class TestDatabase(TestCaseWithId):
 
     def test_execute(self):
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             self.database.execute("RAISE EXCEPTION %s;", ("EXECUTE WORKED",))
 
         self.test_passed = True
@@ -309,7 +309,7 @@ class TestDatabase(TestCaseWithId):
         self.database.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
         self.database.delete_calculations([opt_mol], "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
 
         self.test_passed = True
@@ -353,7 +353,7 @@ class TestDatabase(TestCaseWithId):
 
         self.database.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test", delete_complete_calculations = False)
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             training_set = list(self.database.get_1B_training_set("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", True, "database_test"))
 
         self.test_passed = True
@@ -1092,27 +1092,27 @@ class TestDatabase(TestCaseWithId):
 
         # Now, test_user2 tries to read the training set without permissions.
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 list(self.database2.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                            "database_test"))
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 list(self.database2.export_calculations(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                            "database_test"))
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 list(self.database2.get_failed("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                            "database_test"))
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
 
@@ -1137,28 +1137,28 @@ class TestDatabase(TestCaseWithId):
         self.database.revoke_read_privilege("test_user2", "database_test")
         self.database.save()
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 list(
                     self.database2.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                                     "database_test"))
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 list(self.database2.export_calculations(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                                         "database_test"))
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 list(self.database2.get_failed("H2O", ["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                            "database_test"))
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have read privileges on training set database_test", str(e))
                 raise
 
@@ -1222,31 +1222,31 @@ class TestDatabase(TestCaseWithId):
 
         # Now, test_user2 tries to write to the training set without permissions.
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.import_calculations([(molecule, energy) for molecule, energy in zip(molecules, energies)], "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
@@ -1318,7 +1318,7 @@ class TestDatabase(TestCaseWithId):
         self.database2.save()
 
         # with all calculations deleted, there will be no optimized energy for H2O
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             training_set = list(
                 self.database.get_training_set(["H2O"], ["H1.HO1"], "testmethod", "testbasis", False,
                                                "database_test"))
@@ -1331,31 +1331,31 @@ class TestDatabase(TestCaseWithId):
         self.database.revoke_write_privilege("test_user2", "database_test")
         self.database.save()
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.add_calculations(molecules, "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.import_calculations([(molecule, energy) for molecule, energy in zip(molecules, energies)], "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.delete_calculations(molecules, "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.delete_all_calculations("H2O", "testmethod", "testbasis", False, "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have write privileges on training set database_test", str(e))
                 raise
 
@@ -1419,40 +1419,40 @@ class TestDatabase(TestCaseWithId):
 
         # Now, test_user2 tries to change permissions to the training set without admin permissions.
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.grant_read_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.grant_write_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.grant_admin_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_read_privilege("test_user1", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_write_privilege("test_user1", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_admin_privilege("test_user1", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
 
@@ -1465,10 +1465,10 @@ class TestDatabase(TestCaseWithId):
         self.database2.revoke_read_privilege("test_user1", "database_test")
 
         # Admins cannot revoke the last admin's privileges.
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_admin_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 is the last admin of this training set and many not be removed", str(e))
                 raise
 
@@ -1480,40 +1480,40 @@ class TestDatabase(TestCaseWithId):
         self.database.revoke_admin_privilege("test_user2", "database_test")
         self.database.save()
 
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.grant_read_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.grant_write_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.grant_admin_privilege("test_user2", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_read_privilege("test_user1", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_write_privilege("test_user1", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
-        with self.assertRaises(psycopg2.InternalError):
+        with self.assertRaises(DatabaseOperationError):
             try:
                 self.database2.revoke_admin_privilege("test_user1", "database_test")
-            except psycopg2.InternalError as e:
+            except DatabaseOperationError as e:
                 self.assertIn("User test_user2 does not have admin privileges on training set database_test", str(e))
                 raise
 

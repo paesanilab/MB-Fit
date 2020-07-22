@@ -19,6 +19,9 @@ Please look at the documentation and the examples to see how to run the whole wo
 Most recent changes at the top
 
 Version v0.2.3 (Under development, not released.)
+* Refactored arguments for NormalModesConfigurationGenerator class constructor and
+potential_fitting.generate_normal_mode_configuration funtion. Arguments should be easier to use now, but old calls to
+the funtion will be broken.
 * Cleaned up old files that were not needed
 * Added functionality to add direct polynomials (with and without gradients) to MBX, avoinding the need of MAPLE
 * Added updated examples for CO2 and NH4+

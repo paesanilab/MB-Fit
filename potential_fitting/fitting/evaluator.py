@@ -68,11 +68,23 @@ class Evaluator:
         low_energy_corr = []
         high_energy_corr = []
         energy_corr = []
+
+        max_err = 0;
+        max_ind = -1;
+        low_max_err = 0;
+        low_max_ind = -1;
+        high_max_err = 0;
+        high_max_ind = -1;
         
         for i in range(nbe):
             line = "{0:16.8f}{1:16.8f}\n".format(ref[i],nb[i])
             number = (ref[i] - nb[i]) * (ref[i] - nb[i])
             energy_list = [ref[i],nb[i]]
+
+            err = abs(ref[i] - nb[i])
+            if err > max_err:
+                max_err = err
+                max_ind = i
 
             corr_str += line
             rmsd += number
@@ -82,16 +94,23 @@ class Evaluator:
                 high_str += line
                 high_energy_corr.append(energy_list)
                 high_rmsd += number
+                if err > high_max_err:
+                    high_max_err = err
+                    high_max_ind = i
             else:
                 low_str += line
                 low_energy_corr.append(energy_list)
                 low_rmsd += number
+                if err > low_max_err:
+                    low_max_err = err
+                    low_max_ind = i
 
 
         with open(correlation_file_path,'w') as corr:
             corr.write(corr_str)
         rmsd = math.sqrt(rmsd/float(nbe))
         print("Total RMSD = {0:16.4f}".format(rmsd))
+        print("Max Error = {0:16.4f} at index {1}".format(max_err, max_ind))
 
         # Result is all[, low, high]
         self.energies.clear()
@@ -115,6 +134,7 @@ class Evaluator:
                 low_rmsd = math.sqrt(low_rmsd/float(len(low_energy_corr)))
                 self.rmsd.append(low_rmsd)
                 print("Low Energy RMSD = {0:16.4f}".format(low_rmsd))
+                print("Low Energy Max Error = {0:16.4f} at index {1}".format(low_max_err, low_max_ind))
             else:
                 self.rmsd.append(0.0)
 
@@ -125,6 +145,7 @@ class Evaluator:
                 high_rmsd = math.sqrt(high_rmsd/float(len(high_energy_corr)))
                 self.rmsd.append(high_rmsd)
                 print("High Energy RMSD = {0:16.4f}".format(high_rmsd))
+                print("High Energy Max Error = {0:16.4f} at index {1}".format(high_max_err, high_max_ind))
             else:
                 self.rmsd.append(0.0)
             

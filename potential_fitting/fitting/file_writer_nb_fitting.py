@@ -2771,21 +2771,21 @@ def write_makefile_mbnrg(number_of_monomers, system_name):
     a = """
 ifndef INTELHOME
 $(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
-INTELHOME=/opt/intel
+INTELHOME=/opt/intel/
 endif
 
 ifndef GSLHOME
 $(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
-GSLHOME=""
+GSLHOME=
 endif
 
 ifndef NETCDFHOME
 $(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
-NETCDFHOME=""
+NETCDFHOME=
 endif
 
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+CXXFLAGS= -g -Wall -std=c++11 -O2 -m64 
 LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
@@ -2876,21 +2876,21 @@ def write_makefile_ttmnrg(number_of_monomers, system_name):
     a = """
 ifndef INTELHOME
 $(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
-INTELHOME=/opt/intel
+INTELHOME=/opt/intel/
 endif
 
 ifndef GSLHOME
 $(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
-GSLHOME=""
+GSLHOME=
 endif
 
 ifndef NETCDFHOME
 $(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
-NETCDFHOME=""
+NETCDFHOME=
 endif
 
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+CXXFLAGS= -g -Wall -std=c++11 -O2 -m64 
 LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar

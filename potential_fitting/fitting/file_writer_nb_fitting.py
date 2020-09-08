@@ -2635,8 +2635,15 @@ int main(int argc, char** argv) {
                      << std::setw(20)       << "Repulsion (TTM-nrg)"
 #endif
                      << std::setw(20)       << "Polynomials"
-                     << std::setw(20)       << "Dispersion"
-                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
+"""
+
+    ff.write(a)
+    if (number_of_monomers<3):
+        a = """                     << std::setw(20)       << "Dispersion"
+
+"""
+        ff.write(a)
+    a = """                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
                      << "    \\n";
 
     double err_L2(0), err_wL2(0), err_Linf(0);
@@ -2681,8 +2688,14 @@ int main(int argc, char** argv) {
                          << std::setw(20) <<  buck_e[i]
 #endif
                          << std::setw(20) << model.calculate(training_set[i].xyz)
-                         << std::setw(20) <<  disp_e[i] 
-                         << std::setw(40) <<  elec_e[i]
+"""
+
+    ff.write(a)
+    if (number_of_monomers<3):
+        a = """                         << std::setw(20) <<  disp_e[i] 
+"""
+        ff.write(a)
+    a = """                         << std::setw(40) <<  elec_e[i]
                          << "    \\n" ;
 
         err_L2 += delta*delta;
@@ -3063,22 +3076,6 @@ namespace {
 static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyholder_""" + str(number_of_monomers) + "b_" + system_name + """_fit model;
 
 static std::vector<tset::nb_system> training_set;
-static std::vector<double> elec_e;
-"""
-
-    ff.write(a)
-
-    a = """static std::vector<double> disp_e;
-#ifdef USE_BUCKINGHAM
-static std::vector<double> buck_e;
-#endif
-"""
-
-    if (number_of_monomers<3): 
-        ff.write(a)
-
-    a = """static std::vector<double> nb_energy;
-
 
 } // namespace
 
@@ -3177,8 +3174,14 @@ int main(int argc, char** argv) {
               << std::setw(20)  << "Repulsion (TTM-nrg)"
 #endif
               << std::setw(20)  << "Polynomials"
-              << std::setw(20)  << "Dispersion"
-              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
+"""
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a="""              << std::setw(20)  << "Dispersion"
+"""
+        ff.write(a)
+    a = """              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
               << std::endl;
 
     
@@ -3192,8 +3195,15 @@ int main(int argc, char** argv) {
                   << std::setw(20)   << buck_e[n]
 #endif
                   << std::setw(20)   << poly_e[n]
-                  << std::setw(20)   << disp_e[n]
-                  << std::setw(40)   << elec_e[n]
+"""
+
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a="""                  << std::setw(20)   << disp_e[n]
+"""
+        ff.write(a)
+    a = """                  << std::setw(40)   << elec_e[n]
                   << std::endl;
     }
 

@@ -178,10 +178,13 @@ class Evaluator:
         
         axs.set_xlim([min_e,max_e])
         axs.set_ylim([min_e,max_e])
-        axs.xaxis.set_minor_locator(MultipleLocator(5))
-        axs.yaxis.set_minor_locator(MultipleLocator(5))
-        axs.xaxis.set_major_locator(MultipleLocator(10))
-        axs.yaxis.set_major_locator(MultipleLocator(10))
+        
+        interval = round((max_e - min_e) / 10.0,1)
+         
+        axs.xaxis.set_minor_locator(MultipleLocator(interval))
+        axs.yaxis.set_minor_locator(MultipleLocator(interval))
+        axs.xaxis.set_major_locator(MultipleLocator(2*interval))
+        axs.yaxis.set_major_locator(MultipleLocator(2*interval))
 
         axs.tick_params(top=True, bottom=True, left=True, right=True, direction='in', labelsize=15, length=6)
         axs.tick_params(which='minor', top=True, bottom=True, left=True, right=True, direction='in', labelsize=15, length=4)

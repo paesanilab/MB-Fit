@@ -685,7 +685,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                     bucktools.write(line)
 
 
-        if not ttm_only:
+        if mbnrg_fits_path is not None:
             # Include section
             with open(MBX_HOME + "/src/potential/{0}b/energy{0}b.h".format(number_of_monomers), 'r') as mbnrg:
                 lines = mbnrg.readlines()

@@ -3090,7 +3090,10 @@ int main(int argc, char** argv) {
 
     ff.write(a)
 
-    a = """    std::vector<double> disp_e;
+    a = """#ifdef USE_BUCKINGHAM
+std::vector<double> buck_e;
+#endif
+std::vector<double> disp_e;
 """
 
     if (number_of_monomers<3): ff.write(a)

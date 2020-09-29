@@ -1,11 +1,11 @@
 from subprocess import call
 import json
-from potential_fitting import molecule
-from potential_fitting.calculator import mbdecomp
-from potential_fitting.molecule import xyz_to_molecules
+from mbfit import molecule
+from mbfit.calculator import mbdecomp
+from mbfit.molecule import xyz_to_molecules
 
-from potential_fitting.utils import SettingsReader
-from potential_fitting.exceptions import InvalidValueError, ParsingError, XYZFormatError, InconsistentValueError
+from mbfit.utils import SettingsReader
+from mbfit.exceptions import InvalidValueError, ParsingError, XYZFormatError, InconsistentValueError
 
 # Config file, set by user, contains instructions for operation
 settings = SettingsReader("driver_settings.ini")

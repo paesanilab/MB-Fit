@@ -29,10 +29,12 @@ def parse_training_set_file(file_path, settings = None):
 
             symmetry += "{}1".format(symmetry_class)
 
-            if symmetry_class[-1] == "W":
-                symmetry_class += "A"
+            for i in range(len(symmetry_class) - 1, -1, -1):
+                if symmetry_class[i] != "W":
+                    symmetry_class = symmetry_class[:i] + chr(ord(symmetry_class[i]) + 1) + symmetry_class[i+1:]
+                    break
             else:
-                symmetry_class = symmetry_class[:-1] + chr(ord(symmetry_class[-1]) + 1)
+                symmetry_class = "A" + "".join(["A" for c in symmetry_class])
 
         symmetry_per_fragment = [symmetry]
 

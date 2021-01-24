@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 import sys, os, argparse
-import potential_fitting
-from potential_fitting import calculator
-from potential_fitting.utils import SettingsReader, system
-from potential_fitting.molecule import Molecule
-from potential_fitting.exceptions import FunctionNotImplementedError, InvalidValueError
+import mbfit
+from mbfit import calculator
+from mbfit.utils import SettingsReader, system
+from mbfit.molecule import Molecule
+from mbfit.exceptions import FunctionNotImplementedError, InvalidValueError
 
 __author__ = 'Ethan Bull-Vulpe'
 __email__ = 'ebullvul@ucsd.edu'
@@ -299,7 +299,7 @@ def main(opt):
 
     if opt.calculate_properties:
         system.format_print("Finding properties of optimized geometry...", bold=True, italics=True, color=system.Color.YELLOW)
-        potential_fitting.generate_fitting_config_file(settings_file_path, opt.properties_path, geo_paths=optimized_geometry_paths, config_1b_paths=opt.config_1b_paths, config_2b_paths=opt.config_2b_paths)
+        mbfit.generate_fitting_config_file(settings_file_path, opt.properties_path, geo_paths=optimized_geometry_paths, config_1b_paths=opt.config_1b_paths, config_2b_paths=opt.config_2b_paths)
         system.format_print("Optimized properties calculated successfully!", bold=True, italics=True, color=system.Color.GREEN)
     else:
         system.format_print("Optimized properties already calculated, no need to caclulate them.", bold=True, italics=True, color=system.Color.BLUE)
@@ -308,9 +308,9 @@ def main(opt):
 
     if opt.generate_polynomials:
         system.format_print("Generating polynomials...", bold=True, italics=True, color=system.Color.YELLOW)
-        potential_fitting.generate_poly_input(settings_file_path, molecule_in, poly_in_path)
-        potential_fitting.generate_polynomials(settings_file_path, poly_in_path, opt.poly_order, opt.poly_directory_path)
-        potential_fitting.execute_maple(settings_file_path, opt.poly_directory_path)
+        mbfit.generate_poly_input(settings_file_path, molecule_in, poly_in_path)
+        mbfit.generate_polynomials(settings_file_path, poly_in_path, opt.poly_order, opt.poly_directory_path)
+        mbfit.execute_maple(settings_file_path, opt.poly_directory_path)
         system.format_print("Polynomial generation successful!", bold=True, italics=True, color=system.Color.GREEN)
     else:
         system.format_print("Polynomials already generated, no need to generate them.", bold=True, italics=True, color=system.Color.BLUE)
@@ -322,9 +322,9 @@ def main(opt):
     elif opt.perform_ttm_fit:
         system.format_print("Performing TTM fit...", bold=True, italics=True, color=system.Color.YELLOW)
         if opt_molecule.get_num_fragments() == 2:
-            potential_fitting.generate_2b_ttm_fit_code(settings_file_path, opt.properties_path, molecule_in, opt.ttm_directory_path)
-            potential_fitting.compile_fit_code(settings_file_path, opt.ttm_directory_path)
-            potential_fitting.fit_2b_ttm_training_set(settings_file_path, os.path.join(opt.ttm_directory_path, "fit-2b-ttm"), opt.training_set_output_path, opt.ttm_directory_path, opt.properties_path, opt.num_ttm_fits)
+            mbfit.generate_2b_ttm_fit_code(settings_file_path, opt.properties_path, molecule_in, opt.ttm_directory_path)
+            mbfit.compile_fit_code(settings_file_path, opt.ttm_directory_path)
+            mbfit.fit_2b_ttm_training_set(settings_file_path, os.path.join(opt.ttm_directory_path, "fit-2b-ttm"), opt.training_set_output_path, opt.ttm_directory_path, opt.properties_path, opt.num_ttm_fits)
         else:
             raise FunctionNotImplementedError("ttm fits for 3b+")
         system.format_print("TTM fit successful!", bold=True, italics=True, color=system.Color.GREEN)
@@ -336,15 +336,15 @@ def main(opt):
     if opt.perform_poly_fit:
         system.format_print("Performing Polynomial fit...", bold=True, italics=True, color=system.Color.YELLOW)
         if opt_molecule.get_num_fragments() == 1:
-            potential_fitting.generate_1b_fit_code(settings_file_path, opt.properties_path, molecule_in, poly_in_path, opt.poly_directory_path, opt.poly_order, opt.poly_fit_directory_path)
-            potential_fitting.compile_fit_code(settings_file_path, opt.poly_fit_directory_path)
+            mbfit.generate_1b_fit_code(settings_file_path, opt.properties_path, molecule_in, poly_in_path, opt.poly_directory_path, opt.poly_order, opt.poly_fit_directory_path)
+            mbfit.compile_fit_code(settings_file_path, opt.poly_fit_directory_path)
             system.call("mv", os.path.join(opt.poly_fit_directory_path, "eval-1b"), opt.eval_script_path)
-            potential_fitting.fit_1b_training_set(settings_file_path, os.path.join(opt.poly_fit_directory_path, "fit-1b"), opt.training_set_output_path, opt.poly_fit_directory_path, opt.fit_params_path, opt.num_poly_fits)
+            mbfit.fit_1b_training_set(settings_file_path, os.path.join(opt.poly_fit_directory_path, "fit-1b"), opt.training_set_output_path, opt.poly_fit_directory_path, opt.fit_params_path, opt.num_poly_fits)
         elif opt_molecule.get_num_fragments() == 2:
-            potential_fitting.generate_2b_fit_code(settings_file_path, opt.properties_path, poly_in_path, opt.poly_directory_path, opt.poly_order, opt.poly_fit_directory_path)
-            potential_fitting.compile_fit_code(settings_file_path, opt.poly_fit_directory_path)
+            mbfit.generate_2b_fit_code(settings_file_path, opt.properties_path, poly_in_path, opt.poly_directory_path, opt.poly_order, opt.poly_fit_directory_path)
+            mbfit.compile_fit_code(settings_file_path, opt.poly_fit_directory_path)
             system.call("mv", os.path.join(opt.poly_fit_directory_path, "eval-2b"), opt.eval_script_path)
-            potential_fitting.fit_2b_training_set(settings_file_path, os.path.join(opt.poly_fit_directory_path, "fit-2b"), opt.training_set_output_path, opt.poly_fit_directory_path, opt.fit_params_path, opt.num_poly_fits)
+            mbfit.fit_2b_training_set(settings_file_path, os.path.join(opt.poly_fit_directory_path, "fit-2b"), opt.training_set_output_path, opt.poly_fit_directory_path, opt.fit_params_path, opt.num_poly_fits)
         else:
             raise FunctionNotImplementedError("polynomial fits for 3b+")
         system.format_print("Polynomial fit successful!", bold=True, italics=True, color=system.Color.GREEN)

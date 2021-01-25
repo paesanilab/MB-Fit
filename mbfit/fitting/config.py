@@ -394,7 +394,7 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         # read lines until we read the line before where charges are specified
         while True:
             try:
-                qchem_out.readline().index("Ground-State ChElPG Net Atomic Charges")
+                qchem_out.readline().index("Charge Model 5")
                 # skip 3 more lines
                 for i in range(3):
                     qchem_out.readline()

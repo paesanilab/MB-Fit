@@ -534,6 +534,7 @@ def get_pointer_setup_string(symmetry_parser, vsites, xyz_var_name, extension = 
             crd_shift += 3
         else:
             string_pointers_vs += "{}{}double {}[3];\n".format(spaces, "", get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
+            string_pointers_vs += "{}{}std::fill({},{} + 3, 0.0);\n".format(spaces,"",get_coords_var_name(symmetry_class, atom_index, fragment_index, extension),get_coords_var_name(symmetry_class, atom_index, fragment_index, extension))
             string_pointers_vs += "\n"
         mon_id = chr(ord(mon_id)+1)
 
@@ -2004,6 +2005,7 @@ int main(int argc, char** argv) {
     
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
+    double weight_sum(0);
 
     for (size_t i = 0; i < training_set.size(); ++i) {
 
@@ -2024,10 +2026,10 @@ int main(int argc, char** argv) {
             err_Linf = std::abs(delta);
 
         correlation_file <<  std::setw(10) << i+1
-                         << std::setw(15) << std::scientific
+                         << std::setw(20) << std::scientific
                          << std::setprecision(8)  <<  training_set[i].nb_energy
-                         << std::setw(15) <<  E_model
-                         << std::setw(15) <<  delta*delta  << "    \\n" ;
+                         << std::setw(20) <<  E_model
+                         << std::setw(20) <<  delta*delta  << "    \\n" ;
 
         terms_file <<  std::setw(10) << i+1
                          << std::setw(20) << std::scientific
@@ -2040,6 +2042,7 @@ int main(int argc, char** argv) {
 
         err_L2 += delta*delta;
         err_wL2 += ts_weights[i]*delta*delta;
+        weight_sum += ts_weights[i];
 
         if (training_set[i].binding_energy - E_min < E_range) {
             nlo += 1.0;
@@ -2053,7 +2056,7 @@ int main(int argc, char** argv) {
     terms_file.close();
 
     err_L2 /= training_set.size();
-    err_wL2 /= training_set.size();
+    err_wL2 /= weight_sum;
 
     err_L2_lo /= nlo;
 
@@ -2632,12 +2635,20 @@ int main(int argc, char** argv) {
                      << std::setw(20)       << "Repulsion (TTM-nrg)"
 #endif
                      << std::setw(20)       << "Polynomials"
-                     << std::setw(20)       << "Dispersion"
-                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
+"""
+
+    ff.write(a)
+    if (number_of_monomers<3):
+        a = """                     << std::setw(20)       << "Dispersion"
+
+"""
+        ff.write(a)
+    a = """                     << std::setw(40)       << "Electrostatics (Permanent + Induced)"
                      << "    \\n";
 
     double err_L2(0), err_wL2(0), err_Linf(0);
     double err_L2_lo(0), err_Linf_lo(0), nlo(0);
+    double weight_sum(0);
 
     for (size_t i = 0; i < training_set.size(); ++i) {
 """
@@ -2677,12 +2688,19 @@ int main(int argc, char** argv) {
                          << std::setw(20) <<  buck_e[i]
 #endif
                          << std::setw(20) << model.calculate(training_set[i].xyz)
-                         << std::setw(20) <<  disp_e[i] 
-                         << std::setw(40) <<  elec_e[i]
+"""
+
+    ff.write(a)
+    if (number_of_monomers<3):
+        a = """                         << std::setw(20) <<  disp_e[i] 
+"""
+        ff.write(a)
+    a = """                         << std::setw(40) <<  elec_e[i]
                          << "    \\n" ;
 
         err_L2 += delta*delta;
         err_wL2 += ts_weights[i]*delta*delta;
+        weight_sum += ts_weights[i];
 
         if (training_set[i].binding_energy - E_min < E_range) {
             nlo += 1.0;
@@ -2696,7 +2714,7 @@ int main(int argc, char** argv) {
     terms_file.close();
 
     err_L2 /= training_set.size();
-    err_wL2 /= training_set.size();
+    err_wL2 /= weight_sum;
 
     err_L2_lo /= nlo;
 
@@ -2753,21 +2771,21 @@ def write_makefile_mbnrg(number_of_monomers, system_name):
     a = """
 ifndef INTELHOME
 $(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
-INTELHOME=/opt/intel
+INTELHOME=/opt/intel/
 endif
 
 ifndef GSLHOME
 $(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
-GSLHOME=""
+GSLHOME=
 endif
 
 ifndef NETCDFHOME
 $(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
-NETCDFHOME=""
+NETCDFHOME=
 endif
 
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+CXXFLAGS= -g -Wall -std=c++11 -O2 -m64 
 LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
@@ -2858,21 +2876,21 @@ def write_makefile_ttmnrg(number_of_monomers, system_name):
     a = """
 ifndef INTELHOME
 $(info "INTELHOME is not set. Please set it or ignore if the default /opt/intel is OK")
-INTELHOME=/opt/intel
+INTELHOME=/opt/intel/
 endif
 
 ifndef GSLHOME
 $(info "GSLHOME is not set. Please set it or ignore if GSL is already in your path")
-GSLHOME=""
+GSLHOME=
 endif
 
 ifndef NETCDFHOME
 $(info "NETCDFHOMEis not set. Please set it or ignore if netcdf is already in your path")
-NETCDFHOME=""
+NETCDFHOME=
 endif
 
 CXX=icpc
-CXXFLAGS= -g -Wall -std=c++11 -O0 -m64 
+CXXFLAGS= -g -Wall -std=c++11 -O2 -m64 
 LIBS = -lnetcdf -lgsl -lgslcblas -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread
 
 AR = /usr/bin/ar
@@ -3058,22 +3076,6 @@ namespace {
 static mbnrg_""" + str(number_of_monomers) + "b_" + system_name + """_fit::polyholder_""" + str(number_of_monomers) + "b_" + system_name + """_fit model;
 
 static std::vector<tset::nb_system> training_set;
-static std::vector<double> elec_e;
-"""
-
-    ff.write(a)
-
-    a = """static std::vector<double> disp_e;
-#ifdef USE_BUCKINGHAM
-static std::vector<double> buck_e;
-#endif
-"""
-
-    if (number_of_monomers<3): 
-        ff.write(a)
-
-    a = """static std::vector<double> nb_energy;
-
 
 } // namespace
 
@@ -3088,7 +3090,10 @@ int main(int argc, char** argv) {
 
     ff.write(a)
 
-    a = """    std::vector<double> disp_e;
+    a = """#ifdef USE_BUCKINGHAM
+std::vector<double> buck_e;
+#endif
+std::vector<double> disp_e;
 """
 
     if (number_of_monomers<3): ff.write(a)
@@ -3172,8 +3177,14 @@ int main(int argc, char** argv) {
               << std::setw(20)  << "Repulsion (TTM-nrg)"
 #endif
               << std::setw(20)  << "Polynomials"
-              << std::setw(20)  << "Dispersion"
-              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
+"""
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a="""              << std::setw(20)  << "Dispersion"
+"""
+        ff.write(a)
+    a = """              << std::setw(40)  << "Electrostatics (Permanent + Induced)"
               << std::endl;
 
     
@@ -3187,8 +3198,15 @@ int main(int argc, char** argv) {
                   << std::setw(20)   << buck_e[n]
 #endif
                   << std::setw(20)   << poly_e[n]
-                  << std::setw(20)   << disp_e[n]
-                  << std::setw(40)   << elec_e[n]
+"""
+
+    ff.write(a)
+
+    if (number_of_monomers<3):
+        a="""                  << std::setw(20)   << disp_e[n]
+"""
+        ff.write(a)
+    a = """                  << std::setw(40)   << elec_e[n]
                   << std::endl;
     }
 
@@ -3733,7 +3751,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
         if use_lonepairs[i] != 0:
             a = """
         monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
@@ -3882,7 +3900,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
         if use_lonepairs[i] != 0:
             a = """
         monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
@@ -3944,7 +3962,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
             a = """
-        m""" + str(i+1) + """.grads(""" + list(fragments[i].get_atoms())[3][0] + "_1_g" + char_code + ", " + list(fragments[i].get_atoms())[4][0] + "_2_g" + char_code + """, w12, wcross, """ + list(fragments[i].get_atoms())[0][0] + "_1_g" + char_code + """);
+        m""" + str(i+1) + """.grads(coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + "_g, coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """_g, w12, wcross, coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """_g);
 """
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
@@ -4014,7 +4032,7 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
         a = """
         
-            (*virial)[""" + str(virial_index) + """] = """
+            (*virial)[""" + str(virial_index) + """] += """
 
         ff.write(a)
 

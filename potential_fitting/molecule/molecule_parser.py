@@ -22,14 +22,19 @@ def parse_training_set_file(file_path, settings = None):
 
         symmetry = ""
 
-        symmetry_class = 65
+        symmetry_class = "A"
 
         # loop over each atom assigning it a unique symmetry class
         for atom_index in range(total_atoms):
 
-            symmetry += "{}1".format(chr(symmetry_class))
+            symmetry += "{}1".format(symmetry_class)
 
-            symmetry_class += 1
+            for i in range(len(symmetry_class) - 1, -1, -1):
+                if symmetry_class[i] != "W":
+                    symmetry_class = symmetry_class[:i] + chr(ord(symmetry_class[i]) + 1) + symmetry_class[i+1:]
+                    break
+            else:
+                symmetry_class = "A" + "".join(["A" for c in symmetry_class])
 
         symmetry_per_fragment = [symmetry]
 

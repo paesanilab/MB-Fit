@@ -394,7 +394,7 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         # read lines until we read the line before where charges are specified
         while True:
             try:
-                qchem_out.readline().index("Ground-State ChElPG Net Atomic Charges")
+                qchem_out.readline().index("Charge Model 5")
                 # skip 3 more lines
                 for i in range(3):
                     qchem_out.readline()
@@ -606,7 +606,7 @@ def write_config_file(settings_file, config_path, chg,
     configwriter.set("common", "molecule", molecule_in)
 
     configwriter.set("fitting", "number_of_atoms", str(molecule.get_num_atoms()))
-    configwriter.set("fitting", "number_of_electrostatic_sites", str(parser.get_num_atoms_and_virtual_sites()))
+    configwriter.set("fitting", "number_of_electrostatic_sites", str(molecule.get_num_atoms() + sum([int(i) for i in settings.get("molecule", "use_mbpol").split(",")])))
 
 
     excluded_pairs12, excluded_pairs13, excluded_pairs14 = molecule.get_excluded_pairs()

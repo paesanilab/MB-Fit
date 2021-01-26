@@ -2069,9 +2069,9 @@ DECLARE
 $$;
 
 create function set_properties(hash character varying, model character varying, use_cp boolean, indices integer[], result boolean, energy double precision, log_txt character varying, overwrite boolean) returns void
-	security definer
-	SET search_path=public, pg_temp
-	language plpgsql
+  security definer
+  SET search_path=public, pg_temp
+  language plpgsql
 as $$
 DECLARE
     id INTEGER;
@@ -2081,7 +2081,7 @@ DECLARE
     SELECT status FROM molecule_properties WHERE  mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp
       INTO cur_status;
 
-    IF cur_status = 'complete' THEN
+    IF cur_status = 'complete' OR cur_status = 'failed' THEN
       IF overwrite THEN
         UPDATE molecule_properties SET energies = '{}', status='dispatched' WHERE mol_hash=hash AND model_name=model AND frag_indices=indices AND molecule_properties.use_cp = set_properties.use_cp;
         cur_status = 'dispatched';
@@ -2089,10 +2089,10 @@ DECLARE
     END IF;
 
     IF NOT cur_status = 'dispatched' THEN
-      IF cur_status = 'complete' THEN
+      IF cur_status = 'complete' OR cur_status = 'failed' THEN
         RETURN;
       END IF;
-      RAISE EXCEPTION 'Trying to set energy of calculation that does not have status = "dispatched" or status = "complete"';
+      RAISE EXCEPTION 'Trying to set energy of calculation that does not have status = "dispatched" or status = "complete" or status = "failed"';
     END IF;
 
     IF result THEN
@@ -2109,4 +2109,3 @@ DECLARE
   END;
 
 $$;
-

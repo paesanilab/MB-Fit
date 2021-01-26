@@ -127,8 +127,6 @@ def prepare_ttmnrg_fitting_code(settings_path, config_path, fit_path):
     # move files from cwd into fit directory
     os.system("mv dispersion.* " + fit_path + "/src" + "/")
     os.system("mv buckingham.* " + fit_path + "/src" + "/")
-    os.system("mv eval*b.cpp " + fit_path + "/src" + "/")
-    os.system("mv fit*b.cpp " + fit_path + "/src" + "/")
 
     os.system("mv eval*b-ttm.cpp " + fit_path + "/src" + "/")
     os.system("mv fit*b-ttm.cpp " + fit_path + "/src" + "/")

@@ -1,3 +1,3 @@
-import test_potential_fitting
+import test_mbfit
 
-test_potential_fitting.execute_tests()
+test_mbfit.execute_tests()

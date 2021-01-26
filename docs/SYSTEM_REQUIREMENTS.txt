@@ -1,0 +1,11 @@
+# Note: this file lists all programs that must be installed to run all code in the
+# MB-Fit library.
+
+# only required to use qchem for calculations
+qchem
+# http://www.q-chem.com/qchem-website/doc_for_web/qchem-install.shtml
+
+# only required to use database
+postgreSQL
+# https://www.postgresql.org/download/
+

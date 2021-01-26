@@ -1,0 +1,17 @@
+# Note: this file lists all python packages that must be installed to run all code in the
+# MB-Fit library.
+
+numpy
+# conda install numpy
+pandas
+# conda install pandas
+matplotlib
+# conda install matplotlib
+
+# only required to use psi4 for calculations.
+psi4
+# conda install psi4 -c psi4
+
+# only required to use database.
+psycopg2
+# conda install psycopg2

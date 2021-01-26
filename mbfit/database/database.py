@@ -216,7 +216,7 @@ class Database():
         with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "init.sql")) as sql_initilizer:
             sql_script = sql_initilizer.read()
             try:
-                self.single_execute(sql_script)
+                self.single_execute(sql_script, ())
             except psycopg2.OperationalError as e:
                 raise DatabaseInitializationError(self.name, str(e))
 
@@ -285,6 +285,7 @@ class Database():
         """
 
         try:
+            print(command)
             self.cursor.execute(
                 command,
                 params)

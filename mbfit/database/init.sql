@@ -9,8 +9,6 @@ create type empty_mol as
 	frag_smiles character varying[]
 );
 
-alter type empty_mol owner to ebullvul;
-
 create type fragment as
 (
 	name varchar,
@@ -22,11 +20,7 @@ create type fragment as
 	smile varchar
 );
 
-alter type fragment owner to ebullvul;
-
 create type status_enum as enum ('pending', 'dispatched', 'complete', 'failed');
-
-alter type status_enum owner to ebullvul;
 
 create table molecule_info
 (
@@ -34,8 +28,6 @@ create table molecule_info
 		constraint "molecule_Name_index"
 			primary key
 );
-
-alter table molecule_info owner to ebullvul;
 
 create index molecule_info_name_uindex
 	on molecule_info (name);
@@ -50,8 +42,6 @@ create table molecule_list
 			references molecule_info,
 	atom_coordinates double precision[] not null
 );
-
-alter table molecule_list owner to ebullvul;
 
 create unique index molecule_list_mol_hash_uindex
 	on molecule_list (mol_hash);
@@ -68,8 +58,6 @@ create table atom_info
 
 comment on table atom_info is 'Holds immutable information that is universal to all instances of a specific Atom.';
 
-alter table atom_info owner to ebullvul;
-
 create unique index atom_info_atomic_symbol_uindex
 	on atom_info (atomic_symbol);
 
@@ -85,8 +73,6 @@ create table fragment_info
 
 comment on table fragment_info is 'This table holds all immutable information shared by all fragments of a type';
 
-alter table fragment_info owner to ebullvul;
-
 create unique index fragment_info_name_uindex
 	on fragment_info (name);
 
@@ -100,8 +86,6 @@ create table molecule_contents
 			references fragment_info,
 	count integer not null
 );
-
-alter table molecule_contents owner to ebullvul;
 
 create index molecule_contents_mol_name_index
 	on molecule_contents (mol_name);
@@ -120,8 +104,6 @@ create table fragment_contents
 
 comment on table fragment_contents is 'This table describes fragments found in fragment_info table as built by atoms in atom_info table.';
 
-alter table fragment_contents owner to ebullvul;
-
 create index fragment_contents_frag_name_index
 	on fragment_contents (frag_name);
 
@@ -131,8 +113,6 @@ create table model_info
 		constraint models_info_name_key
 			primary key
 );
-
-alter table model_info owner to ebullvul;
 
 create unique index models_info_name_uindex
 	on model_info (name);
@@ -147,8 +127,6 @@ create table log_files
 	log_text varchar,
 	client_name varchar not null
 );
-
-alter table log_files owner to ebullvul;
 
 create unique index log_files_log_id_uindex
 	on log_files (log_id);
@@ -171,8 +149,6 @@ create table molecule_properties
 			references log_files,
 	use_cp boolean not null
 );
-
-alter table molecule_properties owner to ebullvul;
 
 create index energies_list_mol_hash_model_name_index
 	on molecule_properties (mol_hash, model_name);
@@ -203,8 +179,6 @@ create table tags
 	tag_names character varying[] not null
 );
 
-alter table tags owner to ebullvul;
-
 create unique index tags_mol_hash_model_name_uindex
 	on tags (mol_hash, model_name);
 
@@ -221,8 +195,6 @@ create table optimized_geometries
 			references model_info
 );
 
-alter table optimized_geometries owner to ebullvul;
-
 create index optimized_geometries_mol_name_model_name_index
 	on optimized_geometries (mol_name, model_name);
 
@@ -235,8 +207,6 @@ create table pending_calculations
 	frag_indices integer[] not null,
 	use_cp boolean not null
 );
-
-alter table pending_calculations owner to ebullvul;
 
 create index pending_calculations_mol_hash_model_name_frag_indices_use_cp_in
 	on pending_calculations (mol_hash, model_name, frag_indices, use_cp);
@@ -253,8 +223,6 @@ create table training_sets
 	read_users integer[] not null,
 	write_users integer[] not null
 );
-
-alter table training_sets owner to ebullvul;
 
 create unique index training_sets_tag_name_uindex
 	on training_sets (tag_name);
@@ -286,8 +254,6 @@ DECLARE
   END;
 $$;
 
-alter function get_molecule(varchar) owner to ebullvul;
-
 create function count_entries(molecule_name character varying) returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -302,8 +268,6 @@ DECLARE
   END;
 
 $$;
-
-alter function count_entries(varchar) owner to ebullvul;
 
 create function add_atom_info(atomic_symbol character varying) returns boolean
 	security definer
@@ -322,8 +286,6 @@ DECLARE
   END;
 
 $$;
-
-alter function add_atom_info(varchar) owner to ebullvul;
 
 create function add_molecule_info(name character varying, fragments fragment[], counts integer[]) returns boolean
 	security definer
@@ -350,8 +312,6 @@ DECLARE
 
 $$;
 
-alter function add_molecule_info(varchar, fragment[], integer[]) owner to ebullvul;
-
 create function add_model_info(method character varying, basis character varying, cp boolean) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -377,8 +337,6 @@ DECLARE
 
 $$;
 
-alter function add_model_info(varchar, varchar, boolean) owner to ebullvul;
-
 create function add_molecule(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[]) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -397,8 +355,6 @@ DECLARE
   END;
 
 $$;
-
-alter function add_molecule(varchar, varchar, fragment[], integer[], double precision[]) owner to ebullvul;
 
 create function combinations(arr integer[]) returns TABLE(perm integer[], l integer)
 	security definer
@@ -438,8 +394,6 @@ DECLARE
 
 $$;
 
-alter function combinations(integer[]) owner to ebullvul;
-
 create function reset_dispatched(ts character varying[]) returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -465,8 +419,6 @@ DECLARE
 
 $$;
 
-alter function reset_dispatched(character varying[]) owner to ebullvul;
-
 create function reset_failed(ts character varying[]) returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -491,8 +443,6 @@ DECLARE
   END;
 
 $$;
-
-alter function reset_failed(character varying[]) owner to ebullvul;
 
 create function add_fragment_info(name character varying, charge integer, spin integer, smile character varying, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns boolean
 	security definer
@@ -522,8 +472,6 @@ DECLARE
 
 $$;
 
-alter function add_fragment_info(varchar, integer, integer, varchar, character varying[], character varying[], integer[]) owner to ebullvul;
-
 create function construct_fragment(name character varying, charge integer, spin integer, smile character varying, atomic_symbols character varying[], symmetries character varying[], counts integer[]) returns fragment
 	security definer
 	SET search_path=public, pg_temp
@@ -544,8 +492,6 @@ DECLARE
   END;
 
 $$;
-
-alter function construct_fragment(varchar, integer, integer, varchar, character varying[], character varying[], integer[]) owner to ebullvul;
 
 create function get_pending_calculations(molecule_name character varying, input_client_name character varying, input_tags character varying[], batch_size integer) returns TABLE(coords double precision[], model character varying, indices integer[], use_cp boolean)
 	security definer
@@ -582,8 +528,6 @@ DECLARE
 
 $$;
 
-alter function get_pending_calculations(varchar, varchar, character varying[], integer) owner to ebullvul;
-
 create function delete_atom_info(atomic_symbol character varying) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -600,8 +544,6 @@ DECLARE
   END;
 
 $$;
-
-alter function delete_atom_info(varchar) owner to ebullvul;
 
 create function delete_fragment_info(name character varying) returns boolean
 	security definer
@@ -626,8 +568,6 @@ DECLARE
   END;
 
 $$;
-
-alter function delete_fragment_info(varchar) owner to ebullvul;
 
 create function delete_molecule_info(name character varying) returns boolean
 	security definer
@@ -655,8 +595,6 @@ DECLARE
 
 $$;
 
-alter function delete_molecule_info(varchar) owner to ebullvul;
-
 create function delete_molecule(hash character varying, name character varying) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -679,8 +617,6 @@ DECLARE
   END;
 
 $$;
-
-alter function delete_molecule(varchar, varchar) owner to ebullvul;
 
 create function delete_model_info(method character varying, basis character varying, cp boolean) returns boolean
 	security definer
@@ -707,8 +643,6 @@ DECLARE
   END;
 
 $$;
-
-alter function delete_model_info(varchar, varchar, boolean) owner to ebullvul;
 
 create function delete_all_calculations(molecule_name character varying, method character varying, basis character varying, cp boolean, input_tags character varying[], delete_complete_calculations boolean) returns integer
 	security definer
@@ -749,8 +683,6 @@ END;
 
 $$;
 
-alter function delete_all_calculations(varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
-
 create function training_set_exists(input_tag character varying) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -767,8 +699,6 @@ DECLARE
       END;
 
 $$;
-
-alter function training_set_exists(varchar) owner to ebullvul;
 
 create function get_user_id(username character varying) returns integer
 	security definer
@@ -788,8 +718,6 @@ DECLARE
 
 $$;
 
-alter function get_user_id(varchar) owner to ebullvul;
-
 create function has_read_privilege(input_tag character varying) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -806,8 +734,6 @@ DECLARE
       END;
 
 $$;
-
-alter function has_read_privilege(varchar) owner to ebullvul;
 
 create function has_write_privilege(input_tag character varying) returns boolean
 	security definer
@@ -826,8 +752,6 @@ DECLARE
 
 $$;
 
-alter function has_write_privilege(varchar) owner to ebullvul;
-
 create function has_admin_privilege(input_tag character varying) returns boolean
 	security definer
 	SET search_path=public, pg_temp
@@ -844,8 +768,6 @@ DECLARE
       END;
 
 $$;
-
-alter function has_admin_privilege(varchar) owner to ebullvul;
 
 create function get_empty_molecule(molecule_name character varying) returns TABLE(f_name character varying, f_charge integer, f_spin integer, a_atomic_symbols character varying[], a_symmetries character varying[], a_counts integer[], f_smile character varying, f_count integer)
 	security definer
@@ -889,8 +811,6 @@ DECLARE
   END;
 $$;
 
-alter function get_empty_molecule(varchar) owner to ebullvul;
-
 create function annihilate() returns void
 	security definer
 	SET search_path=public, pg_temp
@@ -903,8 +823,6 @@ DECLARE
   END;
 
 $$;
-
-alter function annihilate() owner to ebullvul;
 
 create function add_calculation(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[], method character varying, basis character varying, cp boolean, tags character varying[], optimized boolean) returns boolean
 	security definer
@@ -941,7 +859,7 @@ DECLARE
       ELSIF NOT has_write_privilege(tag_name)
       THEN
         -- If training set does exist and current user doesn't have write privileges, Error.
-        raise EXCEPTION 'User % does not have write privileges on training set %', session_user, tag_name;
+        raise EXCEPTION 'User %% does not have write privileges on training set %%', session_user, tag_name;
       END IF;
     END LOOP;
 
@@ -1026,8 +944,6 @@ DECLARE
 
 $$;
 
-alter function add_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
-
 create function get_1b_training_set(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], energy double precision)
 	security definer
 	SET search_path=public, pg_temp
@@ -1052,11 +968,11 @@ DECLARE
           IF NOT training_set_exists(tag_name)
           THEN
             -- If the training set does not exist, Error
-            raise EXCEPTION 'Training set % does not exist', tag_name;
+            raise EXCEPTION 'Training set %% does not exist', tag_name;
           ELSIF NOT has_read_privilege(tag_name)
           THEN
             -- If training set does exist and current user doesn't have read privileges, Error.
-            raise EXCEPTION 'User % does not have read privileges on training set %', session_user, tag_name;
+            raise EXCEPTION 'User %% does not have read privileges on training set %%', session_user, tag_name;
           END IF;
         END LOOP;
 
@@ -1137,8 +1053,6 @@ DECLARE
 
 $$;
 
-alter function get_1b_training_set(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
-
 create function get_2b_training_set(molecule_name character varying, monomer1_name character varying, monomer2_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], binding_energy double precision, interaction_energy double precision, monomer1_deformation_energy double precision, monomer2_deformation_energy double precision)
 	security definer
 	SET search_path=public, pg_temp
@@ -1170,11 +1084,11 @@ DECLARE
           IF NOT training_set_exists(tag_name)
           THEN
             -- If the training set does not exist, Error
-            raise EXCEPTION 'Training set % does not exist', tag_name;
+            raise EXCEPTION 'Training set %% does not exist', tag_name;
           ELSIF NOT has_read_privilege(tag_name)
           THEN
             -- If training set does exist and current user doesn't have read privileges, Error.
-            raise EXCEPTION 'User % does not have read privileges on training set %', session_user, tag_name;
+            raise EXCEPTION 'User %% does not have read privileges on training set %%', session_user, tag_name;
           END IF;
         END LOOP;
 
@@ -1314,8 +1228,6 @@ DECLARE
 
 $$;
 
-alter function get_2b_training_set(varchar, varchar, varchar, varchar, character varying[], integer, integer) owner to ebullvul;
-
 create function get_failed_configs(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], frags integer[], used_cp boolean)
 	security definer
 	SET search_path=public, pg_temp
@@ -1338,11 +1250,11 @@ DECLARE
           IF NOT training_set_exists(tag_name)
           THEN
             -- If the training set does not exist, Error
-            raise EXCEPTION 'Training set % does not exist', tag_name;
+            raise EXCEPTION 'Training set %% does not exist', tag_name;
           ELSIF NOT has_read_privilege(tag_name)
           THEN
             -- If training set does exist and current user doesn't have read privileges, Error.
-            raise EXCEPTION 'User % does not have read privileges on training set %', session_user, tag_name;
+            raise EXCEPTION 'User %% does not have read privileges on training set %%', session_user, tag_name;
           END IF;
         END LOOP;
 
@@ -1381,8 +1293,6 @@ DECLARE
 
 $$;
 
-alter function get_failed_configs(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
-
 create function get_user_id() returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -1398,8 +1308,6 @@ DECLARE
       END;
 
 $$;
-
-alter function get_user_id() owner to ebullvul;
 
 create function import_calculation(hash character varying, name character varying, fragments fragment[], counts integer[], coordinates double precision[], method character varying, basis character varying, cp boolean, tags character varying[], optimized boolean, nmer_energies double precision[]) returns boolean
 	security definer
@@ -1436,7 +1344,7 @@ DECLARE
       ELSIF NOT has_write_privilege(tag_name)
       THEN
         -- If training set does exist and current user doesn't have write privileges, Error.
-        raise EXCEPTION 'User % does not have write privileges on training set %', session_user, tag_name;
+        raise EXCEPTION 'User %% does not have write privileges on training set %%', session_user, tag_name;
       END IF;
     END LOOP;
 
@@ -1520,8 +1428,6 @@ DECLARE
 
 $$;
 
-alter function import_calculation(varchar, varchar, fragment[], integer[], double precision[], varchar, varchar, boolean, character varying[], boolean, double precision[]) owner to ebullvul;
-
 create function grant_admin_privilege(input_tag character varying, username character varying) returns void
 	security definer
 	SET search_path=public, pg_temp
@@ -1535,7 +1441,7 @@ DECLARE
         IF not has_admin_privilege(input_tag)
         THEN
           -- If current user does not have admin privileges, error
-          raise EXCEPTION 'User % does not have admin privileges on training set %', session_user, input_tag;
+          raise EXCEPTION 'User %% does not have admin privileges on training set %%', session_user, input_tag;
         END IF;
 
       SELECT admins FROM training_sets WHERE tag_name = input_tag
@@ -1548,8 +1454,6 @@ DECLARE
     END;
 
 $$;
-
-alter function grant_admin_privilege(varchar, varchar) owner to ebullvul;
 
 create function grant_read_privilege(input_tag character varying, username character varying) returns void
 	security definer
@@ -1564,7 +1468,7 @@ DECLARE
         IF not has_admin_privilege(input_tag)
         THEN
           -- If current user does not have admin privileges, error
-          raise EXCEPTION 'User % does not have admin privileges on training set %', session_user, input_tag;
+          raise EXCEPTION 'User %% does not have admin privileges on training set %%', session_user, input_tag;
         END IF;
 
       SELECT read_users FROM training_sets WHERE tag_name = input_tag
@@ -1577,8 +1481,6 @@ DECLARE
     END;
 
 $$;
-
-alter function grant_read_privilege(varchar, varchar) owner to ebullvul;
 
 create function grant_write_privilege(input_tag character varying, username character varying) returns void
 	security definer
@@ -1593,7 +1495,7 @@ DECLARE
         IF not has_admin_privilege(input_tag)
         THEN
           -- If current user does not have admin privileges, error
-          raise EXCEPTION 'User % does not have admin privileges on training set %', session_user, input_tag;
+          raise EXCEPTION 'User %% does not have admin privileges on training set %%', session_user, input_tag;
         END IF;
 
       SELECT write_users FROM training_sets WHERE tag_name = input_tag
@@ -1606,8 +1508,6 @@ DECLARE
     END;
 
 $$;
-
-alter function grant_write_privilege(varchar, varchar) owner to ebullvul;
 
 create function revoke_admin_privilege(input_tag character varying, username character varying) returns void
 	security definer
@@ -1622,7 +1522,7 @@ DECLARE
         IF not has_admin_privilege(input_tag)
         THEN
           -- If current user does not have admin privileges, error
-          raise EXCEPTION 'User % does not have admin privileges on training set %', session_user, input_tag;
+          raise EXCEPTION 'User %% does not have admin privileges on training set %%', session_user, input_tag;
         END IF;
 
       SELECT admins FROM training_sets WHERE tag_name = input_tag
@@ -1632,13 +1532,13 @@ DECLARE
       IF NOT get_user_id(username) = ANY(cur_admins)
       THEN
         -- If username is not in the list of admins, error
-        raise EXCEPTION 'User % is already not an admin of training set %', username, input_tag;
+        raise EXCEPTION 'User %% is already not an admin of training set %%', username, input_tag;
       END IF;
 
       IF array_length(cur_admins, 1) = 1
       THEN
         -- If the user is trying to remove the last admin, error.
-        raise EXCEPTION 'User % is the last admin of this training set and many not be removed.', username;
+        raise EXCEPTION 'User %% is the last admin of this training set and many not be removed.', username;
 
       END IF;
 
@@ -1646,8 +1546,6 @@ DECLARE
     END;
 
 $$;
-
-alter function revoke_admin_privilege(varchar, varchar) owner to ebullvul;
 
 create function revoke_read_privilege(input_tag character varying, username character varying) returns void
 	security definer
@@ -1662,7 +1560,7 @@ DECLARE
         IF not has_admin_privilege(input_tag)
         THEN
           -- If current user does not have admin privileges, error
-          raise EXCEPTION 'User % does not have admin privileges on training set %', session_user, input_tag;
+          raise EXCEPTION 'User %% does not have admin privileges on training set %%', session_user, input_tag;
         END IF;
 
       SELECT read_users FROM training_sets WHERE tag_name = input_tag
@@ -1672,15 +1570,13 @@ DECLARE
       IF NOT get_user_id(username) = ANY(cur_readers)
       THEN
         -- If username is not in the list of readers, error.
-        raise EXCEPTION 'User % is already not a reader of training set %', username, input_tag;
+        raise EXCEPTION 'User %% is already not a reader of training set %%', username, input_tag;
       END IF;
 
       UPDATE training_sets SET read_users = array_remove(read_users, get_user_id(username)) WHERE tag_name = input_tag;
     END;
 
 $$;
-
-alter function revoke_read_privilege(varchar, varchar) owner to ebullvul;
 
 create function revoke_write_privilege(input_tag character varying, username character varying) returns void
 	security definer
@@ -1695,7 +1591,7 @@ DECLARE
         IF not has_admin_privilege(input_tag)
         THEN
           -- If current user does not have admin privileges, error
-          raise EXCEPTION 'User % does not have admin privileges on training set %', session_user, input_tag;
+          raise EXCEPTION 'User %% does not have admin privileges on training set %%', session_user, input_tag;
         END IF;
 
       SELECT write_users FROM training_sets WHERE tag_name = input_tag
@@ -1705,15 +1601,13 @@ DECLARE
       IF NOT get_user_id(username) = ANY(cur_writers)
       THEN
         -- If username is not in the list of writers, error.
-        raise EXCEPTION 'User % is already not a writer of training set %', username, input_tag;
+        raise EXCEPTION 'User %% is already not a writer of training set %%', username, input_tag;
       END IF;
 
       UPDATE training_sets SET write_users = array_remove(write_users, get_user_id(username)) WHERE tag_name = input_tag;
     END;
 
 $$;
-
-alter function revoke_write_privilege(varchar, varchar) owner to ebullvul;
 
 create function delete_calculation(hash character varying, name character varying, method character varying, basis character varying, cp boolean, tags character varying[], delete_complete_calculations boolean) returns boolean
 	security definer
@@ -1740,11 +1634,11 @@ DECLARE
       IF NOT training_set_exists(tag_name)
       THEN
         -- If the training set does not exist, Error
-        raise EXCEPTION 'Training set % does not exist', tag_name;
+        raise EXCEPTION 'Training set %% does not exist', tag_name;
       ELSIF NOT has_write_privilege(tag_name)
       THEN
         -- If training set does exist and current user doesn't have write privileges, Error.
-        raise EXCEPTION 'User % does not have write privileges on training set %', session_user, tag_name;
+        raise EXCEPTION 'User %% does not have write privileges on training set %%', session_user, tag_name;
       END IF;
     END LOOP;
 
@@ -1791,8 +1685,6 @@ DECLARE
 
 $$;
 
-alter function delete_calculation(varchar, varchar, varchar, varchar, boolean, character varying[], boolean) owner to ebullvul;
-
 create function get_pending_molecule_name(input_tags character varying[]) returns character varying
 	security definer
 	SET search_path=public, pg_temp
@@ -1825,8 +1717,6 @@ DECLARE
 
 $$;
 
-alter function get_pending_molecule_name(character varying[]) owner to ebullvul;
-
 create function count_training_set_size(molecule_name character varying, model character varying, input_tags character varying[]) returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -1846,11 +1736,11 @@ DECLARE
       IF NOT training_set_exists(tag_name)
       THEN
         -- If the training set does not exist, Error
-        raise EXCEPTION 'Training set % does not exist', tag_name;
+        raise EXCEPTION 'Training set %% does not exist', tag_name;
       ELSIF NOT has_read_privilege(tag_name)
       THEN
         -- If training set does exist and current user doesn't have read privileges, Error.
-        raise EXCEPTION 'User % does not have read privileges on training set %', session_user, tag_name;
+        raise EXCEPTION 'User %% does not have read privileges on training set %%', session_user, tag_name;
       END IF;
     END LOOP;
 
@@ -1864,8 +1754,6 @@ DECLARE
   END;
 
 $$;
-
-alter function count_training_set_size(varchar, varchar, character varying[]) owner to ebullvul;
 
 create function export_calculations(molecule_name character varying, model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], energies double precision[])
 	security definer
@@ -1889,11 +1777,11 @@ DECLARE
           IF NOT training_set_exists(tag_name)
           THEN
             -- If the training set does not exist, Error
-            raise EXCEPTION 'Training set % does not exist', tag_name;
+            raise EXCEPTION 'Training set %% does not exist', tag_name;
           ELSIF NOT has_read_privilege(tag_name)
           THEN
             -- If training set does exist and current user doesn't have read privileges, Error.
-            raise EXCEPTION 'User % does not have read privileges on training set %', session_user, tag_name;
+            raise EXCEPTION 'User %% does not have read privileges on training set %%', session_user, tag_name;
           END IF;
         END LOOP;
 
@@ -1945,8 +1833,6 @@ DECLARE
 
 $$;
 
-alter function export_calculations(varchar, varchar, character varying[], integer, integer) owner to ebullvul;
-
 create function count_pending_calculations(input_tags character varying[]) returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -1964,8 +1850,6 @@ DECLARE
   END;
 
 $$;
-
-alter function count_pending_calculations(character varying[]) owner to ebullvul;
 
 create function get_training_set(molecule_name character varying, monomer_names character varying[], model character varying, input_tags character varying[], batch_offset integer, batch_size integer) returns TABLE(coords double precision[], binding_energy double precision, nb_energy double precision, deformation_energies double precision[])
 	security definer
@@ -1993,11 +1877,11 @@ DECLARE
           IF NOT training_set_exists(tag_name)
           THEN
             -- If the training set does not exist, Error
-            raise EXCEPTION 'Training set % does not exist', tag_name;
+            raise EXCEPTION 'Training set %% does not exist', tag_name;
           ELSIF NOT has_read_privilege(tag_name)
           THEN
             -- If training set does exist and current user doesn't have read privileges, Error.
-            raise EXCEPTION 'User % does not have read privileges on training set %', session_user, tag_name;
+            raise EXCEPTION 'User %% does not have read privileges on training set %%', session_user, tag_name;
           END IF;
         END LOOP;
 
@@ -2039,13 +1923,13 @@ DECLARE
 
                 end if;
 
-                RAISE WARNING 'Multiple optimized geometries for % in database.', monomer_name;
+                RAISE WARNING 'Multiple optimized geometries for %% in database.', monomer_name;
 
               END IF;
 
             ELSE
 
-              RAISE EXCEPTION 'Optimized energy for % uncalculated in database.', monomer_name;
+              RAISE EXCEPTION 'Optimized energy for %% uncalculated in database.', monomer_name;
 
             END IF;
 
@@ -2056,7 +1940,7 @@ DECLARE
           IF optimized_energies[optimized_index] ISNULL
           THEN
 
-            RAISE EXCEPTION 'No optimized energy in database for %.', monomer_name;
+            RAISE EXCEPTION 'No optimized energy in database for %%.', monomer_name;
 
           END IF;
 
@@ -2135,7 +2019,7 @@ DECLARE
                 CONTINUE TrainingSetLoop;
               END IF;
 
-              IF (array_length(monomer_names, 1) - n_mer) % 2 = 1
+              IF (array_length(monomer_names, 1) - n_mer) %% 2 = 1
               THEN
                 nb_energy := nb_energy - energy;
               ELSE
@@ -2166,8 +2050,6 @@ DECLARE
       END;
 $$;
 
-alter function get_training_set(varchar, character varying[], varchar, character varying[], integer, integer) owner to ebullvul;
-
 create function count_dispatched_calculations() returns integer
 	security definer
 	SET search_path=public, pg_temp
@@ -2185,8 +2067,6 @@ DECLARE
   END;
 
 $$;
-
-alter function count_dispatched_calculations() owner to ebullvul;
 
 create function set_properties(hash character varying, model character varying, use_cp boolean, indices integer[], result boolean, energy double precision, log_txt character varying, overwrite boolean) returns void
   security definer
@@ -2229,10 +2109,3 @@ DECLARE
   END;
 
 $$;
-
-alter function set_properties(varchar, varchar, boolean, integer[], boolean, double precision, varchar, boolean) owner to ebullvul;
-
-
-
-alter function set_properties(varchar, varchar, boolean, integer[], boolean, double precision, varchar, boolean) owner to ebullvul;
-

@@ -1,0 +1,155 @@
+# setting up a postgreSQL server
+choose the appropriate installation gude from:
+https://wiki.postgresql.org/wiki/Detailed_installation_guides
+or install via anaconda with
+```
+conda install postgresql
+```
+
+The installation process will usually automatically initialize a database in
+```/usr/local/pgsql/data``` but if it does not, you should initialize a database
+manually with
+```
+initdb <path to where data will be stored>
+```
+
+once you have installed postgres, you may launch the server using:
+```
+postgres -D <path to where data is stored>
+```
+Note: unless you chose a different directory, the <path to where data is stored> is
+generally ```/usr/local/pgsql/data```.
+
+If you see an error that looks like this:
+"could not bind IPv6 adress "::1": Address already in use"
+you might need to change the port number for the database to operate on.
+If you need to change the port number for this or any other reason, edit
+<path to where data is stored>/postgresql.conf and change the line
+```
+#port = 5432
+```
+to
+```
+port = <desired port>
+```
+If you leave this line commented out, it will use the default port 5432.
+If you do not use the default port, you will have to add ```-p <desired port>```
+to most console commands below.
+
+For further troubleshooting and more information, check:
+https://www.postgresql.org/docs/9.1/server-start.html
+
+Next, create a database on the server with the following command:
+```
+createdb <name of database>
+```
+For troubleshooting and more information, check:
+https://www.postgresql.org/docs/10/tutorial-createdb.html
+
+Then, connect to the database (still from the host machine) using
+```
+psql <name of database>
+```
+For troubleshooting and more information, check:
+https://www.postgresql.org/docs/10/tutorial-accessdb.html
+
+Next, we will add users with passwords so that the database can be accessed
+securely and remotely.
+From inside the database console opened by ```psql <name of database>``` run
+```
+CREATE USER <username> WITH ENCRYPTED PASSWORD '<new password>';
+```
+For more details, see:
+https://www.postgresql.org/docs/8.0/sql-createuser.html
+
+How you handle users is up to you, you may create one user for each member of
+your team, or you may make a single username and password to share.
+
+Now, we must change the configuration settings to ask for a password upon connection:
+inside <path to where data is stored> edit 'pg_hba.conf'. Change all entries in
+the 'METHOD' column from 'trust' to 'md5'.
+
+Now, restart the database, by stopping the process launched by 
+```
+postgres -D <path to where data is stored>
+```
+and then running that command again.
+
+Now, you should be able to log in LOCALLY using your username and password. Try it:
+```
+psql <database name> -U <username>
+```
+You will be prompted for your password.
+
+Now, we need to enable remote connections.
+To do so, edit 'postgresql.conf' inside <path to where data is stored>. Change the line:
+```
+#listen_addresses = 'localhost'
+```
+to:
+```
+listen_addresses = '*'
+```
+
+Then, open 'pg_hba.conf' again and add the lines:
+```
+host    all             all              0.0.0.0/0                       md5
+host    all             all              ::/0                            md5
+```
+to the end of the file.
+
+Now, we need to open the port that postgres runs on to accept incoming connections.
+In order to do this, you will need sudo access on your machine.
+Run:
+```
+firewall-cmd --zone=public --add-port=<port number>/tcp
+```
+If you did not change the port number, it is the default: 5432
+Now, to automatically open the port when your machine reboots, optionally run:
+```
+firewall-cmd --zone=public --add-port=<port number>/tcp --permanent
+```
+Alternatively, you can manually run the first command when your system reboots or add it to a startup script.
+
+Restart the server again.
+
+Now, you should be able to log into the database remotely from a client machine.
+To do so run the following on the client:
+```
+psql -h <host name or IP> -p <host port> -d <database name> -U <username>
+```
+You will be prompted for your password.
+
+Note that you will need to have the postgresql client installed, which you can get from here:
+https://www.postgresql.org/download/
+or install via anaconda with
+```
+conda install postgresql
+```
+Though the anaconda method will install both the client and the server.
+
+Then, run database_setup.py in order to initialize the tables and routines needed to run the MB-Fit server. database_setup.py is located in the home MB-Fit directory.
+database_setup.py takes a database config file as its argument.
+The format of the database config file should be as follows:
+```
+[database]
+host = <host name or IP>
+port = <host port of connection>
+database = <name of the database>
+username = <your username>
+password = <your password>
+```
+
+Before putting your password in any file, make sure to use
+```
+chmod 700 <name of file>
+```
+to make sure only you can access the file.
+
+Also, of course, use a unique password.
+
+If you want to change your password, use:
+```
+ALTER USER <username> WITH ENCRYPTED PASSWORD '<new password>';
+```
+from inside the database console.

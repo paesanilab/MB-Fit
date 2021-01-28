@@ -153,7 +153,7 @@ class Evaluator:
 
     def plot(self, do_ttm = False, split_energy = None, 
              correlation_prefix = "correlation",
-             min_e = 0.0, max_e = 50.0):
+             min_e = 0.0, max_e = 50.0, minor_tick = 5.0):
 
         if do_ttm:
             colors = ["#FF8000","#EE220C"]
@@ -179,7 +179,7 @@ class Evaluator:
         axs.set_xlim([min_e,max_e])
         axs.set_ylim([min_e,max_e])
         
-        interval = round((max_e - min_e) / 10.0,1)
+        interval = minor_tick
          
         axs.xaxis.set_minor_locator(MultipleLocator(interval))
         axs.yaxis.set_minor_locator(MultipleLocator(interval))
@@ -206,7 +206,11 @@ class Evaluator:
                 legends.append("BE > " + str(int(split_energy)) + " kcal/mol")
         
         axs.legend(legends, fontsize=15, loc=4, frameon=False)
-        #axs.text(3, 53, r'a) CH$_4$: TTM-nrg', fontsize=15)
+
+        xtext = [(max_e - min_e)*0.05 + min_e, (max_e - min_e)*0.9 + min_e]
+
+        axs.text(xtext[0], xtext [1], "RMSD (BE < " + str(int(split_energy)) + ") = " + "{0:6.4f}".format(self.rmsd[1]), fontsize=12)
+        #axs.text(xtext[0], xtext [1], r'a) CH$_4$: TTM-nrg', fontsize=15)
 
         # x = y line
         xi = np.linspace(-2000, 2000 ,10, endpoint = True)

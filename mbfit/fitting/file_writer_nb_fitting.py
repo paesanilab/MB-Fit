@@ -3237,24 +3237,117 @@ def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly,
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + ".h"
     ff = open(fname,'w')
     a = """
+/******************************************************************************
+Copyright 2019 The Regents of the University of California.
+All Rights Reserved.
+
+Permission to copy, modify and distribute any part of this Software for
+educational, research and non-profit purposes, without fee, and without
+a written agreement is hereby granted, provided that the above copyright
+notice, this paragraph and the following three paragraphs appear in all
+copies.
+
+Those desiring to incorporate this Software into commercial products or
+use for commercial purposes should contact the:
+Office of Innovation & Commercialization
+University of California, San Diego
+9500 Gilman Drive, Mail Code 0910
+La Jolla, CA 92093-0910
+Ph: (858) 534-5815
+FAX: (858) 534-7345
+E-MAIL: invent@ucsd.edu
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY OF CALIFORNIA MAKES NO
+REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+******************************************************************************/
+
+
+
 #ifndef POLY_""" + str(number_of_monomers) + "B_" + namespace.upper() + """_H
 #define POLY_""" + str(number_of_monomers) + "B_" + namespace.upper() + """_H
+
+/**
+ * @file """ + fname + """
+ * @brief Contains the structure of the polynomial for symmetry """ + system_name + """
+ */
+
+/**
+ * @namespace """ + namespace + """
+ * @brief Encloses the structure of the polynomial for symmetry """ + system_name + """
+ */
 
 namespace """ + namespace + """ {
 
 struct """ + struct_name + """ {
+    // Degree of the polynomial
     static const unsigned degree = """ + str(degree) + """;
+
+    // Number of variables
     static const unsigned n_vars = """ + str(nvars) + """;
 
+    // Number of terms
     static const unsigned size = """ + str(npoly) + """;
 
+    /**
+     * @brief Evaluates the polynomial of degree """ + str(degree) + """ for """ + system_name + """ symmetry.
+     *
+     * Given the linear parameters and the value of the polynomial variables, 
+     * evaluates the polynomial for the """ + system_name + """ symmetry.
+     * @param[in] x Double array of length """ + str(nvars) + """ with the variable values
+     * @param[in] a Double array of """ + str(npoly) + """ elements with the linear parameters of the polynomial
+     * @return Value of the polynomial
+     */
     double eval(const double x[""" + str(nvars) + """],
               const double a[""" + str(npoly) + """]);
+
+    /**
+     * @brief Evaluates the polynomial of degree """ + str(degree) + """ for """ + system_name + """ symmetry.
+     *
+     * Given the linear parameters and the value of the polynomial variables, 
+     * evaluates the polynomial for the """ + system_name + """ symmetry.
+     * It uses the direct, non optimized polynomial
+     * @param[in] x Double array of length """ + str(nvars) + """ with the variable values
+     * @param[in] a Double array of """ + str(npoly) + """ elements with the linear parameters of the polynomial
+     * @return Value of the polynomial
+     */
     double eval_direct(const double x[""" + str(nvars) + """],
                      const double a[""" + str(npoly) + """]);
+
+    /**
+     * @brief Evaluates the polynomial of degree """ + str(degree) + """ for """ + system_name + """ symmetry.
+     *
+     * Given the linear parameters and the value of the polynomial variables, 
+     * evaluates the polynomial for the """ + system_name + """ symmetry.
+     * @param[in] x Double array of length """ + str(nvars) + """ with the variable values
+     * @param[in] a Double array of """ + str(npoly) + """ elements with the linear parameters of the polynomial
+     * @param[out] g Double array of length """ + str(nvars) + """ that will store the gradients dP/dxi
+     * @return Value of the polynomial
+     */
     double eval(const double x[""" + str(nvars) + """],
               const double a[""" + str(npoly) + """],
                     double g[""" + str(nvars) + """]);
+    
+    /**
+     * @brief Evaluates the polynomial of degree """ + str(degree) + """ for """ + system_name + """ symmetry.
+     *
+     * Given the linear parameters and the value of the polynomial variables, 
+     * evaluates the polynomial for the """ + system_name + """ symmetry.
+     * It uses the direct, non optimized polynomial
+     * @param[in] x Double array of length """ + str(nvars) + """ with the variable values
+     * @param[in] a Double array of """ + str(npoly) + """ elements with the linear parameters of the polynomial
+     * @param[out] g Double array of length """ + str(nvars) + """ that will store the gradients dP/dxi
+     * @return Value of the polynomial
+     */
     double eval_direct(const double x[""" + str(nvars) + """],
                      const double a[""" + str(npoly) + """],
                            double g[""" + str(nvars) + """]);
@@ -3319,8 +3412,55 @@ def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npol
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
     ff = open(fname,'w')
-    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
 
+    a = """
+/******************************************************************************
+Copyright 2019 The Regents of the University of California.
+All Rights Reserved.
+
+Permission to copy, modify and distribute any part of this Software for
+educational, research and non-profit purposes, without fee, and without
+a written agreement is hereby granted, provided that the above copyright
+notice, this paragraph and the following three paragraphs appear in all
+copies.
+
+Those desiring to incorporate this Software into commercial products or
+use for commercial purposes should contact the:
+Office of Innovation & Commercialization
+University of California, San Diego
+9500 Gilman Drive, Mail Code 0910
+La Jolla, CA 92093-0910
+Ph: (858) 534-5815
+FAX: (858) 534-7345
+E-MAIL: invent@ucsd.edu
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY OF CALIFORNIA MAKES NO
+REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+******************************************************************************/
+
+"""
+
+    a += "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+/**
+ * @file """ + fname + """
+ * @brief Contains the implementation of the polynomials with gradients for symmetry """ + system_name + """
+ */
+
+/**
+ * @namespace """ + namespace + """
+ * @brief Encloses the structure of the polynomial holder for symmetry """ + system_name + """
+ */
 namespace """ + namespace + """ {
 
 double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
@@ -3362,7 +3502,53 @@ def write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvar
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_grad_" + version + ".cpp"
     ff = open(fname,'w')
-    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+    a = """
+/******************************************************************************
+Copyright 2019 The Regents of the University of California.
+All Rights Reserved.
+
+Permission to copy, modify and distribute any part of this Software for
+educational, research and non-profit purposes, without fee, and without
+a written agreement is hereby granted, provided that the above copyright
+notice, this paragraph and the following three paragraphs appear in all
+copies.
+
+Those desiring to incorporate this Software into commercial products or
+use for commercial purposes should contact the:
+Office of Innovation & Commercialization
+University of California, San Diego
+9500 Gilman Drive, Mail Code 0910
+La Jolla, CA 92093-0910
+Ph: (858) 534-5815
+FAX: (858) 534-7345
+E-MAIL: invent@ucsd.edu
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY OF CALIFORNIA MAKES NO
+REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+******************************************************************************/
+
+"""
+    a += "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+/**
+ * @file """ + fname + """
+ * @brief Contains the implementation of the polynomials with gradients for symmetry """ + system_name + """
+ */
+
+/**
+ * @namespace """ + namespace + """
+ * @brief Encloses the structure of the polynomial for symmetry """ + system_name + """
+ */
 
 namespace """ + namespace + """ {
 
@@ -3413,7 +3599,54 @@ med
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
     ff = open(fname,'w')
-    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+    a = """
+/******************************************************************************
+Copyright 2019 The Regents of the University of California.
+All Rights Reserved.
+
+Permission to copy, modify and distribute any part of this Software for
+educational, research and non-profit purposes, without fee, and without
+a written agreement is hereby granted, provided that the above copyright
+notice, this paragraph and the following three paragraphs appear in all
+copies.
+
+Those desiring to incorporate this Software into commercial products or
+use for commercial purposes should contact the:
+Office of Innovation & Commercialization
+University of California, San Diego
+9500 Gilman Drive, Mail Code 0910
+La Jolla, CA 92093-0910
+Ph: (858) 534-5815
+FAX: (858) 534-7345
+E-MAIL: invent@ucsd.edu
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY OF CALIFORNIA MAKES NO
+REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+******************************************************************************/
+
+"""
+
+    a += "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+/**
+ * @file """ + fname + """
+ * @brief Contains the implementation of the polynomials without gradients for symmetry """ + system_name + """
+ */
+
+/**
+ * @namespace """ + namespace + """
+ * @brief Encloses the structure of the polynomial for symmetry """ + system_name + """
+ */
 
 namespace """ + namespace + """ {
 
@@ -3456,7 +3689,54 @@ med
     struct_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     fname = "poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_nograd_" + version + ".cpp"
     ff = open(fname,'w')
-    a = "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+    a = """
+/******************************************************************************
+Copyright 2019 The Regents of the University of California.
+All Rights Reserved.
+
+Permission to copy, modify and distribute any part of this Software for
+educational, research and non-profit purposes, without fee, and without
+a written agreement is hereby granted, provided that the above copyright
+notice, this paragraph and the following three paragraphs appear in all
+copies.
+
+Those desiring to incorporate this Software into commercial products or
+use for commercial purposes should contact the:
+Office of Innovation & Commercialization
+University of California, San Diego
+9500 Gilman Drive, Mail Code 0910
+La Jolla, CA 92093-0910
+Ph: (858) 534-5815
+FAX: (858) 534-7345
+E-MAIL: invent@ucsd.edu
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY OF CALIFORNIA MAKES NO
+REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+******************************************************************************/
+
+"""
+
+    a += "#include \"poly_" + str(number_of_monomers) + "b_" + system_name + "_deg" + str(degree) + "_" + version + """.h"
+
+/**
+ * @file """ + fname + """
+ * @brief Contains the implementation of the polynomials without gradients for symmetry """ + system_name + """
+ */
+
+/**
+ * @namespace """ + namespace + """
+ * @brief Encloses the structure of the polynomial for symmetry """ + system_name + """
+ */
 
 namespace """ + namespace + """ {
 
@@ -3531,7 +3811,42 @@ med
     poly_name = "poly_" + system_name + "_deg" + str(degree) + "_" + version
     ff = open(fname,'w')
 
-    a = """#ifndef {0}
+    a = """
+/******************************************************************************
+Copyright 2019 The Regents of the University of California.
+All Rights Reserved.
+
+Permission to copy, modify and distribute any part of this Software for
+educational, research and non-profit purposes, without fee, and without
+a written agreement is hereby granted, provided that the above copyright
+notice, this paragraph and the following three paragraphs appear in all
+copies.
+
+Those desiring to incorporate this Software into commercial products or
+use for commercial purposes should contact the:
+Office of Innovation & Commercialization
+University of California, San Diego
+9500 Gilman Drive, Mail Code 0910
+La Jolla, CA 92093-0910
+Ph: (858) 534-5815
+FAX: (858) 534-7345
+E-MAIL: invent@ucsd.edu
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE UNIVERSITY
+OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
+CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY OF CALIFORNIA MAKES NO
+REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER IMPLIED OR
+EXPRESS, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE
+SOFTWARE WILL NOT INFRINGE ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+******************************************************************************/
+
+#ifndef {0}
 #define {0}
 
 #include <cmath>
@@ -3552,30 +3867,78 @@ med
     arg_xyz = get_arguments_for_functions("const double *xyz",number_of_monomers)
     arg_grad = get_arguments_for_functions("double *grad",number_of_monomers)
 
+    docs_const = ""
+    docs_eval = ""
+    docs_eval_g = ""
+    
+    for i in range(number_of_monomers):
+       docs_const += "     * @param[in] mon{0} Monomer id of the first monomer of interest\n".format(i)
+       docs_eval += "     * @param[in] xyz{0} Pointer to a double array with the coordinates of monomer {0} of the n-mer.\n".format(i)
+       docs_eval_g += "     * @param[out] grad{0} Pointer to a double array with the gradients of monomer {0} of the n-mer.\n".format(i)
+
     if number_of_monomers == 1:
        declare_key = "std::vector<double> "
+       return_message = "Vector of doubles"
     else:
        declare_key = "double "
+       return_message = "Double"
 
     a = """
-////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @file """ + fname + """
+ * @brief Contains the structure of the polynomial holder for symmetry """ + system_name + """
+ */
+
+/**
+ * @namespace """ + namespace + """
+ * @brief Encloses the structure of the polynomial holder for symmetry """ + system_name + """
+ */
 
 namespace """ + namespace + """ {
 
 //----------------------------------------------------------------------------//
 
 struct """ + struct_name + """ {
+    // Creates an empty class
     """ + struct_name + """() {};
+
+    /**
+     * @brief Creates a class and initializes the parameters corresponding to mon
+""" + docs_const + """
+     */
     """ + struct_name + "(" +  arg_constr + """);
 
+    // Destroys the class
     ~""" + struct_name + """() {};
-
+    
+    // Polynomial for this symmetry
     typedef """ + poly_name + """ polynomial;
 
+    /**
+     * @brief Computes the one body energy for the monomers
+     *
+     * Given the coordinates of a number of monomers, it calculates the polynomial value for each one of them, and ret
+urns a vector with them.
+""" + docs_eval + """     
+     * @param[in] n Number of monomers passed in the xyz array.
+     * @return """ + return_message + """ with the energy.
+     */
     """ + declare_key + """eval(""" + arg_xyz + """, const size_t n);
+
+    /**
+     * @brief Computes the one body energy for the monomers
+     *
+     * Given the coordinates of a number of monomers, it calculates the polynomial value for each one of them, and ret
+urns a vector with them.
+""" + docs_eval + docs_eval_g + """    
+     * @param[in] n Number of monomers passed in the xyz array.
+     * @return """ + return_message + """ with the energy.
+     */
     """ + declare_key + """eval(""" + arg_xyz + ", " + arg_grad + """ , const size_t n, std::vector<double> *virial=0);
 
   private:
+    // Non-linear constants
 """
     ff.write(a)
 
@@ -3583,11 +3946,16 @@ struct """ + struct_name + """ {
         ff.write("    double m_" + nl + ";\n")
 
     a = """
+    // Inner cutoff
     double m_ri = """ + str(ri) + """;
+    
+    // Outer cutoff
     double m_ro = """ + str(ro) + """;
 
+    // Switch function
     double f_switch(const double, double&);
 
+    // Vector with the coefficients of the polynomials
     std::vector<double> coefficients;
 };
 

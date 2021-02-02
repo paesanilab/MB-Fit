@@ -637,7 +637,7 @@ def write_config_file(settings_file, config_path, charges,
                       bmin = 0.0, bmax = 10.0,
                       kmin_init = 1.0, kmax_init = 4.0, dmin_init = 1.0, dmax_init = 4.0,
                       bmin_init = 1.0, bmax_init = 4.0,
-                      r_in=7.0, r_out=8.0,
+                      r_in=6.0, r_out=8.0,
                       energy_range = 20, alpha = 0.0005,
                       virtual_sites_label = ['X','Y','Z'],
                       var_intra = "exp", var_inter = "exp", var_virtual_sites = "coul"):
@@ -684,9 +684,11 @@ def write_config_file(settings_file, config_path, charges,
                     Default: 1.0
             bmax_init           - Maximum value of b allowed in initialization
                     Default: 4.0
-            r_in                - Distance at which polynomials start to decay to 0
-                    Default: 7.0
-            r_out               - Distance at which polynomials are 0
+            r_in                - Distance at which polynomials start to decay to 0. Ideally, 
+                                  it should be 2-3A beyond the pea of the first solvation shell.
+                    Default: 6.0
+            r_out               - Distance at which polynomials are 0. As a rule of thumb,
+                                  it should be 2A beyond the inner cutoff.
                     Default: 8.0
             energy_range        - Value of DE in the weight expressions: w = (DE/(E-Emin+DE))^2
                     Default: 20.0
@@ -730,7 +732,7 @@ def write_config_file(settings_file, config_path, charges,
 
 
 
-def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
+def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False, version = "v1"):
     """
     Generates the fit code based on the polynomials for a system
 
@@ -752,7 +754,7 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
+    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct,version)
 
 def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
     """
@@ -1147,7 +1149,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
                          split_energy = None, 
                          min_energy_plot = 0.0, max_energy_plot = 50.0,
                          correlation_prefix = "correlation",
-                         correlation_directory = "correlation",
+                         correlation_directory = "correlation", minor_tick = 5.0,
                          ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
                          fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
@@ -1163,6 +1165,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
         max_energy_plot       - Upper bound of the energy in the plot
         correlation_prefix    - Prefix for the correlation files that will be generated.
         correlation_directory - Directory where all the correlation files will be put.
+        minor_tick            - Interval of the minor ticks in the plot
         ttm                   - True if these are ttm fits. False otherwise.
         over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
         nc_path               - Netcdf file with the parameters for the best fit.
@@ -1198,7 +1201,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
 
     os.system("mv *" +  correlation_file + " " + corr_folder_prefix)
 
-    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix, min_e = min_energy_plot, max_e = max_energy_plot)
+    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix, min_e = min_energy_plot, max_e = max_energy_plot, minor_tick = minor_tick)
 
     os.system("mv *.png *.pdf " + " " + corr_folder_prefix)
 

@@ -242,7 +242,7 @@ class PolynomialGenerator(object):
 
                 system.format_print('Writing gradients...',
                                     italics=True)
-                progress_bar = ProgressBar(start=0, end=len(variables) - 1)
+                progress_bar = ProgressBar(start=0, end=max(len(variables) - 1),1)
                 progress_bar.update(0)
 
                 for index in range(len(variables)):
@@ -255,7 +255,7 @@ class PolynomialGenerator(object):
 
             system.format_print('Writing terms...',
                                 italics=True)
-            progress_bar = ProgressBar(start=0, end=len(monomials))
+            progress_bar = ProgressBar(start=0, end=max(1,len(monomials)))
             progress_bar.update(0)
 
             # loop thru every degree in this polynomial
@@ -585,7 +585,7 @@ class PolynomialGenerator(object):
         for d in range(1, degree + 1):
             monomial_grid[n][d] = set([])
 
-        progress_bar = ProgressBar(start=0, end=(number_of_variables) * (degree))
+        progress_bar = ProgressBar(start=0, end=max(1,(number_of_variables) * (degree)))
         progress_bar.update(0)
 
         # Now, for our recursive case!

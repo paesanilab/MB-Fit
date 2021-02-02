@@ -6,7 +6,7 @@ from . import utils_nb_fitting
 from . import file_writer_nb_fitting 
 
 
-def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, poly_directory_path, use_direct):
+def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, poly_directory_path, use_direct,version):
 
     directcpp = poly_directory_path + "/poly-direct.cpp"
     directgradcpp = poly_directory_path + "/poly-grd-direct.cpp"
@@ -261,24 +261,24 @@ def write_mbnrg_fitting_code(settings_path, config_path, degree, poly_in_path, p
     ## Write polynomial header and cpp for MBX #####################################
     ################################################################################
     
-    file_writer_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in_path)
+    file_writer_nb_fitting.write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in_path,version)
 
     if use_direct:
-        file_writer_nb_fitting.write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+        file_writer_nb_fitting.write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version)
 
-        file_writer_nb_fitting.write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+        file_writer_nb_fitting.write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version)
     else:
-        file_writer_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+        file_writer_nb_fitting.write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory,version)
         
-        file_writer_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory)
+        file_writer_nb_fitting.write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory,version)
     
     ################################################################################
     ## Write polynomial holder and cpp for MBX #####################################
     ################################################################################
     
-    file_writer_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, "v1")
+    file_writer_nb_fitting.write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, nl_param_all, ri, ro, virtual_sites_poly, version)
     
-    file_writer_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, "v1")
+    file_writer_nb_fitting.write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, virtual_sites_poly, use_lonepairs, nl_param_all, variables, nvars, degree, version)
 
 
 def write_ttmnrg_fitting_code(settings_path, config_path):

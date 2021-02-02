@@ -637,7 +637,7 @@ def write_config_file(settings_file, config_path, charges,
                       bmin = 0.0, bmax = 10.0,
                       kmin_init = 1.0, kmax_init = 4.0, dmin_init = 1.0, dmax_init = 4.0,
                       bmin_init = 1.0, bmax_init = 4.0,
-                      r_in=7.0, r_out=8.0,
+                      r_in=6.0, r_out=8.0,
                       energy_range = 20, alpha = 0.0005,
                       virtual_sites_label = ['X','Y','Z'],
                       var_intra = "exp", var_inter = "exp", var_virtual_sites = "coul"):
@@ -684,9 +684,11 @@ def write_config_file(settings_file, config_path, charges,
                     Default: 1.0
             bmax_init           - Maximum value of b allowed in initialization
                     Default: 4.0
-            r_in                - Distance at which polynomials start to decay to 0
-                    Default: 7.0
-            r_out               - Distance at which polynomials are 0
+            r_in                - Distance at which polynomials start to decay to 0. Ideally, 
+                                  it should be 2-3A beyond the pea of the first solvation shell.
+                    Default: 6.0
+            r_out               - Distance at which polynomials are 0. As a rule of thumb,
+                                  it should be 2A beyond the inner cutoff.
                     Default: 8.0
             energy_range        - Value of DE in the weight expressions: w = (DE/(E-Emin+DE))^2
                     Default: 20.0

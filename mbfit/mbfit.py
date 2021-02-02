@@ -732,7 +732,7 @@ def write_config_file(settings_file, config_path, charges,
 
 
 
-def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False):
+def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct=False, version = "v1"):
     """
     Generates the fit code based on the polynomials for a system
 
@@ -754,7 +754,7 @@ def generate_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_p
     if not os.path.isdir(fit_dir_path):
         os.mkdir(fit_dir_path)
 
-    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct)
+    fitting.prepare_mbnrg_fitting_code(settings_path, config_path, poly_in_path, poly_path, poly_order, fit_dir_path, use_direct,version)
 
 def generate_ttmnrg_fitting_code(settings_path, config_path, fit_dir_path):
     """

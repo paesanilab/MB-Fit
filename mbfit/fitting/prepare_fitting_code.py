@@ -4,7 +4,7 @@ from mbfit.polynomials import MoleculeSymmetryParser
 from .write_fitting_code import write_mbnrg_fitting_code, write_ttmnrg_fitting_code
 
 
-def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct):
+def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, poly_order, fit_path, use_direct, version):
 
     if not os.path.isdir(fit_path + "/src"):
         os.mkdir(fit_path + "/src")
@@ -70,7 +70,7 @@ def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, p
 
     print("Executing python generator script")
 
-    write_mbnrg_fitting_code(settings_path, config_path, poly_order, in_path, poly_path, use_direct)
+    write_mbnrg_fitting_code(settings_path, config_path, poly_order, in_path, poly_path, use_direct, version)
 
 #    # restore settings
 #    os.system("mv " + config_path + ".tmp " + config_path)
@@ -96,15 +96,15 @@ def prepare_mbnrg_fitting_code(settings_path, config_path, in_path, poly_path, p
     system_name = symmetry_parser.get_symmetry()
     system_name = system_name.replace("(", "_o_").replace(")", "_c_")
 
-    file_name = "mbnrg_{}b_{}_deg{}_v1.h".format(nmons, system_name, degree)
+    file_name = "mbnrg_{}b_{}_deg{}_{}.h".format(nmons, system_name, degree, version)
     os.system("mv " + file_name + " MBX_files/")
-    file_name = "mbnrg_{}b_{}_deg{}_v1.cpp".format(nmons, system_name, degree)
+    file_name = "mbnrg_{}b_{}_deg{}_{}.cpp".format(nmons, system_name, degree, version)
     os.system("mv " + file_name + " MBX_files/")
-    file_name = "poly_{}b_{}_deg{}_v1.h".format(nmons, system_name, degree)
+    file_name = "poly_{}b_{}_deg{}_{}.h".format(nmons, system_name, degree, version)
     os.system("mv " + file_name + " MBX_files/")
-    file_name = "poly_{}b_{}_deg{}_grad_v1.cpp".format(nmons, system_name, degree)
+    file_name = "poly_{}b_{}_deg{}_grad_{}.cpp".format(nmons, system_name, degree, version)
     os.system("mv " + file_name + " MBX_files/")
-    file_name = "poly_{}b_{}_deg{}_nograd_v1.cpp".format(nmons, system_name, degree)
+    file_name = "poly_{}b_{}_deg{}_nograd_{}.cpp".format(nmons, system_name, degree, version)
     os.system("mv " + file_name + " MBX_files/")
 
 def prepare_ttmnrg_fitting_code(settings_path, config_path, fit_path):

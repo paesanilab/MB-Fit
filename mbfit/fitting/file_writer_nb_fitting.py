@@ -3218,7 +3218,7 @@ std::vector<double> disp_e;
     ff.close()
 
 
-def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in, version = "v1"):
+def write_poly_header_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_in, version):
     """
     Writes the polynomial header for MBX
 
@@ -3300,7 +3300,7 @@ def retrieve_polynomial_lines(keyword_start, poly_file):
     return poly_lines
 
 
-def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+def write_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version):
     """
     Writes the polynomial C++ file with gradients for MBX
 
@@ -3343,7 +3343,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
-def write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+def write_direct_poly_cpp_grad_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version ):
     """
     Writes the polynomial C++ file with gradients for MBX
 
@@ -3393,7 +3393,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.close()
 
 
-def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+def write_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version):
     """
     Writes the polynomial C++ file without gradients for MBX
 
@@ -3436,7 +3436,7 @@ double """ + struct_name + """::eval(const double x[""" + str(nvars) + """],
     ff.write(a)
     ff.close()
 
-def write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version = "v1"):
+def write_direct_poly_cpp_nograd_mbx(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, version):
     """
     Writes the polynomial C++ file without gradients for MBX
 
@@ -3503,7 +3503,7 @@ def get_arguments_for_functions(arg_string, number_of_monomers):
     return arg_text
 
 
-def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version = "v1"):
+def write_mbx_polynomial_holder_header(number_of_monomers, system_name, degree, nvars, npoly, poly_directory, non_linear_parameters, ri, ro, vsites, version ):
     """
     Writes the polynomial holder header file
 
@@ -3603,7 +3603,7 @@ struct """ + struct_name + """ {
     ff.close()
 
 
-def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, version = "v1"):
+def write_mbx_polynomial_holder_cpp(system_name, symmetry_parser, number_of_monomers, number_of_atoms, vsites, use_lonepairs, non_linear_parameters, variables, number_of_variables, degree, version):
     """
     Writes the polynomial holder header file
 

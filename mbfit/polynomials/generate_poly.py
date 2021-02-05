@@ -242,7 +242,7 @@ class PolynomialGenerator(object):
 
                 system.format_print('Writing gradients...',
                                     italics=True)
-                progress_bar = ProgressBar(start=0, end=max(len(variables) - 1),1)
+                progress_bar = ProgressBar(start=0, end=max(len(variables) - 1,1))
                 progress_bar.update(0)
 
                 for index in range(len(variables)):

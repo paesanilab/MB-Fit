@@ -1149,7 +1149,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
                          split_energy = None, 
                          min_energy_plot = 0.0, max_energy_plot = 50.0,
                          correlation_prefix = "correlation",
-                         correlation_directory = "correlation", minor_tick = 5.0,
+                         correlation_directory = "correlation", minor_tick = 5.0, colors = None,
                          ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
                          fitted_ttmnrg_params = "ttm-nrg_params.dat"):
     """
@@ -1166,6 +1166,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
         correlation_prefix    - Prefix for the correlation files that will be generated.
         correlation_directory - Directory where all the correlation files will be put.
         minor_tick            - Interval of the minor ticks in the plot
+        colors                - List of two elements with the colors for low energy and high energy in the correlation plot
         ttm                   - True if these are ttm fits. False otherwise.
         over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
         nc_path               - Netcdf file with the parameters for the best fit.
@@ -1201,7 +1202,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
 
     os.system("mv *" +  correlation_file + " " + corr_folder_prefix)
 
-    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix, min_e = min_energy_plot, max_e = max_energy_plot, minor_tick = minor_tick)
+    eval_obj.plot(do_ttm = ttm, split_energy = split_energy, correlation_prefix = correlation_prefix, min_e = min_energy_plot, max_e = max_energy_plot, minor_tick = minor_tick, colors = colors)
 
     os.system("mv *.png *.pdf " + " " + corr_folder_prefix)
 

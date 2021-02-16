@@ -48,9 +48,9 @@ class TrainingSet:
 
                 energies = [float(e) for e in energies_line.split()]
 
-                if len(energies) != len(energy_names):
+                if len(energies) < len(energy_names):
                     if is_training_format:
-                        raise XYZFormatError("Expected {} enegies in line '{}' but found only {}.".format(len(energy_names), energies_line, len(energies)))
+                        raise XYZFormatError("Expected at least {} enegies in line '{}' but found only {}.".format(len(energy_names), energies_line, len(energies)))
                     else:
                         energies = [0.0]*len(energy_names)
 

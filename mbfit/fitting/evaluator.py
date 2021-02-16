@@ -153,14 +153,20 @@ class Evaluator:
 
     def plot(self, do_ttm = False, split_energy = None, 
              correlation_prefix = "correlation",
-             min_e = 0.0, max_e = 50.0, minor_tick = 5.0):
+             min_e = 0.0, max_e = 50.0, minor_tick = 5.0, colors = None):
 
-        if do_ttm:
-            colors = ["#FF8000","#EE220C"]
-            labels = ["Reference (kcal/mol)", "TTM-nrg (kcal/mol)"]
+        if colors is None:
+          if do_ttm:
+              colors = ["#FF8000","#EE220C"]
+              labels = ["Reference (kcal/mol)", "TTM-nrg (kcal/mol)"]
+          else:
+              colors = ["#61D836","#017100"]
+              labels = ["Reference (kcal/mol)", "MB-nrg (kcal/mol)"]
         else:
-            colors = ["#61D836","#017100"]
-            labels = ["Reference (kcal/mol)", "MB-nrg (kcal/mol)"]
+          if do_ttm:
+              labels = ["Reference (kcal/mol)", "TTM-nrg (kcal/mol)"]
+          else:
+              labels = ["Reference (kcal/mol)", "MB-nrg (kcal/mol)"]
 
         x = []
         y = []

@@ -7,3 +7,4 @@ mem_total 80000
 DFTVDW_JOBNUMBER    1
 DFTVDW_METHOD       1
 DFTVDW_PRINT        2
+$end

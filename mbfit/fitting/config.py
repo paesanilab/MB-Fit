@@ -1,4 +1,4 @@
-import os
+import os,sys
 import math, configparser, itertools
 from collections import OrderedDict
 
@@ -37,8 +37,8 @@ def get_atom_types(fragment):
     return atom_list
 
 def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_list, distance_between, use_published_polarizabilities,
-                            method="wb97m-v",
-                            basis="aug-cc-pvtz"):
+                            method,
+                            basis, use_cm5):
     # Define the names
     name1 = settings_list[0].get("molecule","names")
     name2 = settings_list[1].get("molecule","names")
@@ -97,7 +97,10 @@ def calculate_c6_for_config(dimer_settings, settings_list, geo_list, fragment_li
             qchem_in.write("basis " + basis + "\n")
 
             # read the qchem template and append it to the qchem in
-            qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
+            qchem_template2 = qchem_template 
+            if use_cm5 == False:
+                qchem_template2 += "_chelpg"
+            qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template2)
             with open(qchem_template_path, "r") as template:
                 for line in template:
                     qchem_in.write(line)
@@ -253,8 +256,8 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
 
 
 def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_published_polarizabilities,
-                                 method="wb97m-v",
-                                 basis="aug-cc-pvtz"):
+                                 method,
+                                 basis,use_cm5):
     name = settings.get("molecule","names")
     print("Running C6 calculation for the monomer {} with {}/{}.".format(name, method, basis))
 
@@ -299,7 +302,10 @@ def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_
             qchem_in.write("basis " + basis + "\n")
 
             # read the qchem template and append it to the qchem in
-            qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template)
+            qchem_template2 = qchem_template
+            if use_cm5 == False:
+                qchem_template2 += "_chelpg"
+            qchem_template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), qchem_template2)
             with open(qchem_template_path, "r") as template:
                 for line in template:
                     qchem_in.write(line)
@@ -313,11 +319,11 @@ def calculate_chg_pol_for_config(settings, geo, fragment, distance_between, use_
 
     print("Parsing qchem output {}.".format(qchem_out_path))
 
-    charges, pols = get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_published_polarizabilities)
+    charges, pols = get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_published_polarizabilities,use_cm5)
 
     return charges, pols
 
-def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_published_polarizabilities):
+def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_published_polarizabilities, use_cm5):
     # parse the output file
     with open(qchem_out_path, "r") as qchem_out:
 
@@ -327,9 +333,6 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
                 line = qchem_out.readline()
                 if "SCF failed to converge" in line:
                     raise LibraryCallError("Qchem", "charge/polarizability calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
-                if line == "":
-                    print("Something went wrong with qchem")
-                    exit(1)
                 line.index("Atom  vol   volFree")
                 break
             except ValueError:
@@ -394,7 +397,14 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         # read lines until we read the line before where charges are specified
         while True:
             try:
-                qchem_out.readline().index("Charge Model 5")
+                line = qchem_out.readline()
+                if "SCF failed to converge" in line:
+                    raise LibraryCallError("Qchem", "charge/polarizability calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
+                if use_cm5:
+                  line.index("Charge Model 5")
+                else:
+                  line.index("Ground-State ChElPG Net Atomic Charges")
+
                 # skip 3 more lines
                 for i in range(3):
                     qchem_out.readline()
@@ -444,7 +454,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
                           method,
                           basis,
                           num_digits,
-                          virtual_sites):
+                          virtual_sites,use_cm5):
 
     # read Settings for the full system
     settings = SettingsReader(settings_file)
@@ -497,8 +507,8 @@ def get_system_properties(settings_file, config_path, geo_paths,
 
     for i in range(len(symmetries)):
         chgs, pols = calculate_chg_pol_for_config(monomer_settings[i],geo_paths[i], fragments[i], distance_between, use_published_polarizabilities,
-                                                     method=method,
-                                                     basis=basis)
+                                                     method,
+                                                     basis,use_cm5)
 
         dimer_setting = SettingsReader(settings_file)
         dimer_setting.set("molecule", "names", name + "," + name)
@@ -509,8 +519,8 @@ def get_system_properties(settings_file, config_path, geo_paths,
         dimer_setting.set("molecule", "SMILES", SMILE + "," + SMILE)
 
         c6 = calculate_c6_for_config(dimer_setting, [monomer_settings[i], monomer_settings[i]], [geo_paths[i],geo_paths[i]],[fragments[i],fragments[i]], distance_between, use_published_polarizabilities,
-                                     method=method,
-                                     basis=basis)
+                                     method,
+                                     basis,use_cm5)
 
 
         chg_list.append([round(charge, num_digits) for charge in chgs[0]])
@@ -522,8 +532,8 @@ def get_system_properties(settings_file, config_path, geo_paths,
     if len(symmetries) == 2:
         true_dimer_setting = SettingsReader(settings_file)
         c6 = calculate_c6_for_config(true_dimer_setting, [monomer_settings[0], monomer_settings[1]], [geo_paths[0],geo_paths[1]],[fragments[0],fragments[1]], distance_between, use_published_polarizabilities,
-                                     method=method,
-                                     basis=basis)
+                                     method,
+                                     basis,use_cm5)
 
         c6_list.append([round(c, num_digits) for c in c6[-1]])
 

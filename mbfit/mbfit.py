@@ -591,7 +591,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
                           method="wb97m-v",
                           basis="aug-cc-pvtz",
                           num_digits=4,
-                          virtual_sites=["X", "Y", "Z"]):
+                          virtual_sites=["X", "Y", "Z"],use_cm5=True):
     """
         Obtains information such as charges and pols that will be needed for the fitting.
 
@@ -627,7 +627,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
                                   method=method,
                                   basis=basis,
                                   num_digits=num_digits,
-                                  virtual_sites=virtual_sites)
+                                  virtual_sites=virtual_sites,use_cm5=use_cm5)
     return chg, pol, c6
 
 def write_config_file(settings_file, config_path, charges,
@@ -990,7 +990,7 @@ def retrieve_best_fit(settings_path, fits_path, fitted_nc_path = "mbnrg.nc", fit
                     results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, False])
                 else:
                     results.append([fit, full_rmsd, wfull_rmsd, max_error, low_rmsd, low_max_error, True])
-        except (FileNotFoundError, IndexError):
+        except (FileNotFoundError, IndexError, ValueError):
             print("Doesn't seem that the log file in " + fit + " is correct...")
             print("Maybe you want to rerun " + fit + " again.")
             results.append([fit, float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), False])
@@ -1085,7 +1085,7 @@ def update_config_with_ttm(settings_path, fits_path, config_path, fitted_ttmnrg_
     config.write(config_path)
 
 
-def generate_MBX_files(settings_path, config_file, mon_ids, do_ttmnrg = False, mbnrg_fits_path = None, degree = 1, MBX_HOME=None, version="v1",
+def generate_MBX_files(settings_path, config_file, mon_ids, degree, do_ttmnrg = False, mbnrg_fits_path = None, MBX_HOME=None, version="v1",
                             virtual_sites=["X", "Y", "Z"]):
     """
     Creates the pieces of code that will be needed in MBX to use this potential

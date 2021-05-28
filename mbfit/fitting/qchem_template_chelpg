@@ -1,0 +1,26 @@
+jobtype         sp
+purecart        1111
+xc_grid         000099000590
+nl_grid         1
+unrestricted    false
+incdft          0
+incfock         0
+max_scf_cycles  100
+scf_guess       sad
+scf_algorithm   diis
+scf_convergence 6
+thresh          11
+symmetry        false
+sym_ignore      true
+!constrained dft
+!CDFT                TRUE
+!Multipole-derived charges
+!Andy said to use this for molecules with non-zero dipole moments
+MM_CHARGES     true
+!CHELPG charges
+CHELPG          true
+!XDM module
+DFTVDW_JOBNUMBER    1
+DFTVDW_METHOD       1
+DFTVDW_PRINT        2
+$end

@@ -636,7 +636,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                     systools.write(line)
 
         # Dispersion
-        if number_of_monomers < 3:
+        if number_of_monomers < 3 and do_ttmnrg:
             with open(MBX_HOME + "/src/potential/dispersion/disptools.cpp", 'r') as disptools:
                 lines = disptools.readlines()
             i = 0

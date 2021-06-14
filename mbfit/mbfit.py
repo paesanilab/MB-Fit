@@ -1151,7 +1151,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
                          correlation_prefix = "correlation",
                          correlation_directory = "correlation", minor_tick = 5.0, colors = None,
                          ttm=False, over_ttm=False, nc_path = "mbnrg.nc",
-                         fitted_ttmnrg_params = "ttm-nrg_params.dat"):
+                         fitted_ttmnrg_params = "ttm-nrg_params.dat", max_1b = 100.0):
     """
     Generates correltation data for the training/test set passed as argument
 
@@ -1171,6 +1171,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
         over_ttm              - Only used if ttm is False, if enabled, will fit polynomials over ttm.
         nc_path               - Netcdf file with the parameters for the best fit.
         fitted_ttmnrg_params  - Name of the output where the TTM-nrg params
+        max_1b                - Maximum deformation energy allowed in the plot (IE - BE)
     """
 
     # Get information
@@ -1198,7 +1199,7 @@ def get_correlation_data(settings_path, fitting_code_dir_path, fits_path, traini
     eval_obj.calculate_energies(path_to_params, training_set)
 
     correlation_file = correlation_prefix + ".dat"
-    energies = eval_obj.write_correlation_file(correlation_file = correlation_file , split_energy = split_energy)
+    energies = eval_obj.write_correlation_file(correlation_file = correlation_file , split_energy = split_energy, max_1b = max_1b)
 
     os.system("mv *" +  correlation_file + " " + corr_folder_prefix)
 

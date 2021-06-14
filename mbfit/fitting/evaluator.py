@@ -39,7 +39,7 @@ class Evaluator:
         return fit_energies
 
         
-    def write_correlation_file(self, correlation_file = "correlation.dat", split_energy = None):
+    def write_correlation_file(self, correlation_file = "correlation.dat", split_energy = None, max_1b = 100.0):
         be = self.ts_obj.get_energies("binding_energy")
         ref = self.ts_obj.get_energies("ref_energy")
         nb = self.ts_obj.get_energies("fit_energy")
@@ -77,6 +77,8 @@ class Evaluator:
         high_max_ind = -1;
         
         for i in range(nbe):
+            if be[i] - nb[i] > max_1b:
+                continue
             line = "{0:16.8f}{1:16.8f}\n".format(ref[i],nb[i])
             number = (ref[i] - nb[i]) * (ref[i] - nb[i])
             energy_list = [ref[i],nb[i]]

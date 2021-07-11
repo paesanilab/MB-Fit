@@ -1,4 +1,4 @@
-# MB-nrg potential energy function generation
+# MB-Fit: Software infrastructure for data-driven many-body potential energy functions
 
 [![Build Status](https://travis-ci.org/paesanilab/potential_fitting.svg?branch=master)](https://travis-ci.org/paesanilab/potential_fitting)
 

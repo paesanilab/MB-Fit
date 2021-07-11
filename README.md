@@ -7,6 +7,7 @@ MB-Fit is an integrated software infrastructure that enables the automated devel
 MB-Fit provides a complete array of software tools to: 1) generate training and test sets for individual many-body energies, 2) set up and perform the required quantum mechanical calculations of the necessary training data, 3) optimize both linear and non-linear parameters entering the mathematical expressions for the TTM-nrg and MB-nrg PEFs, and 4) generate the associated codes that are directly exported to the MBX many-body energy/force calculator (http://paesanigroup.ucsd.edu/software/mbx.html) that enables MD simulations with the TTM-nrg and MB-nrg PEFs using LAMMPS (https://www.lammps.org) and i-PI (http://ipi-code.org).
 
 Key references for TTM-nrg and MB-nrg PEFs:
+
 MB-pol PEF
 - V. Babin, C. Leforestier, F. Paesani, “Development of a first principles water potential with flexible monomers: Dimer potential energy surface, VRT spectrum, and second virial coefficient”, J. Chem. Theory Comput. 9, 5395 (2013). https://doi.org/10.1021/ct400863t
 - V. Babin, G.R. Medders, F. Paesani, “Development of a first principles water potential with flexible monomers. II: Trimer potential energy surface, third virial coefficient, and small clusters”, J. Chem. Theory Comput. 10, 1599 (2014). https://doi.org/10.1021/ct500079y
@@ -26,7 +27,7 @@ TTM-nrg and MB-nrg PEFs
 - M. Riera, E.P. Yeh, F. Paesani, “Data-driven many-body models for molecular fluids: CO2/H2O mixtures as a case study”. J. Chem. Theory Comput. 16, 2246 (2020). https://doi.org/10.1021/acs.jctc.9b01175
 - M. Riera, A. Hirales, F. Paesani, “Data-driven many-body models with chemical accuracy for CH4/H2O mixtures”. J. Phys. Chem. B 124, 11207 (2020). https://doi.org/10.1021/acs.jpcb.0c08728
 - E. Lambros, S. Dasgupta, E. Palos, S. Swee, J. Hu, F. Paesani, “General many-body framework for data-driven potentials with arbitrary quantum mechanical accuracy: Water as a case study”. https://doi.org/10.26434/chemrxiv.14710815.v1    
-- 155.	A. Caruso, F. Paesani, “Data-driven many-body models enable a quantitative description of chloride hydration from clusters to bulk”. Under review. https://doi.org/10.26434/chemrxiv.14755449.v1
+- A. Caruso, F. Paesani, “Data-driven many-body models enable a quantitative description of chloride hydration from clusters to bulk”. Under review. https://doi.org/10.26434/chemrxiv.14755449.v1
 
 
 

@@ -155,16 +155,14 @@ class Evaluator:
 
     def plot(self, do_ttm = False, split_energy = None, 
              correlation_prefix = "correlation",
-             min_e = 0.0, max_e = 50.0, minor_tick = 5.0, colors = None):
+             min_e = 0.0, max_e = 50.0, minor_tick = 5.0, colors = None, labels = None):
 
         if colors is None:
           if do_ttm:
               colors = ["#FF8000","#EE220C"]
-              labels = ["Reference (kcal/mol)", "TTM-nrg (kcal/mol)"]
           else:
               colors = ["#61D836","#017100"]
-              labels = ["Reference (kcal/mol)", "MB-nrg (kcal/mol)"]
-        else:
+        if labels is None:
           if do_ttm:
               labels = ["Reference (kcal/mol)", "TTM-nrg (kcal/mol)"]
           else:
@@ -194,11 +192,11 @@ class Evaluator:
         axs.xaxis.set_major_locator(MultipleLocator(2*interval))
         axs.yaxis.set_major_locator(MultipleLocator(2*interval))
 
-        axs.tick_params(top=True, bottom=True, left=True, right=True, direction='in', labelsize=15, length=6)
-        axs.tick_params(which='minor', top=True, bottom=True, left=True, right=True, direction='in', labelsize=15, length=4)
+        axs.tick_params(top=True, bottom=True, left=True, right=True, direction='in', labelsize=18, length=6)
+        axs.tick_params(which='minor', top=True, bottom=True, left=True, right=True, direction='in', labelsize=18, length=4)
 
-        axs.set_xlabel(labels[0], fontsize=16)
-        axs.set_ylabel(labels[1], fontsize=16)
+        axs.set_xlabel(labels[0], fontsize=20)
+        axs.set_ylabel(labels[1], fontsize=20)
 
         legends = []
 
@@ -213,11 +211,11 @@ class Evaluator:
                 axs.scatter(x[2], y[2], marker='^',color=colors[1], facecolors='none')
                 legends.append("BE > " + str(int(split_energy)) + " kcal/mol")
         
-        axs.legend(legends, fontsize=15, loc=4, frameon=False)
+        axs.legend(legends, fontsize=18, loc=4, frameon=False)
 
         xtext = [(max_e - min_e)*0.05 + min_e, (max_e - min_e)*0.9 + min_e]
 
-        axs.text(xtext[0], xtext [1], "RMSD (BE < " + str(int(split_energy)) + ") = " + "{0:6.4f}".format(self.rmsd[1]), fontsize=12)
+        axs.text(xtext[0], xtext [1], "RMSD (BE < " + str(int(split_energy)) + ") = " + "{0:6.4f}".format(self.rmsd[1]), fontsize=14)
         #axs.text(xtext[0], xtext [1], r'a) CH$_4$: TTM-nrg', fontsize=15)
 
         # x = y line

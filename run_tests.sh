@@ -34,7 +34,7 @@ fi
 
 echo "Running python tests."
 
-coverage run --source potential_fitting run_tests.py > $log 2> $results
+coverage run --source mbfit run_tests.py > $log 2> $results
 
 if [ -d "failed_tests_outputs" ]; then
     echo "Some tests have failed. Outputs of these tests will be found in $failed"

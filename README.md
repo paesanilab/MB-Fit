@@ -12,8 +12,9 @@ MB-pol PEF
 - V. Babin, C. Leforestier, F. Paesani, “Development of a first principles water potential with flexible monomers: Dimer potential energy surface, VRT spectrum, and second virial coefficient”, J. Chem. Theory Comput. 9, 5395 (2013). https://doi.org/10.1021/ct400863t
 - V. Babin, G.R. Medders, F. Paesani, “Development of a first principles water potential with flexible monomers. II: Trimer potential energy surface, third virial coefficient, and small clusters”, J. Chem. Theory Comput. 10, 1599 (2014). https://doi.org/10.1021/ct500079y
 - G.R. Medders, V. Babin, F. Paesani, “Development of a first principles water potential with flexible monomers. III: Liquid phase properties”, J. Chem. Theory Comput. 10, 2906 (2014). https://doi.org/10.1021/ct5004115
-- F. Paesani, “Getting the right answers for the right reasons: Towards predictive molecular simulations of water with many-body potential energy functions”, Acc. Chem. Res. 49, 1844 (2016). https://doi.org/10.1021/acs.accounts.6b00285
 - S.K. Reddy, S.C. Straight, P. Bajaj, C.H. Pham, M. Riera, D.R. Moberg, M.A. Morales, C. Knight, A.W. Götz, F. Paesani, “On the accuracy of the MB-pol many-body potential for water: Interaction energies, vibrational frequencies, and classical thermodynamic and dynamical properties from clusters to liquid water and ice”. J. Chem. Phys. 145, 194504 (2016). https://doi.org/10.1063/1.4967719
+- F. Paesani, “Getting the right answers for the right reasons: Towards predictive molecular simulations of water with many-body potential energy functions”, Acc. Chem. Res. 49, 1844 (2016). https://doi.org/10.1021/acs.accounts.6b00285
+
 
 TTM-nrg and MB-nrg PEFs
 - D.J. Arismendi-Arrieta, M. Riera, P. Bajaj, R. Prosmiti, F. Paesani, “The i-TTM model for ab initio-based ion-water interaction potentials. I. Halide-water potential energy functions”, J. Phys. Chem. B 120, 1822 (2016). https://doi.org/10.1021/acs.jpcb.5b09562

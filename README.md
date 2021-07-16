@@ -6,14 +6,19 @@ MB-Fit is an integrated software infrastructure that enables the automated devel
 
 MB-Fit provides a complete array of software tools to: 1) generate training and test sets for individual many-body energies, 2) set up and perform the required quantum mechanical calculations of the necessary training data, 3) optimize both linear and non-linear parameters entering the mathematical expressions for the TTM-nrg and MB-nrg PEFs, and 4) generate the associated codes that are directly exported to the MBX many-body energy/force calculator (http://paesanigroup.ucsd.edu/software/mbx.html) that enables MD simulations with the TTM-nrg and MB-nrg PEFs using LAMMPS (https://www.lammps.org) and i-PI (http://ipi-code.org).
 
+For details on the theoretical background and software implementation, please refer to:
+E.F. Bull-Vulpe, M. Riera, A.W. Goetz, F. Paesani, MB-Fit: Software Infrastructure for Data-Driven Many-Body Potential Energy Functions. https://doi.org/10.33774/chemrxiv-2021-pjr3l.
+
+
 Key references for TTM-nrg and MB-nrg PEFs:
 
 MB-pol PEF
 - V. Babin, C. Leforestier, F. Paesani, “Development of a first principles water potential with flexible monomers: Dimer potential energy surface, VRT spectrum, and second virial coefficient”, J. Chem. Theory Comput. 9, 5395 (2013). https://doi.org/10.1021/ct400863t
 - V. Babin, G.R. Medders, F. Paesani, “Development of a first principles water potential with flexible monomers. II: Trimer potential energy surface, third virial coefficient, and small clusters”, J. Chem. Theory Comput. 10, 1599 (2014). https://doi.org/10.1021/ct500079y
 - G.R. Medders, V. Babin, F. Paesani, “Development of a first principles water potential with flexible monomers. III: Liquid phase properties”, J. Chem. Theory Comput. 10, 2906 (2014). https://doi.org/10.1021/ct5004115
-- F. Paesani, “Getting the right answers for the right reasons: Towards predictive molecular simulations of water with many-body potential energy functions”, Acc. Chem. Res. 49, 1844 (2016). https://doi.org/10.1021/acs.accounts.6b00285
 - S.K. Reddy, S.C. Straight, P. Bajaj, C.H. Pham, M. Riera, D.R. Moberg, M.A. Morales, C. Knight, A.W. Götz, F. Paesani, “On the accuracy of the MB-pol many-body potential for water: Interaction energies, vibrational frequencies, and classical thermodynamic and dynamical properties from clusters to liquid water and ice”. J. Chem. Phys. 145, 194504 (2016). https://doi.org/10.1063/1.4967719
+- F. Paesani, “Getting the right answers for the right reasons: Towards predictive molecular simulations of water with many-body potential energy functions”, Acc. Chem. Res. 49, 1844 (2016). https://doi.org/10.1021/acs.accounts.6b00285
+
 
 TTM-nrg and MB-nrg PEFs
 - D.J. Arismendi-Arrieta, M. Riera, P. Bajaj, R. Prosmiti, F. Paesani, “The i-TTM model for ab initio-based ion-water interaction potentials. I. Halide-water potential energy functions”, J. Phys. Chem. B 120, 1822 (2016). https://doi.org/10.1021/acs.jpcb.5b09562

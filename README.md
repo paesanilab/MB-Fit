@@ -9,6 +9,8 @@ MB-Fit provides a complete array of software tools to: 1) generate training and 
 For details on the theoretical background and software implementation, please refer to:
 E.F. Bull-Vulpe, M. Riera, A.W. Goetz, F. Paesani, MB-Fit: Software Infrastructure for Data-Driven Many-Body Potential Energy Functions. https://doi.org/10.33774/chemrxiv-2021-pjr3l.
 
+For questions about MB-Fit, please refer to the [MB-Fit_users group](https://groups.google.com/u/0/g/mb-fit_users). 
+After joining the group, users will be able to post questions/comments about MB-Fit
 
 Key references for TTM-nrg and MB-nrg PEFs:
 

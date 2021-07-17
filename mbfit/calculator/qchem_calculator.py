@@ -240,7 +240,7 @@ class QchemCalculator(Calculator):
                     found = True
 
         # if we didn't find a geometry to parse, raise an exception.
-        raise LibraryCallError("qchem", "optimze", "output file is of incorrect format", log_path=qchem_out_path)
+        raise LibraryCallError("qchem", "optimize", "output file is of incorrect format", log_path=qchem_out_path)
 
     def calculate_frequencies(self, molecule, model, qm_options={}):
         """

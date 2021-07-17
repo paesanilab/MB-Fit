@@ -285,7 +285,6 @@ class Database():
         """
 
         try:
-            print(command)
             self.cursor.execute(
                 command,
                 params)

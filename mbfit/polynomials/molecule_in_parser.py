@@ -427,7 +427,7 @@ class FragmentParser(object):
 
                 # if we were reading atom type, then raise an exception, because every atom type must be followed
                 # by an atom number
-                raise Exception
+                raise InvalidInputError("{} is not a valid fragment symmetry input. All symmetry labels must be followed by an integer.".format(fragment_in))
 
             # if character is a digit
 #MRR            if character_code >= 48 and character_code < 58:
@@ -438,7 +438,7 @@ class FragmentParser(object):
 
                     # if we didn't read at least 1 letter for atom type, raise an error
                     if(start_index == end_index):
-                        raise Exception
+                        raise InvalidInputError("{} is not a valid symmetry input. Something went wrong while parsing it, make sure each symmetry label has a number after it, and each number has a symmetry label before it.".format(fragment_in))
 
                     # otherwise start reading in the atom number
                     reading_atom_type = False
@@ -465,9 +465,8 @@ class FragmentParser(object):
 
             # if character is not a digit or capital letter
             else:
-                print("error", fragment_in)
                 # raise exception, because fragment_in must be all numbers and capital letters.
-                raise Exception
+                raise InvalidInputError("{} is not a valid symmetry input. It contains an invalid character, make sure only uppercase letters, digits, underscores, and parentheses are used.".format(fragment_in))
 
     def get_original_fragment_in(self):
         return self.fragment_in

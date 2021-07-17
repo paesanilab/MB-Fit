@@ -545,7 +545,7 @@ def execute_maple(settings_path, poly_dir_path):
 
     os.chdir(original_dir)
 
-def get_system_properties(settings_file, config_path, geo_paths,
+def get_system_properties(settings_path, config_path, geo_paths,
                           distance_between=20,
                           use_published_polarizabilities=True,
                           method="wb97m-v",
@@ -574,6 +574,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
                     Default: 4
             virtual_sites       - List of Symmetry labels that are virtual sites.
                     Default: ["X", "Y", "Z"]
+            use_cm5             - Use CM5 charges rather than ChElPG
 
         Returns:
             charges             - List with the charges of each monomer [[mon1],[mon2],..]
@@ -581,7 +582,7 @@ def get_system_properties(settings_file, config_path, geo_paths,
             C6                  - List with the C6 constants
         """
 
-    chg, pol, c6 = fitting.get_system_properties(settings_file, config_path, geo_paths,
+    chg, pol, c6 = fitting.get_system_properties(settings_path, config_path, geo_paths,
                                   distance_between=distance_between,
                                   use_published_polarizabilities=use_published_polarizabilities,
                                   method=method,

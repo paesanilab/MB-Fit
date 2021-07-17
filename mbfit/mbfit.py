@@ -9,6 +9,30 @@ from mbfit.exceptions import InconsistentValueError
 
 
 def apply_standard_order(settings_path, geo_path):
+    """
+
+    Reorders the fragments and atoms in a molecule into 'standard order'.
+    This order is arbitrarily defined as:
+     * Fragments are ordered alphabetically
+     * Atoms within fragments are reordered in the following way:
+        * If two atoms have a different atomic number, the atom with the lower number comes first.
+        * If two atoms have the same atomic number, the atom with the adjacent atom of the lowest priority comes first.
+
+
+    WARNING:
+    This function is mostly uninteresting and probably not useful unless you know specifically why you are using it.
+
+    Args:
+        settings_path       - Local path to the file containing all relevent settings information.
+        geo_path            - Local path to the file containing the non-standard-order xyz data.
+
+    Returns:
+        (standard_settings_path, standard_geo_path)
+        standard_settings_path  - Local path to new settings file containing information for the molecule in standard order.
+            Will be equal to settings_path + "_standard"
+        standard_geo_path       - Local path to new xyz file containing data for the molecule in standard order.
+            Will be equal to geo_path  + "_standard"
+    """
 
     settings = SettingsReader(settings_path)
     molecule = xyz_to_molecules(geo_path, settings)[0]
@@ -431,70 +455,6 @@ def generate_training_set(settings_path, database_config_path, training_set_path
             cp, *tags, e_bind_min=e_bind_min, e_bind_max=e_bind_max, e_mon_min=e_mon_min, e_mon_max=e_mon_max,
             deprecated_fitcode=deprecated_fitcode)
 
-#def generate_1b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags, e_min = 0, e_max = float('inf')):
-#    """
-#    Generates a 1b training set from the energies inside a database.
-#
-#    ***deprecated, please use generate_training_set instead***
-#
-#    Specific method, basis, and cp may be specified to only use energies calculated
-#    with a specific model.
-#
-#    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        database_config_path - .ini file containing host, port, database, username, and password.
-#                    Make sure only you have access to this file or your password will be compromised!
-#        training_set_path   - Local path to the file to write the training set to.
-#        molecule_name       - The name of the moelcule to generate a training set for.
-#        method              - Only use energies calcualted by this method.
-#        basis               - Only use energies calculated in this basis.
-#        cp                  - Only use energies calculated with this cp. Note that counterpoise correct has no
-#                effect on 1b energies.
-#        tags                - Only use energies marked with one or more of these tags.
-#        e_min               - Minimum (inclusive) energy of any config to include in this training set.
-#        e_max               - Maximum (exclusive) energy of any config to include in this training set.
-#
-#    Returns:
-#        None.
-#    """
-#
-#    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-#        cp, *tags, e_bind_min=e_min, e_bind_max=e_max, e_mon_min=e_min, e_mon_max=e_max)
-#
-#
-#def generate_2b_training_set(settings_path, database_config_path, training_set_path, molecule_name, method, basis, cp, *tags,
-#            e_bind_max = float('inf'), e_mon_max = float('inf')):
-#    """
-#    Generates a 2b training set from the energies inside a database.
-#
-#    ***deprecated, please use generate_training_set instead***
-#
-#    Specific method, basis, and cp may be specified to only use energies calculated
-#    with a specific model.
-#
-#    '%' can be used to stand in as a wild card, meaning any method/basis/cp will be used in the training set.
-#
-#    Args:
-#        settings_path       - Local path to the file containing all relevent settings information.
-#        database_config_path - .ini file containing host, port, database, username, and password.
-#                    Make sure only you have access to this file or your password will be compromised!
-#        training_set_path   - Local path to the file to write the training set to.
-#        molecule_name       - The name of the dimer.
-#        method              - Only use energies calculated by this method.
-#        basis               - Only use energies calculated in this basis.
-#        cp                  - Only use energies calculated with this cp.
-#        tags                - Only use energies marked with one or more of these tags.
-#        e_bind_max          - Maximum binding energy allowed
-#        e_mon_max           - Maximum monomer deformation energy allowed
-#
-#    Returns:
-#        None.
-#    """
-#    database.generate_training_set(settings_path, database_config_path, training_set_path, method, basis,
-#        cp, *tags, e_bind_min=-float('inf'), e_bind_max=e_bind_max, e_mon_min=-float('inf'), e_mon_max=e_mon_max)
-
 def generate_poly_input(settings_path, molecule_in, in_file_path, virtual_sites=["X", "Y", "Z"]):
     """
     Generates an input file for polynomial generation.
@@ -542,7 +502,7 @@ def generate_polynomials(settings_path, poly_in_path, order, poly_dir_path, gene
 
 def execute_maple(settings_path, poly_dir_path):
     """
-    Runs maple on the polynomial files in the specified directory to turn them into actual cpp files.
+    Runs maple on the maple input files generated during polynomial generation to convert them to C++ files.
 
     Args:
         settings_path       - Local path to the file containing all relevent settings information.

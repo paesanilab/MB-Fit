@@ -122,6 +122,23 @@ def get_c6_from_qchem_output(qchem_out_path, fragments, atomic_symbols, use_publ
         # read lines until we read the line before where c6 constants are specified
         while True:
             line = qchem_out.readline()
+            if line == "":
+                print("Warning: c6 constants either failed to be calculated or cannot be read from the qchem output.")
+                print("The qchem log file is located at {}".format(qchem_out_path))
+                print("Setting all c6 constants to 0")
+
+                s = {}
+                for fragment_index_a in range(len(fragments)):
+                    for fragment_index_b in range(len(fragments)):
+
+                        for syma in fragments[fragment_index_a][::2]:
+                            for symb in fragments[fragment_index_b][::2]:
+                                if not (fragment_index_a == fragment_index_b and syma == symb):
+                                    s[":".join(sorted([syma, symb]))] = 0
+
+                print(s)
+                return [list(s.values())]
+                
             if "SCF failed to converge" in line:
                 raise LibraryCallError("Qchem", "c6 calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
             try:
@@ -331,6 +348,21 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         while True:
             try:
                 line = qchem_out.readline()
+                if line == "":
+                    print("Warning: polarizabilities and charges either failed to be calculated or cannot be read from the qchem output.")
+                    print("The qchem log file is located at {}".format(qchem_out_path))
+                    print("Setting all polarizabilities and charges to 0")
+                    at_types = get_atom_types(fragment)
+                    pols = []
+                    chgs = []
+                    for i in range(0,len(at_types),2):
+                        atom_index = int(i/2)
+                        atom_type = at_types[i]
+                        for k in range(0, int(fragment[atom_index * 2 + 1])):
+                            pols.append(0)
+                            chgs.append(0)
+                    return [chgs], [pols]
+                    
                 if "SCF failed to converge" in line:
                     raise LibraryCallError("Qchem", "charge/polarizability calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
                 line.index("Atom  vol   volFree")
@@ -398,6 +430,18 @@ def get_chg_pol_from_qchem_output(qchem_out_path, fragment, atomic_symbols, use_
         while True:
             try:
                 line = qchem_out.readline()
+                if line == "":
+                    print("Warning: charges either failed to be calculated or cannot be read from the qchem output.")
+                    print("The qchem log file is located at {}".format(qchem_out_path))
+                    print("Setting all charges to 0")
+                    at_types = get_atom_types(fragment)
+                    chgs = []
+                    for i in range(0,len(at_types),2):
+                        atom_index = int(i/2)
+                        atom_type = at_types[i]
+                        for k in range(0, int(fragment[atom_index * 2 + 1])):
+                            chgs.append(0)
+                    return [chgs], effective_polarizabilities
                 if "SCF failed to converge" in line:
                     raise LibraryCallError("Qchem", "charge/polarizability calculation", "SCF failed to converge".format(qchem_out_path), log_path = qchem_out_path)
                 if use_cm5:

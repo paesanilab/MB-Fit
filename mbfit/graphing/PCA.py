@@ -22,7 +22,6 @@ class PCA_analysis:
         Args:
             setting_path            - The path of the setting.ini with all relevant settings.
             train_file_path         - The path of the training xyz file.
-            multiple                - A boolean indicates if the scan_file_path accepts multiple paths
             scan_file_path          - The path of the testing xyz file or the scanning data file.
             sym_string              - The symmetrical string for the molecule.
 

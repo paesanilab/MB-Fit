@@ -426,11 +426,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                 my_buckingham_text += "        types{}.push_back({});\n".format(i + 1, my_number_types[my_mon[i][0]][j])
             my_buckingham_text += "\n"
 
-        number_of_types_2 = 0
-        if my_mon[0][0] > my_mon[1][0]:
-            number_of_types_2 = max(my_number_types[my_mon[0][0]])
-        else:
-            number_of_types_2 = max(my_number_types[my_mon[1][0]])
+        number_of_types_2 = max(my_number_types[my_mon[1][0]])
 
         my_buckingham_text += "        nt2 = {};\n\n".format(number_of_types_2 + 1)
 

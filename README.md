@@ -7,7 +7,7 @@ MB-Fit is an integrated software infrastructure that enables the automated devel
 MB-Fit provides a complete array of software tools to: 1) generate training and test sets for individual many-body energies, 2) set up and perform the required quantum mechanical calculations of the necessary training data, 3) optimize both linear and non-linear parameters entering the mathematical expressions for the TTM-nrg and MB-nrg PEFs, and 4) generate the associated codes that are directly exported to the MBX many-body energy/force calculator (http://paesanigroup.ucsd.edu/software/mbx.html) that enables MD simulations with the TTM-nrg and MB-nrg PEFs using LAMMPS (https://www.lammps.org) and i-PI (http://ipi-code.org).
 
 For details on the theoretical background and software implementation, please refer to:
-E.F. Bull-Vulpe, M. Riera, A.W. Goetz, F. Paesani, MB-Fit: Software Infrastructure for Data-Driven Many-Body Potential Energy Functions. https://doi.org/10.33774/chemrxiv-2021-pjr3l.
+E.F. Bull-Vulpe, M. Riera, A.W. Goetz, F. Paesani, "MB-Fit: Software Infrastructure for Data-Driven Many-Body Potential Energy Functions", J. Chem. Phys. 155, 124801 (2021). https://doi.org/10.1063/5.0063198.
 
 For questions about MB-Fit, please refer to the [MB-Fit_users group](https://groups.google.com/u/0/g/mb-fit_users). 
 After joining the group, users will be able to post questions/comments about MB-Fit

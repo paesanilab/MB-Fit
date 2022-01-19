@@ -431,7 +431,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
         my_buckingham_text += "        nt2 = {};\n\n".format(number_of_types_2 + 1)
 
 
-        my_buckingham_text += "        // Fill in (in order) the C6 and d6 coefficients\n"
+        my_buckingham_text += "        // Fill in (in order) the a and d6 coefficients\n"
 
         A_units = "// kcal/mol"
         b_units = "// A^(-1)"

@@ -844,9 +844,9 @@ void """ + system_keyword_polyholder + """_fit::write_cdl(std::ostream& os, unsi
         if use_lonepairs[i] != 0:
             atoms = list(fragments[i].get_atoms())
             a = "    monomer m{};\n".format(str(i + 1))
-            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], 1, char_code),
-                                                                    get_coords_var_name(atoms[3][0], 1, char_code),
-                                                                    get_coords_var_name(atoms[4][0], 2, char_code))
+            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code))
             ff.write(a)
         char_code = chr(ord(char_code)+1)
 

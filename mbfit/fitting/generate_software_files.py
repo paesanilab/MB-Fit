@@ -807,6 +807,8 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
             if we_are_good:
                 os.system("cd " + sofdir + " ; cp " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "; cd ../ ")
 
+                # Old code that updates CMakeLists
+                """
                 # Now update CMake
                 with open(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "CMakeLists.txt", 'r') as cmakelists:
                     lines = cmakelists.readlines()
@@ -841,6 +843,29 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                 with open(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "CMakeLists.txt", 'w') as cmakelists:
                     for line in lines:
                         cmakelists.write(line)
+                """
+
+                # New code that updates the makefile instead
+                with open(MBX_HOME + "/src/Makefile.am", 'r') as makefile:
+                    lines = makefile.readlines()
+                i = 0
+                while i < len(lines):
+                    if (lines[i].startswith("oneb_sources") and number_of_monomers == 1) or (lines[i].startswith("twob_sources") and number_of_monomers == 2) or (lines[i].startswith("threeb_sources") and number_of_monomers == 3):
+                        current_sources = lines[i].split()[2:]
+                        if cppgrad not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + cppgrad + "\n"
+                        if cppnograd not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + cppnograd + "\n"
+                        if holdercpp not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + holdercpp + "\n"
+
+                        break
+                    i += 1
+
+                with open(MBX_HOME + "/src/Makefile.am", 'w') as makefile:
+                    for line in lines:
+                        makefile.write(line)
+
 
 
                 if copy_holder:

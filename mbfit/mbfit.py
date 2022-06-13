@@ -685,7 +685,7 @@ def write_config_file(settings_file, config_path, charges,
             bmax_init           - Maximum value of b allowed in initialization
                     Default: 4.0
             r_in                - Distance at which polynomials start to decay to 0. Ideally, 
-                                  it should be 2-3A beyond the pea of the first solvation shell.
+                                  it should be 2-3A beyond the peak of the first solvation shell.
                     Default: 6.0
             r_out               - Distance at which polynomials are 0. As a rule of thumb,
                                   it should be 2A beyond the inner cutoff.

@@ -2432,10 +2432,30 @@ double compute_chisq(const gsl_vector* X, void* unused)
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "usage: ./fit-""" + str(number_of_monomers) + """b <training_set.xyz> [DE] [ridge_alpha] > fit.log"
+        std::cerr << "usage: ./fit-""" + str(number_of_monomers) + """b <training_set.xyz> [DE] [ridge_alpha] [restart_file] > fit.log"
                   << std::endl;
         return 0;
     }
+
+    argv++;
+    argc--;
+
+    char * restart_file = NULL;
+
+    try {
+        size_t nsys = tset::load_nb_system(*argv, training_set);
+        std::cout << "'" << *(argv++) << "' : "
+                      << nsys << " configurations" << std::endl;
+        if (--argc > 0) E_range = atof(*(argv++));
+
+        if (--argc > 0) alpha = atof(*(argv++));
+        if (--argc > 0) restart_file = *(argv++);
+
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+
 
     long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -2454,6 +2474,12 @@ int main(int argc, char** argv) {
 
     a = """
     model.set_nonlinear_parameters(x0);
+    // you can convert a fit-2b.cdl file to .nc file using the following command
+    // $ ncgen -o mbnrg.nc fit-2b.cdl
+    if(restart_file != NULL) {
+        model.load_netcdf(restart_file);
+        std::cout << ">> restarting fit by loading non-linear parameters from '" << restart_file << "'" << std::endl;
+    }
 
     std::cout << "<> using ridge regression with alpha = "
               << alpha << std::endl;
@@ -2463,22 +2489,6 @@ int main(int argc, char** argv) {
         std::ofstream ofs(fn);
         std::cout << "\\n>> dumping initial model as '" << fn << "' >>\\n\\n";
         model.as_cdl(ofs);
-    }
-
-    argv++;
-    argc--;
-
-    try {
-        size_t nsys = tset::load_nb_system(*argv, training_set);
-        std::cout << "'" << *(argv++) << "' : "
-                      << nsys << " configurations" << std::endl;
-        if (--argc > 0) E_range = atof(*(argv++));
-
-        if (--argc > 0) alpha = atof(*(argv++));
-
-    } catch (const std::exception& e) {
-        std::cerr << " ** Error ** : " << e.what() << std::endl;
-        return 1;
     }
 
     ts_weights = std::vector<double>(training_set.size(),1.0);
@@ -2580,6 +2590,16 @@ int main(int argc, char** argv) {
             for (size_t n = 0; n <  model.get_num_nonlinear_params(); ++n)
                 std::cout << n << " : " << s->x->data[n] << "\\n";
             std::cout << "<>" << std::endl;
+
+            model.set_nonlinear_parameters(s->x->data);
+            model.set_linear_parameters(linear::params);
+            {
+                std::string fn = (iter%20==0) ? "fit-2b-restart-2.cdl" : "fit-2b-restart-1.cdl";
+                std::ofstream ofs(fn);
+                std::cout << ">> saving as '" << fn << "'" << std::endl;
+                model.as_cdl(ofs);
+            }
+
         }
     } while (status == GSL_CONTINUE && iter < 5000);
 

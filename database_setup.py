@@ -1,9 +1,6 @@
 import sys
 
-from potential_fitting.database import Database
-
-
-
+from mbfit.database import Database
 
 if(len(sys.argv) != 2):
     print("Usage:")

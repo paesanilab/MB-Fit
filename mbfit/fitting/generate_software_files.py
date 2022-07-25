@@ -845,6 +845,10 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                         cmakelists.write(line)
                 """
 
+                full_cppgrad_path = "potential/{}b/".format(number_of_monomers) + cppgrad
+                full_cppnograd_path = "potential/{}b/".format(number_of_monomers) + cppnograd
+                full_holdercpp_path = "potential/{}b/".format(number_of_monomers) + holdercpp
+
                 # New code that updates the makefile instead
                 with open(MBX_HOME + "/src/Makefile.am", 'r') as makefile:
                     lines = makefile.readlines()
@@ -852,12 +856,12 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                 while i < len(lines):
                     if (lines[i].startswith("oneb_sources") and number_of_monomers == 1) or (lines[i].startswith("twob_sources") and number_of_monomers == 2) or (lines[i].startswith("threeb_sources") and number_of_monomers == 3):
                         current_sources = lines[i].split()[2:]
-                        if cppgrad not in current_sources:
-                            lines[i] = lines[i][:-1] + " potential/{}b/".format(number_of_monomers) + cppgrad + "\n"
-                        if cppnograd not in current_sources:
-                            lines[i] = lines[i][:-1] + " potential/{}b/".format(number_of_monomers) + cppnograd + "\n"
-                        if holdercpp not in current_sources:
-                            lines[i] = lines[i][:-1] + " potential/{}b/".format(number_of_monomers) + holdercpp + "\n"
+                        if full_cppgrad_path not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + full_cppgrad_path + "\n"
+                        if full_cppnograd_path not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + full_cppnograd_path + "\n"
+                        if full_holdercpp_path not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + full_holdercpp_path + "\n"
 
                         break
                     i += 1

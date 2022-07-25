@@ -853,11 +853,11 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                     if (lines[i].startswith("oneb_sources") and number_of_monomers == 1) or (lines[i].startswith("twob_sources") and number_of_monomers == 2) or (lines[i].startswith("threeb_sources") and number_of_monomers == 3):
                         current_sources = lines[i].split()[2:]
                         if cppgrad not in current_sources:
-                            lines[i] = lines[i][:-1] + " " + cppgrad + "\n"
+                            lines[i] = lines[i][:-1] + " potential/{}b/".format(number_of_monomers) + cppgrad + "\n"
                         if cppnograd not in current_sources:
-                            lines[i] = lines[i][:-1] + " " + cppnograd + "\n"
+                            lines[i] = lines[i][:-1] + " potential/{}b/".format(number_of_monomers) + cppnograd + "\n"
                         if holdercpp not in current_sources:
-                            lines[i] = lines[i][:-1] + " " + holdercpp + "\n"
+                            lines[i] = lines[i][:-1] + " potential/{}b/".format(number_of_monomers) + holdercpp + "\n"
 
                         break
                     i += 1

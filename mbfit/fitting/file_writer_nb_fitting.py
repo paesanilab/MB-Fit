@@ -2594,7 +2594,7 @@ int main(int argc, char** argv) {
             model.set_nonlinear_parameters(s->x->data);
             model.set_linear_parameters(linear::params);
             {
-                std::string fn = (iter%20==0) ? "fit-2b-restart-2.cdl" : "fit-2b-restart-1.cdl";
+                std::string fn = (iter%20==0) ? "fit-""" + str(number_of_monomers) + """b-restart-2.cdl" : "fit-""" + str(number_of_monomers) + """b-restart-1.cdl";
                 std::ofstream ofs(fn);
                 std::cout << ">> saving as '" << fn << "'" << std::endl;
                 model.as_cdl(ofs);

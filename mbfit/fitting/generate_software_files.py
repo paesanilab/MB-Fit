@@ -363,7 +363,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                 c6index = sum(range(max(atom_types_number[0]) - atom_types_number[0][j] + 2, max(atom_types_number[0]) + 2))
                 print(c6index)
                 my_c6_long_range = C6[c6index]
-                my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind] = {}; // {}\n".format(math.sqrt(my_c6_long_range), atom_types_letter[0][j])
+                my_c6_lr_text += "            c6_lr[nv * natoms + fst_ind + {}] = {}; // {}\n".format(j, math.sqrt(my_c6_long_range), atom_types_letter[0][j])
             my_c6_lr_text += "        }\n"
 
         if my_mon[0][0] == my_mon[1][0]:

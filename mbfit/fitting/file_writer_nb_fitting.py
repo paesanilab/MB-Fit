@@ -4133,16 +4133,27 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
     fragments = symmetry_parser.get_sub_parsers()
 
-    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-        monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
-"""
+            atoms = list(fragments[i].get_atoms())
+            a = "    monomer m{};\n".format(str(i + 1))
+            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code))
             ff.write(a)
-        char_code = chr(ord(char_code) + 1)
+        char_code = chr(ord(char_code)+1)
+
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+    #char_code = 'a'
+    #for i in range(len(use_lonepairs)):
+    #    if use_lonepairs[i] != 0:
+    #        a = """
+    #    monomer m""" + str(i + 1) + """;
+    #    m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+#"""
+    #        ff.write(a)
+    #    char_code = chr(ord(char_code) + 1)
 
     ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
     ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
@@ -4282,16 +4293,29 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
     fragments = symmetry_parser.get_sub_parsers()
 
-    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-        monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
-"""
+            atoms = list(fragments[i].get_atoms())
+            a = "    monomer m{};\n".format(str(i + 1))
+            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code))
             ff.write(a)
-        char_code = chr(ord(char_code) + 1)
+        char_code = chr(ord(char_code)+1)
+
+
+
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+#    char_code = 'a'
+#    for i in range(len(use_lonepairs)):
+#        if use_lonepairs[i] != 0:
+#            a = """
+#        monomer m""" + str(i + 1) + """;
+#        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+#"""
+#            ff.write(a)
+#        char_code = chr(ord(char_code) + 1)
 
     ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
     ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")

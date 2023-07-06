@@ -646,7 +646,7 @@ def write_config_file(settings_file, config_path, charges,
             bmax_init           - Maximum value of b allowed in initialization
                     Default: 4.0
             r_in                - Distance at which polynomials start to decay to 0. Ideally, 
-                                  it should be 2-3A beyond the pea of the first solvation shell.
+                                  it should be 2-3A beyond the peak of the first solvation shell.
                     Default: 6.0
             r_out               - Distance at which polynomials are 0. As a rule of thumb,
                                   it should be 2A beyond the inner cutoff.
@@ -859,9 +859,40 @@ def prepare_fits(settings_path, fit_dir_path, training_set_path, fits_path, DE=2
 
             # Create bash script that will run the fit
             with open("run_fit.sh",'w') as my_bash:
-                my_bash.write("#!/bin/bash\n")
-                my_bash.write("\n{} {} {} {} > fit.log 2> fit.err \n".format(fit_executable_path,
-                                                                         training_set_basename, DE, alpha))
+                my_bash.write("""#!/bin/bash
+restarted=0
+if [ -f "fit-{nb}b-restart-1.cdl" ]
+then
+    ncgen -o restart.nc fit-{nb}b-restart-1.cdl
+    if [ $? -ne 0 ]
+    then
+        echo "Cannot restart from fit-{nb}b-restart-1.cdl, it seems to be corrupted."
+    else
+        restarted=1
+        echo "Restarting fit from fit-{nb}b-restart-1.cdl."
+    fi
+fi
+
+if [ -f "fit-{nb}b-restart-2.cdl" ] && [ $restarted -eq 0 ]
+then
+    ncgen -o restart.nc fit-{nb}b-restart-2.cdl
+    if [ $? -ne 0 ]
+    then
+        echo "Cannot restart from fit-{nb}b-restart-2.cdl, it seems to be corrupted."
+    else
+        restarted=1
+        echo "Restarting fit from fit-{nb}b-restart-2.cdl."
+    fi
+fi
+
+
+if [ $restarted -eq 1 ]
+then
+    {fit_exe} {train_set} {DE} {alpha} restart.nc > fit.log 2> fit.err 
+else
+    {fit_exe} {train_set} {DE} {alpha} > fit.log 2> fit.err 
+fi
+""".format(**{"nb": nb, "fit_exe": fit_executable_path, "train_set": training_set_basename, "DE": DE, "alpha": alpha}))
 
             system.call("chmod", "744", "run_fit.sh")
             fit_index += 1
@@ -884,6 +915,9 @@ def execute_fits(settings_path, fits_path):
         None.
     """
 
+    settings = SettingsReader(settings_path)
+    nb = len(settings.get("molecule","names").split(","))
+
     # Get information
     workdir = os.getcwd()
     fit_folder_prefix = os.path.join(workdir, fits_path)
@@ -894,10 +928,10 @@ def execute_fits(settings_path, fits_path):
     all_fits = glob.glob("fit*")
     for fit in all_fits:
         os.chdir(fit)
-        if not os.path.exists("fit.log"):
+        if not os.path.exists("fit-{}b.cdl".format(nb)):
             print("{} is running.".format(fit))
             print(os.path.dirname(os.curdir))
-            system.call("./run_fit.sh")
+            system.call("./run_fit.sh", out_file = None)
             print("{} is completed.".format(fit))
         else:
             print("{} is already done. Continuing...".format(fit))

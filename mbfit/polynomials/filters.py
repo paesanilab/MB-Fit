@@ -72,6 +72,13 @@ def parse_filter(*args):
                 raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "two arguments for 'num-fragments' filter") from None
             index = 2
             args = args[index + 1:]
+        elif args[0] == "poorly-behaved":
+            try:
+                filter1 = PoorlyBehavedFilter()
+            except TypeError:
+                raise FilterBadSyntaxError(input_args, len(args), "not enough arguments", "zero arguments for 'poorly-behaved' filter") from None
+            index = 2
+            args = args[index + 1:]
         else:
             raise FilterBadSyntaxError(input_args, 0, args[0], "a valid filter name: 'not', 'degree', 'ind-degree', 'sum-degree', or 'num-fragments'")
 
@@ -529,6 +536,58 @@ class DegreeFilter(Filter):
 
         # if the degree of one of this monomial's variables did not cause it to be filtered out, then it is a keeper!
         return True
+
+class PoorlyBehavedFilter(object):
+    """
+    Filters out monomials that do not have the correct asymptotic behavior as atoms move apart.
+    """
+
+    def __init__(self):
+        pass
+
+    def keep(self, monomial, variables):
+        """
+        Tells whether the input monomial formed by the input variables is not filtered out by this filter.
+
+        Args:
+            monomial        - The monomial to filter, specified as list of degrees of length len(variables).
+            variables       - List of variables in this monomial, should be same length as monomial.
+
+        Returns:
+            False if this Filter filters out this monomial, True otherwise.
+        """
+
+        involved_atoms = []
+        edges = {}
+
+        for involved_variable in [variable for index, variable in enumerate(variables) if monomial[index] > 0]:
+            atom1 = involved_variable.atom1_name + involved_variable.atom1_fragment
+            atom2 = involved_variable.atom2_name + involved_variable.atom2_fragment
+
+            if atom1 not in involved_atoms:
+                involved_atoms.append(atom1)
+                edges[atom1] = []
+
+            if atom2 not in involved_atoms:
+                involved_atoms.append(atom2)
+                edges[atom2] = []
+
+            edges[atom1].append(atom2)
+            edges[atom2].append(atom1)
+
+        connected_atoms = {atom: False for atom in involved_atoms}
+
+        stack = [involved_atoms[0]]
+        connected_atoms[involved_atoms[0]] = True
+
+        while len(stack) > 0:
+            atom1 = stack.pop()
+            for atom2 in edges[atom1]:
+                if not connected_atoms[atom2]:
+                    stack.append(atom2)
+                    connected_atoms[atom2] = True
+
+        return all(connected_atoms.values())
 
 class PatternMatcher(object):
 

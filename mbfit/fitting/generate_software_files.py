@@ -431,7 +431,7 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
         my_buckingham_text += "        nt2 = {};\n\n".format(number_of_types_2 + 1)
 
 
-        my_buckingham_text += "        // Fill in (in order) the C6 and d6 coefficients\n"
+        my_buckingham_text += "        // Fill in (in order) the a and d6 coefficients\n"
 
         A_units = "// kcal/mol"
         b_units = "// A^(-1)"
@@ -803,6 +803,8 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
             if we_are_good:
                 os.system("cd " + sofdir + " ; cp " + headerf + " " + cppgrad + " " + cppnograd + " " + holderh + " " + MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "; cd ../ ")
 
+                # Old code that updates CMakeLists
+                """
                 # Now update CMake
                 with open(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "CMakeLists.txt", 'r') as cmakelists:
                     lines = cmakelists.readlines()
@@ -837,6 +839,33 @@ def generate_software_files(settings_path, config_file, mon_ids, do_ttmnrg, mbnr
                 with open(MBX_HOME + "/src/potential/{0}b/".format(number_of_monomers) + "CMakeLists.txt", 'w') as cmakelists:
                     for line in lines:
                         cmakelists.write(line)
+                """
+
+                full_cppgrad_path = "potential/{}b/".format(number_of_monomers) + cppgrad
+                full_cppnograd_path = "potential/{}b/".format(number_of_monomers) + cppnograd
+                full_holdercpp_path = "potential/{}b/".format(number_of_monomers) + holdercpp
+
+                # New code that updates the makefile instead
+                with open(MBX_HOME + "/src/Makefile.am", 'r') as makefile:
+                    lines = makefile.readlines()
+                i = 0
+                while i < len(lines):
+                    if (lines[i].startswith("oneb_sources") and number_of_monomers == 1) or (lines[i].startswith("twob_sources") and number_of_monomers == 2) or (lines[i].startswith("threeb_sources") and number_of_monomers == 3):
+                        current_sources = lines[i].split()[2:]
+                        if full_cppgrad_path not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + full_cppgrad_path + "\n"
+                        if full_cppnograd_path not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + full_cppnograd_path + "\n"
+                        if full_holdercpp_path not in current_sources:
+                            lines[i] = lines[i][:-1] + " " + full_holdercpp_path + "\n"
+
+                        break
+                    i += 1
+
+                with open(MBX_HOME + "/src/Makefile.am", 'w') as makefile:
+                    for line in lines:
+                        makefile.write(line)
+
 
 
                 if copy_holder:

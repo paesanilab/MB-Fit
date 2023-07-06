@@ -12,7 +12,7 @@ class PeriodicTable(object):
     
         return None # should probably raise an exception instead
 
-class Atom(object)
+class Atom(object):
     def __init__(self, number, symbol):
         self.number = number
         self.symbol = symbol

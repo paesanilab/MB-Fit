@@ -2432,10 +2432,30 @@ double compute_chisq(const gsl_vector* X, void* unused)
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "usage: ./fit-""" + str(number_of_monomers) + """b <training_set.xyz> [DE] [ridge_alpha] > fit.log"
+        std::cerr << "usage: ./fit-""" + str(number_of_monomers) + """b <training_set.xyz> [DE] [ridge_alpha] [restart_file] > fit.log"
                   << std::endl;
         return 0;
     }
+
+    argv++;
+    argc--;
+
+    char * restart_file = NULL;
+
+    try {
+        size_t nsys = tset::load_nb_system(*argv, training_set);
+        std::cout << "'" << *(argv++) << "' : "
+                      << nsys << " configurations" << std::endl;
+        if (--argc > 0) E_range = atof(*(argv++));
+
+        if (--argc > 0) alpha = atof(*(argv++));
+        if (--argc > 0) restart_file = *(argv++);
+
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+
 
     long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -2454,6 +2474,12 @@ int main(int argc, char** argv) {
 
     a = """
     model.set_nonlinear_parameters(x0);
+    // you can convert a fit-2b.cdl file to .nc file using the following command
+    // $ ncgen -o mbnrg.nc fit-2b.cdl
+    if(restart_file != NULL) {
+        model.load_netcdf(restart_file);
+        std::cout << ">> restarting fit by loading non-linear parameters from '" << restart_file << "'" << std::endl;
+    }
 
     std::cout << "<> using ridge regression with alpha = "
               << alpha << std::endl;
@@ -2463,22 +2489,6 @@ int main(int argc, char** argv) {
         std::ofstream ofs(fn);
         std::cout << "\\n>> dumping initial model as '" << fn << "' >>\\n\\n";
         model.as_cdl(ofs);
-    }
-
-    argv++;
-    argc--;
-
-    try {
-        size_t nsys = tset::load_nb_system(*argv, training_set);
-        std::cout << "'" << *(argv++) << "' : "
-                      << nsys << " configurations" << std::endl;
-        if (--argc > 0) E_range = atof(*(argv++));
-
-        if (--argc > 0) alpha = atof(*(argv++));
-
-    } catch (const std::exception& e) {
-        std::cerr << " ** Error ** : " << e.what() << std::endl;
-        return 1;
     }
 
     ts_weights = std::vector<double>(training_set.size(),1.0);
@@ -2580,6 +2590,16 @@ int main(int argc, char** argv) {
             for (size_t n = 0; n <  model.get_num_nonlinear_params(); ++n)
                 std::cout << n << " : " << s->x->data[n] << "\\n";
             std::cout << "<>" << std::endl;
+
+            model.set_nonlinear_parameters(s->x->data);
+            model.set_linear_parameters(linear::params);
+            {
+                std::string fn = (iter%20==0) ? "fit-""" + str(number_of_monomers) + """b-restart-2.cdl" : "fit-""" + str(number_of_monomers) + """b-restart-1.cdl";
+                std::ofstream ofs(fn);
+                std::cout << ">> saving as '" << fn << "'" << std::endl;
+                model.as_cdl(ofs);
+            }
+
         }
     } while (status == GSL_CONTINUE && iter < 5000);
 
@@ -4113,16 +4133,27 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
     fragments = symmetry_parser.get_sub_parsers()
 
-    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-        monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
-"""
+            atoms = list(fragments[i].get_atoms())
+            a = "    monomer m{};\n".format(str(i + 1))
+            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code))
             ff.write(a)
-        char_code = chr(ord(char_code) + 1)
+        char_code = chr(ord(char_code)+1)
+
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+    #char_code = 'a'
+    #for i in range(len(use_lonepairs)):
+    #    if use_lonepairs[i] != 0:
+    #        a = """
+    #    monomer m""" + str(i + 1) + """;
+    #    m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+#"""
+    #        ff.write(a)
+    #    char_code = chr(ord(char_code) + 1)
 
     ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
     ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
@@ -4262,16 +4293,29 @@ double """ + struct_name + """::f_switch(const double r, double& g)
 
     fragments = symmetry_parser.get_sub_parsers()
 
-    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-        monomer m""" + str(i + 1) + """;
-        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
-"""
+            atoms = list(fragments[i].get_atoms())
+            a = "    monomer m{};\n".format(str(i + 1))
+            a += "    m{}.setup({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code))
             ff.write(a)
-        char_code = chr(ord(char_code) + 1)
+        char_code = chr(ord(char_code)+1)
+
+
+
+    # FIXME Only monomer that accepts lone pairs, for now, is MBpol water.
+#    char_code = 'a'
+#    for i in range(len(use_lonepairs)):
+#        if use_lonepairs[i] != 0:
+#            a = """
+#        monomer m""" + str(i + 1) + """;
+#        m""" + str(i + 1) + """.setup(coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """, w12, wcross, coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + ", coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """);
+#"""
+#            ff.write(a)
+#        char_code = chr(ord(char_code) + 1)
 
     ff.write("\n        variable vs[" + str(number_of_variables) + "];\n")
     ff.write("\n        double xs[" + str(number_of_variables) + "];\n\n")
@@ -4329,9 +4373,17 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-        m""" + str(i+1) + """.grads(coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + "_g, coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """_g, w12, wcross, coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """_g);
-"""
+#            a = """
+#        m""" + str(i+1) + """.grads(coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + "_g, coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """_g, w12, wcross, coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """_g);
+#"""
+            atoms = list(fragments[i].get_atoms())
+            #a = "    m{}.grads({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code, extension="_g"),
+            #                                                        get_coords_var_name(atoms[3][0], i*2+1, char_code, extension="_g"),
+            #                                                        get_coords_var_name(atoms[4][0], i*2+2, char_code, extension="_g"))
+            a = "        m{}.grads({}, {}, w12, wcross, {});\n".format(str(i + 1),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code, extension="g"),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code, extension="g"),
+                                                                    get_coords_var_name(atoms[0][0], i+1, char_code, extension="g"))
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
 

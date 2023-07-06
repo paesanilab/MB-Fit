@@ -4373,9 +4373,17 @@ double """ + struct_name + """::f_switch(const double r, double& g)
     char_code = 'a'
     for i in range(len(use_lonepairs)):
         if use_lonepairs[i] != 0:
-            a = """
-        m""" + str(i+1) + """.grads(coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + "_g, coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """_g, w12, wcross, coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """_g);
-"""
+#            a = """
+#        m""" + str(i+1) + """.grads(coords_""" + list(fragments[i].get_atoms())[3][0] + "_1_" + char_code + "_g, coords_" + list(fragments[i].get_atoms())[4][0] + "_2_" + char_code + """_g, w12, wcross, coords_""" + list(fragments[i].get_atoms())[0][0] + "_1_" + char_code + """_g);
+#"""
+            atoms = list(fragments[i].get_atoms())
+            #a = "    m{}.grads({}, w12, wcross, {}, {});\n".format(str(i + 1), get_coords_var_name(atoms[0][0], i+1, char_code, extension="_g"),
+            #                                                        get_coords_var_name(atoms[3][0], i*2+1, char_code, extension="_g"),
+            #                                                        get_coords_var_name(atoms[4][0], i*2+2, char_code, extension="_g"))
+            a = "        m{}.grads({}, {}, w12, wcross, {});\n".format(str(i + 1),
+                                                                    get_coords_var_name(atoms[3][0], i*2+1, char_code, extension="g"),
+                                                                    get_coords_var_name(atoms[4][0], i*2+2, char_code, extension="g"),
+                                                                    get_coords_var_name(atoms[0][0], i+1, char_code, extension="g"))
             ff.write(a)
         char_code = chr(ord(char_code) + 1)
 
